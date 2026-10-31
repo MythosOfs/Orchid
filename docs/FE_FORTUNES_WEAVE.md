@@ -29,20 +29,26 @@ surface only once the earlier ones are lowered.
 Lowered already (2026-10-31, this branch): `ISETP.EX` (64-bit compare high word), `REDUX.MIN`,
 `SHF` with a constant source (`0xa19`).
 
-Still rejected, with the instruction that fails:
+Lowered so far, each verified by a run: `ISETP.EX`, `REDUX.MIN`, `SHF` with a constant
+source (`0xa19`), `IMNMX` with a 32-bit immediate (`0x817`), `IMAD.HI.S32` (`0x827`), `IMAD.HI`
+with a constant multiplier (`0xa27`), `IADD3.X` with a constant source (`0xa10`), `LEA.HI.X`
+with a constant base (`0xa11`), `ATOMS.MIN/MAX` (`0x38c`), `BAR.SYNC.DEFER_BLOCKING` (`0xb1d`),
+`BPT.TRAP` as a no-op (`0x95c`), and `LDG` through `desc[URn]` (`0x981`).
 
-| Stage | Message | Instruction |
-|---|---|---|
-| graphics | native surface descriptor buffer conflict | `b9b 00007b9b 8080480c 00100f00` |
-| graphics | unsupported native opcode | `370 1c1d7370 08000000 000001ff` |
-| graphics | native shared atomic mode | `38c ffff038c 00000801 00800000` |
-| compute | native formatted surface store mode | `b9b 02007b9b 60005804 0010af00` |
-| compute | native extended constant add mode | `a10 94052a10 00005b00 007fe4ff` (4 programs) |
-| compute | unsupported native opcode | `a27 00022a27 0000a800 078e00ff` (4) |
-| compute | native constant LEA carry mode | `a11 0f0d8a11 00005900 010f0eff` |
-| compute | native integer min/max mode | `817 00097817 ffffffc0 07800200` |
-| compute | native high multiply mode | `827 05067827 66666667 078e02ff` |
-| compute | unsupported native opcode | `95c 0000795c 00000004 00300000` |
+Still rejected (fail-fast: the next one only surfaces once this one is lowered):
+
+| Message | Instruction |
+|---|---|
+| native high effective address mode | `211 034f5211 000000ab 010f0eff` (4 programs) |
+| native integer multiply mode | `824 9a2b7824 00000001 008e0603` |
+| native surface descriptor buffer conflict | `b9b 00007b9b 8080480c 00100f00` |
+| native formatted surface store mode | `b9b 02007b9b 60005804 0010af00` |
+| unsupported native opcode | `370 1c1d7370 08000000 000001ff` (TXQ.B, bindless handle) |
+| unsupported native opcode | `fae 020d7fae 00000000 0e101c48` |
+| unsupported native opcode | `311 00047311 00000004 0021d800` (F2I.64) |
+| native integer carry/third source | `c10 0c0a7c10 00000004 0ff9e0ff` |
+| native global store uniform addressing mode | `986 02007986 00000005 0c101104` (the `desc[URn]` store twin of the above) |
+| native matrix multiply | `23c 0a08723c 0000000c 00000008` — needs `EDEN_NX2_TENSOR=1` |
 
 Also seen, not yet shader related:
 

@@ -35,21 +35,28 @@ with a constant multiplier (`0xa27`), `IADD3.X` with a constant source (`0xa10`)
 with a constant base (`0xa11`), `ATOMS.MIN/MAX` (`0x38c`), `BAR.SYNC.DEFER_BLOCKING` (`0xb1d`),
 `BPT.TRAP` as a no-op (`0x95c`), and `LDG` through `desc[URn]` (`0x981`).
 
-Still rejected (fail-fast: the next one only surfaces once this one is lowered):
+Still rejected (fail-fast: the next one only surfaces once this one is lowered). The three
+graphics-path ones keep the screen black; the rest are compute passes:
 
 | Message | Instruction |
 |---|---|
-| native high effective address mode | `211 034f5211 000000ab 010f0eff` (4 programs) |
+| native surface descriptor buffer conflict | `b9b 00007b9b 8080480c 00100f00` (2 programs) |
+| native formatted surface store mode | `b9b 02007b9b 60005804 0010af00`, `b9b 1200ab9b 6000aa04 0010af00` |
+| unsupported native opcode (TXQ.B, bindless handle) | `370 1c1d7370 08000000 000001ff` |
 | native integer multiply mode | `824 9a2b7824 00000001 008e0603` |
-| native surface descriptor buffer conflict | `b9b 00007b9b 8080480c 00100f00` |
-| native formatted surface store mode | `b9b 02007b9b 60005804 0010af00` |
-| unsupported native opcode | `370 1c1d7370 08000000 000001ff` (TXQ.B, bindless handle) |
+| unsupported native opcode (IMAD.WIDE, cbuf) | `625 34028625 00005e00 078e0203` |
+| unsupported native opcode | `226 47407226 00000040 000010ff` |
+| unsupported native opcode (F2I.64) | `311 00047311 00000004 0021d800` |
 | unsupported native opcode | `fae 020d7fae 00000000 0e101c48` |
-| unsupported native opcode | `311 00047311 00000004 0021d800` (F2I.64) |
 | native integer carry/third source | `c10 0c0a7c10 00000004 0ff9e0ff` |
-| native global store uniform addressing mode | `986 02007986 00000005 0c101104` (the `desc[URn]` store twin of the above) |
-| native matrix multiply | `23c 0a08723c 0000000c 00000008` — needs `EDEN_NX2_TENSOR=1` |
+| native constant add carry mode | `a10 2c2c8a10 00005c00 07b5e005` |
+| native matrix multiply | `23c ...` — `EDEN_NX2_TENSOR=1` does not clear it |
 
+The two `b9b` classes are not a missing case: `ShaderEnvironment::texture_bound` holds one
+descriptor buffer per program, so a program that stores through a surface and samples a
+texture that live in different descriptor buffers has nowhere to put the second one. That,
+and `TXQ.B` on a bindless handle (a descriptor in a register pair instead of a bank offset),
+are the two structural items; the remaining opcodes are ordinary case work.
 Also seen, not yet shader related:
 
 - `Unmapped Device ReadBlock` bursts — guest reads inside ranges that never got mapped.

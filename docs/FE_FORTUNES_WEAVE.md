@@ -26,21 +26,27 @@ The update's `romfs/` is found next to that `exefs/` directory. Log: `~/.local/s
 `lower_to_maxwell.h` fails on the first offending instruction of a program, so later modes
 surface only once the earlier ones are lowered.
 
-| # | Stage | Message | Op |
-|---|---|---|---|
-| 1 | graphics + compute | native extended integer comparison | `0x20c` |
-| 2 | graphics + compute | native surface descriptor buffer conflict / native formatted surface store mode | `0xb9b` |
-| 3 | compute | native warp reduction mode | `0x3c4` |
-| 4 | compute | native integer min/max mode | `0x817` |
-| 5 | compute | native extended constant add mode | `0xa10` |
-| 6 | compute | native constant LEA carry mode | `0xa11` |
-| 7 | compute | native high multiply mode | `0x827` |
-| 8 | compute | unsupported native opcode | `0xa27`, `0x95c`, `0xd70` |
+Lowered already (2026-10-31, this branch): `ISETP.EX` (64-bit compare high word), `REDUX.MIN`,
+`SHF` with a constant source (`0xa19`).
+
+Still rejected, with the instruction that fails:
+
+| Stage | Message | Instruction |
+|---|---|---|
+| graphics | native surface descriptor buffer conflict | `b9b 00007b9b 8080480c 00100f00` |
+| graphics | unsupported native opcode | `370 1c1d7370 08000000 000001ff` |
+| graphics | native shared atomic mode | `38c ffff038c 00000801 00800000` |
+| compute | native formatted surface store mode | `b9b 02007b9b 60005804 0010af00` |
+| compute | native extended constant add mode | `a10 94052a10 00005b00 007fe4ff` (4 programs) |
+| compute | unsupported native opcode | `a27 00022a27 0000a800 078e00ff` (4) |
+| compute | native constant LEA carry mode | `a11 0f0d8a11 00005900 010f0eff` |
+| compute | native integer min/max mode | `817 00097817 ffffffc0 07800200` |
+| compute | native high multiply mode | `827 05067827 66666667 078e02ff` |
+| compute | unsupported native opcode | `95c 0000795c 00000004 00300000` |
 
 Also seen, not yet shader related:
 
-- `Unmapped Device ReadBlock @ 0x120585000` (16 blocks, one burst) right after the first
-  rejected dispatches — guest reads inside a 69632-byte range that never got mapped.
+- `Unmapped Device ReadBlock` bursts — guest reads inside ranges that never got mapped.
 - `nx2:gsv` TIPC `11` unimplemented (falls back to the auto stub).
 - `Load: Failed to read title for ROM` — no control NACP in a loose dump, expected.
 

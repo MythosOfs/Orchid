@@ -928,24 +928,30 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
             restore_predicate();
             break;
         }
-        case 0x3c4: { // REDUX.SUM (modulo 2^32), .MAX.U32, or .OR over the actual active lanes.
+        case 0x3c4: { // REDUX.SUM (modulo 2^32), .MAX.U32, .MIN.U32, or .OR over the actual active lanes.
             const u32 source = insn.Bits(24, 8), target = uniform_register(static_cast<u32>(dest));
             const bool maximum = insn.words[2] == 0x14000;
+            const bool minimum = insn.words[2] == 0x10000;
             const bool bitwise_or = insn.words[2] == 0x4000;
             if (target == ~0U || target == 255 || insn.words[1] ||
-                (insn.words[2] != 0xc000 && !maximum && !bitwise_or) || native_predicate != 7)
+                (insn.words[2] != 0xc000 && !maximum && !minimum && !bitwise_or) ||
+                native_predicate != 7)
                 return fail(index, "native warp reduction mode");
             emit(0x50d8000000070000ULL | 250 | (u64{7} << 39) | (u64{7} << 45) | (u64{1} << 48));
-            mov_imm(target, 0);
+            mov_imm(target, minimum ? ~0U : 0);
             for (u32 lane = 0; lane < 32; ++lane) {
                 emit(0xef10000000070000ULL | 251 | (u64{source} << 8) | (u64{lane} << 20) |
                     (u64{1} << 28) | (u64{1} << 29) | (u64{31} << 34) | (u64{7} << 48));
                 emit(0x3828000000070000ULL | 252 | (u64{250} << 8) | (u64{lane} << 20));
                 emit(0x0400000000070000ULL | 252 | (u64{252} << 8) | (u64{1} << 20));
                 emit(0x5c10000000070000ULL | 252 | (u64{255} << 8) | (u64{252} << 20) | (u64{1} << 48));
-                emit(0x5c40000000070000ULL | 251 | (u64{251} << 8) | (u64{252} << 20) | (u64{7} << 48));
-                if (maximum) {
-                    emit(0x5c20000000070000ULL | target | (u64{target} << 8) | (u64{251} << 20) | (u64{15} << 39));
+                // An inactive lane gives the operation's identity: 0, or all ones for MIN (OR
+                // with the inverted mask).
+                emit(0x5c40000000070000ULL | 251 | (u64{251} << 8) | (u64{252} << 20) |
+                     (u64{7} << 48) | (minimum ? (u64{1} << 41) | (u64{1} << 40) : 0));
+                if (maximum || minimum) {
+                    emit(0x5c20000000070000ULL | target | (u64{target} << 8) | (u64{251} << 20) |
+                         (u64{minimum ? 7U : 15U} << 39));
                 } else if (bitwise_or) {
                     emit(0x5c40000000070000ULL | target | (u64{target} << 8) | (u64{251} << 20) |
                          (u64{1} << 41) | (u64{7} << 48));
@@ -1038,18 +1044,22 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
             emit(base(0x3828000000000000ULL) | (u64{insn.words[1]} << 8) |
                 (u64{1} << 39) | (u64{1} << 40));
             break;
-        case 0x219: case 0xc19: { // U32 register (or uniform, 0xc19) shifts with a zero word outside the selected result.
+        case 0x219: case 0xc19: case 0xa19: { // U32 register (or uniform, 0xc19, or
+                                                 // constant, 0xa19) shifts with a zero word
+                                                 // outside the selected result.
             const u32 low = insn.Bits(24, 8), high = insn.Bits(64, 8);
-            const u32 shift = opcode == 0xc19 ? uniform_register(insn.Bits(32, 8)) : insn.Bits(32, 8);
+            const u32 shift = opcode == 0xa19   ? operand(1, false)
+                              : opcode == 0xc19 ? uniform_register(insn.Bits(32, 8))
+                                                : insn.Bits(32, 8);
             const bool right = insn.Bits(76, 1) != 0, high_result = insn.Bits(80, 1) != 0;
             // SHF.R.U32 of the low word with a zero high word: a plain logical right shift.
             if (right && !high_result && high == 255 && insn.Bits(73, 2) == 3 && shift != ~0U &&
-                insn.words[1] <= 255 &&
+                (opcode == 0xa19 || insn.words[1] <= 255) &&
                 (insn.words[2] & ~(0x000118ffU | (opcode == 0xc19 ? 0x08000000U : 0U))) == 0x00000600U) {
                 emit(base(0x5c28000000000000ULL) | (u64{low} << 8) | (u64{shift} << 20));
                 break;
             }
-            if (insn.words[1] > 255 || insn.Bits(73, 2) != 3 || shift == ~0U ||
+            if ((opcode != 0xa19 && insn.words[1] > 255) || insn.Bits(73, 2) != 3 || shift == ~0U ||
                 (insn.words[2] & ~(0x000118ffU | (opcode == 0xc19 ? 0x08000000U : 0U))) != 0x00000600U ||
                 (right ? (!high_result || low != 255) : (high_result || high != 255)))
                 return fail(index, "native register shift mode");
@@ -2269,7 +2279,36 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
         case 0x20b: case 0x80b: case 0xa0b: case 0xc0b: // FSETP
         case 0x20c: case 0x80c: case 0xa0c: case 0xc0c: { // ISETP
             const bool floating = (opcode & 0x1ff) == 0xb;
-            if (!floating && insn.Bits(72, 1)) return fail(index, "native extended integer comparison");
+            if (!floating && insn.Bits(72, 1)) {
+                // ISETP.EX: the high word of a 64-bit compare, the low word's result in the
+                // predicate at 68-71. EQ and NE are Maxwell's own combine with a source
+                // predicate. The orderings are (a strictly-ordered b) OR (a == b AND low),
+                // through P6. The instruction's own input must be PT.
+                const u32 ex_compare = insn.Bits(76, 3);
+                if (ex_compare == 0 || ex_compare == 7 || insn.Bits(87, 4) != 7 ||
+                    insn.Bits(74, 2)) {
+                    return fail(index, "native extended integer comparison");
+                }
+                const u32 ea = operand(0, false), eb = operand(1, false);
+                const u64 sign = u64{insn.Bits(73, 1)} << 48;
+                const u64 low = (u64{insn.Bits(68, 3)} << 39) | (u64{insn.Bits(71, 1)} << 42);
+                const u64 outs = insn.Bits(84, 3) | (u64{insn.Bits(81, 3)} << 3);
+                if (ex_compare == 2 || ex_compare == 5) {
+                    emit(0x5b60000000000000ULL | predicate | outs | (u64{ea} << 8) |
+                         (u64{eb} << 20) | low | (u64{ex_compare == 5 ? 1U : 0U} << 45) |
+                         sign | (u64{ex_compare} << 49));
+                } else {
+                    const u32 strict = ex_compare <= 3 ? 1U : 4U; // LT, LE: LT. GT, GE: GT
+                    save_predicate();
+                    emit(0x5b60000000000000ULL | predicate | 7 | (u64{6} << 3) | (u64{ea} << 8) |
+                         (u64{eb} << 20) | low | sign | (u64{2} << 49));
+                    emit(0x5b60000000000000ULL | predicate | outs | (u64{ea} << 8) |
+                         (u64{eb} << 20) | (u64{6} << 39) | (u64{1} << 45) | sign |
+                         (u64{strict} << 49));
+                    restore_predicate();
+                }
+                break;
+            }
             const u32 a = operand(0, floating), b = operand(1, floating);
             const u32 combine = insn.Bits(74, 2);
             if (combine > 2) return fail(index, "native predicate combination");

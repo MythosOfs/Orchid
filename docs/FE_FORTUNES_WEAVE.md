@@ -108,3 +108,15 @@ IMAD.HI's 64-bit addend, F2I.U64's high word, calls returning into their block, 
 | reserved register as a source | `211 f73b7211 00000000 078f18ff`, `831 d88d7831 3a003a00 0000008d` | programs whose own operands use R246-R254 |
 
 Getting a picture needs every one of these; the display buffer (0x91f41000, 3840x2160) is written by compute passes only.
+
+## Still rejected (2026-11-01, 12 compute dispatches, 6 instructions)
+
+| Family | Instruction words | What is missing |
+|---|---|---|
+| reserved GPR as a source | `211 f73b7211 00000000 078f18ff`, `831 d88d7831 3a003a00 0000008d` | the program's own operands live in R216-R254, where the lowering keeps uniforms and scratch: needs register remapping |
+| MUFU operation 9 | `308 000c7308 0000000c 00002400` | SM86 MUFU op 9 |
+| LDGSTS.E.BYPASS.128 | `fae 020d7fae 00000000 0e101c48` | LDG.128 + STS.128 split |
+| F2I variant 0x312 | `312 00027312 00000002 00301000` | opcode 0x312 has no case yet |
+| CALL with another link setup | `944 00007944 00002d00 03c00000` | the preceding move is not the `0x7802` form the lowering expects |
+
+Done since the last table: IADD3 with one or two carry predicates and a third-source carry-in, LEA.HI.X with a constant base, LEA.HI with a uniform base, HFMA2.RELU with a predicate output, USHF over UR0-UR21, IDP.4A.S8.S8.

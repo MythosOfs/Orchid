@@ -35,6 +35,9 @@ struct LoweredProgram {
     std::vector<u32> source_instruction_offsets;
     u32 source_size{};
     u32 required_texture_buffer = ~0U;
+    /// The constant buffer the surface stores read their descriptors from, when it differs from
+    /// the textures' one (a program may address both a texture and a surface table).
+    u32 required_surface_buffer = ~0U;
     u32 error_offset{};
     std::string_view error;
 
@@ -1035,9 +1038,9 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
                 binding >= 18 || offset > 0x1fff || insn.Bits(59, 2) || dest == 255 ||
                 coordinate > (dimension == 4 ? 252U : 253U))
                 return fail(index, "native formatted surface load mode");
-            if (result.required_texture_buffer != ~0U && result.required_texture_buffer != binding)
+            if (result.required_surface_buffer != ~0U && result.required_surface_buffer != binding)
                 return fail(index, "native surface descriptor buffer conflict");
-            result.required_texture_buffer = binding;
+            result.required_surface_buffer = binding;
             emit(base(0xeb00000000000000ULL) | (u64{coordinate} << 8) |
                 (u64{channels} << 20) | (u64{dimension} << 33) | (u64{offset} << 36) | (u64{1} << 51));
             break;
@@ -1046,14 +1049,18 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
             const u32 binding = insn.Bits(54, 5), offset = insn.Bits(40, 14);
             const u32 data = insn.Bits(32, 8), coordinate = insn.Bits(24, 8);
             const u32 dimension = insn.Bits(61, 3);
-            if (insn.words[2] != 0x00100f00 || (dimension != 1 && (dimension < 3 || dimension > 5)) ||
-                binding >= 18 || offset > 0x1fff || insn.Bits(59, 2) || data > 252 || coordinate > (dimension >= 4 ? 252U : 253U))
+            // Bits 72-75 carry the channel swizzle; a partial mask stores only those channels.
+            const u32 channels = insn.Bits(72, 4);
+            if ((insn.words[2] & ~0xf00U) != 0x00100000 || channels == 0 ||
+                (dimension != 1 && (dimension < 3 || dimension > 5)) ||
+                binding >= 18 || offset > 0x1fff || insn.Bits(59, 2) || data > 252 ||
+                coordinate > (dimension >= 4 ? 252U : 253U))
                 return fail(index, "native formatted surface store mode");
-            if (result.required_texture_buffer != ~0U && result.required_texture_buffer != binding)
+            if (result.required_surface_buffer != ~0U && result.required_surface_buffer != binding)
                 return fail(index, "native surface descriptor buffer conflict");
-            result.required_texture_buffer = binding;
+            result.required_surface_buffer = binding;
             emit(0xeb20000000000000ULL | predicate | data | (u64{coordinate} << 8) |
-                (u64{15} << 20) | (u64{dimension} << 33) | (u64{offset} << 36) | (u64{1} << 51));
+                (u64{channels} << 20) | (u64{dimension} << 33) | (u64{offset} << 36) | (u64{1} << 51));
             break;
         }
         case 0x301: // BREV register.
@@ -1507,6 +1514,15 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
                 emit(base(0x5c40000000000000ULL) | (dest << 8) | (u64{251} << 20) |
                      (u64{1} << 41) | (u64{7} << 48));
             }
+            break;
+        }
+        case 0x370: { // TXQ.B texture dimensions on a handle in a register (bindless).
+            if (insn.Bits(72, 4) == 0 || insn.Bits(72, 4) > 3 || insn.Bits(76, 14) ||
+                insn.Bits(91, 1) || dest >= 254 || (insn.Bits(72, 4) == 3 && (dest & 1)))
+                return fail(index, "native texture dimension query mode");
+            // Maxwell's TXQ (b) takes the handle from the register and one more for the LOD.
+            emit(0xdf50000000000000ULL | predicate | dest | (u64{insn.Bits(24, 8)} << 8) |
+                 (u64{1} << 22) | (u64{insn.Bits(72, 4)} << 31) | (u64{insn.Bits(90, 1)} << 49));
             break;
         }
         case 0xb6f: { // TXQ texture dimensions, two packed scalar outputs.
@@ -2647,33 +2663,14 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
             break;
         }
         case 0x944: { // Verified CALL.REL.NOINC with R55 holding the return PC
-            const auto terminal_float_tail = [&] {
-                if (index + 2 >= code.size()) return false;
-                for (size_t tail = index + 2; tail < code.size(); ++tail) {
-                    const auto& next = code[tail];
-                    if (next.words[3] & 0xc00001ffU) return false;
-                    if (next.words[0] == 0x794d && next.words[1] == 0 &&
-                        next.words[2] == 0x03800000)
-                        return true;
-                    const u32 form = next.words[0] & 0xffffU;
-                    if ((form != 0x7209 && form != 0x7809) ||
-                        (next.words[2] != 0x07810000 && next.words[2] != 0x03810000) ||
-                        (form == 0x7209 && next.words[1] > 255))
-                        return false;
-                }
-                return false;
-            };
             // A predicated NOINC forward transfer can terminate a loop at its
             // reconvergence point without a return-link setup or matching RET.
             if (native_predicate != 7 && (insn.words[0] & ~0xf000U) == 0x944 &&
                 insn.words[1] == 16 && insn.words[2] == 0x03c00000 &&
                 (insn.words[3] & 0xc00001ffU) == 0 &&
-                index + 2 < code.size() && code[index + 1].words[0] == 0x7947 &&
+                index + 2 < code.size() && (code[index + 1].words[0] & 0xfffU) == 0x947 &&
                 (code[index + 1].words[2] & ~0x3ffffU) == 0x03800000 &&
-                (code[index + 1].words[3] & 0xc00001ffU) == 0 &&
-                (std::none_of(code.begin(), code.end(), [](const Instruction& candidate) {
-                    return candidate.Bits(0, 12) == 0x950;
-                }) || terminal_float_tail())) {
+                (code[index + 1].words[3] & 0xc00001ffU) == 0) {
                 relocations.push_back({static_cast<u32>(result.instructions.size()), index + 2});
                 emit(0xe24000000000000fULL | predicate);
                 break;

@@ -531,8 +531,10 @@ TextureInst MakeInst(Environment& env, IR::Block* block, IR::Inst& inst, const H
             addr = *track_addr;
         }
     } else {
+        // Surface (image write) descriptors may live in another constant buffer than the textures'.
+        const bool is_surface{inst.GetOpcode() == IR::Opcode::ImageWrite};
         addr = ConstBufferAddr{
-            .index = env.TextureBoundBuffer(),
+            .index = is_surface ? env.SurfaceBoundBuffer() : env.TextureBoundBuffer(),
             .offset = inst.Arg(0).U32(),
             .shift_left = 0,
             .secondary_index = 0,

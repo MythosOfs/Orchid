@@ -23,9 +23,10 @@ inline u64 NativeProgramKey(std::span<const Instruction> source) {
 inline std::vector<u8> EncodeProgramOverride(std::span<const Instruction> source,
                                             const LoweredProgram& program) {
     if (!program || program.source_size != source.size_bytes() || program.source_instruction_offsets.size() != source.size()) return {};
-    const std::array<u32, 6> header{0x4e454445, 0x3230564f,
+    const std::array<u32, 7> header{0x4e454445, 0x3330564f,
         static_cast<u32>(source.size_bytes()), static_cast<u32>(program.instructions.size()),
-        program.required_texture_buffer, static_cast<u32>(program.source_instruction_offsets.size())};
+        program.required_texture_buffer, static_cast<u32>(program.source_instruction_offsets.size()),
+        program.required_surface_buffer};
     std::vector<u8> bytes(sizeof(header) + source.size_bytes() + program.instructions.size() * 8 + program.source_instruction_offsets.size() * 4);
     std::memcpy(bytes.data(), header.data(), sizeof(header));
     std::memcpy(bytes.data() + sizeof(header), source.data(), source.size_bytes());
@@ -36,10 +37,10 @@ inline std::vector<u8> EncodeProgramOverride(std::span<const Instruction> source
 }
 
 inline u32 ProgramOverrideSourceSize(std::span<const u8> bytes) {
-    std::array<u32, 6> header{};
+    std::array<u32, 7> header{};
     if (bytes.size() < sizeof(header)) return 0;
     std::memcpy(header.data(), bytes.data(), sizeof(header));
-    const bool mapped = header[1] == 0x3230564f;
+    const bool mapped = header[1] == 0x3330564f;
     if (header[0] != 0x4e454445 || (!mapped && header[1] != 0x3130564f) ||
         (mapped ? header[5] != header[2] / 16 : header[5] != 0) ||
         header[2] == 0 || header[2] % sizeof(Instruction) || header[2] > 1048576 ||
@@ -57,7 +58,7 @@ inline LoweredProgram DecodeProgramOverride(std::span<const u8> bytes,
         result.error = message;
         return result;
     };
-    std::array<u32, 6> header{};
+    std::array<u32, 7> header{};
     if (!ProgramOverrideSourceSize(bytes)) return fail("invalid native override header or length");
     std::memcpy(header.data(), bytes.data(), sizeof(header));
     if (header[2] != source.size_bytes()) return fail("native override source length mismatch");
@@ -79,6 +80,7 @@ inline LoweredProgram DecodeProgramOverride(std::span<const u8> bytes,
     }
     result.source_size = header[2];
     result.required_texture_buffer = header[4];
+    result.required_surface_buffer = header[6];
     return result;
 }
 

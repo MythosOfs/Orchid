@@ -313,6 +313,11 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
                  (u64{250} << 20) | (u64{16} << 39));
         };
         // The carry of a 64-bit add as a value: 1 when the predicate (or its negate) holds.
+        // Unsigned x < y into predicate pd: the carry out of x + y
+        const auto unsigned_less = [&](u32 pd, u32 x, u32 y) {
+            emit(0x5b60000000000000ULL | predicate | 7 | (u64{pd} << 3) | (u64{x} << 8) |
+                 (u64{y} << 20) | (u64{7} << 39) | (u64{1} << 49));
+        };
         const auto carry_value = [&](u32 pred, u32 negate) {
             mov_imm(253, 1);
             emit(0x5ca0000000000000ULL | predicate | 253 | (u64{253} << 8) | (u64{255} << 20) |
@@ -320,10 +325,9 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
         };
         switch (opcode) {
         case 0x625: case 0x825: { // IMAD.WIDE: Rd:Rd+1 = Ra * Rb + c[bank][offset]
-            const u32 a = insn.Bits(24, 8), b = insn.Bits(64, 8), slot = insn.Bits(72, 5);
+            const u32 a = insn.Bits(24, 8), b = insn.Bits(64, 8);
             // ponytail: the operand modifiers in bits 77-83 and 90 are dropped
-            if (insn.Bits(32, 8) || slot >= 18 || insn.Bits(40, 14) > 0x1fff || (dest & 1) ||
-                dest >= 246)
+            if (bank() >= 18 || (dest & 1) || dest >= 246)
                 return fail(index, "native wide multiply mode");
             const bool signed_mult = opcode == 0x625;
             // Low word, then the high word from base-2^16 partial products (as IMAD.HI above), then
@@ -336,8 +340,8 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
             emit(0x3828000000000000ULL | predicate | 250 | (u64{250} << 8) | (u64{16} << 20));
             emit(0x5c18000000000000ULL | (u64{251} << 8) | (u64{250} << 20) | (u64{252} << 20) |
                  (u64{16} << 39));
-            emit(0xef90000000000000ULL | predicate | 252 | (u64{insn.Bits(40, 14) * 4} << 20) |
-                 (u64{slot} << 36) | (u64{5} << 48));
+            emit(0xef90000000000000ULL | predicate | 252 | (u64{insn.Bits(38, 16)} << 20) |
+                 (u64{bank()} << 36) | (u64{5} << 48));
             emit(0x5c10000000000000ULL | predicate | dest | (u64{dest} << 8) | (u64{252} << 20));
             emit(0x5b60000000000000ULL | predicate | 7 | (u64{6} << 3) | (u64{dest} << 8) |
                  (u64{252} << 20) | (u64{7} << 39) | (u64{1} << 49)); // P6 = dest < c_lo
@@ -2687,6 +2691,33 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                      (u64{source} << 39) | (u64{insn.Bits(90, 1)} << 42));
                 if (rewritten_uniform && condition != 7) restore(mask);
                 emit(base(0x5c10000000000000ULL) | (u64{250} << 8) | (u64{251} << 20));
+                break;
+            }
+            if (!(insn.words[1] & ~(opcode == 0x210 ? 0xffU : 0xffffffffU)) && !insn.Bits(72, 2) &&
+                insn.Bits(81, 3) != 7 && !insn.Bits(74, 1) && insn.Bits(77, 4) == 15 &&
+                insn.Bits(87, 4) == 15) {
+                // IADD3 R, P[, Q], a, b, [-]c: the carry of a + b in P and of that + c in Q.
+                const u32 a = insn.Bits(24, 8), c = insn.Bits(64, 8);
+                const u32 b = opcode == 0x210 ? insn.Bits(32, 8) : operand(1, false);
+                emit(0x5c10000000000000ULL | predicate | 250 | (u64{a} << 8) | (u64{b} << 20));
+                unsigned_less(insn.Bits(81, 3), 250, a);
+                emit(0x5c10000000000000ULL | predicate | 251 | (u64{255} << 8) | (u64{c} << 20) |
+                     (u64{insn.Bits(75, 1)} << 48));
+                emit(0x5c10000000000000ULL | predicate | 252 | (u64{250} << 8) | (u64{251} << 20));
+                if (insn.Bits(84, 3) != 7) unsigned_less(insn.Bits(84, 3), 252, 250);
+                emit(base(0x5c98000000000000ULL) | (u64{15} << 39) | (u64{252} << 20));
+                break;
+            }
+            if (insn.Bits(74, 1) && !insn.Bits(72, 2)) {
+                // IADD3.X R, a, b, [-]c, P: a + b + c and the carry predicate of a previous add.
+                const u32 a = insn.Bits(24, 8), c = insn.Bits(64, 8);
+                const u32 b = opcode == 0x210 ? insn.Bits(32, 8) : operand(1, false);
+                emit(0x5c10000000000000ULL | predicate | 250 | (u64{a} << 8) | (u64{b} << 20));
+                emit(0x5c10000000000000ULL | predicate | 251 | (u64{250} << 8) | (u64{c} << 20) |
+                     (u64{insn.Bits(75, 1)} << 48));
+                if (insn.Bits(81, 3) != 7) unsigned_less(insn.Bits(81, 3), 251, 250);
+                carry_value(insn.Bits(87, 3), insn.Bits(90, 1));
+                emit(base(0x5c10000000000000ULL) | (u64{251} << 8) | (u64{253} << 20));
                 break;
             }
             if (opcode == 0xa10 && insn.Bits(81, 3) != 7) {

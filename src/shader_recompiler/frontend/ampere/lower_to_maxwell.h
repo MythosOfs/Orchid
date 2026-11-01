@@ -2766,12 +2766,14 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
             }
             if (insn.Bits(74, 1) && !insn.Bits(72, 2)) {
                 // IADD3.X R, a, b, [-]c, P: a + b + c and the carry predicate of a previous add.
+                // Carry outputs and a second carry input are not lowered (a + b + c + P can carry twice).
+                if (insn.Bits(81, 3) != 7 || insn.Bits(84, 3) != 7 || insn.Bits(77, 4) != 15)
+                    return fail(index, "native integer carry mode");
                 const u32 a = insn.Bits(24, 8), c = insn.Bits(64, 8);
                 const u32 b = opcode == 0x210 ? insn.Bits(32, 8) : operand(1, false);
                 emit(0x5c10000000000000ULL | predicate | 250 | (u64{a} << 8) | (u64{b} << 20));
                 emit(0x5c10000000000000ULL | predicate | 251 | (u64{250} << 8) | (u64{c} << 20) |
                      (u64{insn.Bits(75, 1)} << 48));
-                if (insn.Bits(81, 3) != 7) unsigned_less(insn.Bits(81, 3), 251, 250);
                 carry_value(insn.Bits(87, 3), insn.Bits(90, 1));
                 emit(base(0x5c10000000000000ULL) | (u64{251} << 8) | (u64{253} << 20));
                 break;

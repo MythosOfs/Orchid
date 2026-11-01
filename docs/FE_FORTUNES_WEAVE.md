@@ -47,20 +47,22 @@ fixes that got there:
 - `CALL` accepts the predicated NOINC forward transfer when the next instruction is `BSSY`
   (`0x947`), the rule the nxnative build uses.
 
-The screen is still black because the *compute* side never dispatches: 26 × `native shader
-dispatch required` (the QMD needs a lowered shader that was rejected). Those programs still hit
-this list, which is now only compute:
+The screen is still black because the *compute* side never dispatches: 24 × `native shader
+dispatch required` (a QMD needs a lowered program that was rejected). What is left is one family
+per line, all compute:
 
-| Message | Instruction |
-|---|---|
-| native integer multiply mode | `824 9a2b7824 00000001 008e0603`, `824 91497824 00000001 000e062f` |
-| native integer carry/third source | `c10 0c0a7c10 00000004 0ff9e0ff`, `c10 0402ac10 0000000a 0ffde0ff` |
-| native constant add carry mode | `a10 2c2c8a10 00005c00 07b5e005` |
-| native formatted surface store mode | `b9b 02007b9b 60005804 0010af00`, `b9b 1200ab9b 6000aa04 0010af00` |
-| unsupported native opcode (F2I.64) | `311 00047311 00000004 0021d800` |
-| unsupported native opcode | `226 47407226 00000040 000010ff`, `fae 020d7fae 00000000 0e101c48` |
-| unsupported native opcode (IMAD.WIDE, cbuf) | `625 34028625 00005e00 078e0203` |
-| native matrix multiply | `23c 0a08723c 0000000c 00000008` — `EDEN_NX2_TENSOR=1` does not clear it |
+| Message | Instruction | Needs |
+|---|---|---|
+| unsupported native opcode | `625 34028625 00005e00 078e0203`, `625 00288625 00005e00 078e0223`, `625 00228625 00005e00 078e0223`, `825 ccd43825 00000010 078e02d2` (4 programs) | IMAD.WIDE: Maxwell's IMAD is not in the frontend, so lo/hi multiply plus the 64-bit cbuf addend must be rebuilt from `xmad` |
+| native integer carry/third source | `210 05087210 00000007 07b5e800`, `c10 0402ac10 0000000a 0ffde0ff`, `c10 0c0a7c10 00000004 0ff9e0ff` | IADD3 with a third source and two carry predicates, in the uniform-rewritten form |
+| native constant add carry mode | `a10 2c2c8a10 00005c00 07b5e005`, `a10 1a1aca10 00005c00 0783e011` | IADD3 with a cbuf addend, a third source and both carries |
+| unsupported native opcode | `fae 020d7fae 00000000 0e101c48` | LDGSTS.E.BYPASS.128: Maxwell has no async copy, so LDG + STS |
+| unsupported native opcode | `226 47407226 00000040 000010ff` | IDP.4A.S8.S8: four signed 8-bit products summed |
+
+Done in this pass, each verified by a run: `LEA`/`LEA.HI` with a carry predicate (Pp out of
+bits 81-83), `F2I.FTZ.U64.TRUNC` (`0x311`, the auto-exposure of `Lighting.bfsha`), `IMAD.X` with a
+carry value and bit 73, `FMNMX` with a dropped predicate output, `HMMA` with a plain addend, and
+`IADD3` third-source modifiers.
 
 Also seen, not yet shader related:
 

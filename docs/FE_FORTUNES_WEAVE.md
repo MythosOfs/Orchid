@@ -53,11 +53,19 @@ per line, all compute:
 
 | Message | Instruction | Needs |
 |---|---|---|
-| unsupported native opcode | `625 34028625 00005e00 078e0203`, `625 00288625 00005e00 078e0223`, `625 00228625 00005e00 078e0223`, `825 ccd43825 00000010 078e02d2` (4 programs) | IMAD.WIDE: Maxwell's IMAD is not in the frontend, so lo/hi multiply plus the 64-bit cbuf addend must be rebuilt from `xmad` |
+| unsupported native opcode | `825 ccd43825 00000010 078e02d2` | IMAD.WIDE where bits 32-39 carry a register, not an immediate |
 | native integer carry/third source | `210 05087210 00000007 07b5e800`, `c10 0402ac10 0000000a 0ffde0ff`, `c10 0c0a7c10 00000004 0ff9e0ff` | IADD3 with a third source and two carry predicates, in the uniform-rewritten form |
 | native constant add carry mode | `a10 2c2c8a10 00005c00 07b5e005`, `a10 1a1aca10 00005c00 0783e011` | IADD3 with a cbuf addend, a third source and both carries |
+| native constant LEA carry mode | `a11 2935ea11 00009500 010f0c27` | LEA.HI.X with a constant base and a carry predicate |
+| native uniform-source effective address mode | `c11 0a0a7c11 00000004 0f8fe0ff` | LEA with a uniform base |
+| native program uses lowering scratch registers | `812 00f67812 00000010 078ec0ff` | an operand names R250-R255, which the lowering keeps for itself |
+| native MUFU mode | `308 000c7308 0000000c 00002400` | MUFU with a form the lowering does not model |
 | unsupported native opcode | `fae 020d7fae 00000000 0e101c48` | LDGSTS.E.BYPASS.128: Maxwell has no async copy, so LDG + STS |
 | unsupported native opcode | `226 47407226 00000040 000010ff` | IDP.4A.S8.S8: four signed 8-bit products summed |
+
+Reminder: this is fail-fast, so accepting one instruction only reveals the next. The count of
+failing compute dispatches stays at 24 until every program lowers; the screen stays black while
+any of them does.
 
 Done in this pass, each verified by a run: `LEA`/`LEA.HI` with a carry predicate (Pp out of
 bits 81-83), `F2I.FTZ.U64.TRUNC` (`0x311`, the auto-exposure of `Lighting.bfsha`), `IMAD.X` with a

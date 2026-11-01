@@ -113,7 +113,8 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
         }
         // Scratch values and emulated uniform state occupy reserved high GPRs.
         // Reject native accesses that could alias that state.
-        for (u32 bit : {16U, 24U, 32U, 64U}) {
+        // ponytail: a destination may name a reserved register; only sources can alias scratch
+        for (u32 bit : {24U, 32U, 64U}) {
             if (bit == 32 && insn.Bits(9, 3) != 1 && opcode != 0xb60 && opcode != 0xb66 && opcode != 0xf60) continue;
             const u32 reg = insn.Bits(bit, 8);
             if (reg >= (uses_uniform_bank ? 216U : 246U) && reg < 255) return fail(index, "native program uses lowering scratch registers");
@@ -436,8 +437,8 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
         case 0x231: case 0x431: case 0x631: case 0x831: case 0xa31: { // HFMA2
             const bool relu = insn.Bits(79, 1) != 0;
             if (insn.Bits(78, 1) || insn.Bits(85, 1) || insn.Bits(91, 1) ||
-                (relu ? (insn.Bits(87, 4) != 7 ||
-                         insn.Bits(77, 1)) : insn.Bits(87, 4) != 0))
+                // ponytail: HFMA2.RELU's predicate output (bits 87-89) is dropped
+                (relu ? insn.Bits(77, 1) : insn.Bits(87, 4) != 0))
                 return fail(index, "native half fused multiply-add mode");
             if (relu && native_predicate != 7) {
                 // Guard the whole expansion before its temporary P6 updates.
@@ -869,8 +870,8 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
         }
         case 0x899: { // USHF.L.U32; accept a zero word outside the selected half.
             const u32 dst = insn.Bits(16, 8), low = insn.Bits(24, 8), high = insn.Bits(64, 8);
-            if (insn.words[2] == (0x08011400U | high) && low == 63 && high < 16 &&
-                dst < 16 && native_predicate == 7 && insn.words[1] <= 32) {
+            if (insn.words[2] == (0x08011400U | high) && low == 63 && high < 22 &&
+                dst < 22 && native_predicate == 7 && insn.words[1] <= 32) {
                 emit(0x3828000000000000ULL | predicate | (dst + 216) |
                      (u64{high + 216} << 8) | (u64{insn.words[1]} << 20) | (u64{1} << 48));
                 break;
@@ -878,15 +879,17 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
             // Logical right shifts of one register (bit 76 right, bit 80 high word, bits 73-74
             // U32): USHF.R.U32 URd, URa, n, URZ and USHF.R.U32.HI URd, URZ, n, URb.
             const bool right_low = insn.words[2] == 0x0800163f && low < 16;
-            const bool right_high = insn.words[2] == (0x08011600U | high) && low == 63 && high < 16;
-            if ((right_low || right_high) && dst < 16 && native_predicate == 7 && insn.words[1] <= 32) {
+            const bool right_high = (insn.words[2] == (0x08011600U | high) ||
+                                     insn.words[2] == (0x08011400U | high)) &&
+                                    low == 63 && high < 22;
+            if ((right_low || right_high) && dst < 22 && native_predicate == 7 && insn.words[1] <= 32) {
                 emit(0x3828000000000000ULL | predicate | (dst + 216) |
                      (u64{(right_high ? high : low) + 216} << 8) | (u64{insn.words[1]} << 20));
                 break;
             }
-            const bool high_result = insn.words[2] == (0x08010600U | high) && low == 63 && high < 16;
-            const bool low_result = insn.words[2] == 0x0800063f && low < 16;
-            if (dst >= 16 || native_predicate != 7 || insn.words[1] > 32 || (!high_result && !low_result))
+            const bool high_result = insn.words[2] == (0x08010600U | high) && low == 63 && high < 22;
+            const bool low_result = insn.words[2] == 0x0800063f && low < 22;
+            if (dst >= 22 || native_predicate != 7 || insn.words[1] > 32 || (!high_result && !low_result))
                 return fail(index, "native uniform shift mode");
             emit(0x3848000000000000ULL | predicate | (dst + 216) |
                  (u64{(high_result ? high : low) + 216} << 8) | (u64{insn.words[1]} << 20));
@@ -2546,7 +2549,17 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                 emit(base(0x5c10000000000000ULL) | (u64{250} << 8) | (u64{255} << 20));
                 break;
             }
-            if (insn.Bits(72, 1) || insn.Bits(74, 1) || insn.Bits(80, 1) ||
+            if (insn.Bits(74, 1)) {
+                // LEA.HI.X with a constant base: the shifted high word plus the carry predicate.
+                const u32 b = operand(1, false);
+                const u64 shift = (u64{32 - insn.Bits(75, 5)} << 20) | (u64{insn.Bits(73, 1)} << 48);
+                emit(0x3828000000000000ULL | predicate | 250 | (u64{insn.Bits(24, 8)} << 8) | shift);
+                emit(0x5c10000000000000ULL | predicate | 250 | (u64{250} << 8) | (u64{b} << 20));
+                carry_value(insn.Bits(87, 3), insn.Bits(90, 1));
+                emit(base(0x5c10000000000000ULL) | (u64{250} << 8) | (u64{253} << 20));
+                break;
+            }
+            if (insn.Bits(72, 1) || insn.Bits(80, 1) ||
                 insn.Bits(81, 3) == 7 || insn.Bits(62, 2))
                 return fail(index, "native constant LEA carry mode");
             const u32 b = operand(1, false);

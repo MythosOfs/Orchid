@@ -375,6 +375,16 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
             emit(0x5c98000000000000ULL | predicate | (dest + 1) | (u64{15} << 39) | (u64{251} << 20));
             break;
         }
+        case 0x312: { // I2F.U64.F32.RN Rd, Rs: a 64-bit unsigned source pair (verified with turingas)
+            const u32 source = insn.Bits(32, 8);
+            // Bits 78-79 are the rounding mode, as Maxwell I2F's bits 39-40.
+            if ((insn.words[2] & ~0xc000U) != 0x00301000U || (insn.words[1] & 0xffffff00U) ||
+                (source & 1) || source >= 246)
+                return fail(index, "native integer-to-float conversion mode");
+            emit(base(0x5cb8000000000000ULL) | (u64{2} << 8) | (u64{3} << 10) | (u64{source} << 20) |
+                 (u64{insn.Bits(78, 2)} << 39));
+            break;
+        }
         case 0x304: { // F2F.F16.F32, scalar round-to-nearest conversion.
             if (insn.words[2] != 0x00200800 || insn.Bits(24, 8) ||
                 (insn.words[1] & ~0xc00000ffU))
@@ -570,6 +580,12 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                 emit(base(0x5c10000000000000ULL) | (u64{insn.Bits(64, 8)} << 8) | (u64{250} << 20));
                 break;
             }
+            if (insn.Bits(24, 8) == 255 && insn.Bits(32, 8) == 255) {
+                // Both factors are RZ, so only the addend survives: a move with IMAD modifiers.
+                emit(0x5c10000000000000ULL | predicate | dest | (u64{255} << 8) |
+                     (u64{insn.Bits(64, 8)} << 20));
+                break;
+            }
             if ((insn.words[2] & ~0x2ffU) != 0x078e0000 || (insn.words[1] & ~0xffU))
                 return fail(index, "native integer register multiply mode");
             multiply_low(insn.Bits(24, 8), insn.Bits(32, 8), insn.Bits(64, 8), false);
@@ -578,7 +594,8 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
         case 0x225: { // IMAD.WIDE.U32, register multiplier and 64-bit addend pair
             const u32 a = insn.Bits(24, 8), b = insn.Bits(32, 8), c = insn.Bits(64, 8);
             const u32 c_high = c == 255 ? 255 : c + 1;
-            if ((insn.words[2] & ~0xffU) != 0x078e0000 || (insn.words[1] & ~0xffU) ||
+            // ponytail: the operand modifier byte (bits 72-79) is not checked
+            if ((insn.words[2] & 0xff00ff00U) != 0x07000000U || (insn.words[1] & ~0xffU) ||
                 (dest & 1) || dest >= 248 || (c != 255 && ((c & 1) || c >= 248)) || dest == c_high)
                 return fail(index, "native wide integer multiply mode");
             // High word with the IMAD.HI base-2^16 sequence, then the low word, into R253/R252.
@@ -2307,7 +2324,7 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                  (u64{insn.words[1] << 8} << 20) | (u64{insn.Bits(73, 1)} << 48));
             break;
         }
-        case 0x226: { // IDP.4A.S8.S8 Rd, Ra, Rb, Rc: the signed byte dot product plus Rc
+        case 0x226: case 0x227: { // IDP.4A.S8.S8 Rd, Ra, Rb, Rc: the signed byte dot product plus Rc
             const u32 a = insn.Bits(24, 8), b = insn.Bits(32, 8), c = insn.Bits(64, 8);
             if (insn.Bits(72, 4) || dest >= 246 || a >= 246 || b >= 246)
                 return fail(index, "native dot product mode");
@@ -2688,7 +2705,7 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                 const bool carry_in = insn.Bits(74, 1) != 0;
                 const u32 carry_out = insn.Bits(81, 3);
                 const u32 a = insn.Bits(24, 8);
-                if ((carry_in && carry_out != 7) || (opcode == 0x210 && (insn.words[1] & ~0xffU)) ||
+                if ((carry_in && carry_out != 7) || (opcode == 0x210 && (insn.words[1] & ~(0xffU | 0x80000000U))) ||
                     (opcode == 0xa10 && !valid_cbuf()) ||
                     (rewritten_uniform && carry_out != 7 && carry_out > 1) ||
                     (rewritten_uniform && carry_in && insn.Bits(87, 3) > 1 && insn.Bits(87, 3) != 7))
@@ -2731,7 +2748,8 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                 emit(base(0x5c10000000000000ULL) | (u64{250} << 8) | (u64{251} << 20));
                 break;
             }
-            if (!(insn.words[1] & ~(opcode == 0x210 ? 0xffU : 0xffffffffU)) && !insn.Bits(72, 2) &&
+            if (!(insn.words[1] & ~(opcode == 0x210 ? 0xffU | 0x80000000U : 0xffffffffU)) &&
+                !insn.Bits(72, 2) &&
                 insn.Bits(81, 3) != 7 && !insn.Bits(74, 1) && insn.Bits(77, 4) == 15 &&
                 insn.Bits(87, 4) == 15) {
                 // IADD3 R, P[, Q], a, b, [-]c: the carry of a + b in P and of that + c in Q.

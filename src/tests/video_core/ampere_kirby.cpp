@@ -160,9 +160,9 @@ TEST_CASE("Ampere local stores add a register base to the uniform one", "[video_
     REQUIRE(static_cast<bool>(lowered));
     REQUIRE(lowered.instructions.size() >= 2);
     REQUIRE(lowered.instructions[0] ==
-            (0x5c10000000070000ULL | 250ULL | (4ULL << 8) | (221ULL << 20)));
+            (0x5c10000000070000ULL | 252ULL | (4ULL << 8) | (221ULL << 20)));
     REQUIRE(lowered.instructions[1] ==
-            (0xef50000000070000ULL | 6ULL | (250ULL << 8) | (0x20ULL << 20) | (4ULL << 48)));
+            (0xef50000000070000ULL | 6ULL | (252ULL << 8) | (0x20ULL << 20) | (4ULL << 48)));
 }
 
 TEST_CASE("Ampere texture queries place a third output in the second destination",

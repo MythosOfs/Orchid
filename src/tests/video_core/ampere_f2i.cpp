@@ -813,9 +813,12 @@ TEST_CASE("Ampere F2IP to a byte lowers as the byte F2I of its B source", "[vide
     const auto expected = LowerToMaxwell(byte);
     REQUIRE(static_cast<bool>(expected));
     REQUIRE(lowered.instructions == expected.instructions);
-    // A or C naming a register, other mode bits or source flags stay rejected.
-    for (const auto& [word, value] : std::array<std::pair<u32, u32>, 4>{
-             {{0, 0x04097243U}, {2, 0x0000c404U}, {2, 0x0000c5ffU}, {1, 0x40000009U}}}) {
+    // A can name a register in the two-source form; C and unverified flags remain restricted.
+    auto pair = packed;
+    pair[0].words[0] = 0x04097243U;
+    REQUIRE(static_cast<bool>(LowerToMaxwell(pair)));
+    for (const auto& [word, value] : std::array<std::pair<u32, u32>, 3>{
+             {{2, 0x0000c404U}, {2, 0x0000c5ffU}, {1, 0x40000009U}}}) {
         auto invalid = packed;
         invalid[0].words[word] = value;
         REQUIRE_FALSE(static_cast<bool>(LowerToMaxwell(invalid)));

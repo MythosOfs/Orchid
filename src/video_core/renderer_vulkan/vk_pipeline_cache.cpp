@@ -1478,6 +1478,8 @@ std::shared_ptr<ReusableShaders> PipelineCache::BuildGraphicsShaders(
         Shader::Profile stage_profile{profile};
         stage_profile.has_broken_spirv_dynamic_subgroup_shuffle =
             device.NeedsGraphicsSubgroupShuffleWorkaround(MaxwellToVK::ShaderStage(program.stage));
+        stage_profile.has_crashing_graphics_dynamic_subgroup_shuffle =
+            device.NeedsFullSubgroupShuffleExpansion(MaxwellToVK::ShaderStage(program.stage));
         if (relative_layer_geometry) {
             // Translated as on hosts without the NV extensions (StageHostInfo), emitted the same.
             stage_profile.support_viewport_mask = false;

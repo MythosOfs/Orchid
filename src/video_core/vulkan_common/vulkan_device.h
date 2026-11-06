@@ -538,6 +538,17 @@ FN_MAX_LIMIT_LIST
                IsExtSubgroupSizeControlSupported() && IsGuestWarpSizeSupported(stage);
     }
 
+    /// AMD graphics stages without a forceable 32-lane subgroup; dynamic Shuffle must be expanded
+    /// over the full host subgroup (native Shuffle + Ballot crashes amdvlk64).
+    bool NeedsFullSubgroupShuffleExpansion(VkShaderStageFlagBits stage) const {
+        const auto driver_id = GetDriverID();
+        const bool affected_driver = driver_id == VK_DRIVER_ID_AMD_PROPRIETARY ||
+                                     driver_id == VK_DRIVER_ID_AMD_OPEN_SOURCE;
+        return affected_driver && stage != VK_SHADER_STAGE_COMPUTE_BIT &&
+               stage != VK_SHADER_STAGE_TASK_BIT_EXT && stage != VK_SHADER_STAGE_MESH_BIT_EXT &&
+               !NeedsGraphicsSubgroupShuffleWorkaround(stage);
+    }
+
     /// Returns true if the device supports the provided subgroup feature.
     bool IsSubgroupFeatureSupported(VkSubgroupFeatureFlagBits feature) const {
         return properties.subgroup_properties.supportedOperations & feature;

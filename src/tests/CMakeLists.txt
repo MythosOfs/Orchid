@@ -81,6 +81,7 @@ add_executable(tests
     video_core/framebuffer_clear_layers.cpp
     video_core/vertex_repack.cpp
     video_core/query_copy.cpp
+    video_core/multi_range_buffer.cpp
     video_core/shader_reuse_environment.cpp
     video_core/ampere_lowering.cpp
     video_core/ampere_matrix.cpp

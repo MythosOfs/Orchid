@@ -150,8 +150,13 @@ void TextureCache<P>::RunGarbageCollector() {
             const char* value = std::getenv("EDEN_NX2_TC_MIN_AGE");
             return value != nullptr ? std::strtoull(value, nullptr, 10) : 0ULL;
         }();
-        ticks_to_destroy = (std::max)(ticks_to_destroy, min_age);
-        num_iterations = aggressive_mode ? 40 : (high_priority_mode ? 20 : 10);
+        // After an image did not fit the device has no room left: the test switch must not
+        // keep the collector from freeing memory, and it deletes more images per frame.
+        const bool out_of_memory = out_of_memory_collect_frames != 0;
+        if (!(aggressive_mode && out_of_memory)) {
+            ticks_to_destroy = (std::max)(ticks_to_destroy, min_age);
+        }
+        num_iterations = CollectorIterations(high_priority_mode, aggressive_mode, out_of_memory);
     };
     const auto Cleanup = [this, &num_iterations, &high_priority_mode, &aggressive_mode,
                           &evict_old_costly](ImageId image_id) {
@@ -260,12 +265,17 @@ void TextureCache<P>::RunGarbageCollector() {
 }
 
 template <class P>
-void TextureCache<P>::ApplyThresholdOverrides(bool log) {
+bool TextureCache<P>::UsesDriverBudgetThresholds() const {
     // Wonder's Overworld working set exceeds the historical 5-GiB ceiling. Use
     // the existing pressure/slack-adjusted driver budget for that title only;
     // other titles and unavailable budgets retain the conservative ceiling.
-    const bool budget_driven = native_driver_budget_available &&
-                               Settings::GetCurrentProgramID() == Settings::WonderSwitch2ProgramId;
+    return native_driver_budget_available &&
+           Settings::GetCurrentProgramID() == Settings::WonderSwitch2ProgramId;
+}
+
+template <class P>
+void TextureCache<P>::ApplyThresholdOverrides(bool log) {
+    const bool budget_driven = UsesDriverBudgetThresholds();
     const auto limits = ClampTextureCacheThresholds(
         {expected_memory, critical_memory, minimum_memory}, budget_driven, MaxCriticalMemory);
     expected_memory = limits.expected;
@@ -311,7 +321,7 @@ void TextureCache<P>::TickFrame() {
         // VRAM (another game: 7.0 -> 6.4 GB), and collecting only past it means the driver pages
         // textures out. It is also the room to use: Eden's device memory figure is capped near
         // 7 GB, which on a 12 GB card (11.2 GB budget) kept title 1 evicting textures with 3 GB
-        // unused. Both thresholds stay under it with a margin (1/8 of it, at most 1 GiB): past it
+        // unused. Both thresholds stay under it with a margin (TextureCacheBaseMargin): past it
         // allocations fail and images end up unbacked (garbage textures), and Windows shrinks the
         // budget as the card fills (16 GB card: 13.5 GB left mid-race), hence the re-read every 30
         // frames. EDEN_NX2_TC_*_MIB overrides still win.
@@ -319,18 +329,19 @@ void TextureCache<P>::TickFrame() {
             if constexpr (requires { runtime.MemoryPressureEvents(); }) {
                 // Images that did not fit (made in host memory or with nothing bound) mean the
                 // thresholds sit too high for this card and driver: leave more room until the
-                // pressure has been gone for a while.
+                // pressure has been gone for a while. How much more is decided below, where the
+                // budget and the other margins are known.
                 if (native_thresholds_applied) {
                     const u32 events = runtime.MemoryPressureEvents();
                     if (events != seen_pressure_events) {
                         seen_pressure_events = events;
-                        pressure_margin = (std::min)(pressure_margin + 512_MiB, 3_GiB);
+                        out_of_memory_pending = true;
+                        out_of_memory_collect_frames = OutOfMemoryCollectFrames;
                         pressure_quiet_frames = 0;
                         budget_check_frames = 0; // thresholds are recomputed below
-                        LOG_WARNING(HW_GPU, "Out of device memory: keeping {} MiB more free",
-                                    pressure_margin >> 20);
-                    } else if (pressure_margin != 0 && ++pressure_quiet_frames % 600 == 0) {
-                        pressure_margin -= (std::min)(pressure_margin, 128_MiB);
+                    } else if (pressure_margin > pressure_floor &&
+                               ++pressure_quiet_frames % 600 == 0) {
+                        pressure_margin = DecayPressureMargin(pressure_margin, pressure_floor);
                         budget_check_frames = 0;
                     }
                 }
@@ -349,7 +360,8 @@ void TextureCache<P>::TickFrame() {
                 }
                 if (budget != 0) {
                     const u64 old_critical = critical_memory;
-                    const u64 margin = (std::min)(budget / 8, 1_GiB);
+                    const bool budget_driven = UsesDriverBudgetThresholds();
+                    const u64 margin = TextureCacheBaseMargin(budget, budget_driven);
                     if constexpr (requires { runtime.GetDeviceMemorySlack(); }) {
                         // The usage counted here leaves out the unused part of the allocator's
                         // blocks, which the driver counts and a full heap cannot hand to a new
@@ -362,9 +374,25 @@ void TextureCache<P>::TickFrame() {
                                            ? slack
                                            : slack_margin - (std::min)(slack_margin - slack, 16_MiB);
                     }
-                    critical_memory =
-                        budget - (std::min)(margin + pressure_margin + slack_margin, budget / 2);
-                    expected_memory = critical_memory - (std::min)(margin, critical_memory / 2);
+                    if (out_of_memory_pending) {
+                        out_of_memory_pending = false;
+                        // total_used_memory is last frame's: what was in use when it ran out.
+                        pressure_margin = PressureMarginAfterOutOfMemory(
+                            budget, total_used_memory, margin, slack_margin, pressure_margin);
+                        if (budget_driven) {
+                            // Only the legacy ceiling keeps other titles away from the budget;
+                            // this one would climb back to where it ran out within minutes.
+                            pressure_floor = (std::max)(pressure_floor, pressure_margin / 2);
+                        }
+                        LOG_WARNING(HW_GPU,
+                                    "Out of device memory: keeping {} MiB more free "
+                                    "({} MiB in use)",
+                                    pressure_margin >> 20, total_used_memory >> 20);
+                    }
+                    const auto limits = TextureCacheBudgetThresholds(
+                        budget, budget_driven, pressure_margin, slack_margin, minimum_memory);
+                    critical_memory = limits.critical;
+                    expected_memory = limits.expected;
                     ApplyThresholdOverrides(false);
                     // Compare final thresholds: small driver budget movements should not
                     // flood the log, and legacy titles still have the conservative clamp.
@@ -383,6 +411,7 @@ void TextureCache<P>::TickFrame() {
                                  margin >> 20, pressure_margin >> 20, slack_margin >> 20);
                     }
                 } else {
+                    out_of_memory_pending = false;
                     ApplyThresholdOverrides(false);
                 }
             }
@@ -472,6 +501,7 @@ void TextureCache<P>::TickFrame() {
     if (total_used_memory > minimum_memory) {
         RunGarbageCollector();
     }
+    out_of_memory_collect_frames -= (std::min)(out_of_memory_collect_frames, u32{1});
     sentenced_images.Tick();
     sentenced_image_index = (sentenced_image_index + 1) % TICKS_TO_DESTROY;
     sentenced_image_bytes[sentenced_image_index] = 0;

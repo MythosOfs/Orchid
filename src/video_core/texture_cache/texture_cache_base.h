@@ -140,6 +140,9 @@ class TextureCache : public VideoCommon::ChannelSetupCaches<TextureCacheChannelI
     u32 seen_pressure_events{};   ///< Allocator pressure events already answered
     u64 pressure_margin{};        ///< Extra room under the budget after images did not fit
     u64 pressure_quiet_frames{};  ///< Frames since the last such image
+    u64 pressure_floor{};         ///< What pressure_margin keeps for the session (budget-driven)
+    bool out_of_memory_pending{}; ///< An image did not fit; pressure_margin is not raised yet
+    u32 out_of_memory_collect_frames{}; ///< Frames left in which the collector deletes more
     u64 slack_margin{};           ///< Extra room for allocator block space the driver counts as used
     u64 astc_opaque_images{};
     u64 astc_alpha_images{};
@@ -565,6 +568,9 @@ private:
 
     /// Applies EDEN_NX2_TC_EXPECTED_MIB / EDEN_NX2_TC_CRITICAL_MIB and logs the thresholds.
     void ApplyThresholdOverrides(bool log = true);
+
+    /// True for the title whose thresholds follow the driver's budget past the legacy ceiling.
+    bool UsesDriverBudgetThresholds() const;
 
     /// The CPU address an image at gpu_addr is keyed by: its backing, or a fixed stand-in.
     [[nodiscard]] std::optional<DAddr> ImageCpuAddress(GPUVAddr gpu_addr, size_t size) const;

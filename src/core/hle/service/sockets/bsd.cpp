@@ -576,6 +576,8 @@ std::pair<s32, Errno> BSD_USA::SocketImpl(Domain domain, Type type, Protocol pro
     // The host network layer only speaks IPv4; refuse other families like a stack without them
     // instead of asserting in the translation tables.
     if (domain != Domain::Unspecified && domain != Domain::INET) {
+        LOG_INFO(Service, "Refusing socket domain={} type={} protocol={}: only IPv4 is supported",
+                 static_cast<u32>(domain), static_cast<u32>(type), static_cast<u32>(protocol));
         return {-1, Errno::AFNOSUPPORT};
     }
 

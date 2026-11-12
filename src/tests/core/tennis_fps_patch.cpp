@@ -41,6 +41,11 @@ constexpr std::array<std::array<u32, 4>, 27> CapturedWaits{{
     {0x96576c, 0x5280e108, 1800, 0}, {0x965a60, 0x52804b09, 600, 0},
     {0x965a70, 0x5280e108, 1800, 0},
 }};
+// Character state-age updates: FADD S0,S0,S1; FCVTZS W8/W9,S0; STR W8/W9,[X19,#0x78].
+constexpr std::array<std::array<u32, 2>, 6> CapturedAgeWords{{
+    {0x106a150, 0x1e212800}, {0x106a154, 0x1e380008}, {0x106a158, 0xb9007a68},
+    {0xe474a8, 0x1e212800},  {0xe474ac, 0x1e380009},  {0xe474b0, 0xb9007a69},
+}};
 std::vector<u8> CapturedModule() {
     std::vector<u8> module(0x179e000);
     for (const auto& word : CapturedWords) {
@@ -48,6 +53,9 @@ std::vector<u8> CapturedModule() {
     }
     for (const auto& wait : CapturedWaits) {
         std::memcpy(module.data() + wait[0], &wait[1], sizeof(u32));
+    }
+    for (const auto& word : CapturedAgeWords) {
+        std::memcpy(module.data() + word[0], &word[1], sizeof(u32));
     }
     for (const auto& load : FileSys::TennisStepLoads) {
         std::memcpy(module.data() + load.offset, &load.instruction, sizeof(u32));
@@ -96,6 +104,64 @@ TEST_CASE("Tennis high FPS pairs presentation and actual simulation step", "[ten
         }
     }
     REQUIRE_FALSE(FileSys::ApplyTennisFpsPatch(module, ModuleId, 120));
+}
+
+TEST_CASE("Tennis patch hooks only the state-age additions", "[tennis_fps]") {
+    const auto original = CapturedModule();
+    auto module = original;
+    REQUIRE(FileSys::ApplyTennisFpsPatch(module, ModuleId, 144));
+    for (const auto& word : CapturedAgeWords) {
+        const bool hooked = word[0] == 0x106a150 || word[0] == 0xe474a8;
+        REQUIRE(ReadWord(module, word[0]) == (hooked ? 0xd41e0241 : word[1]));
+    }
+    for (const auto& word : CapturedAgeWords) {
+        module = original;
+        module[word[0]] ^= 1;
+        const auto changed = module;
+        REQUIRE_FALSE(FileSys::ApplyTennisFpsPatch(module, ModuleId, 120));
+        REQUIRE(module == changed);
+    }
+}
+
+TEST_CASE("Tennis state age counts nominal frames at fractional steps", "[tennis_fps]") {
+    // One nominal second at 120, 90, 144 FPS and an uneven mix must age 60 frames, as at 60.
+    for (const float step : {0.5f, 0.671875f, 0.421875f, 1.0f, 1.5f}) {
+        FileSys::TennisAgeCarry carry;
+        float age = 0;
+        const int calls = static_cast<int>(std::lround(60 / step));
+        for (int i = 0; i < calls; ++i) {
+            const float next = FileSys::TennisAdvanceAge(age, step, carry);
+            REQUIRE(next == std::floor(next));
+            REQUIRE(next - age <= std::ceil(step));
+            age = next;
+        }
+        REQUIRE(std::abs(age - 60.0f) <= 1.0f);
+    }
+    FileSys::TennisAgeCarry carry;
+    REQUIRE(FileSys::TennisAdvanceAge(0, 0.5f, carry) == 0);
+    REQUIRE(FileSys::TennisAdvanceAge(0, 0.5f, carry) == 1);
+    REQUIRE(FileSys::TennisAdvanceAge(1, 0.75f, carry) == 1);
+    // The game reset the age: the old fraction must not leak into the new state.
+    REQUIRE(FileSys::TennisAdvanceAge(0, 0.5f, carry) == 0);
+    REQUIRE(FileSys::TennisAdvanceAge(0, 0.25f, carry) == 0);
+    REQUIRE(FileSys::TennisAdvanceAge(0, 0.25f, carry) == 1);
+    // A whole frame keeps the native result exactly.
+    REQUIRE(FileSys::TennisAdvanceAge(7, 1.0f, carry) == 8);
+    // Values the native code would treat differently stay native and drop the carry.
+    REQUIRE(FileSys::TennisAdvanceAge(8, 0.5f, carry) == 8);
+    REQUIRE(FileSys::TennisAdvanceAge(-3, 0.5f, carry) == -2.5f);
+    REQUIRE(FileSys::TennisAdvanceAge(8, 0.5f, carry) == 8);
+    REQUIRE(FileSys::TennisAdvanceAge(4, -0.5f, carry) == 3.5f);
+    REQUIRE(std::isnan(
+        FileSys::TennisAdvanceAge(4, std::numeric_limits<float>::quiet_NaN(), carry)));
+    REQUIRE(FileSys::TennisAdvanceAge(16777216.0f, 0.5f, carry) == 16777216.0f);
+    // Still exact just below 2^24; a zero step (pause) keeps the pending fraction.
+    REQUIRE(FileSys::TennisAdvanceAge(16777214.0f, 0.5f, carry) == 16777214.0f);
+    REQUIRE(FileSys::TennisAdvanceAge(16777214.0f, 0.5f, carry) == 16777215.0f);
+    REQUIRE(FileSys::TennisAdvanceAge(0, 0.5f, carry) == 0);
+    REQUIRE(FileSys::TennisAdvanceAge(0, 0.0f, carry) == 0);
+    REQUIRE(FileSys::TennisAdvanceAge(0, 0.5f, carry) == 1);
+    REQUIRE(FileSys::TennisAdvanceAge(4, 0.5f, carry) == 4);
 }
 
 TEST_CASE("Tennis patch stays off at the game's native 60 FPS", "[tennis_fps]") {

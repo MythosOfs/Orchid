@@ -1,6 +1,6 @@
 # Mario Tennis Fever dynamic FPS test
 
-Status: dynamic timing implemented; normal GPU gameplay validation is pending.
+Status: dynamic timing implemented; see the 2026-11-12 section for the CPU opponent report.
 The requested behavior is a 120-FPS limit with normal game speed when actual
 rendering falls to, for example, 90 FPS. A 30-FPS-only build does not meet that
 request.
@@ -110,3 +110,58 @@ further checking. The integer actor+78 update truncates fractional steps at
 why shots would miss throughout a match. No direct AI use of native3ece3b4 was
 found among its35GOT and9direct references. No speculative AI correction is
 included in the speed-display build.
+
+## CPU opponent report: investigation 2026-11-12
+
+Status: the reported "CPU swings but misses" was **not reproduced** in the harness, with or without
+the change below. One real divergence from 60 FPS behaviour was found and fixed; it is not proven
+to be the cause of the report. The `tennis_fps` warning text stays unchanged.
+
+### Fixed: character time-in-state froze above 60 FPS
+
+Both character classes (vtables NRO+`174d870` and NRO+`1732b90`) update a time-in-state counter
+once per frame: `age = (int)(float(age) + step)` at `106a140..106a158` and `e47498..e474b0`
+(`FADD S0,S0,S1`, `FCVTZS`, `STR W,[X19,#0x78]`; the step is `char+0x390`, the object's
+`+0xc38` points to itself). `FCVTZS` truncates, so every step below 1 adds nothing: above 60 FPS
+the counter never advances, below 60 FPS it counts one per frame instead of the elapsed nominal
+frames. Readers include `age >= 3` at `10679f4` and `age == 1` at `10697b0`.
+
+Evidence (temporary log in the `0xf00a` hook, removed again): target 120 in the harness, real
+steps 0.66–0.98, the counter stayed at 0, 2 or 277 for whole rallies; with steps 1.1–1.8 it rose by
+exactly 1 per frame. With the fix it rose by about 0.8 per frame at steps near 0.8.
+
+Fix: the `FADD` at both sites is hooked (`0xf012`, three words build-checked each). The handler
+carries the fraction per object while the game keeps the age it last produced, so the counter
+counts nominal 60-Hz frames; a reset by the game drops the carry; negative, NaN and >= 2^24 values
+stay native. Known difference: during native slow motion (shared step < 1 at 60 FPS) the stock
+game also freezes this counter, while the patch now advances it at the slowed rate.
+
+### What was measured (harness, private display, 1x)
+
+Snapshot `mtf-after-first-practice-tennisfps-20261112` (the original snapshot plus the
+`tennis_fps_target` key, which the harness can only override when present), route
+`mtf-stadium-match-v3-tennisfps` (copy of v3 bound to it). A driver
+(`~/.cache/orchid-fps-survey/tennis/bench/serves.sh`, `rally.sh`) serves with A and, for rallies,
+presses A every 0.35 s; Mario does not move. Measure: points Mario wins (= CPU errors), read from
+the corner counters before each serve. Opponents are random per match, so the counts are coarse.
+
+| Build / setting | Driver, cycles | Mario points (CPU errors) |
+|---|---|---|
+| patch off (60) | rally, 20 | 1 of ~18 |
+| no fix, 120, dynamic (real ~85 FPS) | serve, 30 | 0 |
+| no fix, 120, dynamic | rally, 30 | ~6 of ~40 (5 vs Rosalina) |
+| no fix, 120, fixed step 0.5 (`use_speed_limit=false`) | serve 24 / rally 20 | 0 / 0 (long rallies) |
+| fix, 120, dynamic | serve, 30 | 0 |
+| fix, 240 (real ~60 FPS) | rally, 20 | 3 of ~22 |
+
+One CPU whiff with replay was seen in an unfixed run at real ~43 FPS (steps ~1.5). No build or
+setting showed CPUs missing "throughout a match". `use_speed_limit=false` makes the dynamic clock
+use exactly 60/target per frame, the step sequence of a desktop running at the target.
+
+### Ruled out / still open
+
+- Prediction mode 1 (`1081b80`: copies with `+0xf8 != 0` advance 64/64 per call) and the live ball
+  time (`+0x30 += units/64` at `1081e10`) both count nominal frames; `106b7b8..106b7d4` compares
+  like units. No mismatch found there.
+- Not reproduced: the maintainer's exact setup (desktop window at a real 120 FPS, difficulty,
+  doubles, other courts). A desktop run of the report scenario is the next step.

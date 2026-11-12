@@ -2557,7 +2557,7 @@ void Call(Core::System& system, u32 imm) {
                      list);
         }
     }
-    if (imm >= 0xf003 && imm <= 0xf011 && process.Is64Bit() &&
+    if (imm >= 0xf003 && imm <= 0xf012 && process.Is64Bit() &&
         system.GetApplicationProcessProgramID() == Settings::TennisFpsProgramId &&
         Settings::tennis_fps_active.load(std::memory_order_acquire) != 0) {
         ThreadContext context{};
@@ -2776,6 +2776,29 @@ void Call(Core::System& system, u32 imm) {
                             std::bit_cast<float>(memory.Read32(base + FileSys::TennisStepOffset)),
                             fps, position);
             }
+            return;
+        }
+        if (imm == 0xf012) {
+            // Replaces FADD S0,S0,S1 (step + age) before the age's truncating store.
+            const bool known = std::any_of(
+                FileSys::TennisAgeSites.begin(), FileSys::TennisAgeSites.end(),
+                [&](const auto& age_site) { return site == base + age_site.offset; });
+            if (!known)
+                return;
+            static std::mutex age_mutex;
+            static std::unordered_map<u64, FileSys::TennisAgeCarry> ages;
+            static u64 age_generation{};
+            std::scoped_lock lock{age_mutex};
+            if (age_generation != generation || ages.size() > 256) {
+                ages.clear();
+                age_generation = generation;
+            }
+            const float step = std::bit_cast<float>(static_cast<u32>(context.v[0][0]));
+            const float age = std::bit_cast<float>(static_cast<u32>(context.v[1][0]));
+            context.v[0] = {
+                std::bit_cast<u32>(FileSys::TennisAdvanceAge(age, step, ages[context.r[19]])), 0};
+            context.pc = site + 4;
+            arm->SetContext(context);
             return;
         }
         // Hook only validated fresh nominal-speed stores. Saved-value restores,

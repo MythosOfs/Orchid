@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstring>
 #include <span>
 #include "common/common_types.h"
@@ -37,6 +38,19 @@ inline constexpr u32 TennisBallStepHook = 0xd4000001U | (0xf00bU << 5);
 inline constexpr u32 TennisTimelineOffset = 0x10588e0;
 inline constexpr u32 TennisTimelineHook = 0xd4000001U | (0xf005U << 5);
 inline constexpr u32 TennisFpsHook = 0xd4000001U | (0xf003U << 5);
+inline constexpr u32 TennisAgeHook = 0xd4000001U | (0xf012U << 5);
+
+// Character time-in-state: FADD S0,S0,S1 (step + age), FCVTZS W,S0, STR W,[X19,#0x78]. The
+// truncation drops every step below 1, so above 60 FPS the age froze (gates such as age>=3 at
+// 10679f4 never opened) and below 60 FPS it lost time. Both character classes share this update.
+struct TennisAgeSite {
+    u32 offset;
+    std::array<u32, 3> words;
+};
+inline constexpr std::array TennisAgeSites{
+    TennisAgeSite{0x106a150, {0x1e212800, 0x1e380008, 0xb9007a68}},
+    TennisAgeSite{0xe474a8, {0x1e212800, 0x1e380009, 0xb9007a69}},
+};
 
 struct TennisStepStore {
     u32 offset;
@@ -133,6 +147,25 @@ inline u32 TennisFrameDelay(u32 frames, u32 fps, u32& remainder) {
     return static_cast<u32>(std::min<u64>(ticks / 60, 0x7fffffff));
 }
 
+// Advance an integer frame age by a fractional step, carrying the fraction while the game keeps
+// the age the previous call produced. Returns the float the native FCVTZS then truncates.
+struct TennisAgeCarry {
+    float last{};
+    double carry{};
+};
+inline float TennisAdvanceAge(float age, float step, TennisAgeCarry& state) {
+    const float native = age + step;
+    if (!(age >= 0) || !(step >= 0) || !(native < 16777216.0f)) {
+        state = {};
+        return native;
+    }
+    const double exact =
+        static_cast<double>(age) + step + (age == state.last ? state.carry : 0.0);
+    const double whole = std::floor(exact);
+    state = {static_cast<float>(whole), exact - whole};
+    return static_cast<float>(whole);
+}
+
 inline constexpr u32 TennisSubtractFlags(u32 left, u32 right) {
     const u32 result = left - right;
     return (result & 0x80000000U) | (result == 0 ? 0x40000000U : 0) |
@@ -185,6 +218,13 @@ inline bool ApplyTennisFpsPatch(std::span<u8> nro, std::span<const u8> module_id
             return false;
         }
     }
+    for (const auto& site : TennisAgeSites) {
+        for (u32 i = 0; i < site.words.size(); ++i) {
+            if (read(site.offset + i * 4) != site.words[i]) {
+                return false;
+            }
+        }
+    }
     const auto write = [&](u32 offset, u32 word) {
         std::memcpy(nro.data() + offset, &word, sizeof(word));
     };
@@ -214,6 +254,9 @@ inline bool ApplyTennisFpsPatch(std::span<u8> nro, std::span<const u8> module_id
     write(TennisStepOffset, std::bit_cast<u32>(TennisSimulationStep(1.0f, fps)));
     for (const auto& store : TennisStepStores) {
         write(store.offset, TennisFpsHook);
+    }
+    for (const auto& site : TennisAgeSites) {
+        write(site.offset, TennisAgeHook);
     }
     return true;
 }

@@ -4,10 +4,12 @@ How each supported game can run at another frame rate than its fixed 60 FPS with
 its speed. All options are per game (Properties > System) and take effect on the next start.
 Status 2026-11-12; "checked" names what was actually run.
 
+Mario Tennis Fever has no option: its frame rate patch (about 700 hooks) was removed on
+2026-11-12 because CPU opponents kept missing the ball with it and the cause was never found.
+
 | Game | Option | How it works |
 |---|---|---|
 | Super Mario Bros. Wonder | Frame rate (FPS, game patch) | Game patch, see [wonder-dynamic-fps.md](wonder-dynamic-fps.md) |
-| Mario Tennis Fever | Frame rate (FPS, HIGHLY EXPERIMENTAL game patch) | Game patch, see [MarioTennisFeverFpsInvestigation.md](MarioTennisFeverFpsInvestigation.md) |
 | Donkey Kong Bananza | Dynamic frame rate (variable refresh rate display) | No patch: the game has its own controller for VRR displays |
 | Pokémon Pokopia | Frame rate (FPS) | No patch: the game measures real time |
 | Hyrule Warriors: Age of Imprisonment | Keep game speed below 60 FPS | The emulator writes the game's frames-per-update variable |

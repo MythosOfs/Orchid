@@ -2392,19 +2392,11 @@ private:
         if (!m_vsync_timer) {
             m_vsync_timer = Core::Timing::CreateEvent(
                 "nx2:vi2 vsync",
-                [vsync_state = m_vsync, &kernel = system.Kernel(),
-                 program_id = system.GetApplicationProcessProgramID()](
+                [vsync_state = m_vsync, &kernel = system.Kernel()](
                     s64, std::chrono::nanoseconds) -> std::optional<std::chrono::nanoseconds> {
                     std::scoped_lock lk{vsync_state->mutex};
                     for (auto* vsync : vsync_state->events) {
                         vsync->Signal(kernel);
-                    }
-                    // This timer can start before Tennis' NRO has been loaded. Follow
-                    // the active patch each tick instead of latching a 60-Hz startup value.
-                    const u32 fps = program_id == Settings::TennisFpsProgramId
-                                        ? Settings::GetActiveGameFps(program_id) : 0;
-                    if (fps != 0) {
-                        return std::chrono::nanoseconds{1'000'000'000LL / fps};
                     }
                     return std::nullopt;
                 });

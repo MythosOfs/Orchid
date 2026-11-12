@@ -42,7 +42,6 @@ add_executable(tests
     core/nx2_readback_cache.cpp
     core/nx2_core_readback_capacity.cpp
     core/game_settings.cpp
-    core/tennis_fps_patch.cpp
     core/frame_step_fps.cpp
     core/wonder_fps_patch.cpp
     core/nx2_sysmix_pcm.cpp

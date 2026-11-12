@@ -660,8 +660,6 @@ struct Values {
     /// Present rate for titles that measure real time (Settings::IsTimeBasedTitle); no game patch.
     SwitchableSetting<u32, true> timed_fps{linkage, 60, 1, 1000, "timed_fps_target",
                                          Category::System, Specialization::Countable};
-    SwitchableSetting<u32, true> tennis_fps{linkage, 60, 1, 1000, "tennis_fps_target",
-                                          Category::System, Specialization::Countable};
     SwitchableSetting<u32, true> wonder_fps{linkage, 60, 1, 1000, "wonder_fps_target",
                                           Category::System, Specialization::Countable};
 

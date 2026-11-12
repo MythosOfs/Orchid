@@ -43,7 +43,6 @@ public:
 private:
     void changeEvent(QEvent* event) override;
     void RetranslateUI();
-    void UpdateTennisWarning();
 
     void Setup(const ConfigurationShared::Builder& builder);
 
@@ -57,7 +56,6 @@ private:
     Core::System& system;
     const u64 program_id;
 
-    QLabel* tennis_fps_warning{};
     QComboBox* combo_region;
     QComboBox* combo_language;
     QCheckBox* checkbox_rtc;

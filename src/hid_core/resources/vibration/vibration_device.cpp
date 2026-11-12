@@ -139,4 +139,12 @@ Result NpadVibrationDevice::GetActualVibrationValue(Core::HID::VibrationValue& o
     return ResultSuccess;
 }
 
+Core::HID::VibrationValue GetActualVibrationValueOrDefault(const NpadVibrationDevice* device) {
+    Core::HID::VibrationValue value{};
+    if (device == nullptr || device->GetActualVibrationValue(value).IsError()) {
+        return Core::HID::DEFAULT_VIBRATION_VALUE;
+    }
+    return value;
+}
+
 } // namespace Service::HID

@@ -40,4 +40,9 @@ private:
     Core::HID::DeviceIndex device_index{};
 };
 
+/// What hid 202 (GetActualVibrationValue) reports for the device a handle resolved to. A handle
+/// without a device (unknown style, GameCube or N64 pad) and a device that was never activated
+/// read as "not vibrating" instead of failing: the SDK aborts the game on any error.
+Core::HID::VibrationValue GetActualVibrationValueOrDefault(const NpadVibrationDevice* device);
+
 } // namespace Service::HID

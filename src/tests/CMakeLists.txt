@@ -48,6 +48,7 @@ add_executable(tests
     core/nx2_sysmix_pcm.cpp
     core/hid_joycon2_style.cpp
     core/hid_auto_buttons.cpp
+    core/hid_style_set_reconnect.cpp
     core/nso.cpp
     core/nrr.cpp
     core/ncz_decompressor.cpp

@@ -19,7 +19,8 @@ SDL_VIDEODRIVER=wayland WAYLAND_DISPLAY=wayland-1 \
   ./eden-cli -g "/home/leon/Switch2/Fire Emblem Fortune's Weave/updates/131072/exefs"
 ```
 
-The update's `romfs/` is found next to that `exefs/` directory. Log: `~/.local/share/eden/log/eden_log.txt`.
+The update's `romfs/` is found next to that `exefs/` directory. Log: `~/.local/share/orchid/log/orchid_log.txt`
+(`~/.local/share/eden/log/` on installs that still use the older folder name).
 
 ## Blockers, in order of first hit
 

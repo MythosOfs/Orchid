@@ -7,6 +7,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <vector>
 
 #include "common/fs/fs_util.h"
@@ -57,6 +58,79 @@ enum EmuPath {
     // used exclusively for save data linking
     RyujinxDir,
 };
+
+/// The three roots everything else in the user directory hangs off.
+struct UserDirectoryRoots {
+    std::filesystem::path data;   // NAND, SDMC, keys, logs, mods, ...
+    std::filesystem::path config; // Config files.
+    std::filesystem::path cache;  // Shader and other caches.
+
+    bool operator==(const UserDirectoryRoots&) const = default;
+};
+
+enum class UserDirectoryKind {
+    Portable, // A directory that is not picked by name: the portable "user" directory.
+    Orchid,   // The global "orchid" directories.
+    Legacy,   // The global "eden" directories of an install from before Orchid had its own.
+};
+
+struct UserDirectorySelection {
+    UserDirectoryKind kind;
+    UserDirectoryRoots roots;
+};
+
+/**
+ * Decides which directories hold the user's data. In order:
+ * - portable_dir, if it is a directory (its config and cache then live inside it);
+ * - the orchid roots, if an Orchid install is there;
+ * - the legacy roots, if an install from before the rename is there, so that existing users keep
+ *   their saves, keys and settings. Nothing is moved or copied: the data can be many GB, and Eden
+ *   may still be installed and using the very same directories;
+ * - otherwise the orchid roots (new install).
+ *
+ * An install counts as present when its data or its config root is a directory. The cache root
+ * does not count: caches are disposable and unrelated tools may own a directory of that name.
+ * All three roots always come from the same candidate, so config, data and cache never end up
+ * split between the two names.
+ *
+ * @param portable_dir Portable directory candidate
+ * @param orchid Global roots under the "orchid" name
+ * @param legacy Global roots under the legacy "eden" name
+ * @param is_dir Predicate telling whether a path is an existing directory
+ *
+ * @returns The selected roots and where they came from.
+ */
+[[nodiscard]] UserDirectorySelection SelectUserDirectories(
+    const std::filesystem::path& portable_dir, const UserDirectoryRoots& orchid,
+    const UserDirectoryRoots& legacy,
+    const std::function<bool(const std::filesystem::path&)>& is_dir);
+
+/// Same as above, checking the real filesystem.
+[[nodiscard]] UserDirectorySelection SelectUserDirectories(
+    const std::filesystem::path& portable_dir, const UserDirectoryRoots& orchid,
+    const UserDirectoryRoots& legacy);
+
+/**
+ * Gets which kind of user directory is in use (decided once, when the paths are initialized).
+ *
+ * @returns The kind of the user directory in use.
+ */
+[[nodiscard]] UserDirectoryKind GetUserDirectoryKind();
+
+/**
+ * Gets the name of the global user directory in use: "eden" for a legacy install,
+ * "orchid" otherwise.
+ *
+ * @returns The directory name.
+ */
+[[nodiscard]] const char* GetUserDirectoryName();
+
+/**
+ * Logs one Info line when a legacy "eden" user directory is in use, saying how to switch to the
+ * "orchid" directories. The paths are decided before logging is up, so frontends call this once
+ * after starting the logger.
+ */
+void LogUserDirectorySelection();
 
 /**
  * Validates a given path.

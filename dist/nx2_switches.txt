@@ -1,8 +1,9 @@
 # Switch NX2 - read at every start of the Orchid GUI. The CLI frontend does not read it.
 # One NAME=VALUE per line. Lines starting with # are ignored.
 # A variable already set in the environment wins over this file.
-# Between files, %APPDATA%\eden\nx2_switches.txt (yours) wins over this one, so editing
-# this file is never needed: copy the lines you want into your own and restart.
+# Between files, %APPDATA%\orchid\nx2_switches.txt (yours; ~/.config/orchid/ on Linux and
+# macOS) wins over this one, so editing this file is never needed: copy the lines you want into
+# your own and restart. A file in the older "eden" folder is still read; "orchid" wins.
 #
 # Restart the emulator after editing.
 

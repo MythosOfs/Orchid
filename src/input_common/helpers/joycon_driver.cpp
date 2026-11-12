@@ -143,6 +143,9 @@ void JoyconDriver::InputThread(std::stop_token stop_token) {
 
     // Max update rate is 5ms, ensure we are always able to read a bit faster
     constexpr int ThreadDelay = 3;
+    // Bluetooth controllers report every 15 ms; rumble is sent no faster than that.
+    constexpr auto VibrationInterval = std::chrono::milliseconds{15};
+    auto last_vibration_time = std::chrono::steady_clock::now() - VibrationInterval;
     std::vector<u8> buffer(MaxBufferSize);
 
     while (!stop_token.stop_requested()) {
@@ -166,13 +169,23 @@ void JoyconDriver::InputThread(std::stop_token stop_token) {
             OnNewData(buffer);
         }
 
-        if (!vibration_queue.Empty()) {
-            VibrationValue vibration_value;
-            vibration_queue.Pop(vibration_value);
+        // One rumble report per VibrationInterval, carrying the newest request: a report sets
+        // the whole motor state, so older queued values are obsolete. Sending one on every pass
+        // of this loop (up to every 3 ms) is more than a Bluetooth controller takes; it falls
+        // behind on its own input reports until it stops answering. Nothing is sent while
+        // another thread talks to the controller (disable_input_thread).
+        const auto now = std::chrono::steady_clock::now();
+        if (!disable_input_thread && !vibration_queue.Empty() &&
+            now - last_vibration_time >= VibrationInterval) {
+            VibrationValue vibration_value{};
+            while (vibration_queue.Pop(vibration_value)) {
+            }
             last_vibration_result = rumble_protocol->SendVibration(vibration_value);
+            last_vibration_time = now;
         }
 
-        // We can't keep up with vibrations. Start skipping.
+        // Requests can pile up while nothing is sent (disable_input_thread). Only the newest
+        // matters, so keep the queue short.
         while (vibration_queue.Size() > 6) {
             vibration_queue.Pop();
         }

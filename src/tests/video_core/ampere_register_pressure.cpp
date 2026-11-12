@@ -345,6 +345,35 @@ TEST_CASE("Ampere IMAD negates a constant buffer addend", "[video_core][ampere]"
     CHECK(absolute.error == "native multiply wide addend mode");
 }
 
+TEST_CASE("Ampere IMAD with a zero product negates a constant buffer addend",
+          "[video_core][ampere]") {
+    // IMAD R1, RZ, RZ, -c[0x3][0x10]: 0 * 0 - c. The move path this form otherwise takes
+    // refuses bit 63, so it goes through the multiply, which negates the addend.
+    constexpr Instruction negated{{0xff017624, 0x80c00400, 0x078e00ff, 0}};
+    const auto lowered = LowerToMaxwell(std::array{negated, Exit});
+    INFO(lowered.error);
+    REQUIRE(static_cast<bool>(lowered));
+    const auto& words = lowered.instructions;
+    REQUIRE(words.size() >= 3);
+    CHECK(words[0] == (0x4c98000000070000ULL | 252 | (u64{15} << 39) | (u64{4} << 20) |
+                       (u64{3} << 34)));
+    CHECK(words[1] == (0x5c10000000070000ULL | 252 | (u64{255} << 8) | (u64{252} << 20) |
+                       (u64{1} << 48)));
+    CHECK(words[2] == (0x5b00000000070000ULL | 250 | (u64{255} << 8) | (u64{255} << 20) |
+                       (u64{252} << 39)));
+    // Without the negation it stays the plain constant buffer move into R1.
+    const auto move = LowerToMaxwell(std::array{With(negated, 63, 0, 1), Exit});
+    INFO(move.error);
+    REQUIRE(static_cast<bool>(move));
+    REQUIRE_FALSE(move.instructions.empty());
+    CHECK(move.instructions[0] == (0x4c98000000070000ULL | 1 | (u64{15} << 39) |
+                                   (u64{4} << 20) | (u64{3} << 34)));
+    // The absolute value (bit 62) stays refused on both paths.
+    CHECK_FALSE(static_cast<bool>(LowerToMaxwell(std::array{With(negated, 62, 1, 1), Exit})));
+    CHECK_FALSE(static_cast<bool>(
+        LowerToMaxwell(std::array{With(With(negated, 63, 0, 1), 62, 1, 1), Exit})));
+}
+
 TEST_CASE("Ampere HSETP2 with a constant buffer compares through a scratch register",
           "[video_core][ampere]") {
     // HSETP2.GT.AND P1, PT, RZ.H0_H0, c[0x7][0xfc].H1_H1, !P1 (Hyrule Warriors).

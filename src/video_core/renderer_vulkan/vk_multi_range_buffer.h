@@ -52,6 +52,19 @@ public:
         return frame - last_used > MAX_UNUSED_FRAMES;
     }
 
+    /// Removes every entry of map that IsUnused at frame, after handing it to retire. A template
+    /// so the unit test can run it on a map of plain structs, without a Vulkan device.
+    template <typename Map, typename Retire>
+    static void EraseUnused(Map& map, u64 frame, Retire&& retire) {
+        erase_if(map, [&](auto& item) {
+            const bool unused = IsUnused(frame, item.second.last_used);
+            if (unused) {
+                retire(item.second);
+            }
+            return unused;
+        });
+    }
+
     explicit MultiRangeBufferCache(const Device& device);
 
     YUZU_NON_COPYABLE(MultiRangeBufferCache);

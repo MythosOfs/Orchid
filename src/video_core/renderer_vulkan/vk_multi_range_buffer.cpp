@@ -208,14 +208,7 @@ void MultiRangeBufferCache::DrainRetired(Scheduler& scheduler) {
 
 void MultiRangeBufferCache::TickFrame(Scheduler& scheduler) {
     ++frame;
-    for (auto it = entries.begin(); it != entries.end();) {
-        if (!IsUnused(frame, it->second.last_used)) {
-            ++it;
-            continue;
-        }
-        RetireEntry(scheduler, it->second);
-        it = entries.erase(it);
-    }
+    EraseUnused(entries, frame, [&](Entry& entry) { RetireEntry(scheduler, entry); });
     DrainRetired(scheduler);
 }
 

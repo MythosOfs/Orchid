@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 
 #include "common/common_types.h"
 #include "common/logging.h"
@@ -937,6 +938,31 @@ Result IHidServer::ClearNpadCaptureButtonAssignment(ClientAppletResourceUserId a
     R_RETURN(GetResourceManager()->GetNpad()->ClearNpadCaptureButtonAssignment(aruid.pid));
 }
 
+// Games get their vibration handles from the SDK and the SDK aborts when one of the commands
+// below fails (Kirby Air Riders: nn::hid::GetActualVibrationValue). A handle we consider invalid,
+// such as a style index this emulator does not know, is therefore answered like a controller
+// without a vibration device instead of with an error. Warns once, then logs at debug level.
+static bool IsVibrationHandleUsable(const Core::HID::VibrationDeviceHandle& handle,
+                                    const char* command) {
+    const Result result = IsVibrationHandleValid(handle);
+    if (result.IsSuccess()) {
+        return true;
+    }
+    static std::atomic_bool has_warned{};
+    if (!has_warned.exchange(true)) {
+        LOG_WARNING(Service_HID,
+                    "{}: ignoring invalid vibration handle, npad_type={}, npad_id={}, "
+                    "device_index={}, result={:#x}",
+                    command, handle.npad_type, handle.npad_id, handle.device_index, result.raw);
+    } else {
+        LOG_DEBUG(Service_HID,
+                  "{}: ignoring invalid vibration handle, npad_type={}, npad_id={}, "
+                  "device_index={}, result={:#x}",
+                  command, handle.npad_type, handle.npad_id, handle.device_index, result.raw);
+    }
+    return false;
+}
+
 Result IHidServer::GetVibrationDeviceInfo(
     Out<Core::HID::VibrationDeviceInfo> out_vibration_device_info,
     Core::HID::VibrationDeviceHandle vibration_device_handle) {
@@ -976,14 +1002,13 @@ Result IHidServer::GetActualVibrationValue(Out<Core::HID::VibrationValue> out_vi
         R_SUCCEED();
     }
 
-    R_TRY(IsVibrationHandleValid(vibration_device_handle));
-    NpadVibrationDevice* device =
-        GetResourceManager()->GetNSVibrationDevice(vibration_device_handle);
-
-    if (device == nullptr || R_FAILED(device->GetActualVibrationValue(*out_vibration_value))) {
-        *out_vibration_value = Core::HID::DEFAULT_VIBRATION_VALUE;
+    // Never fails for a bad handle, see IsVibrationHandleUsable.
+    NpadVibrationDevice* device{nullptr};
+    if (IsVibrationHandleUsable(vibration_device_handle, "GetActualVibrationValue")) {
+        device = GetResourceManager()->GetNSVibrationDevice(vibration_device_handle);
     }
 
+    *out_vibration_value = GetActualVibrationValueOrDefault(device);
     R_SUCCEED();
 }
 
@@ -1021,9 +1046,13 @@ Result IHidServer::SendVibrationValues(
 
     R_UNLESS(vibration_handles.size() == vibration_values.size(), ResultVibrationArraySizeMismatch);
 
+    // Best effort like 201 and 214: one bad handle neither fails the call nor drops the rest.
     for (std::size_t i = 0; i < vibration_handles.size(); i++) {
-        R_TRY(GetResourceManager()->SendVibrationValue(aruid.pid, vibration_handles[i],
-                                                       vibration_values[i]));
+        const auto result = GetResourceManager()->SendVibrationValue(
+            aruid.pid, vibration_handles[i], vibration_values[i]);
+        if (result.IsError()) {
+            LOG_DEBUG(Service_HID, "failed to send vibration {}, result={:#x}", i, result.raw);
+        }
     }
 
     R_SUCCEED();
@@ -1045,7 +1074,9 @@ Result IHidServer::SendVibrationGcErmCommand(
         R_SUCCEED();
     }
 
-    R_TRY(IsVibrationHandleValid(vibration_device_handle));
+    if (!IsVibrationHandleUsable(vibration_device_handle, "SendVibrationGcErmCommand")) {
+        R_SUCCEED();
+    }
     NpadGcVibrationDevice* gc_device =
         GetResourceManager()->GetGcVibrationDevice(vibration_device_handle);
     if (gc_device != nullptr) {
@@ -1068,11 +1099,13 @@ Result IHidServer::GetActualVibrationGcErmCommand(
 
     if (!has_active_aruid) {
         *out_gc_erm_command = Core::HID::VibrationGcErmCommand::Stop;
+        R_SUCCEED();
     }
 
-    R_TRY(IsVibrationHandleValid(vibration_device_handle));
-    NpadGcVibrationDevice* gc_device =
-        GetResourceManager()->GetGcVibrationDevice(vibration_device_handle);
+    NpadGcVibrationDevice* gc_device{nullptr};
+    if (IsVibrationHandleUsable(vibration_device_handle, "GetActualVibrationGcErmCommand")) {
+        gc_device = GetResourceManager()->GetGcVibrationDevice(vibration_device_handle);
+    }
 
     if (gc_device == nullptr ||
         R_FAILED(gc_device->GetActualVibrationGcErmCommand(*out_gc_erm_command))) {
@@ -1103,7 +1136,10 @@ Result IHidServer::IsVibrationDeviceMounted(
               vibration_device_handle.npad_type, vibration_device_handle.npad_id,
               vibration_device_handle.device_index, aruid.pid);
 
-    R_TRY(IsVibrationHandleValid(vibration_device_handle));
+    *out_is_mounted = false;
+    if (!IsVibrationHandleUsable(vibration_device_handle, "IsVibrationDeviceMounted")) {
+        R_SUCCEED();
+    }
 
     NpadVibrationBase* device = GetResourceManager()->GetVibrationDevice(vibration_device_handle);
 
@@ -1126,9 +1162,13 @@ void IHidServer::SendNx2VibrationValue(HLERequestContext& ctx) {
     }
     const auto handle = rp.PopRaw<Core::HID::VibrationDeviceHandle>();
     const auto value = rp.PopRaw<Core::HID::VibrationValue>();
+    // Best effort like 201 and 214: the SDK treats a failure here as fatal.
     const auto result = GetResourceManager()->SendVibrationValue(ctx.GetPID(), handle, value);
+    if (result.IsError()) {
+        LOG_DEBUG(Service_HID, "failed to send vibration, result={:#x}", result.raw);
+    }
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(result);
+    rb.Push(ResultSuccess);
 }
 
 Result IHidServer::SendNx2VibrationValues(
@@ -1174,7 +1214,9 @@ Result IHidServer::SendVibrationValueInBool(
         R_SUCCEED();
     }
 
-    R_TRY(IsVibrationHandleValid(vibration_device_handle));
+    if (!IsVibrationHandleUsable(vibration_device_handle, "SendVibrationValueInBool")) {
+        R_SUCCEED();
+    }
     NpadN64VibrationDevice* n64_device =
         GetResourceManager()->GetN64VibrationDevice(vibration_device_handle);
 

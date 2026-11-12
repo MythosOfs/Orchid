@@ -225,6 +225,7 @@ void Init(QWidget* root) {
     Common::Log::Initialize();
     Common::Log::Start();
     Common::Log::InstallTerminateHandler();
+    Common::FS::LogUserDirectorySelection();
     // qFatal ends the process through a fail-fast in Qt6Core that leaves the log without a reason
     // (issue 133); keep Qt's own console output after logging.
     static const QtMessageHandler qt_default_handler = qInstallMessageHandler(

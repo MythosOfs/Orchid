@@ -14,6 +14,7 @@
 #include <thread>
 #endif
 
+#include "common/fs/fs_paths.h"
 #include "startup_checks.h"
 
 #if YUZU_ROOM
@@ -127,11 +128,15 @@ static void LoadNx2Switches(const char* argv0) {
     if (!ec) {
         ParseSwitchFile(exe.parent_path() / "nx2_switches.txt", switches);
     }
-    if (const char* appdata = std::getenv("APPDATA")) {
-        ParseSwitchFile(std::filesystem::path{appdata} / "eden" / "nx2_switches.txt", switches);
-    } else if (const char* home = std::getenv("HOME")) {
-        ParseSwitchFile(std::filesystem::path{home} / ".config" / "eden" / "nx2_switches.txt",
-                        switches);
+    // The user's own file: the legacy "eden" location is still read, the "orchid" one is read
+    // after it and so wins where both set the same switch.
+    for (const char* dir : {EDEN_DIR, ORCHID_DIR}) {
+        if (const char* appdata = std::getenv("APPDATA")) {
+            ParseSwitchFile(std::filesystem::path{appdata} / dir / "nx2_switches.txt", switches);
+        } else if (const char* home = std::getenv("HOME")) {
+            ParseSwitchFile(std::filesystem::path{home} / ".config" / dir / "nx2_switches.txt",
+                            switches);
+        }
     }
     for (const auto& [name, value] : switches) {
         if (std::getenv(name.c_str()) != nullptr) {

@@ -14,7 +14,7 @@ Use this when you need to review the logs to determine an issue or provide them 
 
 ###  Windows
 
-*By default the logs are stored in your AppData `C:\Users\<USER>\AppData\Roaming\eden\log`, or the local **user** folder if you have a portable installation.*
+*By default the logs are stored in your AppData `C:\Users\<USER>\AppData\Roaming\orchid\log` (`...\Roaming\eden\log` if you used the emulator before it had its own folder), or the local **user** folder if you have a portable installation.*
 
 <aside>
 
@@ -25,7 +25,7 @@ Use this when you need to review the logs to determine an issue or provide them 
 
 ### Steam Deck
 
-*By default the logs are stored in `/home/deck/.local/share/eden/log`, or the local **user** folder if you have a portable installation.*
+*By default the logs are stored in `/home/deck/.local/share/orchid/log` (`/home/deck/.local/share/eden/log` if you used the emulator before it had its own folder), or the local **user** folder if you have a portable installation.*
 
 <aside>
 

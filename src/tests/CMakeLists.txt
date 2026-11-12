@@ -29,6 +29,7 @@ add_executable(tests
     common/slot_vector.cpp
     common/undefined_fix.cpp
     common/unique_function.cpp
+    common/user_directories.cpp
     common/zstd_compression.cpp
     audio_core/adpcm_decode.cpp
     core/address_arbiter_read.cpp

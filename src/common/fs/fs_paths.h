@@ -8,6 +8,10 @@
 
 // yuzu data directories
 
+// ORCHID_DIR is the directory Orchid creates on new installs. EDEN_DIR is the name Orchid
+// inherited from Eden; it is only kept in use when an install from before the rename is found
+// (see SelectUserDirectories in path_util.h).
+#define ORCHID_DIR "orchid"
 #define EDEN_DIR "eden"
 #define PORTABLE_DIR "user"
 

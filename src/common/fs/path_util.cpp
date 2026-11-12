@@ -108,17 +108,24 @@ public:
     /// over the global configuration directory (in other words, portable directories
     /// take priority over the global ones, always)
     /// On Android, the behaviour is to look for the current directory only.
+    /// The global directory is "orchid"; an existing "eden" one from before the rename keeps
+    /// being used instead (see SelectUserDirectories).
     void Reinitialize(fs::path eden_path = {}) {
         fs::path eden_path_cache;
         fs::path eden_path_config;
 #ifdef _WIN32
         // User directory takes priority over global %AppData% directory
-        eden_path = GetExeDirectory() / PORTABLE_DIR;
-        if (!Exists(eden_path) || !IsDir(eden_path)) {
-            eden_path = GetAppDataRoamingDirectory() / EDEN_DIR;
-        }
-        eden_path_cache = eden_path / CACHE_DIR;
-        eden_path_config = eden_path / CONFIG_DIR;
+        const auto global_roots = [](const char* name) {
+            const fs::path root = GetAppDataRoamingDirectory() / name;
+            return UserDirectoryRoots{root, root / CONFIG_DIR, root / CACHE_DIR};
+        };
+        const auto selection = SelectUserDirectories(GetExeDirectory() / PORTABLE_DIR,
+                                                     global_roots(ORCHID_DIR),
+                                                     global_roots(EDEN_DIR));
+        user_directory_kind = selection.kind;
+        eden_path = selection.roots.data;
+        eden_path_cache = selection.roots.cache;
+        eden_path_config = selection.roots.config;
 #define LEGACY_PATH(titleName, upperName) GenerateLegacyPath(EmuPath::titleName##Dir, GetAppDataRoamingDirectory() / upperName##_DIR); \
         GenerateLegacyPath(EmuPath::titleName##ConfigDir, GetAppDataRoamingDirectory() / upperName##_DIR / CONFIG_DIR); \
         GenerateLegacyPath(EmuPath::titleName##CacheDir, GetAppDataRoamingDirectory() / upperName##_DIR / CACHE_DIR);
@@ -129,18 +136,23 @@ public:
 #undef LEGACY_PATH
 #elif __ANDROID__
         ASSERT(!eden_path.empty());
+        // The app's own storage, handed over by the frontend; there is no name to pick.
+        user_directory_kind = UserDirectoryKind::Portable;
         eden_path_cache = eden_path / CACHE_DIR;
         eden_path_config = eden_path / CONFIG_DIR;
 #else
-        eden_path = GetCurrentDir() / PORTABLE_DIR;
-        if (!Exists(eden_path) || !IsDir(eden_path)) {
-            eden_path = GetDataDirectory("XDG_DATA_HOME") / EDEN_DIR;
-            eden_path_cache = GetDataDirectory("XDG_CACHE_HOME") / EDEN_DIR;
-            eden_path_config = GetDataDirectory("XDG_CONFIG_HOME") / EDEN_DIR;
-        } else {
-            eden_path_cache = eden_path / CACHE_DIR;
-            eden_path_config = eden_path / CONFIG_DIR;
-        }
+        const auto global_roots = [](const char* name) {
+            return UserDirectoryRoots{GetDataDirectory("XDG_DATA_HOME") / name,
+                                      GetDataDirectory("XDG_CONFIG_HOME") / name,
+                                      GetDataDirectory("XDG_CACHE_HOME") / name};
+        };
+        const auto selection = SelectUserDirectories(GetCurrentDir() / PORTABLE_DIR,
+                                                     global_roots(ORCHID_DIR),
+                                                     global_roots(EDEN_DIR));
+        user_directory_kind = selection.kind;
+        eden_path = selection.roots.data;
+        eden_path_cache = selection.roots.cache;
+        eden_path_config = selection.roots.config;
 #define LEGACY_PATH(titleName, upperName) GenerateLegacyPath(EmuPath::titleName##Dir, GetDataDirectory("XDG_DATA_HOME") / upperName##_DIR); \
         GenerateLegacyPath(EmuPath::titleName##ConfigDir, GetDataDirectory("XDG_CONFIG_HOME") / upperName##_DIR); \
         GenerateLegacyPath(EmuPath::titleName##CacheDir, GetDataDirectory("XDG_CACHE_HOME") / upperName##_DIR);
@@ -183,6 +195,10 @@ public:
 
     }
 
+    [[nodiscard]] UserDirectoryKind GetUserDirectoryKindImpl() const {
+        return user_directory_kind;
+    }
+
 private:
     PathManagerImpl() {
         Reinitialize();
@@ -201,7 +217,44 @@ private:
 
     ::Common::unordered_map<EdenPath, fs::path> eden_paths;
     ::Common::unordered_map<EmuPath, fs::path> legacy_paths;
+    UserDirectoryKind user_directory_kind{UserDirectoryKind::Orchid};
 };
+
+UserDirectorySelection SelectUserDirectories(const fs::path& portable_dir,
+                                             const UserDirectoryRoots& orchid,
+                                             const UserDirectoryRoots& legacy,
+                                             const std::function<bool(const fs::path&)>& is_dir) {
+    // Portable directories take priority over the global ones, always.
+    if (!portable_dir.empty() && is_dir(portable_dir)) {
+        return {UserDirectoryKind::Portable,
+                {portable_dir, portable_dir / CONFIG_DIR, portable_dir / CACHE_DIR}};
+    }
+    // The cache root is left out on purpose, see the declaration.
+    const auto installed = [&is_dir](const UserDirectoryRoots& roots) {
+        return is_dir(roots.data) || is_dir(roots.config);
+    };
+    // An Orchid install wins over a legacy one: whoever has both has switched already (or still
+    // runs Eden next to Orchid), and must not be thrown back into the shared directory.
+    if (!installed(orchid) && installed(legacy)) {
+        return {UserDirectoryKind::Legacy, legacy};
+    }
+    return {UserDirectoryKind::Orchid, orchid};
+}
+
+UserDirectorySelection SelectUserDirectories(const fs::path& portable_dir,
+                                             const UserDirectoryRoots& orchid,
+                                             const UserDirectoryRoots& legacy) {
+    return SelectUserDirectories(portable_dir, orchid, legacy,
+                                 [](const fs::path& path) { return IsDir(path); });
+}
+
+UserDirectoryKind GetUserDirectoryKind() {
+    return PathManagerImpl::GetInstance().GetUserDirectoryKindImpl();
+}
+
+const char* GetUserDirectoryName() {
+    return GetUserDirectoryKind() == UserDirectoryKind::Legacy ? EDEN_DIR : ORCHID_DIR;
+}
 
 bool ValidatePath(const fs::path& path) {
     if (path.empty()) {
@@ -311,6 +364,18 @@ void SetEdenPath(EdenPath eden_path, const fs::path& new_path) {
 
 void CreateEdenPaths() {
     PathManagerImpl::GetInstance().CreateEdenPaths();
+}
+
+void LogUserDirectorySelection() {
+    if (GetUserDirectoryKind() != UserDirectoryKind::Legacy) {
+        return;
+    }
+    LOG_INFO(Common_Filesystem,
+             "Using the existing \"" EDEN_DIR "\" user directories (data={}, config={}, cache={}). "
+             "To switch to \"" ORCHID_DIR "\", close the emulator and rename each of them from \""
+             EDEN_DIR "\" to \"" ORCHID_DIR "\"",
+             GetEdenPathString(EdenPath::EdenDir), GetEdenPathString(EdenPath::ConfigDir),
+             GetEdenPathString(EdenPath::CacheDir));
 }
 
 #ifdef _WIN32

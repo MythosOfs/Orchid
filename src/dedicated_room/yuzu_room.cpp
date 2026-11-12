@@ -218,6 +218,7 @@ void LaunchRoom(int argc, char** argv, bool called_by_option) {
     Common::Log::Initialize();
     Common::Log::SetColorConsoleBackendEnabled(true);
     Common::Log::Start();
+    Common::FS::LogUserDirectorySelection();
 
     while (optind < argc) {
         int arg = getopt_long(argc, argv, "n:d:s:p:m:w:g:u:t:a:i:l:hv", long_options, &option_index);

@@ -29,14 +29,24 @@ If your GPU doesn't support or is just behind by a minor version, see Mesa envir
 
 ### Configuration directories
 
-Eden will store configuration files in the following directories:
+Orchid stores its files in a folder named `orchid`:
 
-- **Windows**: `%AppData%\Roaming`.
+- **Windows**: `%AppData%\orchid` (`C:\Users\<USER>\AppData\Roaming\orchid`), with the configuration in `config` and the caches in `cache` inside it.
 - **Android**: Data is stored internally.
-- **Linux, macOS, FreeBSD, Solaris, OpenBSD**: `$XDG_DATA_HOME`, `$XDG_CACHE_HOME`, `$XDG_CONFIG_HOME`.
-- **HaikuOS**: `/boot/home/config/settings/eden`
+- **Linux, macOS, FreeBSD, Solaris, OpenBSD**: `$XDG_DATA_HOME/orchid` (default `~/.local/share/orchid`: NAND, saves, keys, logs, mods), `$XDG_CONFIG_HOME/orchid` (default `~/.config/orchid`: settings) and `$XDG_CACHE_HOME/orchid` (default `~/.cache/orchid`: shader caches).
 
-If a `user` directory is present in the current working directory, that will override all global configuration directories and the emulator will use the `user` directory instead.
+If a `user` directory is present in the current working directory (on Windows: next to the `.exe`), that will override all global configuration directories and the emulator will use the `user` directory instead.
+
+#### Installs that still use the `eden` folders
+
+Older versions of Orchid used the same folders as Eden (`eden` instead of `orchid` in the paths above). If such folders exist and no `orchid` data or configuration folder does, Orchid keeps using them, so nothing is lost by updating; the log then starts with a line saying so. Nothing is moved or copied automatically: the folders can be many GB, and Eden may still be installed and using them.
+
+To switch to the `orchid` folders, close the emulator and rename the folders from `eden` to `orchid`:
+
+- **Windows**: `%AppData%\eden` to `%AppData%\orchid`.
+- **Linux and others**: `~/.local/share/eden`, `~/.config/eden` and `~/.cache/eden` to `~/.local/share/orchid`, `~/.config/orchid` and `~/.cache/orchid`. Rename all three; if `~/.cache/orchid` already exists, move the contents of `~/.cache/eden` into it instead (or leave them behind: caches are rebuilt).
+
+If you also use Eden and want both to keep their data, copy the folders instead of renaming them. The settings store the full paths of the NAND, SD card, mod and dump folders, so after a copy check them under *Configure > System > Filesystem*: they may still point into the `eden` folder. After a rename the old paths no longer exist and Orchid falls back to the new ones by itself.
 
 ### Environment variables
 

@@ -34,10 +34,38 @@
 #include <cstring>
 #endif
 
+#include "common/fs/path_util.h"
 #include "main_window.h"
 
 #ifdef _WIN32
+#include <exception>
+#include <windows.h>
 #include <QScreen>
+
+// An exception that nothing catches ends a GUI program without any trace: there is no console and
+// possibly no log file yet. Show it instead. Stays installed for the whole run.
+[[noreturn]] static void ShowFatalError() {
+    std::string text = "Orchid has to close because of an unexpected error.";
+    if (const std::exception_ptr error = std::current_exception()) {
+        try {
+            std::rethrow_exception(error);
+        } catch (const std::exception& e) {
+            text += "\n\n";
+            text += e.what();
+        } catch (...) {
+        }
+    }
+    // The Vulkan check child runs unattended while the parent waits for it: no dialog there.
+    char startup_check[8];
+    if (GetEnvironmentVariableA(STARTUP_CHECK_ENV_VAR, startup_check, sizeof(startup_check)) == 0) {
+        std::wstring wide(text.size(), L'\0');
+        const int size = MultiByteToWideChar(CP_UTF8, 0, text.data(), static_cast<int>(text.size()),
+                                             wide.data(), static_cast<int>(wide.size()));
+        wide.resize(size > 0 ? static_cast<size_t>(size) : 0);
+        MessageBoxW(nullptr, wide.c_str(), L"Orchid", MB_OK | MB_ICONERROR);
+    }
+    std::abort();
+}
 
 static void OverrideWindowsFont() {
     // Qt5 chooses these fonts on Windows and they have fairly ugly alphanumeric/cyrillic characters
@@ -122,6 +150,20 @@ static void LoadNx2Switches(const char* argv0) {
     ParseSwitchFile(Common::FS::GetBundleDirectory() / "Contents/Resources/nx2_switches.txt",
                     switches);
 #endif
+#ifdef _WIN32
+    // argv and getenv hold text in the system code page. A std::filesystem::path made from such a
+    // string is wrong, and libstdc++ (the MinGW build) reads it as UTF-8 and throws on any other
+    // byte sequence: the program ended here, before the first window or log line, whenever its
+    // folder had a non-ASCII character such as an accent. So ask Windows for wide strings.
+    (void)argv0;
+    ParseSwitchFile(Common::FS::GetExeDirectory() / "nx2_switches.txt", switches);
+    if (const wchar_t* appdata = _wgetenv(L"APPDATA")) {
+        ParseSwitchFile(std::filesystem::path{appdata} / "eden" / "nx2_switches.txt", switches);
+    } else if (const wchar_t* home = _wgetenv(L"HOME")) {
+        ParseSwitchFile(std::filesystem::path{home} / ".config" / "eden" / "nx2_switches.txt",
+                        switches);
+    }
+#else
     std::error_code ec;
     const std::filesystem::path exe = std::filesystem::absolute(argv0, ec);
     if (!ec) {
@@ -133,6 +175,7 @@ static void LoadNx2Switches(const char* argv0) {
         ParseSwitchFile(std::filesystem::path{home} / ".config" / "eden" / "nx2_switches.txt",
                         switches);
     }
+#endif
     for (const auto& [name, value] : switches) {
         if (std::getenv(name.c_str()) != nullptr) {
             continue;
@@ -164,6 +207,9 @@ static void StartProfileWriter() {
 #endif
 
 int main(int argc, char* argv[]) {
+#ifdef _WIN32
+    std::set_terminate(ShowFatalError);
+#endif
 #ifdef ORCHID_PGO_GENERATE
     StartProfileWriter();
 #endif

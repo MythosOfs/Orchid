@@ -3718,6 +3718,20 @@ bool Image::ScaleUp(bool ignore) {
         return false;
     }
     ASSERT(info.type != ImageType::Linear);
+    {
+        const bool is_2d = info.type == ImageType::e2D;
+        const u32 scaled_width = resolution.ScaleUp(info.size.width);
+        const u32 scaled_height = is_2d ? resolution.ScaleUp(info.size.height) : info.size.height;
+        // A scaled image past the device's 16384 guarantee or the 2^28-texel budget of the
+        // image math must not exist: the allocator falls back to an unbacked sparse image and
+        // binding it then loses the device (the 1.5x crash: a 12288^2 D16 scaled to 18432^2).
+        // Keep such images at native size - the framework already handles images that do not
+        // rescale (ImageCanRescale / the Rescaled flag).
+        if (scaled_width > 16384 || scaled_height > 16384 ||
+            u64{scaled_width} * scaled_height > (u64{1} << 28)) {
+            return false;
+        }
+    }
     flags |= ImageFlagBits::Rescaled;
     has_scaled = true;
     if (!scaled_image) {
@@ -4245,6 +4259,10 @@ Sampler::VariantKey Sampler::MakeKey(const ImageView& image_view, bool is_depth)
     key.drop_reduction = has_minmax_reduction && !image_view.SupportsMinmaxFilter();
     key.drop_custom_border = has_custom_border_colors && image_view.RequiresBorderColorFormat();
     key.srgb_border = has_srgb_border_color && IsPixelFormatSRGB(image_view.format);
+    // A compare-enabled TSC read by a plain (non-Dref) sample: Maxwell ignores the comparison,
+    // Vulkan leaves it undefined and AMD returns the 0/1 compare result (Ocarina forest fog
+    // composite read alpha 0 -> black screen). Use a variant without comparison.
+    key.drop_compare = has_depth_comparison && !is_depth;
     if (needs_swizzle_mapping && !key.drop_custom_border && !image_view.HasIdentitySwizzle()) {
         const VkComponentMapping& mapping = image_view.Swizzle();
         key.swizzle = {mapping.r, mapping.g, mapping.b, mapping.a};
@@ -4308,6 +4326,9 @@ VkSampler Sampler::Emplace(VariantKey key) {
     }
 
     VkSamplerCreateInfo create_info = base_ci;
+    if (key.drop_compare) {
+        create_info.compareEnable = VK_FALSE;
+    }
     create_info.pNext = chain;
     if (key.force_nearest) {
         create_info.magFilter = VK_FILTER_NEAREST;

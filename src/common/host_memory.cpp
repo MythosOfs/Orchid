@@ -854,8 +854,10 @@ void HostMemory::HintCold(size_t physical_offset, size_t length,
 #ifdef _WIN32
         // Unlocking pages that are not locked takes them out of the working set.
         VirtualUnlock(address, length);
-#elif defined(__linux__) && defined(MADV_PAGEOUT)
-        madvise(address, length, MADV_PAGEOUT);
+#elif defined(__linux__) && defined(MADV_COLD)
+        // MADV_COLD only deactivates the pages, like VirtualUnlock. MADV_PAGEOUT writes them to
+        // swap right away while holding the mmap lock, which stalled every guest core for 3-15 s.
+        madvise(address, length, MADV_COLD);
 #else
         static_cast<void>(address);
 #endif
@@ -869,6 +871,16 @@ void HostMemory::HintCold(size_t physical_offset, size_t length,
 void HostMemory::ClearBackingRegion(size_t physical_offset, size_t length, u32 fill_value) {
     if (length == 0) {
         return;
+    }
+    if (physical_offset >= backing_size || length > backing_size - physical_offset) {
+        // A fill past the end of the backing would land on whatever the host has mapped next
+        // (e.g. its own heap). Clamp it and say so.
+        LOG_CRITICAL(HW_Memory, "ClearBackingRegion out of range: offset={:#x} length={:#x} backing={:#x}",
+                     physical_offset, length, backing_size);
+        if (physical_offset >= backing_size) {
+            return;
+        }
+        length = backing_size - physical_offset;
     }
     MarkUsed(physical_offset, length);
     if (fill_value != 0) {

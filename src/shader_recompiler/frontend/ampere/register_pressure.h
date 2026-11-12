@@ -45,6 +45,10 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
     std::vector<Operand> operands;
     const auto operand = [&](u32 bit, u32 count = 1) { operands.push_back({bit, count}); };
     const u32 opcode = input.Bits(0, 12);
+    // The SHFL, SUATOM, SUST and TLD4 lowerings stage operands through R250-R254 (and the
+    // predicate saves around them), so a shadowed span reaching R250 stays rejected for them.
+    const bool staged_scratch = opcode == 0x589 || opcode == 0x593 || opcode == 0xb9b ||
+                                opcode == 0xb9d || opcode == 0xb63 || opcode == 0xf63;
     switch (opcode) {
     case 0xa02:
     case 0xc3e:
@@ -59,6 +63,7 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
     case 0x804:
     case 0x80b:
     case 0x80c:
+    case 0x3c2: // R2UR: bits 16-23 name the uniform register written
         operand(24);
         break;
     case 0x20c:
@@ -66,12 +71,21 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
         operand(24);
         operand(32);
         break;
+    case 0x803: // P2R: Rd and the merge source Ra
     case 0x807:
     case 0x808:
+    case 0xc08: // FSEL with a uniform B
+    case 0x809: // FMNMX: B is an immediate, cbuf or uniform register, never a GPR
+    case 0xa09:
+    case 0xc09:
     case 0x923:
     case 0x820:
     case 0xa20:
+    case 0xc20:
     case 0x421:
+    case 0x821: // FADD: B is an immediate, cbuf or (0xe21) uniform register
+    case 0xa21:
+    case 0xe21:
         operand(16);
         operand(24);
         break;
@@ -89,11 +103,21 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
         break;
     case 0xc17:
     case 0x817:
+    case 0xa17:
         operand(16);
         operand(24);
         break;
+    case 0x217: // IMNMX register form: B in bits 32-39
+    case 0x589: // SHFL: value in Ra, lane register at bit 32
+        operand(16);
+        operand(24);
+        operand(32);
+        break;
     case 0xa24:
+    case 0xc24: // IMAD with a uniform B (0xc24) or uniform C (0xe24, B in bits 64-71)
+    case 0xe24:
     case 0xa23:
+    case 0xc23: // FFMA with a uniform B
     case 0x623:
     case 0x423:
         operand(16);
@@ -129,6 +153,8 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
         operand(24);
         break;
     case 0x308:
+    case 0x9a8: // ATOMG: the address is a uniform register (bits 64-69), data at bit 32
+    case 0x304: // F2F.F16.F32: the source is bits 32-39, bits 24-31 must be zero
     case 0x202:
     case 0x245:
     case 0x305:
@@ -139,10 +165,24 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
         break;
     case 0xb05:
     case 0xd05:
+    case 0xc45: // I2FP with a uniform source
         operand(16);
         break;
-    case 0x59f:
+    case 0x593: // SUATOM: result, coordinates (1, 2 or 3 by dimension), data
+        operand(16);
+        operand(24, input.Bits(61, 3) >= 4 ? 3 : input.Bits(61, 3) == 3 ? 2 : 1);
+        operand(32);
+        break;
+    case 0xb9b: // SUST.P: coordinates as SUATOM, one data register per stored channel
+        operand(24, input.Bits(61, 3) >= 4 ? 3 : input.Bits(61, 3) == 3 ? 2 : 1);
+        operand(32, static_cast<u32>(std::popcount(input.Bits(72, 4))));
+        break;
+    case 0xb9d: // SUST.BA 2D: (x, y) in Ra, Ra+1 and the data
         operand(24, 2);
+        operand(32);
+        break;
+    case 0x59f: // SURED: 3D (dimension 5) has three coordinates
+        operand(24, input.Bits(61, 3) == 5 ? 3 : 2);
         operand(32);
         break;
     case 0x98e:
@@ -163,6 +203,8 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
     case 0xa10:
     case 0xc10:
     case 0x812:
+    case 0xa12: // LOP3.LUT with a cbuf or uniform B
+    case 0xc12:
     case 0x824:
     case 0x823:
     case 0x831:
@@ -181,6 +223,8 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
         break;
     case 0x419:
     case 0x819:
+    case 0xa19: // SHF with a cbuf or uniform shift amount
+    case 0xc19:
         operand(16);
         operand(24);
         operand(64);
@@ -188,12 +232,15 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
     case 0x210:
     case 0x211:
     case 0x212:
+    case 0x219: // SHF, register shift amount in bits 32-39
+    case 0x226: // IDP.4A: a, b and the accumulator
         operand(16);
         operand(24);
         operand(32);
         operand(64);
         break;
     case 0xa11:
+    case 0x811: // LEA: B is the immediate in words[1]
         operand(16);
         operand(24);
         operand(64);
@@ -252,6 +299,50 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
         operand(24);
         break;
     }
+    case 0xb82: // LDC indexed: Rd (a pair when 64-bit) and the index Ra
+        operand(16, input.Bits(73, 3) == 5 ? 2 : 1);
+        operand(24);
+        break;
+    case 0xb6c: // TXD bound or (0xf6c) with a uniform handle: Rd, Rd+1 and the second pair take
+    case 0xf6c: { // the channels, (x, y[, layer]) in Ra, the four gradients in Rb.
+        const u32 channels = static_cast<u32>(std::popcount(input.Bits(72, 4)));
+        operand(16, std::min(channels, 2U));
+        operand(24, input.Bits(61, 3) == 5 ? 3 : 2);
+        operand(32, 4);
+        if (channels > 2)
+            operand(64, channels - 2);
+        break;
+    }
+    case 0xb63:
+    case 0xf63: { // TLD4: results in Rd.. and the second destination, Ra (a pair for ARRAY_2D or
+                  // offsets), Rb.
+        // Per-tap offsets are found by Rb's register number in earlier moves; a renamed Rb would
+        // match the wrong ones.
+        if (opcode == 0xb63 && input.Bits(76, 2) == 2) {
+            result.valid = false;
+            return result;
+        }
+        const u32 channels = static_cast<u32>(std::popcount(input.Bits(72, 4)));
+        const bool split = input.Bits(64, 8) != 255, half = opcode == 0xb63 && input.Bits(79, 1);
+        // .F16 packs two channels per register: Rd, then the second destination or Rd+1.
+        operand(16, half ? (!split && channels > 2 ? 2U : 1U)
+                         : split ? std::min(channels, 2U) : channels);
+        operand(24, input.Bits(61, 3) == 5 || input.Bits(76, 2) ? 2 : 1);
+        operand(32);
+        if (split && channels > 2)
+            operand(64, half ? 1 : channels - 2);
+        break;
+    }
+    case 0xf60: { // TEX with a uniform handle, as case 0xf60 of the lowering packs it.
+        const u32 channels = static_cast<u32>(std::popcount(input.Bits(72, 4)));
+        const bool lod = input.Bits(87, 3) >= 2, planar = input.Bits(61, 3) == 1;
+        operand(16, std::min(channels, 2U)); // without a second destination channels 3-4 drop
+        operand(24, !planar || lod || input.Bits(78, 1) ? 2 : 1);
+        operand(32, !planar && lod ? 2 : 1);
+        if (channels > 2)
+            operand(64, channels - 2);
+        break;
+    }
     case 0x381:
     case 0x386:
     case 0x981:
@@ -271,7 +362,8 @@ inline RegisterPressure PrepareRegisterPressure(const Instruction& input, u32 re
         const u32 reg = input.Bits(bit, 8);
         if (reg == 255)
             continue;
-        if (reg + count > 255 || (reg < reserved && reg + count > reserved) ||
+        if (reg + count > 255 || (staged_scratch && reg + count > 250) ||
+            (reg < reserved && reg + count > reserved) ||
             (reg >= reserved && reg / 4 != (reg + count - 1) / 4)) {
             result.valid = false;
             return result;

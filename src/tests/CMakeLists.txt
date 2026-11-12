@@ -6,6 +6,7 @@
 
 add_executable(tests
     common/bit_field.cpp
+    common/bit_util.cpp
     common/cityhash.cpp
     common/describe_exception.cpp
     common/container_hash.cpp
@@ -16,6 +17,7 @@ add_executable(tests
     common/host_memory.cpp
     common/host_memory_fallback.cpp
     common/host_resources.cpp
+    common/multi_level_page_table.cpp
     common/page_table.cpp
     common/paged_scalar.cpp
     common/param_package.cpp
@@ -28,9 +30,12 @@ add_executable(tests
     common/undefined_fix.cpp
     common/unique_function.cpp
     common/zstd_compression.cpp
+    audio_core/adpcm_decode.cpp
     core/address_arbiter_read.cpp
     core/address_space.cpp
+    core/builtin_font_glyphs.cpp
     core/core_timing.cpp
+    core/filesystem_buffer_bounds.cpp
     core/page_heap.cpp
     core/read_traps.cpp
     core/gpu_dirty_memory_manager.cpp
@@ -129,12 +134,19 @@ add_executable(tests
     video_core/ampere_release_f2i.cpp
     video_core/ampere_uniform_immediate_shift.cpp
     video_core/ampere_bindless_surfaces.cpp
+    video_core/ampere_kirby_fsel.cpp
+    video_core/ampere_register_pressure.cpp
     video_core/syncpoint_manager.cpp
     video_core/native_macro_fifo.cpp
+    video_core/turing_macro_ram.cpp
     video_core/uniform_stream_reuse.cpp
     video_core/sparse_uniform_upload.cpp
     video_core/shader_invalidation.cpp
     video_core/descriptor_table.cpp
+    video_core/invalidation_accumulator.cpp
+    video_core/maxwell_dma_const_a.cpp
+    video_core/spirv_atomic_retry.cpp
+    video_core/spirv_min_max_denorms.cpp
     video_core/usage_tracker.cpp
     input_common/calibration_configuration_job.cpp
 )

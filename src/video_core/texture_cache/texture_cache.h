@@ -480,8 +480,19 @@ void TextureCache<P>::TickFrame() {
     TickAsyncDecode();
     TickAsyncUnswizzle();
     if (frame_tick % 600 == 0 && !uploaded_ranges.empty()) {
-        for (const auto& [address, size] : uploaded_ranges) {
-            device_memory.HintCold(address, size);
+        // A range uploaded more than once in the window is being rewritten (Pokopia re-uploads
+        // three 4 MiB textures every 3 frames): it is hot, and hinting each upload cold took its
+        // pages out of the working set ~200 times a window just before the game wrote them again.
+        std::sort(uploaded_ranges.begin(), uploaded_ranges.end());
+        for (size_t i = 0; i < uploaded_ranges.size();) {
+            size_t next = i + 1;
+            while (next < uploaded_ranges.size() && uploaded_ranges[next] == uploaded_ranges[i]) {
+                ++next;
+            }
+            if (next - i == 1) {
+                device_memory.HintCold(uploaded_ranges[i].first, uploaded_ranges[i].second);
+            }
+            i = next;
         }
         uploaded_ranges.clear();
     }
@@ -616,7 +627,35 @@ void TextureCache<P>::ReplaceColorFeedbackViews(std::span<ImageViewInOut> views)
                    a.resources.layers == b.resources.layers;
         };
         auto it = std::ranges::find_if(feedback_shadows, same_shape);
-        if (it == feedback_shadows.end()) {
+        if (it != feedback_shadows.end()) {
+            // Keep the list least recently used first for FeedbackShadowToEvict.
+            std::rotate(it, std::next(it), feedback_shadows.end());
+            it = std::prev(feedback_shadows.end());
+        } else {
+            if (const std::size_t old = FeedbackShadowToEvict<ImageId>(feedback_shadows, used_shadows);
+                old != std::dynamic_extent) {
+                // Shadows are never registered, so DeleteImage does not apply: free the views and
+                // the image the same deferred way, after the GPU is done with earlier draws.
+                const ImageId old_id = feedback_shadows[old];
+                feedback_shadows.erase(feedback_shadows.begin() + old);
+                Image& old_image = slot_images[old_id];
+                const std::vector<ImageViewId> old_views = old_image.image_view_ids;
+                RemoveImageViewReferences(old_views);
+                for (const ImageViewId old_view : old_views) {
+                    sentenced_image_view.Push(std::move(slot_image_views[old_view]));
+                    slot_image_views.erase(old_view);
+                }
+                const u64 old_bytes = ImageMemoryBytes(old_image);
+                if constexpr (requires { runtime.CurrentTick(); }) {
+                    gpu_sentenced_images.push_back(
+                        {runtime.CurrentTick(), old_bytes, std::move(old_image)});
+                    gpu_sentenced_bytes += old_bytes;
+                } else {
+                    sentenced_images.Push(std::move(old_image));
+                    sentenced_image_bytes[sentenced_image_index] += old_bytes;
+                }
+                slot_images.erase(old_id);
+            }
             const ImageInfo info = slot_images[image_id].info;
             const DAddr cpu_addr = slot_images[image_id].cpu_addr;
             feedback_shadows.push_back(slot_images.insert(runtime, info, gpu_addr, cpu_addr));
@@ -859,6 +898,21 @@ bool TextureCache<P>::RescaleRenderTargets() {
     return rescaled;
 }
 
+// A draw that leaves depth and stencil alone does not modify the depth buffer. Counting it as a
+// modification made every texture aliasing that buffer copy it again: Ocarina of Time samples its
+// 854x480 depth between draws into the 864x480 one with depth writes off, ~90 copies a frame in
+// Kokiri Forest, each ending the render pass.
+template <class P>
+bool TextureCache<P>::WritesDepthStencil() const {
+    const auto& regs = maxwell3d->regs;
+    if (regs.depth_write_enabled != 0) {
+        return true;
+    }
+    return regs.stencil_enable != 0 &&
+           (regs.stencil_front_mask != 0 ||
+            (regs.stencil_two_side_enable != 0 && regs.stencil_back_mask != 0));
+}
+
 template <class P>
 void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
     using namespace VideoCommon::Dirty;
@@ -876,7 +930,8 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
             PrepareImageView(color_buffer_id, true, is_clear && IsFullClear(color_buffer_id));
         }
         const ImageViewId depth_buffer_id = render_targets.depth_buffer_id;
-        PrepareImageView(depth_buffer_id, true, is_clear && IsFullClear(depth_buffer_id));
+        PrepareImageView(depth_buffer_id, is_clear || WritesDepthStencil(),
+                         is_clear && IsFullClear(depth_buffer_id));
         return;
     }
 
@@ -894,7 +949,8 @@ void TextureCache<P>::UpdateRenderTargets(bool is_clear) {
     }
     const ImageViewId depth_buffer_id = render_targets.depth_buffer_id;
 
-    PrepareImageView(depth_buffer_id, true, is_clear && IsFullClear(depth_buffer_id));
+    PrepareImageView(depth_buffer_id, is_clear || WritesDepthStencil(),
+                     is_clear && IsFullClear(depth_buffer_id));
 
     rt_active_mask = 0;
     rt_image_id = {};
@@ -1247,10 +1303,20 @@ template <class P>
 bool TextureCache<P>::BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
                                 const Tegra::Engines::Fermi2D::Surface& src,
                                 const Tegra::Engines::Fermi2D::Config& copy) {
+    // A deferred clear parked before this copy has to land before it: realizing it afterwards
+    // starts its clear pass after the copy and wipes what the copy wrote. That is what made
+    // Ocarina of Time draw its terrain layer over the scene (#101): the game clears the
+    // occlusion depth, blits the scene depth over it, and reads it back during the layer draw.
+    // GetFramebufferId only flushes when it creates a framebuffer, so the bug starts on the
+    // second frame. Texture cache copies bypass render passes and keep stream order here.
+    // Only when the copy proceeds: a rejected blit writes nothing and must not realize the
+    // clear ahead of the next draw that consumes it as its load-op. GetBlitImages cannot
+    // invalidate the parked clear: framebuffer removal flushes first (RemoveFramebuffers).
     const auto result = GetBlitImages(dst, src, copy);
     if (!result) {
         return false;
     }
+    runtime.FlushDeferredClear();
     const BlitImages images = *result;
     const ImageId dst_id = images.dst_id;
     const ImageId src_id = images.src_id;
@@ -1487,6 +1553,10 @@ std::pair<typename P::ImageView*, bool> TextureCache<P>::TryFindFramebufferImage
             return PixelFormat::R5G6B5_UNORM;
         case Service::android::PixelFormat::Bgra8888:
             return PixelFormat::B8G8R8A8_UNORM;
+        case Service::android::PixelFormat::Rgba1010102:
+            // A game told the display is HDR presents a 10-bit image (Ocarina of Time); an
+            // 8-bit view of it showed its bits as false colors.
+            return PixelFormat::A2B10G10R10_UNORM;
         default:
             return PixelFormat::A8B8G8R8_UNORM;
         }
@@ -3241,6 +3311,11 @@ ImageId TextureCache<P>::FindDMAImage(const ImageInfo& info, GPUVAddr gpu_addr) 
 template <class P>
 std::pair<u32, u32> TextureCache<P>::PrepareDmaImage(ImageId dst_id, GPUVAddr base_addr,
                                                      bool mark_as_modified) {
+    // As in BlitImage: land a parked deferred clear before the DMA write, but only when the
+    // write happens (mark_as_modified); a read-only access writes nothing.
+    if (mark_as_modified) {
+        runtime.FlushDeferredClear();
+    }
     const auto& image = slot_images[dst_id];
     const auto base = image.TryFindBase(base_addr);
     PrepareImage(dst_id, mark_as_modified, false);
@@ -4205,7 +4280,8 @@ void TextureCache<P>::PrepareImageView(ImageViewId image_view_id, bool is_modifi
         return;
     }
     const ImageViewBase& image_view = slot_image_views[image_view_id];
-    if (image_view.IsBuffer()) {
+    // Views of empty descriptors point at the null image: there is nothing to upload or track.
+    if (image_view.IsBuffer() || image_view.image_id == NULL_IMAGE_ID) {
         return;
     }
     PrepareImage(image_view.image_id, is_modification, invalidate);
@@ -4225,6 +4301,8 @@ void TextureCache<P>::CopyImage(ImageId dst_id, ImageId src_id, std::vector<Imag
         return;
     }
     PrepareSparseTilesForWrite(dst);
+    // As in BlitImage: land a parked deferred clear before the copy overwrites the image.
+    runtime.FlushDeferredClear();
     const bool is_rescaled = True(src.flags & ImageFlagBits::Rescaled);
     if (is_rescaled) {
         ASSERT(True(dst.flags & ImageFlagBits::Rescaled));

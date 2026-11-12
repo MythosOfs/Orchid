@@ -115,10 +115,21 @@ void BufferCache<P>::TickFrame() {
     }
     runtime.TickFrame(slot_buffers);
     if (frame_tick % 600 == 0 && !uploaded_buffer_ranges.empty()) {
-        for (const auto& [address, size] : uploaded_buffer_ranges) {
-            device_memory.HintCold(address, size);
+        // As in TextureCache::TickFrame: a range uploaded more than once in the window is being
+        // rewritten, not cold.
+        auto& ranges = uploaded_buffer_ranges;
+        std::sort(ranges.begin(), ranges.end());
+        for (size_t i = 0; i < ranges.size();) {
+            size_t next = i + 1;
+            while (next < ranges.size() && ranges[next] == ranges[i]) {
+                ++next;
+            }
+            if (next - i == 1) {
+                device_memory.HintCold(ranges[i].first, ranges[i].second);
+            }
+            i = next;
         }
-        uploaded_buffer_ranges.clear();
+        ranges.clear();
     }
     if (static u64 frames{}; ++frames % 600 == 0) {
         u64 total{};
@@ -319,6 +330,11 @@ bool BufferCache<P>::DMACopy(GPUVAddr src_address, GPUVAddr dest_address, u64 am
 
     ClearDownload(*cpu_dest_address, amount);
     MarkVertexBuffersStale(*cpu_dest_address, amount);
+    // Guest memory gets the copy below (the scoped write at the end), which holds every byte the
+    // source has in guest memory: command list pages in the destination read those from it, and
+    // their copies are stale (zortos293/Lichii#805 34656e8225). The bytes copied from GPU-written
+    // source ranges are noted as GPU writes after this.
+    Nx2NoteListHostWrite(*cpu_dest_address, amount);
 
     BufferId buffer_a;
     BufferId buffer_b;
@@ -387,14 +403,19 @@ bool BufferCache<P>::DMAClear(GPUVAddr dst_address, u64 amount, u32 value) {
     if (!cpu_dst_address) {
         return false;
     }
-    const bool dest_dirty = IsRegionRegistered(*cpu_dst_address, amount);
+    // `amount` counts words: the check looked at a quarter of the range (zortos293/Lichii#805
+    // 34656e8225).
+    const size_t size = amount * sizeof(u32);
+    const bool dest_dirty = IsRegionRegistered(*cpu_dst_address, size);
     if (!dest_dirty) {
         return false;
     }
 
-    const size_t size = amount * sizeof(u32);
     ClearDownload(*cpu_dst_address, size);
     gpu_modified_ranges.Subtract(*cpu_dst_address, size);
+    // The caller writes the cleared words to guest memory after this, as an inline write: command
+    // list pages read them from guest memory, and their copies are stale.
+    Nx2NoteListHostWrite(*cpu_dst_address, size);
 
     const BufferId buffer = FindBuffer(*cpu_dst_address, static_cast<u32>(size), false);
     Buffer& dest_buffer = slot_buffers[buffer];
@@ -1455,6 +1476,11 @@ void BufferCache<P>::ResolveMultiRangeStorage(Binding& binding, bool is_written,
             return;
         }
         if (is_written && !runtime.PrefersSparseSources()) {
+            return;
+        }
+        // A range inside one 4 KiB page has one segment at most. Bananza binds a new written
+        // address in most draws; each such miss walked the page table and added a cache entry.
+        if ((binding.gpu_addr >> 12) == ((binding.gpu_addr + binding.size - 1) >> 12)) {
             return;
         }
         const VirtualSegments* found =

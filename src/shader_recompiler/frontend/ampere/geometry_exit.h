@@ -138,6 +138,8 @@ GeometryExitEnvelope AnalyzeGeometryExit(const Code& code) {
         } else if (opcode == 0x805 || opcode == 0xab9 || opcode == 0x945) {
         } else if (opcode == 0x381 || opcode == 0x981) {
             const u32 address = bits(index, 24, 8), size = bits(index, 73, 3);
+            // LDG's load predicate is reverse encoded (7 - P) in bits 64-66.
+            if (opcode == 0x381) read_predicate(7 - bits(index, 64, 3));
             if (address != 255) {
                 read_register(address);
                 read_register(address + 1);
@@ -171,6 +173,11 @@ GeometryExitEnvelope AnalyzeGeometryExit(const Code& code) {
             read_sources(true);
             write_register(bits(index, 16, 8));
             write_predicate(bits(index, 81, 3));
+        } else if (opcode == 0x819) {
+            // SHF with an immediate shift reads the low and high words in a/c, writes Rd.
+            read_register(bits(index, 24, 8));
+            read_register(bits(index, 64, 8));
+            write_register(bits(index, 16, 8));
         } else if (opcode == 0x321) {
             // ALD: loads 1-4 components into Rd.. from the vertex in b, indexed by a unless RZ.
             read_register(bits(index, 24, 8));

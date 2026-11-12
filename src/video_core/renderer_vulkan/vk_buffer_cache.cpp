@@ -164,13 +164,21 @@ public:
     virtual ~QuadIndexBuffer() = default;
 
     void UpdateBuffer(u32 num_indices_) {
+        while (!retired_buffers.empty() && scheduler.IsFree(retired_buffers.front().first)) {
+            retired_buffers.erase(retired_buffers.begin());
+        }
         if (num_indices_ <= num_indices) {
             return;
         }
 
-        scheduler.Finish();
+        // Commands recorded so far may still use the old buffer: it stays until the GPU is past
+        // them. Waiting for the GPU here stalled the thread ~150 ms in the middle of a load.
+        if (buffer) {
+            retired_buffers.emplace_back(scheduler.CurrentTick(), std::move(buffer));
+        }
 
-        num_indices = num_indices_;
+        // Grown by at least half, so that a draw count creeping up doesn't redo this every time.
+        num_indices = (std::max)(num_indices_, num_indices + num_indices / 2);
         index_type = IndexTypeFromNumElements(device, num_indices);
 
         const u32 num_quads = GetQuadsNum(num_indices);
@@ -261,6 +269,7 @@ protected:
     StagingBufferPool& staging_pool;
 
     vk::Buffer buffer{};
+    std::vector<std::pair<u64, vk::Buffer>> retired_buffers; ///< GPU tick that frees each one
     MemoryCommit memory_commit{};
     VkIndexType index_type{};
     u32 num_indices = 0;
@@ -526,7 +535,7 @@ void BufferCacheRuntime::CopyBuffer(VkBuffer dst_buffer, VkBuffer src_buffer,
         cmdbuf.CopyBuffer(src_buffer, dst_buffer, vk_copies);
         if (barrier) {
             cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                   vk::PIPELINE_STAGE_GRAPHICS_COMPUTE, 0, WRITE_BARRIER);
+                                   vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER, 0, WRITE_BARRIER);
         }
     });
 }
@@ -554,8 +563,8 @@ void BufferCacheRuntime::PostCopyBarrier() {
     };
     scheduler.RequestOutsideRenderPassOperationContext();
     scheduler.Record([](vk::CommandBuffer cmdbuf) {
-        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, vk::PIPELINE_STAGE_GRAPHICS_COMPUTE,
-                               0, WRITE_BARRIER);
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER, 0, WRITE_BARRIER);
     });
 }
 
@@ -854,6 +863,16 @@ vk::Buffer BufferCacheRuntime::CreateNullBuffer() {
     scheduler.RequestOutsideRenderPassOperationContext();
     scheduler.Record([buffer = *ret](vk::CommandBuffer cmdbuf) {
         cmdbuf.FillBuffer(buffer, 0, VK_WHOLE_SIZE, 0);
+        const VkMemoryBarrier barrier{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT |
+                             VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT |
+                             VK_ACCESS_SHADER_READ_BIT,
+        };
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               0, barrier);
     });
 
     return ret;

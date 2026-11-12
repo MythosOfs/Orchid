@@ -425,6 +425,9 @@ private:
     /// Find or create an image view for the depth buffer
     [[nodiscard]] ImageViewId FindDepthBuffer();
 
+    /// True when the current draw state can write the depth or stencil buffer
+    [[nodiscard]] bool WritesDepthStencil() const;
+
     /// Find or create a view for a render target with the given image parameters
     [[nodiscard]] ImageViewId FindRenderTargetView(const ImageInfo& info, GPUVAddr gpu_addr);
 
@@ -655,7 +658,7 @@ private:
     std::deque<PendingUnswizzle> unswizzle_queue;
     u8 current_unswizzle_frame;
 
-    /// Copies of colour targets their own draws sample, one per image shape (never deleted).
+    /// Copies of colour targets their own draws sample, one per image shape, least recently used first.
     std::vector<ImageId> feedback_shadows;
 
     // Join caching

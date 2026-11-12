@@ -60,7 +60,7 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
     const auto touches_uniform_bank = [](const Instruction& instruction) {
         const u32 op = instruction.Bits(0, 12);
         return op == 0x3c4 || op == 0x2bd || op == 0xc0b || op == 0xc0c || op == 0x986 || op == 0x9a8 || op == 0xc12 || op == 0xc17 || op == 0xe24 || op == 0xc24 || op == 0xd00 || op == 0xd09 || op == 0x9c3 || op == 0xc45 || op == 0x2a4 || op == 0x891 || op == 0x890 || op == 0x290 || op == 0x28c || op == 0x88c || op == 0x287 || op == 0x887 || op == 0x958 || op == 0xab9 || op == 0xabb || op == 0x899 || op == 0xc20 || op == 0xe21 || op == 0xe23 || op == 0xc02 ||
-               op == 0x886 || op == 0x3c2 || op == 0xc82 || op == 0x882 || op == 0x292 || op == 0x092 || op == 0x892 || op == 0x291 || op == 0x981 || op == 0xc13 || op == 0xc10 || op == 0xc11 || op == 0xc23 || op == 0x526 || op == 0x2be || op == 0x2bf || op == 0x896 || op == 0x8a4 || op == 0xd05 || ((op == 0x984 || op == 0x988) && instruction.Bits(91, 1)) || op == 0x89c || op == 0x883 || op == 0x2a5 || op == 0xd06 || op == 0x299 || op == 0x499 || op == 0xc09 || op == 0xc0a || op == 0xf60 || op == 0xf6c || (op == 0x81c && instruction.Bits(67, 1));
+               op == 0x886 || op == 0x3c2 || op == 0xc82 || op == 0x882 || op == 0x292 || op == 0x092 || op == 0x892 || op == 0x291 || op == 0x981 || op == 0xc13 || op == 0xc10 || op == 0xc11 || op == 0xc23 || op == 0x526 || op == 0x2be || op == 0x2bf || op == 0x896 || op == 0x8a4 || op == 0xd05 || ((op == 0x984 || op == 0x988) && instruction.Bits(91, 1)) || op == 0x89c || op == 0x883 || op == 0x2a5 || op == 0xd06 || op == 0x299 || op == 0x499 || op == 0xc08 || op == 0xc09 || op == 0xc0a || op == 0xf60 || op == 0xf6c || (op == 0x81c && instruction.Bits(67, 1));
     };
     for (const auto& instruction : code) {
         const u32 op = instruction.Bits(0, 12);
@@ -137,8 +137,11 @@ inline LoweredProgram LowerToMaxwell(std::span<const Instruction> code, bool geo
         // instruction, see register_pressure.h) or rejected.
         bool requires_shadow = false;
         for (u32 bit : {16U, 24U, 32U, 64U}) {
-            // Uniform-base STL, RED and SURED also take data from bits 32-39, as RegisterPressure records.
-            if (bit == 32 && insn.Bits(9, 3) != 1 && opcode != 0xb60 && opcode != 0xb66 && opcode != 0xf60 && opcode != 0xf6c && opcode != 0x988 && opcode != 0x987 && opcode != 0xf66 && opcode != 0x98e && opcode != 0x59f) continue;
+            // Bits 32-39 are a register outside the register forms too: TEX/TLD/TXD sources, the data
+            // of the stores, RED, SURED and ATOMG (0x9a8), as RegisterPressure records.
+            if (bit == 32 && insn.Bits(9, 3) != 1 && opcode != 0xb60 && opcode != 0xb66 && opcode != 0xb6c && opcode != 0x9a8 && opcode != 0xf60 && opcode != 0xf6c && opcode != 0x988 && opcode != 0x987 && opcode != 0xf66 && opcode != 0x98e && opcode != 0x59f &&
+                opcode != 0x589 && opcode != 0x593 && opcode != 0xb9b && opcode != 0xb9d &&
+                opcode != 0xb63 && opcode != 0xf63) continue;
             const u32 reg = insn.Bits(bit, 8);
             if (reg >= (uses_uniform_bank ? 216U : 246U) && reg < 255) requires_shadow = true;
             else if (reg < 255) highest_source = std::max(highest_source, reg);
@@ -770,9 +773,16 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                 break;
             }
             if (insn.Bits(24, 8) != 255 || insn.Bits(64, 8) != 255 || insn.words[2] != 0x078e00ff) {
-                if ((insn.words[2] & ~0x2ffU) != 0x078e0000 || (opcode == 0x624 && insn.Bits(62, 2)))
+                // Bit 63 negates the constant buffer addend (bit 62 would be its absolute value).
+                if ((insn.words[2] & ~0x2ffU) != 0x078e0000 || (opcode == 0x624 && insn.Bits(62, 1)))
                     return fail(index, "native multiply wide addend mode");
-                const u32 a = operand(0, false), b = operand(1, false), c = operand(2, false);
+                const u32 a = operand(0, false), b = operand(1, false);
+                u32 c = operand(2, false);
+                if (opcode == 0x624 && insn.Bits(63, 1)) {
+                    emit(0x5c10000000000000ULL | predicate | 252 | (u64{255} << 8) | (u64{c} << 20) |
+                         (u64{1} << 48));
+                    c = 252;
+                }
                 multiply_low(a, b, c, false);
                 break;
             }
@@ -2340,7 +2350,7 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                 // so they cannot break the pair.
                 const bool register_only = op == 0x308 || op == 0x220 || op == 0xa20 || op == 0xa23 ||
                     op == 0x326 || op == 0x211 || op == 0x811 || op == 0x820 || op == 0xc20 ||
-                    op == 0x802 || op == 0x208 || op == 0x808 || op == 0xa08 || op == 0x207 || op == 0x807 ||
+                    op == 0x802 || op == 0x208 || op == 0x808 || op == 0xa08 || op == 0xc08 || op == 0x207 || op == 0x807 ||
                     op == 0xa07 ||
                     op == 0x209 || op == 0x809 || op == 0xa09 || op == 0xc09 || op == 0xa10 || op == 0xc10 ||
                     op == 0xf60 || op == 0xf6c ||
@@ -3152,7 +3162,7 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                 (u64{insn.Bits(87, 3)} << 39) | (u64{insn.Bits(90, 1)} << 42));
             break;
         }
-        case 0x208: case 0x808: case 0xa08: { // FSEL: the sources keep their .NEG/.ABS
+        case 0x208: case 0x808: case 0xa08: case 0xc08: { // FSEL: the sources keep their .NEG/.ABS
             const u32 a = operand(0), b = operand(1);
             emit(base(0x5ca0000000000000ULL) | (u64{a} << 8) | (u64{b} << 20) |
                 (u64{insn.Bits(87, 3)} << 39) | (u64{insn.Bits(90, 1)} << 42));
@@ -3194,11 +3204,20 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
                  (u64{7} << 39) | (u64{insn.Bits(72, 1)} << 43) | (u64{insn.Bits(73, 1)} << 44));
             break;
         }
-        case 0x434: { // HSETP2 with an immediate half pair: A swizzle 74-75 (neg 72, abs 73),
+        case 0x434: case 0x634: { // HSETP2 with an immediate half pair or a constant buffer (B
+                      // swizzle 60-61, abs 62, neg 63): A swizzle 74-75 (neg 72, abs 73),
                       // combine 69-70, H_AND 71, compare 76-79, FTZ 80, P/Q 81-86, input 87-90.
-            mov_imm(250, insn.words[1]);
+            u64 source = u64{250} << 20;
+            if (opcode == 0x634) {
+                if (insn.Bits(64, 5)) return fail(index, "native half comparison mode");
+                materialize(2, 255, 250, false, false);
+                source |= (u64{insn.Bits(60, 2)} << 28) | (u64{insn.Bits(62, 1)} << 30) |
+                          (u64{insn.Bits(63, 1)} << 31);
+            } else {
+                mov_imm(250, insn.words[1]);
+            }
             emit(0x5d20000000000000ULL | predicate | insn.Bits(84, 3) | (u64{insn.Bits(81, 3)} << 3) |
-                 (u64{insn.Bits(80, 1)} << 6) | (u64{insn.Bits(24, 8)} << 8) | (u64{250} << 20) |
+                 (u64{insn.Bits(80, 1)} << 6) | (u64{insn.Bits(24, 8)} << 8) | source |
                  (u64{insn.Bits(76, 4)} << 35) | (u64{insn.Bits(87, 3)} << 39) |
                  (u64{insn.Bits(90, 1)} << 42) | (u64{insn.Bits(72, 1)} << 43) |
                  (u64{insn.Bits(73, 1)} << 44) | (u64{insn.Bits(69, 2)} << 45) |
@@ -3656,8 +3675,10 @@ case 0x311: { // F2I.FTZ.U64.TRUNC, per nvdisasm: Maxwell's F2I gives 32 bits, s
             // Third source, optionally negated (bit 75; 63 and 72 negate b and a).
             if (insn.Bits(64, 8) != 255 && (insn.Bits(73, 4) & ~4U) == 0 && insn.Bits(77, 7) == 0x7f && insn.Bits(84, 7) == 0x7f) {
                 const u32 b = operand(1, false);
+                // In the immediate form bit 63 is the literal's sign bit, not the negation of b.
                 emit(0x5c10000000000000ULL | predicate | 250 | (u64{insn.Bits(24, 8)} << 8) |
-                    (u64{b} << 20) | (u64{insn.Bits(63, 1)} << 48) | (u64{insn.Bits(72, 1)} << 49));
+                    (u64{b} << 20) | (u64{opcode != 0x810 && insn.Bits(63, 1)} << 48) |
+                    (u64{insn.Bits(72, 1)} << 49));
                 emit(base(0x5c10000000000000ULL) | (u64{250} << 8) | (u64{insn.Bits(64, 8)} << 20) |
                      (u64{insn.Bits(75, 1)} << 48));
                 break;

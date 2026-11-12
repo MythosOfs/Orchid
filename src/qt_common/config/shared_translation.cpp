@@ -257,6 +257,23 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
            tr("Patches the game's frame-rate controller to always pick 30 fps, so it runs at full "
               "speed at a steady 30 fps. Only for supported games and versions (Donkey Kong "
               "Bananza); others ignore it. Takes effect on the next game start."));
+    INSERT(Settings, frame_step_fps, tr("Keep game speed below 60 FPS (dynamic frame rate)"),
+           tr("This game advances a fixed step per frame and runs in slow motion when the PC "
+              "renders fewer than 60 FPS. With this on, the emulator tells the game how many "
+              "steps each frame stands for: it then runs at 30 FPS and full speed. Only for the "
+              "game version it was checked with (Hyrule Warriors: Age of Imprisonment, update "
+              "v196608); other versions ignore it. Takes effect on the next game start."));
+    INSERT(Settings, timed_fps, tr("Frame rate (FPS)"),
+           tr("This game measures real time, so it plays at normal speed at any frame rate and "
+              "needs no game patch: the emulator shows its frames at this rate instead of 60 FPS. "
+              "If the PC cannot hold the rate, the game just shows fewer frames. Takes effect on "
+              "the next game start."));
+    INSERT(Settings, vrr_display, tr("Dynamic frame rate (variable refresh rate display)"),
+           tr("Tells Switch 2 games that the display supports a variable refresh rate. Games with "
+              "their own dynamic frame rate then lower it in small steps when the PC cannot hold "
+              "60 FPS, and keep running at full speed (Donkey Kong Bananza: 40 to 60 FPS, below "
+              "that 30). Games without it ignore the setting. Takes effect on the next game "
+              "start."));
     INSERT(Settings, gpu_unswizzle_enabled, tr("GPU Unswizzle"),
            tr("Accelerates BCn 3D texture decoding using GPU compute.\n"
               "Disable if experiencing crashes or graphical glitches."));

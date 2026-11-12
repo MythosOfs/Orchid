@@ -206,3 +206,29 @@ TEST_CASE("Wonder audit separates slow frames and settled continuous above-30 ru
     audit.Observe(400, now += 500'000'000, 1.0f);
     CHECK(audit.discontinuities == 1);
 }
+
+TEST_CASE("Display mode capability reports VRR only when asked", "[game_fps]") {
+    // The sdk's QueryDisplayVrrSupported shifts the refresh rate flags right by 63.
+    CHECK(Settings::DisplayRefreshRateFlags(true) >> 63 == 1);
+    CHECK(Settings::DisplayRefreshRateFlags(true) == 0x8000000000000000ULL);
+    CHECK(Settings::DisplayRefreshRateFlags(false) == 0);
+}
+
+TEST_CASE("Time-based titles get a present rate without a game patch", "[game_fps]") {
+    CHECK(Settings::IsTimeBasedTitle(Settings::PokopiaProgramId));
+    CHECK_FALSE(Settings::IsTimeBasedTitle(Settings::WonderSwitch2ProgramId));
+    CHECK(Settings::TimedFpsTarget(Settings::PokopiaProgramId, 120) == 120);
+    CHECK(Settings::TimedFpsTarget(Settings::PokopiaProgramId, 30) == 30);
+    // 60 is the game's own rate: leave its swap interval alone.
+    CHECK(Settings::TimedFpsTarget(Settings::PokopiaProgramId, 60) == 0);
+    CHECK(Settings::TimedFpsTarget(Settings::WonderSwitch2ProgramId, 120) == 0);
+    CHECK(Settings::ShowTimedFps(Settings::PokopiaProgramId, false));
+    CHECK_FALSE(Settings::ShowTimedFps(Settings::PokopiaProgramId, true));
+    CHECK_FALSE(Settings::ShowTimedFps(Settings::WonderSwitch2ProgramId, false));
+
+    Settings::timed_fps_active.store(90);
+    CHECK(Settings::GetActiveGameFps(Settings::PokopiaProgramId) == 90);
+    CHECK(Settings::GetActiveGameFps(0x0100000000001000ULL) == 0);
+    Settings::timed_fps_active.store(0);
+    CHECK(Settings::GetActiveGameFps(Settings::PokopiaProgramId) == 0);
+}

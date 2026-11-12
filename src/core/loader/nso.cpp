@@ -24,6 +24,8 @@
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_thread.h"
+#include "common/game_fps.h"
+#include "core/file_sys/hyrule_frame_step.h"
 #include "core/loader/nso.h"
 #include "core/memory.h"
 
@@ -186,6 +188,20 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::
         pi_header = pm->PatchNSO(pi_header, name);
 
         std::copy(pi_header.begin() + sizeof(NSOHeader), pi_header.end(), patchable_section.data());
+    }
+
+    // Dynamic frame step: remember where the checked build keeps its frames-per-update variable.
+    // EDEN_FRAME_STEP_FPS=1 switches it on for test profiles made before the setting existed.
+    if (load_into_process && name == "main" &&
+        (Settings::values.frame_step_fps.GetValue() || std::getenv("EDEN_FRAME_STEP_FPS"))) {
+        const std::span<const u8> image{codeset.memory.data() + module_start,
+                                        codeset.memory.size() - module_start};
+        if (const auto step = FileSys::FindHyruleFrameStep(image, nso_header.build_id)) {
+            Settings::frame_step_address.store(load_base + *step, std::memory_order_relaxed);
+            LOG_INFO(Loader, "Dynamic frame step active, variable at {:#x}", load_base + *step);
+        } else if (process.GetProgramId() == Settings::HyruleWarriorsProgramId) {
+            LOG_WARNING(Loader, "Dynamic frame step skipped: unsupported game version");
+        }
     }
 
 #ifdef HAS_NCE

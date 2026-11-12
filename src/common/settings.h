@@ -651,6 +651,15 @@ struct Values {
     /// Built-in code patch for titles whose frame-rate controller can be held at 30 fps
     /// (FileSys::PatchManager, FPS30_PATCHES). Ignored for other titles and builds.
     SwitchableSetting<bool> fps30_patch{linkage, false, "fps30_patch", Category::System};
+    /// Report a variable refresh rate display to Switch 2 titles (nx2:vi2 107), so games with
+    /// their own dynamic frame rate use it.
+    SwitchableSetting<bool> vrr_display{linkage, false, "vrr_display", Category::System};
+    /// Keep the game speed below 60 FPS in titles that simulate whole 60 Hz frames per rendered
+    /// frame (Core::FrameStepFps; Hyrule Warriors: Age of Imprisonment, checked build only).
+    SwitchableSetting<bool> frame_step_fps{linkage, false, "frame_step_fps", Category::System};
+    /// Present rate for titles that measure real time (Settings::IsTimeBasedTitle); no game patch.
+    SwitchableSetting<u32, true> timed_fps{linkage, 60, 1, 1000, "timed_fps_target",
+                                         Category::System, Specialization::Countable};
     SwitchableSetting<u32, true> tennis_fps{linkage, 60, 1, 1000, "tennis_fps_target",
                                           Category::System, Specialization::Countable};
     SwitchableSetting<u32, true> wonder_fps{linkage, 60, 1, 1000, "wonder_fps_target",

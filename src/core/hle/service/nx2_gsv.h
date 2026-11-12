@@ -34,6 +34,7 @@
 #include "common/hitch_diagnostic.h"
 #include "common/fs/path_util.h"
 #include "common/game_fps.h"
+#include "core/frame_step_fps.h"
 #include "common/settings.h"
 #include "common/swap.h"
 #include "common/thread.h"
@@ -1524,7 +1525,7 @@ public:
             {13, &INx2Vi2Session::StubReplyZeroed, "Unknown13"},
             {51, &INx2Vi2Session::StubReplyZeroed, "Unknown51"},
             {53, &INx2Vi2Session::GetRecordedTimestamps, "GetRecordedTimestamps"},
-            {107, &INx2Vi2Session::StubReplyZeroed, "Unknown107"},
+            {107, &INx2Vi2Session::QueryDisplayModeCapability, "QueryDisplayModeCapability"},
             {108, &INx2Vi2Session::StubReplyZeroed, "Unknown108"},
             {111, &INx2Vi2Session::StubReplyZeroed, "Unknown111"},
             {112, &INx2Vi2Session::StubReplyZeroed, "Unknown112"},
@@ -1741,6 +1742,10 @@ private:
     // present faster than that. Every slot is reported free here: hold each present until the
     // next vblank instead (title 4 ran at up to 160 fps, its timing and audio with it).
     std::chrono::steady_clock::time_point m_next_vblank{};
+    Core::FrameStepFps m_frame_step;
+    std::array<u32, Core::FrameStepFps::MaxStep> m_frame_step_counts{};
+    u32 m_frame_step_presents{};
+    std::chrono::steady_clock::time_point m_last_present{};
     u32 m_swap_word{};
     u32 m_swap_stable{};  ///< Presents since the swap word last changed (capped)
     u32 m_swap_changes{}; ///< Logged swap word changes (the first 32)
@@ -1749,6 +1754,30 @@ private:
     // sends 0x1003c during its boot logos and 0x2003c (two vblanks per frame, 30 fps) after; paced
     // at every vblank it ran at double speed. EDEN_NX2_SWAP_INTERVAL=<n> forces the interval.
     void PaceToVblank(u32 timing) {
+        // Settings::frame_step_fps: tell the game how many 60 Hz frames the next rendered frame
+        // stands for (Core::FrameStepFps), measured from present to present. A data write to the
+        // variable the loader found in the checked build; the game copies it once per frame.
+        if (const u64 step_address = Settings::frame_step_address.load(std::memory_order_relaxed);
+            step_address != 0) {
+            const auto now = std::chrono::steady_clock::now();
+            const u32 speed =
+                Settings::values.use_speed_limit.GetValue() ? Settings::SpeedLimit() : 0;
+            const u32 step = m_frame_step.Next(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(now - m_last_present).count(),
+                speed);
+            m_last_present = now;
+            auto& memory = system.ApplicationMemory();
+            if (memory.IsValidVirtualAddressRange(step_address, sizeof(u32))) {
+                memory.Write32(step_address, step);
+            }
+            // For reports: how often each step was used. All 1 = the PC held 60 FPS.
+            ++m_frame_step_counts[step - 1];
+            if (++m_frame_step_presents % 1800 == 0) {
+                LOG_INFO(Service, "Dynamic frame step, last 1800 presents: {} x1, {} x2",
+                         m_frame_step_counts[0], m_frame_step_counts[1]);
+                m_frame_step_counts = {};
+            }
+        }
         if (!Settings::values.use_speed_limit.GetValue() || Settings::SpeedLimit() == 0) {
             return;
         }
@@ -2061,6 +2090,22 @@ private:
     // in all). nn::vi::detail::DefaultDisplay::QueryRefreshRate takes only -1, 60 or 120 and fails
     // on anything else; Minecraft polls it and never draws while it fails. A one-word reply left
     // the bool to whatever the message buffer held.
+    // 107, nn::vi2::QueryDisplayModeCapability(display name): three 64-bit flag sets (supported
+    // refresh rates, HDR output formats, one more). The sdk's QueryDisplayVrrSupported reads bit 63
+    // of the first as "variable refresh rate". Games with their own dynamic frame rate then pick
+    // it per frame and send it as the refresh rate of present word 12, which PaceToVblank follows
+    // (Donkey Kong Bananza: 40 to 60 Hz in steps of 2 instead of dropping to swap interval 2).
+    void QueryDisplayModeCapability(HLERequestContext& ctx) {
+        // EDEN_NX2_VRR=1 switches it on for test profiles made before the setting existed.
+        static const bool env_vrr = std::getenv("EDEN_NX2_VRR") != nullptr;
+        std::array<u32, 6> words{};
+        const u64 rates =
+            Settings::DisplayRefreshRateFlags(Settings::values.vrr_display.GetValue() || env_vrr);
+        words[0] = static_cast<u32>(rates);
+        words[1] = static_cast<u32>(rates >> 32);
+        LOG_INFO(Service, "nx2:vi2 107 display mode capability, refresh rate flags {:#x}", rates);
+        TipcReplyWords(ctx, words);
+    }
     void QueryDisplayRefreshRate(HLERequestContext& ctx) {
         TipcReplyWords(ctx, {60, 0});
     }

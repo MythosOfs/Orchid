@@ -17,6 +17,41 @@ inline constexpr bool ShowTennisFps(u64 program_id, bool global) {
     return !global && program_id == TennisFpsProgramId;
 }
 
+// nn::vi2::QueryDisplayModeCapability's supported refresh rate flags: bit 63 is what the sdk reads
+// as "the display has a variable refresh rate". No fixed-rate bits are reported.
+inline constexpr u64 DisplayRefreshRateFlags(bool vrr) {
+    return vrr ? u64{1} << 63 : 0;
+}
+
+inline constexpr u64 PokopiaProgramId = 0x0400A3A01EE4C000ULL;
+
+// Titles that measure the real time between frames: they play at normal speed at any frame
+// rate, so the emulator only has to pace their presents at the chosen rate. No game patch.
+// Pokemon Pokopia: its menu animation moved equally fast at 30, 60 and 100 FPS (2026-11-12).
+inline constexpr bool IsTimeBasedTitle(u64 program_id) {
+    return program_id == PokopiaProgramId;
+}
+
+// The present rate to force for a title, 0 = leave the game's own swap interval alone (60 is
+// what these titles ask for themselves).
+inline constexpr u32 TimedFpsTarget(u64 program_id, u32 target) {
+    return IsTimeBasedTitle(program_id) && target != 60 ? target : 0;
+}
+inline std::atomic<u32> timed_fps_active{0};
+
+inline constexpr bool ShowTimedFps(u64 program_id, bool global) {
+    return !global && IsTimeBasedTitle(program_id);
+}
+
+inline constexpr u64 HyruleWarriorsProgramId = 0x04003F40232DE000ULL;
+// Guest address of the frame-step variable the present path writes every frame
+// (Settings::frame_step_fps, FileSys::FindHyruleFrameStep); 0 = off.
+inline std::atomic<u64> frame_step_address{0};
+
+inline constexpr bool ShowFrameStepFps(u64 program_id, bool global) {
+    return !global && program_id == HyruleWarriorsProgramId;
+}
+
 inline constexpr u64 BananzaFpsProgramId = 0x040074A01BF12000ULL;
 
 // Convert the preset index stored by older configs to the numeric FPS target.
@@ -50,6 +85,9 @@ inline u32 GetActiveGameFps(u64 program_id) {
     }
     if (program_id == TennisFpsProgramId) {
         return tennis_fps_active.load(std::memory_order_relaxed);
+    }
+    if (IsTimeBasedTitle(program_id)) {
+        return timed_fps_active.load(std::memory_order_relaxed);
     }
     return 0;
 }

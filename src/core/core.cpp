@@ -368,6 +368,8 @@ struct System::Impl {
         Settings::tennis_fps_active.store(0, std::memory_order_relaxed);
         Settings::tennis_fps_nro_base.store(0, std::memory_order_relaxed);
         Settings::wonder_fps_active.store(0, std::memory_order_relaxed);
+        Settings::timed_fps_active.store(0, std::memory_order_relaxed);
+        Settings::frame_step_address.store(0, std::memory_order_relaxed);
         Settings::wonder_dynamic_fps_active.store(false, std::memory_order_relaxed);
         if (params.launch_type == Service::AM::LaunchType::FrontendInitiated) {
             fs_controller.InitTempStorage();
@@ -440,6 +442,12 @@ struct System::Impl {
 
         // Expose program id to dump sites and other global readers.
         Settings::SetCurrentProgramID(params.program_id);
+        // EDEN_TIMED_FPS=<n> overrides the setting (test profiles made before the key existed).
+        const char* timed_fps_env = std::getenv("EDEN_TIMED_FPS");
+        const u32 timed_fps = timed_fps_env ? static_cast<u32>(std::strtoul(timed_fps_env, nullptr, 10))
+                                            : Settings::values.timed_fps.GetValue();
+        Settings::timed_fps_active.store(Settings::TimedFpsTarget(params.program_id, timed_fps),
+                                         std::memory_order_relaxed);
         // The per-title GPU decisions (Nx2NeedsBufferDownloads) need it before the first fence;
         // the nvhost-ctrl-gpu query that also sets it may come later or not at all.
         Tegra::g_nx2_program_id = params.program_id;

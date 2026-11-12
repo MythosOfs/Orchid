@@ -153,6 +153,14 @@ void ConfigureSystem::Setup(const ConfigurationShared::Builder& builder) {
             !Settings::ShowBananzaFps(program_id, Settings::IsConfiguringGlobal())) {
             continue;
         }
+        if (setting->Id() == Settings::values.frame_step_fps.Id() &&
+            !Settings::ShowFrameStepFps(program_id, Settings::IsConfiguringGlobal())) {
+            continue;
+        }
+        if (setting->Id() == Settings::values.timed_fps.Id() &&
+            !Settings::ShowTimedFps(program_id, Settings::IsConfiguringGlobal())) {
+            continue;
+        }
         if (setting->Id() == Settings::values.tennis_fps.Id() &&
             !Settings::ShowTennisFps(program_id, Settings::IsConfiguringGlobal())) {
             continue;

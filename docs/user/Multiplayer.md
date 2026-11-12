@@ -7,7 +7,7 @@ This FAQ will serve as a general quick question and answer simple questions.
 **[See here](https://evilperson1337.notion.site/Multiplayer-FAQ-2c357c2edaf680fca2e9ce59969a220f) for an illustrated guide.**
 
 ### Can Eden Play Games with a Switch Console?
-No - The only emulator that has this kind of functionality is *Ryujinx* and it's forks.  This solution requires loading a custom module on a modded switch console to work.
+No - The only emulator that has this kind of functionality is *Ryujinx* and its forks.  This solution requires loading a custom module on a modded switch console to work.
 
 ### Can I Play Online Games?
 No - This would require hijacking requests to Nintendo's official servers to a custom server infrastructure built to emulate that functionality.  This is how services like [*Pretendo*](https://pretendo.network/) operate.  As such, you would not be able to play "Online", you can however play multiplayer games.

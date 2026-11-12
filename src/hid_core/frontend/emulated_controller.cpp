@@ -1591,17 +1591,14 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
         return;
     }
 
-    // Attempt to reconnect with the original type
-    if (npad_type != original_npad_type) {
+    // Attempt to reconnect with the original type. Only when the new set supports it: a
+    // disconnect and reconnect as the same fallback type on every call makes a game that sets
+    // its style set again on each controller change loop forever (Star Fox, issue 55).
+    if (npad_type != original_npad_type && IsStyleIndexSupported(original_npad_type)) {
         Disconnect();
-        const auto current_npad_type = npad_type.load();
         SetNpadStyleIndex(original_npad_type);
-        if (IsControllerSupported()) {
-            Connect();
-            return;
-        }
-        SetNpadStyleIndex(current_npad_type);
         Connect();
+        return;
     }
 
     if (IsControllerSupported()) {
@@ -1654,6 +1651,10 @@ bool EmulatedController::IsControllerFullkey(bool use_temporary_value) const {
 
 bool EmulatedController::IsControllerSupported(bool use_temporary_value) const {
     const auto type = is_configuring.load() && use_temporary_value ? tmp_npad_type.load() : npad_type.load();
+    return IsStyleIndexSupported(type);
+}
+
+bool EmulatedController::IsStyleIndexSupported(NpadStyleIndex type) const {
     switch (type) {
     case NpadStyleIndex::Fullkey:     return bool(supported_style_tag.fullkey);
     case NpadStyleIndex::Handheld:    return bool(supported_style_tag.handheld);

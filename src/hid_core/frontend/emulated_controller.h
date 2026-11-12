@@ -497,6 +497,9 @@ private:
      */
     bool IsControllerSupported(bool use_temporary_value = false) const;
 
+    /// Checks a controller type against the supported_style_tag
+    bool IsStyleIndexSupported(NpadStyleIndex type) const;
+
     /**
      * Updates the button status of the controller
      * @param callback A CallbackStatus containing the button status

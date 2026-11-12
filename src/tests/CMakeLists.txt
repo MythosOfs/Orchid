@@ -51,6 +51,7 @@ add_executable(tests
     core/nrr.cpp
     core/ncz_decompressor.cpp
     core/nca_missing_key.cpp
+    core/npdm_header.cpp
     core/ldn.cpp
     core/internal_network/socket_proxy.cpp
     core/nup_writer.cpp

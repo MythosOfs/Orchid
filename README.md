@@ -233,6 +233,11 @@ source and author in its message.
   [sexyboomer888-gif/Lichii](https://github.com/sexyboomer888-gif/Lichii) (sexyboomer888-gif);
   [Uaeriop/Lichii](https://github.com/Uaeriop/Lichii) (bboerge);
   [sheepbun/lichii-bunx2](https://github.com/sheepbun/lichii-bunx2) (sheepbun).
+- Fork scan after v0.10.0: [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (Zortos,
+  cerroverb, after Quixomatic): no deadlock when the emulation thread has to be terminated on
+  Windows, load errors that name the missing key, quieter and clearer socket logging, IMAD with a
+  zero product and a negated addend; [astraea-emu/nx2](https://github.com/astraea-emu/nx2)
+  (astraea-emu): NPDM header checks, libusb context release after a failed init.
 - [ZnOw01/Primrose](https://github.com/ZnOw01/Primrose) (ZnOw01): shader cache invalidation
   lifetime fix, adapted to renderer-thread retirement.
 - [exploitizm/Eglantine](https://github.com/exploitizm/Eglantine) (exploitizm): signed IADD32

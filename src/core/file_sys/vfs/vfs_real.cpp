@@ -240,18 +240,40 @@ bool RealVfsFilesystem::DeleteDirectory(std::string_view path_) {
 
 std::unique_lock<std::mutex> RealVfsFilesystem::RefreshReference(const std::string& path,
                                                                  OpenMode perms,
-                                                                 FileReference& reference) {
+                                                                 FileReference& reference,
+                                                                 bool for_write) {
     std::unique_lock lk{list_lock};
 
     // Temporarily remove from list.
     this->RemoveReferenceFromListLocked(reference);
 
+    // Write access only once something writes. Most files of a writable directory are only read
+    // (every NCA of the NAND and SD card contents), and on Windows a second open of a file fails
+    // with "Permission denied" as soon as one of the two handles has write access: handles deny
+    // other writers, across processes too.
+    const auto full_mode = ModeFlagsToFileAccessMode(perms);
+    const bool want_write = for_write && full_mode == FS::FileAccessMode::ReadWrite;
+    if (reference.file && want_write && !reference.writable) {
+        reference.file.reset();
+        num_open_files--;
+    }
+
     // Restore file if needed.
     if (!reference.file) {
         this->EvictSingleReferenceLocked();
 
-        reference.file =
-            FS::FileOpen(path, ModeFlagsToFileAccessMode(perms), FS::FileType::BinaryFile);
+        const auto mode = full_mode == FS::FileAccessMode::ReadWrite && !want_write
+                              ? FS::FileAccessMode::Read
+                              : full_mode;
+        reference.file = FS::FileOpen(path, mode, FS::FileType::BinaryFile);
+#ifdef _WIN32
+        // Someone else holds the file with write access: read it without denying writers.
+        if (!reference.file && mode == FS::FileAccessMode::Read && FS::IsFile(path)) {
+            reference.file = FS::FileOpen(path, mode, FS::FileType::BinaryFile,
+                                          FS::FileShareFlag::ShareReadWrite);
+        }
+#endif
+        reference.writable = want_write;
         if (reference.file) {
             num_open_files++;
         }
@@ -354,7 +376,7 @@ std::size_t RealVfsFile::GetSize() const {
 
 bool RealVfsFile::Resize(std::size_t new_size) {
     size.reset();
-    auto lk = base.RefreshReference(path, perms, *reference);
+    auto lk = base.RefreshReference(path, perms, *reference, true);
     return reference->file ? reference->file->SetSize(new_size) : false;
 }
 
@@ -380,7 +402,7 @@ std::size_t RealVfsFile::Read(u8* data, std::size_t length, std::size_t offset) 
 
 std::size_t RealVfsFile::Write(const u8* data, std::size_t length, std::size_t offset) {
     size.reset();
-    auto lk = base.RefreshReference(path, perms, *reference);
+    auto lk = base.RefreshReference(path, perms, *reference, true);
     if (!reference->file || !reference->file->Seek(static_cast<s64>(offset))) {
         return 0;
     }

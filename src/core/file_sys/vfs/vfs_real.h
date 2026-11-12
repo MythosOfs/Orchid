@@ -22,6 +22,8 @@ namespace FileSys {
 
 struct FileReference : public Common::IntrusiveListBaseNode<FileReference> {
     std::shared_ptr<Common::FS::IOFile> file{};
+    // Whether `file` was opened with write access (see RealVfsFilesystem::RefreshReference).
+    bool writable{};
 };
 
 class RealVfsFile;
@@ -60,8 +62,11 @@ private:
 
 private:
     friend class RealVfsFile;
+    /// Opens the host file of `reference` if it is closed: for reading, or with the write access
+    /// `perms` allows when `for_write` is set (an open read-only handle is replaced then).
     std::unique_lock<std::mutex> RefreshReference(const std::string& path, OpenMode perms,
-                                                  FileReference& reference);
+                                                  FileReference& reference,
+                                                  bool for_write = false);
     void DropReference(std::unique_ptr<FileReference>&& reference, const std::string& path);
 
 private:

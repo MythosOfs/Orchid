@@ -876,3 +876,189 @@ f941f897d puppywang/Lichii: already in main: alias tick check in SynchronizeAlia
 50c350740 rakefire-impala/Lichii: already in main: depth-compare textures get a float sampled type (texture_pass.cpp)
 679ce4a4e zortos293/Eglantine: already in main: depth-compare image type (texture_pass.cpp)
 4f3506c4c mariohbd/Lichii: already in main: dead timing events are popped (core_timing.cpp)
+# Scan after v0.10.0 (#149)
+db7a53c1e zortos293/Eglantine: not for Orchid: main has no mesh emulation arenas (mesh_arenas, mesh_draw_buffers)
+06dca9a51 zortos293/Eglantine: not for Orchid: main has no zero-page trim pass (no DeviceMemory::TrimZeroPages)
+e4211ace5 zortos293/Eglantine: not for Orchid: off-by-default trace
+4c353ef15 zortos293/Eglantine: not for Orchid: off-by-default traces
+e612af1c2 zortos293/Eglantine: not for Orchid: the fork's online network provider
+070e214d3 zortos293/Eglantine: not for Orchid: the fork's game list design
+5b0954691 zortos293/Eglantine: not for Orchid: the fork's theme, dialogs and What's new
+b933bc145 zortos293/Eglantine: not for Orchid: the fork's AGENTS.md
+73a1b58e7 zortos293/Eglantine: not for Orchid: reworks the fork's CallMethodFast and EDEN_NX2_PERF_VERIFY paths, which main lacks
+6f5a03143 zortos293/Eglantine: not for Orchid: no looping event in main makes up for its lateness (the fork's sysmix pump does); the callbacks ignore ns_late
+435a62f9e kurebeyashi-noah/Lichii: not for Orchid: main has no DLSS network probe (vk_dlss_network_probe)
+7b6fc27bb kurebeyashi-noah/Lichii: not for Orchid: main has no shader_warm; FromSoftware bundles only
+a87db945d kurebeyashi-noah/Lichii: not for Orchid: the fork's online redirect setting
+ef13740b7 kurebeyashi-noah/Lichii: not for Orchid: the fork's stand-in online servers
+038ab99b7 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+07dd64745 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+09177f047 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+1fdfd7563 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+286ebb4bd Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+2df8668e2 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+2ec8c2087 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+2fa740a0c Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+3430e6e00 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+38718e244 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+48d130ffd Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+4adb8b8e9 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+4c0964600 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+53c311c1c Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+56052325b Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+569bfab4e Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+604d22bab Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+6459a7235 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+6674d175f Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+68451e0c6 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+7aeaae8db Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+80d1e1bee Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+81dd55375 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+8205abe5a Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+91862b311 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+92346e5e4 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+9ccb6f429 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+9d8e61f0f Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+a8164dc02 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+b2c423657 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+b44773a10 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+b71ef9aab Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+b9d9283f0 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+bafee746f Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+c07fa61b0 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+c5199a56a Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+c7b59ec28 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+cfa3de68d Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+cfe850b1e Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+d0abc0b6e Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+d60670db1 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+d88e9feed Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+da8787494 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+daf967943 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+dcf753ed2 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+dda3420ad Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+e1426ef96 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+ef2be5903 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+efda293ab Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+f560c7cde Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+1ded026e9 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+227bff39a murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+57281c891 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+61bbe393b murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+88c3145e6 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+9d0710555 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+b3a3c64e8 murapixel/Lichii: not for Orchid: the fork's online network provider
+c545d3da5 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+e73830b7d murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+ed7f7c235 murapixel/Lichii: not for Orchid: UI feature (mod categories)
+fc64776d9 murapixel/Lichii: not for Orchid: the fork's online network provider
+1069ce609 astraea-emu/nx2: not for Orchid: docs of the fork
+305934166 astraea-emu/nx2: not for Orchid: docs of the fork
+3a3f026a4 astraea-emu/nx2: not for Orchid: build preset of the fork
+6f63e99cc astraea-emu/nx2: not for Orchid: RealVfsFilesystem::OpenDirectory never returns null, and a missing game file already fails in CreateApplicationProcess
+88eba1e5c astraea-emu/nx2: already in main: TerminateAllProcesses moves the list out under the lock (kernel.cpp)
+d811ccaad astraea-emu/nx2: not for Orchid: test for 6f63e99cc
+00fafa7b1 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+0e0abd4b9 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+3ad55c1e5 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+66696da74 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+67525fe9f jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+6cf7c0344 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+735c22c26 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+7567732e9 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+80d4ee3c4 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+837359a0a jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+979dc556d jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+9917a0d8a jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+9e0aed5d1 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+c77f2a74c jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+ca9efd825 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+caed8d3f0 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+de7086bc0 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+e42a5e2f4 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+e9a0c6b12 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+f8ad96ca7 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+06b9ea17f inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+080a57b28 inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+17f843051 inxomnyaa/Lichii: not for Orchid: main has no fast draw reuse (nx2_fast_draw.h)
+22c921b55 inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+284336a4b inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+401d5e0f2 inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+45921d39f inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+466397513 inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+66d0e90ec inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+7221a3b64 inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+8011151dd inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+a0b7ae4a0 inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+e03f6830c inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+fe8cd63ad inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+45e17623d zejiran/Lichii: not for Orchid: docs of the fork
+dd31667ac zejiran/Lichii: not for Orchid: docs of the fork
+052b56e46 moirod64/Lichii: not for Orchid: eight guest cores, reverted by the fork itself in 704577274
+36bc5b050 moirod64/Lichii: not for Orchid: follow-up of the reverted eight-core change
+704577274 moirod64/Lichii: not for Orchid: reverts 052b56e46
+d05312adc moirod64/Lichii: not for Orchid: trace roles for the reverted eight-core change
+173390436 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+4093421ae Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+42bebd075 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+45ae1c550 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+a432aaa85 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+bf721ade4 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+06aca34a0 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+0bbc83b99 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+5dc419a98 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+9a5f97d42 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+ed2fcb798 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+f4eb08793 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+f91bea23b JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+0a7e5fe38 2600box/Lichii: not for Orchid: CI and packaging of the fork
+0ac96247b 2600box/Lichii: not for Orchid: CI and packaging of the fork
+4314beab6 2600box/Lichii: not for Orchid: CI and packaging of the fork
+48e18c089 2600box/Lichii: not for Orchid: CI and packaging of the fork
+52f79c719 2600box/Lichii: not for Orchid: CI and packaging of the fork
+57637986a 2600box/Lichii: not for Orchid: CI and packaging of the fork
+57a29a975 2600box/Lichii: not for Orchid: CI and packaging of the fork
+57bcdef69 2600box/Lichii: not for Orchid: CI and packaging of the fork
+6dd588acc 2600box/Lichii: not for Orchid: CI and packaging of the fork
+7b81b9021 2600box/Lichii: not for Orchid: CI and packaging of the fork
+b86d4bf48 2600box/Lichii: not for Orchid: CI and packaging of the fork
+d09304e46 2600box/Lichii: not for Orchid: CI and packaging of the fork
+b3aff6d54 Suxto/Lichii: not for Orchid: CI of the fork
+fcce4e6af Suxto/Lichii: not for Orchid: CI of the fork
+fd166c536 Suxto/Lichii: not for Orchid: CI of the fork
+5c49428b6 AlfaDev23/Lichii: not for Orchid: opt-in diagnostic switches, no default behaviour change
+77c5f2114 AlfaDev23/Lichii: not for Orchid: opt-in switch, no default behaviour change
+bddba3301 AlfaDev23/Lichii: not for Orchid: opt-in switch, no default behaviour change
+c843e2b30 AlfaDev23/Lichii: not for Orchid: docs of the fork
+e551d6200 AlfaDev23/Lichii: not for Orchid: docs of the fork
+34d0d1543 joaopedrocampos/Lichii: not for Orchid: release workflow of the fork
+e8db1cb80 intellq/Lichii: not for Orchid: test-only switch, marked not for merge
+d8c42ecd2 viwe-monai/Lichii: not for Orchid: docs of the fork
+914a9e72c StiensWout/Lichii: not for Orchid: credits of the fork
+0c1e98565 BrodXI/Lichii: not for Orchid: docs of the fork
+14aa90b8a BrodXI/Lichii: not for Orchid: README of the fork
+163e0ca5f BrodXI/Lichii: not for Orchid: README of the fork
+23f880f4e BrodXI/Lichii: not for Orchid: main's ReportRuntimePipeline formats no pipeline identifiers
+2636a123e BrodXI/Lichii: not for Orchid: CI of the fork
+26f925fe7 BrodXI/Lichii: not for Orchid: build fix for the fork's own merge
+396318ec7 BrodXI/Lichii: not for Orchid: CI of the fork
+3f34c281a BrodXI/Lichii: not for Orchid: Ocarina of Time settings UI
+54fb61cc5 BrodXI/Lichii: not for Orchid: Ocarina of Time only (built-in game patch)
+698d9eae1 BrodXI/Lichii: not for Orchid: CI of the fork
+87a633c0d BrodXI/Lichii: not for Orchid: Ocarina of Time settings UI
+8c6b0e2d7 BrodXI/Lichii: not for Orchid: CI of the fork
+b0b170b8d BrodXI/Lichii: not for Orchid: CI of the fork
+dc6ff4c06 BrodXI/Lichii: not for Orchid: CI of the fork
+102ad024a nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+23c75a7f6 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+2bf0d5896 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+5cc630318 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+5dc49ac86 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+73c637f92 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+982e579cc nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+a77515ea5 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+cc6360d0c nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+d6238ba0d nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+ea19152f0 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+295885ef6 lachlan-kelly/Kokirii: not for Orchid: rebrand
+963f07a2d lachlan-kelly/Kokirii: not for Orchid: README of the fork

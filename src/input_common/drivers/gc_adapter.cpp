@@ -23,7 +23,10 @@ public:
     }
 
     ~LibUSBContext() {
-        libusb_exit(ctx);
+        // A failed libusb_init leaves no context to release.
+        if (init_result == LIBUSB_SUCCESS) {
+            libusb_exit(ctx);
+        }
     }
 
     LibUSBContext& operator=(const LibUSBContext&) = delete;
@@ -41,7 +44,7 @@ public:
     }
 
 private:
-    libusb_context* ctx;
+    libusb_context* ctx{};
     int init_result{};
 };
 

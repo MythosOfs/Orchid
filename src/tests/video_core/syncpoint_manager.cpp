@@ -103,3 +103,36 @@ TEST_CASE("Cancelling an action that already ran leaves later actions registered
     manager->IncrementGuest(0);
     REQUIRE(later);
 }
+
+TEST_CASE("The guest mirror gets every value, and moved syncpoints are reported once",
+          "[video_core][syncpoint_manager]") {
+    const auto manager = std::make_unique<SyncpointManager>();
+    manager->IncrementGuest(70);
+    REQUIRE(manager->TakeMovedGuest(1) == u64{1} << 6); // also without a mirror
+    REQUIRE(manager->TakeMovedGuest(1) == 0);
+
+    std::vector<u32> page(SyncpointManager::NUM_MAX_SYNCPOINTS, 0xFFFF);
+    manager->SetGuestMirror([&page](u32 id, u32 value) { page[id] = value; });
+    // Setting the mirror fills the page: nothing else writes it.
+    REQUIRE(page[70] == 1);
+    REQUIRE(page[0] == 0);
+    REQUIRE(page[SyncpointManager::NUM_MAX_SYNCPOINTS - 1] == 0);
+
+    // The page already holds the new value when an action runs and when the bit is taken, so a
+    // poll cannot tell from the page that an armed wait has to be woken.
+    u32 seen_by_action = 0;
+    manager->RegisterGuestAction(70, 2, [&] { seen_by_action = page[70]; });
+    manager->IncrementGuest(70);
+    manager->IncrementGuest(191);
+    manager->IncrementHost(3);
+    REQUIRE(seen_by_action == 2);
+    REQUIRE(page[70] == 2);
+    REQUIRE(manager->TakeMovedGuest(0) == 0); // host increments do not count
+    REQUIRE(manager->TakeMovedGuest(1) == u64{1} << 6);
+    REQUIRE(manager->TakeMovedGuest(2) == u64{1} << 63);
+    REQUIRE(manager->TakeMovedGuest(2) == 0);
+
+    manager->SetGuestMirror({});
+    manager->IncrementGuest(70);
+    REQUIRE(page[70] == 2);
+}

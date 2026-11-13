@@ -3376,11 +3376,12 @@ private:
             memory.Write32(m_syncpt_ro + 0x14, SyncptRoSummaryOffset);
             memory.Write32(m_syncpt_ro + 0x18, SyncptRwBitsOffset);
             memory.Write32(m_syncpt_ro + 0x1c, SyncptRoBitsOffset);
-            UpdateSyncptValues();
             // Mirror each guest increment as it happens, before the waits it meets are answered:
             // the client's TryWaitNativeSync reads this page, and a client woken by an answered
             // wait (nx2:syncpt 201) before the next poll read the old value. Yoshi and the
             // Mysterious Book's movie player then aborted on purpose (2162-0001) a few minutes in.
+            // The mirror is the page's only writer (it also fills it here): a poll that copied
+            // the values too could put an older one back over a mirrored increment.
             system.Host1x().GetSyncpointManager().SetGuestMirror(
                 [memory = m_syncpt_memory, values = m_syncpt_ro + SyncptValuesOffset,
                  count = std::min(m_syncpt_count, HostSyncpoints)](u32 id, u32 value) {
@@ -3412,32 +3413,6 @@ private:
         rb.PushCopyObjects(ctx, m_syncpt_events[1]->GetReadableEvent());
     }
 
-    // Mirrors Eden's guest syncpoint values into the shared RO page. Returns true if any changed.
-    /// Refreshes the value page; `changed_ids` (optional) gets a bit per syncpoint whose value moved.
-    bool UpdateSyncptValues(std::array<u64, 0x40>* changed_ids = nullptr) {
-        auto& manager = system.Host1x().GetSyncpointManager();
-        const u32 count = std::min(m_syncpt_count, HostSyncpoints);
-        if (count == 0) {
-            return false;
-        }
-        std::array<u64_le, HostSyncpoints> values{};
-        m_syncpt_memory->ReadBlock(m_syncpt_ro + SyncptValuesOffset, values.data(),
-                                  count * sizeof(values[0]));
-        bool changed = false;
-        for (u32 id = 0; id < count; ++id) {
-            const u64 value = manager.GetGuestSyncpointValue(id);
-            const u64 address = m_syncpt_ro + SyncptValuesOffset + id * 8;
-            if (values[id] != value) {
-                m_syncpt_memory->Write64(address, value);
-                changed = true;
-                if (changed_ids != nullptr) {
-                    (*changed_ids)[id / 64] |= u64{1} << (id % 64);
-                }
-            }
-        }
-        return changed;
-    }
-
     // Answers every armed wait: the value page is current, so the client rechecks its threshold
     // and rearms if it still has to wait. Acknowledging without a value change costs the client a
     // wakeup per poll, which keeps waits whose syncpoint we never see from hanging.
@@ -3446,8 +3421,7 @@ private:
         if (m_syncpt_memory == nullptr) {
             return;
         }
-        std::array<u64, 0x40> changed_ids{};
-        UpdateSyncptValues(&changed_ids);
+        auto& manager = system.Host1x().GetSyncpointManager();
         bool acked = false;
         const u32 words = (m_syncpt_count + 63) / 64;
         for (u32 w = 0; w < words; ++w) {
@@ -3459,8 +3433,10 @@ private:
             }
             // A wait armed on a syncpoint whose value just moved is woken too: re-arming the same
             // bit leaves the bit set unchanged, and a client that only re-arms would otherwise sleep
-            // until its own timeout (Ocarina of Time: 1 s freezes, every channel waiting).
-            if (w < changed_ids.size() && (rw_bits & changed_ids[w]) != 0) {
+            // until its own timeout (Ocarina of Time: 1 s freezes, every channel waiting). The
+            // manager says which moved; the page cannot, the mirror has already updated it (0.10.0
+            // compared the page and woke nobody: Yoshi and the Mysterious Book stuck loading levels).
+            if (w < HostSyncpoints / 64 && (rw_bits & manager.TakeMovedGuest(w)) != 0) {
                 acked = true;
             }
         }

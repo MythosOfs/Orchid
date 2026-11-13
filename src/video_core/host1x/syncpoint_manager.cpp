@@ -91,6 +91,11 @@ void SyncpointManager::IncrementGuest(u32 syncpoint_id) {
 void SyncpointManager::SetGuestMirror(GuestMirror mirror) {
     std::scoped_lock lk(guard);
     guest_mirror = std::move(mirror);
+    if (guest_mirror) {
+        for (u32 id = 0; id < NUM_MAX_SYNCPOINTS; ++id) {
+            guest_mirror(id, syncpoints_guest[id].load(std::memory_order_acquire));
+        }
+    }
 }
 
 void SyncpointManager::IncrementHost(u32 syncpoint_id) {
@@ -120,10 +125,15 @@ void SyncpointManager::Increment(std::atomic<u32>& syncpoint, std::condition_var
     std::list<RegisteredAction> due;
     {
         std::scoped_lock lk(guard);
-        if (mirrored_id && guest_mirror) {
-            // The current value, not new_value: a concurrent increment may have mirrored a
-            // higher one.
-            guest_mirror(*mirrored_id, syncpoint.load(std::memory_order_acquire));
+        if (mirrored_id) {
+            if (guest_mirror) {
+                // The current value, not new_value: a concurrent increment may have mirrored a
+                // higher one.
+                guest_mirror(*mirrored_id, syncpoint.load(std::memory_order_acquire));
+            }
+            // After the mirror: whoever takes the bit finds the new value in the page.
+            guest_moved[*mirrored_id / 64].fetch_or(u64{1} << (*mirrored_id % 64),
+                                                    std::memory_order_acq_rel);
         }
         auto it = action_storage.begin();
         while (it != action_storage.end() && it->expected_value <= new_value) {

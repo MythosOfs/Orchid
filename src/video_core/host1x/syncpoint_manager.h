@@ -61,8 +61,14 @@ public:
     /// Called with a syncpoint's guest value after every guest increment, before the actions
     /// it meets run (empty to stop). Switch 2 clients read syncpoint values from a page the
     /// gsv service fills, and an action may wake a client that reads it right away.
+    /// Setting one calls it for every syncpoint first, so the mirror alone keeps the page exact.
     using GuestMirror = std::function<void(u32 syncpoint_id, u32 value)>;
     void SetGuestMirror(GuestMirror mirror);
+
+    /// Bits of the guest syncpoints 64 * word .. 64 * word + 63 incremented since the last call.
+    u64 TakeMovedGuest(u32 word) {
+        return guest_moved[word].exchange(0, std::memory_order_acq_rel);
+    }
 
     void IncrementHost(u32 syncpoint_id);
 
@@ -100,6 +106,7 @@ private:
     std::mutex guard;
     u64 last_action_id{}; ///< Guarded by guard
     GuestMirror guest_mirror; ///< Guarded by `guard`.
+    std::array<std::atomic<u64>, (NUM_MAX_SYNCPOINTS + 63) / 64> guest_moved{};
     std::condition_variable wait_guest_cv;
     std::condition_variable wait_host_cv;
     std::condition_variable actions_done_cv;

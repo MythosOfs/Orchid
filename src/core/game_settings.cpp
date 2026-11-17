@@ -21,6 +21,7 @@ static GPUVendor GetGPU(const std::string& gpu_vendor_string) {
     static constexpr Entry GpuVendor[] = {
         // NVIDIA
         {"NVIDIA",   GPUVendor::Nvidia},
+        {"Nvidia",   GPUVendor::Nvidia}, // Vulkan GetDriverName for the proprietary driver
         {"Nouveau",  GPUVendor::Nvidia},
         {"NVK",      GPUVendor::Nvidia},
         {"Tegra",    GPUVendor::Nvidia},
@@ -167,6 +168,15 @@ void LoadOverrides(std::uint64_t program_id, const VideoCore::RendererBase& rend
     // then calls only this function (the split stopped and the title lost its early defaults).
     LoadEarlyOverrides(program_id);
     Settings::values.preemptive_cpu_reads = false;
+
+    // Issue 164: a flat cyan band covers the lower screen in Kirby's opening forest on NVIDIA
+    // with Vulkan (GTX 1070, driver 560.94); not seen on RADV. Cause unknown; the shader
+    // environment skips the fog paths of the affected composite shader instead. Assigned once:
+    // shader workers read it while the configuration dialog calls this mid-game.
+    Settings::values.kirby_fog_workaround =
+        static_cast<TitleID>(program_id) == TitleID::KirbyForgottenLandNintendoSwitch2Edition &&
+        env.vendor == GPUVendor::Nvidia &&
+        Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::Vulkan;
 
     switch (static_cast<TitleID>(program_id)) {
         case TitleID::NinjaGaidenRagebound:

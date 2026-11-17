@@ -589,6 +589,19 @@ std::shared_ptr<const LoweredNativeCode> GenericEnvironment::LowerNativeCode(u32
         }
     }
     hitch.End(true, native.size());
+    constexpr u64 KIRBY_FOG_COMPOSITE_KEY = 0x3ee9a8074418dd4aULL;
+    if (Settings::values.kirby_fog_workaround && stage == Shader::Stage::Fragment &&
+        Shader::Ampere::NativeProgramKey(native) == KIRBY_FOG_COMPOSITE_KEY) {
+        // Issue 164 (reporter's patch): take the shader's existing no-height-fog and
+        // no-volumetric-fog paths, which removes the cyan band on NVIDIA.
+        using Shader::Ampere::Instruction;
+        // ISETP.NE.U32.AND P0/P2, PT, RZ, RZ, PT
+        native[0x6ce0 / sizeof(Instruction)].words = {0xff00720c, 0x000000ff, 0x03f05070, 0x000fe200};
+        native[0x6ef0 / sizeof(Instruction)].words = {0xff00720c, 0x000000ff, 0x03f45070, 0x000fe200};
+        // BRA 0x7520, with the original target and an unconditional predicate.
+        native[0x7160 / sizeof(Instruction)].words[0] = 0x00007947;
+        LOG_INFO(Shader, "Applied Kirby Switch 2 Vulkan fog workaround");
+    }
     const auto tessellation = stage == Shader::Stage::TessellationControl
         ? Shader::Ampere::TessellationStage::Control
         : stage == Shader::Stage::TessellationEval ? Shader::Ampere::TessellationStage::Evaluation

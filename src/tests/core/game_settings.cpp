@@ -48,7 +48,9 @@ public:
 
 class FakeRenderer final : public VideoCore::RendererBase {
 public:
-    explicit FakeRenderer(Core::Frontend::EmuWindow& window) : RendererBase(window, nullptr) {}
+    explicit FakeRenderer(Core::Frontend::EmuWindow& window,
+                          std::string vendor_ = "AMD Radeon RX 7600 (RADV NAVI33)")
+        : RendererBase(window, nullptr), vendor{std::move(vendor_)} {}
     void Composite(std::span<const Tegra::FramebufferConfig>) override {}
     std::vector<u8> GetAppletCaptureBuffer() override {
         return {};
@@ -57,8 +59,11 @@ public:
         return nullptr;
     }
     std::string GetDeviceVendor() const override {
-        return "AMD Radeon RX 7600 (RADV NAVI33)";
+        return vendor;
     }
+
+private:
+    std::string vendor;
 };
 
 bool PreemptiveReadsFor(u64 program_id) {
@@ -194,4 +199,35 @@ TEST_CASE("Wonder and Kirby Switch 2 Editions get the split-friendly GPU default
         CHECK(fences.GetValue() == Settings::GpuFenceBehavior::Default);
         CHECK(reactive.GetValue());
     }
+}
+
+TEST_CASE("GameSettings: Kirby fog workaround only on NVIDIA with Vulkan", "[game_settings]") {
+    // Issue 164: the cyan band was seen on NVIDIA/Vulkan only; RADV renders the fog correctly.
+    SettingSnapshot saved_accuracy{Settings::values.gpu_accuracy};
+    SettingSnapshot saved_fences{Settings::values.gpu_fence_behavior};
+    SettingSnapshot saved_reactive{Settings::values.use_reactive_flushing};
+    SettingSnapshot saved_backend{Settings::values.renderer_backend};
+    const auto old_runtime_accuracy = Settings::values.current_gpu_accuracy;
+    const bool old_preemptive = Settings::values.preemptive_cpu_reads;
+    SCOPE_EXIT {
+        Settings::values.kirby_fog_workaround = false;
+        Settings::values.current_gpu_accuracy = old_runtime_accuracy;
+        Settings::values.preemptive_cpu_reads = old_preemptive;
+    };
+    constexpr u64 kirby = 0x04004D300C5AE001ULL;
+    const auto workaround = [](u64 program_id, std::string vendor, Settings::RendererBackend backend) {
+        Settings::values.renderer_backend.SetValue(backend);
+        FakeWindow window;
+        FakeRenderer renderer{window, std::move(vendor)};
+        Core::GameSettings::LoadOverrides(program_id, renderer);
+        return Settings::values.kirby_fog_workaround;
+    };
+    // Driver names as RendererVulkan::GetDeviceVendor reports them (vk::GetDriverName).
+    const std::string nvidia = "Nvidia";
+    CHECK(workaround(kirby, nvidia, Settings::RendererBackend::Vulkan));
+    CHECK_FALSE(workaround(kirby, "RADV", Settings::RendererBackend::Vulkan));
+    CHECK_FALSE(workaround(kirby, nvidia, Settings::RendererBackend::OpenGL_GLSL));
+    // Another title after Kirby clears it again.
+    CHECK(workaround(kirby, nvidia, Settings::RendererBackend::Vulkan));
+    CHECK_FALSE(workaround(0x0400FF500E34A001ULL, nvidia, Settings::RendererBackend::Vulkan));
 }

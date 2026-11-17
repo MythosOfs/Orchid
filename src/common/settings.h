@@ -971,6 +971,7 @@ struct Values {
 
     // Per-game overrides
     bool use_squashed_iterated_blend;
+    bool kirby_fog_workaround; // Issue 164, see game_settings.cpp
 
 };
 

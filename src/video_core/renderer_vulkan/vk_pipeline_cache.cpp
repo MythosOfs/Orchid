@@ -903,10 +903,13 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
     // names move over once.
     // Serialized environments contain lowered Maxwell code. The corrected Yoshi carry/gather
     // lowering must not reuse an older translation; leave V3's cache intact for comparisons.
+    // The Kirby fog workaround changes lowered code, so it keeps its own files.
+    const std::string_view cache_suffix =
+        Settings::values.kirby_fog_workaround ? "mythos-kirby-fog-v1" : "mythos-v4";
     const auto cache_path = [&](std::string_view stem) {
-        return base_dir / fmt::format("{}.mythos-v4.bin", stem);
+        return base_dir / fmt::format("{}.{}.bin", stem, cache_suffix);
     };
-    if (!Common::FS::Exists(cache_path("vulkan")) &&
+    if (!Settings::values.kirby_fog_workaround && !Common::FS::Exists(cache_path("vulkan")) &&
         IsOwnPipelineCache(base_dir / "vulkan.bin", CACHE_VERSION)) {
         for (const std::string_view stem : {"vulkan", "vulkan_pipelines", "vulkan_used"}) {
             std::error_code ec;

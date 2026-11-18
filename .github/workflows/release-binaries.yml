@@ -200,8 +200,10 @@ jobs:
             if [ "$attempt" -gt 1 ]; then
               # Also over HTTPS and in the runner's mirror list: on 2026-11-11 the runners reached
               # no Ubuntu archive over HTTP for hours, and the mirror list still named Azure's.
-              sudo sed -i -e 's|http://azure\.archive\.ubuntu\.com|https://archive.ubuntu.com|g' \
-                -e 's|http://\(archive\|security\|ports\)\.ubuntu\.com|https://\1.ubuntu.com|g' \
+              # Any regional cloud mirror (azure., us-east-2.ec2. ...): on 2026-11-18 the EC2 one
+              # delivered about 100 kB/s, so all three attempts on it timed out.
+              sudo sed -i -e 's|http://[a-z0-9.-]*\.archive\.ubuntu\.com|https://archive.ubuntu.com|g' \
+                -e 's#http://\(archive\|security\|ports\)\.ubuntu\.com#https://\1.ubuntu.com#g' \
                 /etc/apt/sources.list.d/*.sources /etc/apt/sources.list /etc/apt/apt-mirrors.txt \
                 2> /dev/null || true
             fi

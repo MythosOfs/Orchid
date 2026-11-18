@@ -119,13 +119,14 @@ MCP does this already), keep runs short, end the emulator afterwards. The laptop
 tests; it may only compile (see "Builds: PC or laptop"). The maintainer tests only the final build
 before a release.
 
-### Test runs go to a Terra subagent
+### Test runs go to a test subagent
 
 Routine test runs (boot a game, drive the `orchid` MCP, `orchid-test-run`, screenshots, sound
-recordings, collecting logs, CSV and `summary.txt`) go to a subagent on GPT-6.1 Terra
-(`gpt-6.1-terra`), reasoning effort `medium`, started with `delegate_task` on the Codex provider.
-It runs on the maintainer's ChatGPT subscription and spares the Claude limits. Not the default
-`low`: clearly weaker at computer use.
+recordings, collecting logs, CSV and `summary.txt`) go to a test subagent on GPT-6.2 Sol
+(`gpt-6.2-sol`), reasoning effort `medium`, started with `delegate_task` on the Codex provider.
+It runs on the maintainer's ChatGPT subscription and spares the Claude limits. The maintainer
+chose Sol over GPT-6.1 Terra on 2026-11-18 (better at this work). Not the default `low`: for
+Terra it was clearly weaker at computer use.
 
 - The main agent (Fable or Opus) writes the brief up front: game, scene, exact steps, what to
   record, return format (file paths, raw numbers, screenshot paths).
@@ -134,9 +135,9 @@ It runs on the maintainer's ChatGPT subscription and spares the Claude limits. N
 - All rules in this file apply to the subagent run (`agent-run`, `orchid-test-run` for performance
   numbers, short runs, end the emulator afterwards).
 - Basis (2026-11-10): 21 Orchid screenshots classified by scene type (gameplay, cutscene, menu,
-  loading, title, black screen, error dialog): Terra `medium` 21/21, Haiku 5.5 21/21. Not covered:
-  subtle rendering artifacts and small status-bar text; check those yourself until a harder test
-  says otherwise.
+  loading, title, black screen, error dialog): Terra `medium` 21/21, Haiku 5.5 21/21 (Sol not
+  measured yet). Not covered: subtle rendering artifacts and small status-bar text; check those
+  yourself until a harder test says otherwise.
 
 ### Harness facts every test brief relies on (`orchid` MCP)
 
@@ -231,7 +232,7 @@ own commits.
 - Pass: each game renders correctly (characters, world, HUD, text without missing glyphs), runs
   without hang, crash or device loss, and its log shows no new errors compared with the last good
   build. A game that worked in the last good build and fails now blocks the release or PR.
-- The Terra subagent runs it and returns screenshots and log excerpts. The main agent looks at
+- The test subagent runs it and returns screenshots and log excerpts. The main agent looks at
   the key screenshots and decides pass or fail.
 - Fail: no release or PR; find the regression, fix it, run the gate again.
 

@@ -67,3 +67,18 @@ TEST_CASE("Feedback shadow copies stay bounded", "[memory_budget]") {
     REQUIRE(FeedbackShadowToEvict<int>(shadows, shadows, 3) == none);
     REQUIRE(VideoCommon::MaxFeedbackShadows == 8);
 }
+
+TEST_CASE("Images replaced by a newer write over their memory are found", "[memory_budget]") {
+    using VideoCommon::ReplacedByNewerWrite;
+    const std::vector<u64> ticks{5, 9, 12};
+    const auto tick_of = [&](size_t index) { return ticks[index]; };
+    const std::vector<size_t> none{};
+    const std::vector<size_t> older{0, 1};
+    const std::vector<size_t> with_newer{0, 2};
+    CHECK_FALSE(ReplacedByNewerWrite(10, none, tick_of));
+    CHECK_FALSE(ReplacedByNewerWrite(10, older, tick_of));
+    CHECK(ReplacedByNewerWrite(10, with_newer, tick_of));
+    // A write in the same tick is not newer: the image may still hold that frame's data.
+    CHECK_FALSE(ReplacedByNewerWrite(12, with_newer, tick_of));
+    CHECK(ReplacedByNewerWrite(11, with_newer, tick_of));
+}

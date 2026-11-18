@@ -45,4 +45,11 @@ constexpr std::size_t FeedbackShadowToEvict(std::span<const Id> shadows, std::sp
     }
     return std::dynamic_extent;
 }
+
+/// True when the GPU wrote one of `overlaps` (images over the same memory) after `tick`, the
+/// image's own last write: a newer image replaced it there (a dynamic resolution step).
+template <typename Ids, typename TickOf>
+constexpr bool ReplacedByNewerWrite(u64 tick, const Ids& overlaps, TickOf&& tick_of) {
+    return std::ranges::any_of(overlaps, [&](const auto& id) { return tick_of(id) > tick; });
+}
 } // namespace VideoCommon

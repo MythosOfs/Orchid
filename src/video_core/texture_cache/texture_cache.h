@@ -243,6 +243,36 @@ void TextureCache<P>::RunGarbageCollector() {
         }
     };
     Configure(false);
+    // An image of another size the GPU wrote later over the same memory replaced this one
+    // (BadOverlap: a dynamic resolution step; Wonder makes several a second under load). It is not
+    // used again and needs no download. The passes below spend their budget on the oldest images
+    // first and below the thresholds may not delete those, so these piled up (+100 MB per 10 s)
+    // until the cache reached the device budget and collected under pressure every frame (user log,
+    // Wonder on an 8 GB laptop: 6 GB cached and 42 fps for minutes). Free them in every mode.
+    const auto replaced = [this](const ImageBase& image) {
+        return ReplacedByNewerWrite(image.modification_tick, image.overlapping_images,
+                                    [this](ImageId id) { return slot_images[id].modification_tick; });
+    };
+    constexpr size_t MaxStalePerFrame = 8;
+    boost::container::small_vector<ImageId, MaxStalePerFrame> stale;
+    lru_cache.ForEachItemBelow(frame_tick - ticks_to_destroy, [&](ImageId image_id) {
+        const ImageBase& image = slot_images[image_id];
+        if (True(image.flags & ImageFlagBits::BadOverlap) &&
+            False(image.flags & (ImageFlagBits::CostlyLoad | ImageFlagBits::IsDecoding)) &&
+            replaced(image)) {
+            stale.push_back(image_id);
+        }
+        return stale.size() == MaxStalePerFrame;
+    });
+    for (const ImageId image_id : stale) {
+        Image& image = slot_images[image_id];
+        if (True(image.flags & ImageFlagBits::Tracked)) {
+            UntrackImage(image, image_id);
+        }
+        ++gc_deletes;
+        UnregisterImage(image_id);
+        DeleteImage(image_id, image.scale_tick > frame_tick + 5);
+    }
     static const u64 old_age = [] {
         const char* value = std::getenv("EDEN_NX2_TC_OLD_AGE");
         return value != nullptr ? std::strtoull(value, nullptr, 10) : 1800ULL;

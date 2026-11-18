@@ -1,0 +1,57 @@
+name: gitlab-sync
+
+# Keeps gitlab.com/MythosOfs/Orchid in step with this repository.
+# - Every branch or tag pushed here is pushed to GitLab (no force, no deletes).
+# - main also flows back: if GitLab main is ahead (e.g. a merged GitLab MR), it is
+#   fast-forwarded here. Diverged histories fail the job instead of overwriting anything.
+# Secret GITLAB_TOKEN: GitLab token with write_repository on MythosOfs/Orchid.
+on:
+  push:
+    branches: ['**']
+    tags: ['**']
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gitlab-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync with GitLab
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          set -eu
+          gitlab="https://oauth2:${GITLAB_TOKEN}@gitlab.com/MythosOfs/Orchid.git"
+          git fetch --no-tags "$gitlab" main:refs/remotes/gitlab/main
+          git fetch origin main:refs/remotes/origin/main --update-head-ok
+
+          # The ref this push was about (branches other than main, and tags).
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" != refs/heads/main ]; then
+            git push "$gitlab" "$GITHUB_SHA:$GITHUB_REF"
+          fi
+
+          gh_main=$(git rev-parse origin/main)
+          gl_main=$(git rev-parse gitlab/main)
+          if [ "$gh_main" = "$gl_main" ]; then
+            echo "main in sync at $gh_main"
+          elif git merge-base --is-ancestor "$gl_main" "$gh_main"; then
+            git push "$gitlab" "$gh_main:refs/heads/main"
+          elif git merge-base --is-ancestor "$gh_main" "$gl_main"; then
+            git push origin "$gl_main:refs/heads/main"
+          else
+            echo "::error::main diverged: GitHub $gh_main, GitLab $gl_main. Merge by hand."
+            exit 1
+          fi

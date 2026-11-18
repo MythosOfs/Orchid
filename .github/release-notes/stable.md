@@ -12,6 +12,7 @@ A smaller release focused on the problems you reported after 0.10: memory that k
 
 - **Kirby and the Forgotten Land (Switch 2 Edition):** the slow memory growth is fixed. The game no longer freezes or crashes after a while, also on 8 GB graphics cards ([#140](https://github.com/MythosOfs/Orchid/issues/140)).
 - **Super Mario Bros. Wonder:** graphics memory no longer piles up when the game lowers its resolution under load. On 8 GB cards this could drop a level to about 42 fps for minutes. Logs are also much shorter now.
+- **Donkey Kong Bananza:** the map no longer has lavender stripes and flat surfaces over it ([#53](https://github.com/MythosOfs/Orchid/issues/53)).
 - **Yoshi and the Mysterious Book:** fixed a cause of the game getting stuck when a level loads. We couldn't reproduce the hang ourselves, so please report it if it still happens.
 - **Windows:** games no longer abort on the loading screen when Orchid sits in a folder with a long path (for example a long folder name). Very long paths still need Windows' "long paths" system setting.
 - **Kirby and the Forgotten Land (Switch 2 Edition) on NVIDIA:** the flat cyan band over the lower screen in the opening forest is gone with Vulkan. On NVIDIA the fog of that one scene effect is switched off to avoid it; other GPUs keep it ([#164](https://github.com/MythosOfs/Orchid/issues/164), workaround by Nash21979).

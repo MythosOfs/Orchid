@@ -632,8 +632,8 @@ void TextureCache<P>::ReplaceColorFeedbackViews(std::span<ImageViewInOut> views)
             std::rotate(it, std::next(it), feedback_shadows.end());
             it = std::prev(feedback_shadows.end());
         } else {
-            if (const std::size_t old = FeedbackShadowToEvict<ImageId>(feedback_shadows, used_shadows);
-                old != std::dynamic_extent) {
+            const std::size_t old = FeedbackShadowToEvict<ImageId>(feedback_shadows, used_shadows);
+            if (old != std::dynamic_extent) {
                 // Shadows are never registered, so DeleteImage does not apply: free the views and
                 // the image the same deferred way, after the GPU is done with earlier draws.
                 const ImageId old_id = feedback_shadows[old];
@@ -659,8 +659,12 @@ void TextureCache<P>::ReplaceColorFeedbackViews(std::span<ImageViewInOut> views)
             const ImageInfo info = slot_images[image_id].info;
             const DAddr cpu_addr = slot_images[image_id].cpu_addr;
             feedback_shadows.push_back(slot_images.insert(runtime, info, gpu_addr, cpu_addr));
-            LOG_INFO(HW_GPU, "Colour target {}x{} format {} sampled by its own draw: copying it",
-                     info.size.width, info.size.height, static_cast<u32>(info.format));
+            // Log only while the pool fills: with dynamic resolution (Mario Wonder) every frame
+            // brings a new size, and logging each eviction filled 80 % of a 34-minute log.
+            if (old == std::dynamic_extent) {
+                LOG_INFO(HW_GPU, "Colour target {}x{} format {} sampled by its own draw: copying it",
+                         info.size.width, info.size.height, static_cast<u32>(info.format));
+            }
             it = std::prev(feedback_shadows.end());
         }
         const ImageId shadow_id = *it;

@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 add_executable(tests
+    expect.cpp
     common/bit_field.cpp
     common/bit_util.cpp
     common/cityhash.cpp
@@ -148,6 +149,7 @@ add_executable(tests
     video_core/spirv_atomic_retry.cpp
     video_core/spirv_min_max_denorms.cpp
     video_core/usage_tracker.cpp
+    video_core/expect_shader_ir.cpp
     input_common/calibration_configuration_job.cpp
 )
 
@@ -159,6 +161,9 @@ endif()
 
 target_link_libraries(tests PRIVATE common core input_common video_core)
 target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2WithMain Threads::Threads)
+
+# Reference texts of the expect tests (tests/expect.h); ORCHID_EXPECT_UPDATE=1 rewrites them.
+target_compile_definitions(tests PRIVATE ORCHID_EXPECT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/expect")
 
 add_test(NAME tests COMMAND tests)
 

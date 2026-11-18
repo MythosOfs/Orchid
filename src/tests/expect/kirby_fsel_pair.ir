@@ -1,0 +1,206 @@
+Block $0
+%7     = UndefU32 (uses: 1)
+%8     = UndefU32 (uses: 1)
+%9     = UndefU32 (uses: 1)
+%10    = UndefU32 (uses: 1)
+%11    = UndefU32 (uses: 1)
+%12    = UndefU32 (uses: 1)
+%13    = UndefU32 (uses: 1)
+%14    = UndefU32 (uses: 1)
+%15    = UndefU32 (uses: 1)
+%16    = UndefU32 (uses: 1)
+%17    = UndefU32 (uses: 1)
+%18    = UndefU32 (uses: 1)
+%19    = UndefU32 (uses: 1)
+%20    = UndefU32 (uses: 1)
+%21    = UndefU32 (uses: 1)
+%22    = UndefU32 (uses: 1)
+%23    = UndefU32 (uses: 1)
+%24    = UndefU32 (uses: 1)
+%25    = UndefU32 (uses: 1)
+%26    = UndefU32 (uses: 1)
+%27    = UndefU32 (uses: 1)
+%28    = UndefU32 (uses: 1)
+%29    = UndefU32 (uses: 1)
+%30    = UndefU32 (uses: 1)
+%31    = UndefU32 (uses: 1)
+%32    = UndefU32 (uses: 1)
+%33    = UndefU32 (uses: 1)
+%34    = UndefU32 (uses: 1)
+%35    = UndefU32 (uses: 1)
+%36    = UndefU32 (uses: 1)
+%37    = UndefU1 (uses: 1)
+%38    = UndefU32 (uses: 1)
+%39    = UndefU1 (uses: 1)
+%40    = UndefU1 (uses: 1)
+%41    = UndefU32 (uses: 1)
+%42    = UndefU32 (uses: 1)
+%43    = UndefU1 (uses: 1)
+%44    = Identity %43 (uses: 1)
+         Prologue
+%45    = Identity %44 (uses: 1)
+%46    = Identity #false (uses: 1)
+%47    = Identity %45 (uses: 1)
+%48    = Identity %47 (uses: 1)
+%49    = ConditionRef %48 (uses: 0)
+
+Block $1
+%50    = Identity %40 (uses: 1)
+%51    = Identity %41 (uses: 2)
+%52    = Identity %42 (uses: 2)
+%53    = Identity %51 (uses: 1)
+%54    = Identity %50 (uses: 1)
+%55    = Identity %52 (uses: 1)
+%56    = SelectU32 %54, %53, %55 (uses: 1)
+
+Block $2
+%57    = Phi [ %24, {Block $0} ], [ %56, {Block $1} ] (uses: 1)
+%58    = Identity %39 (uses: 1)
+%59    = Identity %58 (uses: 1)
+%60    = Identity #false (uses: 1)
+%61    = Identity %59 (uses: 1)
+%62    = Identity %61 (uses: 1)
+%63    = ConditionRef %62 (uses: 0)
+
+Block $3
+%64    = Identity %37 (uses: 1)
+%65    = Identity %51 (uses: 1)
+%66    = Identity %38 (uses: 2)
+%67    = Identity %65 (uses: 1)
+%68    = Identity %64 (uses: 1)
+%69    = Identity %66 (uses: 1)
+%70    = SelectU32 %68, %67, %69 (uses: 1)
+
+Block $4
+%71    = Phi [ %17, {Block $2} ], [ %70, {Block $3} ] (uses: 1)
+%72    = Identity %7 (uses: 1)
+%73    = Identity %8 (uses: 1)
+%74    = Identity %9 (uses: 1)
+%75    = Identity %10 (uses: 1)
+%76    = Identity %11 (uses: 1)
+%77    = Identity %12 (uses: 1)
+%78    = Identity %13 (uses: 1)
+%79    = Identity %14 (uses: 1)
+%80    = Identity %15 (uses: 1)
+%81    = Identity %16 (uses: 1)
+%82    = Identity %18 (uses: 1)
+%83    = Identity %19 (uses: 1)
+%84    = Identity %20 (uses: 1)
+%85    = Identity %21 (uses: 1)
+%86    = Identity %22 (uses: 1)
+%87    = Identity %23 (uses: 1)
+%88    = Identity %66 (uses: 1)
+%89    = Identity %57 (uses: 1)
+%90    = Identity %52 (uses: 1)
+%91    = Identity %25 (uses: 1)
+%92    = Identity %26 (uses: 1)
+%93    = Identity %27 (uses: 1)
+%94    = Identity %28 (uses: 1)
+%95    = Identity %29 (uses: 1)
+%96    = Identity %30 (uses: 1)
+%97    = Identity %31 (uses: 1)
+%98    = Identity %32 (uses: 1)
+%99    = Identity %33 (uses: 1)
+%100   = Identity %34 (uses: 1)
+%101   = Identity %35 (uses: 1)
+%102   = Identity %36 (uses: 1)
+%103   = Identity %102 (uses: 1)
+%104   = BitCastF32U32 %103 (uses: 1)
+         SetFragColor #0, #0, %104
+%105   = Identity %101 (uses: 1)
+%106   = BitCastF32U32 %105 (uses: 1)
+         SetFragColor #0, #1, %106
+%107   = Identity %100 (uses: 1)
+%108   = BitCastF32U32 %107 (uses: 1)
+         SetFragColor #0, #2, %108
+%109   = Identity %99 (uses: 1)
+%110   = BitCastF32U32 %109 (uses: 1)
+         SetFragColor #0, #3, %110
+%111   = Identity %98 (uses: 1)
+%112   = BitCastF32U32 %111 (uses: 1)
+         SetFragColor #1, #0, %112
+%113   = Identity %97 (uses: 1)
+%114   = BitCastF32U32 %113 (uses: 1)
+         SetFragColor #1, #1, %114
+%115   = Identity %96 (uses: 1)
+%116   = BitCastF32U32 %115 (uses: 1)
+         SetFragColor #1, #2, %116
+%117   = Identity %95 (uses: 1)
+%118   = BitCastF32U32 %117 (uses: 1)
+         SetFragColor #1, #3, %118
+%119   = Identity %94 (uses: 1)
+%120   = BitCastF32U32 %119 (uses: 1)
+         SetFragColor #2, #0, %120
+%121   = Identity %93 (uses: 1)
+%122   = BitCastF32U32 %121 (uses: 1)
+         SetFragColor #2, #1, %122
+%123   = Identity %92 (uses: 1)
+%124   = BitCastF32U32 %123 (uses: 1)
+         SetFragColor #2, #2, %124
+%125   = Identity %91 (uses: 1)
+%126   = BitCastF32U32 %125 (uses: 1)
+         SetFragColor #2, #3, %126
+%127   = Identity %90 (uses: 1)
+%128   = BitCastF32U32 %127 (uses: 1)
+         SetFragColor #3, #0, %128
+%129   = Identity %89 (uses: 1)
+%130   = BitCastF32U32 %129 (uses: 1)
+         SetFragColor #3, #1, %130
+%131   = Identity %88 (uses: 1)
+%132   = BitCastF32U32 %131 (uses: 1)
+         SetFragColor #3, #2, %132
+%133   = Identity %87 (uses: 1)
+%134   = BitCastF32U32 %133 (uses: 1)
+         SetFragColor #3, #3, %134
+%135   = Identity %86 (uses: 1)
+%136   = BitCastF32U32 %135 (uses: 1)
+         SetFragColor #4, #0, %136
+%137   = Identity %85 (uses: 1)
+%138   = BitCastF32U32 %137 (uses: 1)
+         SetFragColor #4, #1, %138
+%139   = Identity %84 (uses: 1)
+%140   = BitCastF32U32 %139 (uses: 1)
+         SetFragColor #4, #2, %140
+%141   = Identity %83 (uses: 1)
+%142   = BitCastF32U32 %141 (uses: 1)
+         SetFragColor #4, #3, %142
+%143   = Identity %82 (uses: 1)
+%144   = BitCastF32U32 %143 (uses: 1)
+         SetFragColor #5, #0, %144
+%145   = Identity %71 (uses: 1)
+%146   = BitCastF32U32 %145 (uses: 1)
+         SetFragColor #5, #1, %146
+%147   = Identity %81 (uses: 1)
+%148   = BitCastF32U32 %147 (uses: 1)
+         SetFragColor #5, #2, %148
+%149   = Identity %80 (uses: 1)
+%150   = BitCastF32U32 %149 (uses: 1)
+         SetFragColor #5, #3, %150
+%151   = Identity %79 (uses: 1)
+%152   = BitCastF32U32 %151 (uses: 1)
+         SetFragColor #6, #0, %152
+%153   = Identity %78 (uses: 1)
+%154   = BitCastF32U32 %153 (uses: 1)
+         SetFragColor #6, #1, %154
+%155   = Identity %77 (uses: 1)
+%156   = BitCastF32U32 %155 (uses: 1)
+         SetFragColor #6, #2, %156
+%157   = Identity %76 (uses: 1)
+%158   = BitCastF32U32 %157 (uses: 1)
+         SetFragColor #6, #3, %158
+%159   = Identity %75 (uses: 1)
+%160   = BitCastF32U32 %159 (uses: 1)
+         SetFragColor #7, #0, %160
+%161   = Identity %74 (uses: 1)
+%162   = BitCastF32U32 %161 (uses: 1)
+         SetFragColor #7, #1, %162
+%163   = Identity %73 (uses: 1)
+%164   = BitCastF32U32 %163 (uses: 1)
+         SetFragColor #7, #2, %164
+%165   = Identity %72 (uses: 1)
+%166   = BitCastF32U32 %165 (uses: 1)
+         SetFragColor #7, #3, %166
+
+Block $5
+         Epilogue
+

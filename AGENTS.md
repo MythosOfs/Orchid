@@ -70,6 +70,15 @@ The code is almost entirely C++. For symbol questions (definition, references, c
   and `ast-grep run -l cpp -p '<pattern>' [--rewrite '<new>'] <dir>` (structural search and
   multi-file rewrite). After a rewrite, build and run the tests.
 
+## Expect tests
+
+Tests tagged `[expect]` compare a text dump (e.g. shader IR) with a reference file in
+`src/tests/expect/` via `Tests::CheckExpect` (`src/tests/expect.h`). When one goes red, read the
+diff: an unintended change is a bug; an intended one is accepted by
+`ORCHID_EXPECT_UPDATE=1 build-local/bin/tests "[expect]"` and committing the rewritten files. The
+commit message says why each reference changed; a reference update without that reason counts as
+a failed test. Purpose and where to add more: [docs/ExpectTests.md](docs/ExpectTests.md).
+
 ## Mutation check (mandatory part of final verification)
 
 When production code or unit tests change, run it yourself, unasked. Pick the Catch2 filter,

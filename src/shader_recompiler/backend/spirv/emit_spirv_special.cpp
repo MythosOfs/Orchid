@@ -20,6 +20,35 @@ void ConvertDepthMode(EmitContext& ctx) {
     ctx.OpStore(ctx.output_position, vector);
 }
 
+// The fragment stage divides these by w again (FragCoord.w), see EmitGetAttribute.
+void ScaleScreenLinearGenerics(EmitContext& ctx) {
+    const auto& generics{ctx.runtime_info.screen_linear_generics};
+    if (generics.none() || !Sirit::ValidId(ctx.output_position)) {
+        return;
+    }
+    const Id position{ctx.OpLoad(ctx.F32[4], ctx.output_position)};
+    const Id w{ctx.OpCompositeExtract(ctx.F32[1], position, 3u)};
+    for (size_t index = 0; index < generics.size(); ++index) {
+        if (!generics.test(index)) {
+            continue;
+        }
+        const auto& info{ctx.output_generics[index]};
+        for (u32 element = 0; element < 4;) {
+            const GenericElementInfo& element_info{info[element]};
+            const u32 num{element_info.num_components};
+            if (num == 0 || !Sirit::ValidId(element_info.id)) {
+                ++element;
+                continue;
+            }
+            const Id type{ctx.F32[num]};
+            const Id value{ctx.OpLoad(type, element_info.id)};
+            ctx.OpStore(element_info.id, num == 1 ? ctx.OpFMul(type, value, w)
+                                                  : ctx.OpVectorTimesScalar(type, value, w));
+            element += num;
+        }
+    }
+}
+
 void SetFixedPipelinePointSize(EmitContext& ctx) {
     if (ctx.runtime_info.fixed_state_point_size) {
         const float point_size{*ctx.runtime_info.fixed_state_point_size};
@@ -149,6 +178,9 @@ void EmitEpilogue(EmitContext& ctx) {
     if (ctx.stage == Stage::VertexB && ctx.runtime_info.convert_depth_mode &&
         !ctx.profile.support_native_ndc) {
         ConvertDepthMode(ctx);
+    }
+    if (ctx.stage == Stage::VertexB || ctx.stage == Stage::TessellationEval) {
+        ScaleScreenLinearGenerics(ctx);
     }
     if (ctx.stage == Stage::Fragment) {
         AlphaTest(ctx);

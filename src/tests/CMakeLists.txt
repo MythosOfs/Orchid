@@ -148,6 +148,7 @@ add_executable(tests
     video_core/maxwell_dma_const_a.cpp
     video_core/spirv_atomic_retry.cpp
     video_core/spirv_min_max_denorms.cpp
+    video_core/spirv_screen_linear.cpp
     video_core/usage_tracker.cpp
     video_core/expect_shader_ir.cpp
     input_common/calibration_configuration_job.cpp

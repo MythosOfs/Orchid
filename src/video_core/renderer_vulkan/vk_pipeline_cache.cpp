@@ -327,6 +327,30 @@ void PruneUnreadGeometryOutputs(Shader::IR::Program& geometry, const Shader::IR:
     }
 }
 
+// Maxwell keeps screen-linear (noperspective) varyings linear in screen space where a primitive
+// is clipped; hosts clip them in clip space, wrong once a vertex lies behind the camera. Donkey
+// Kong Bananza's map draws boxes around the camera that pass screen positions this way: their
+// masks came out as a checkerboard and hatched the map (issue 53). Written times w and read
+// perspective-correct times FragCoord.w they are exact. Only for a vertex or tessellation
+// evaluation stage before the fragment stage: a geometry stage may emit a written output twice,
+// transform feedback would capture the scaled values, indexed or legacy reads skip the rescale.
+std::bitset<32> ScreenLinearGenerics(std::span<const Shader::IR::Program> programs,
+                                     const ShaderTranslationKey& key) {
+    std::bitset<32> generics;
+    const auto& fragment{programs[static_cast<size_t>(Maxwell::ShaderType::Pixel)]};
+    const bool has_geometry{key.unique_hashes[4] != 0 ||
+                            programs[4].stage == Shader::Stage::Geometry};
+    if (key.unique_hashes[5] == 0 || has_geometry || key.xfb_enabled ||
+        fragment.info.loads_indexed_attributes || fragment.info.loads.Legacy()) {
+        return generics;
+    }
+    for (size_t index = 0; index < generics.size(); ++index) {
+        generics[index] = fragment.info.interpolation[index] == Shader::Interpolation::NoPerspective &&
+                          fragment.info.loads.Generic(index);
+    }
+    return generics;
+}
+
 Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> programs,
                                     const ShaderTranslationKey& key,
                                     const Shader::IR::Program& program,
@@ -351,6 +375,14 @@ Shader::RuntimeInfo MakeRuntimeInfo(std::span<const Shader::IR::Program> program
     }
     const Shader::Stage stage{program.stage};
     const bool has_geometry{key.unique_hashes[4] != 0 && !programs[4].is_geometry_passthrough};
+    const bool feeds_fragment{stage == Shader::Stage::TessellationEval ||
+                              (stage == Shader::Stage::VertexB && key.unique_hashes[3] == 0)};
+    const bool after_vertex{stage == Shader::Stage::Fragment && previous_program &&
+                            (previous_program->stage == Shader::Stage::VertexB ||
+                             previous_program->stage == Shader::Stage::TessellationEval)};
+    if (feeds_fragment || after_vertex) {
+        info.screen_linear_generics = ScreenLinearGenerics(programs, key);
+    }
     const float point_size{std::bit_cast<float>(key.point_size)};
     switch (stage) {
     case Shader::Stage::VertexB:

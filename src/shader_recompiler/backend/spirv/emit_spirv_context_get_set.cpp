@@ -318,6 +318,13 @@ Id EmitGetAttribute(EmitContext& ctx, IR::Attribute attr, Id vertex) {
         const Id pointer{
             AttrPointer(ctx, generic.pointer_type, vertex, generic.id, ctx.Const(element))};
         const Id value{ctx.OpLoad(generic.component_type, pointer)};
+        if (ctx.stage == Stage::Fragment && ctx.runtime_info.screen_linear_generics.test(index) &&
+            generic.load_op == InputGenericLoadOp::None) {
+            // Written times w by the last vertex stage: interpolated perspective-correct, this
+            // gives the screen-linear value even where the host clipped the primitive.
+            const Id frag_coord{ctx.OpLoad(ctx.F32[4], ctx.input_position)};
+            return ctx.OpFMul(ctx.F32[1], value, ctx.OpCompositeExtract(ctx.F32[1], frag_coord, 3u));
+        }
         return [&ctx, generic, value]() {
             switch (generic.load_op) {
             case InputGenericLoadOp::Bitcast:

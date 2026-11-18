@@ -88,6 +88,10 @@ struct RuntimeInfo {
     VaryingState previous_stage_stores;
     /// Fragment stage after a mesh program: generic inputs it writes per primitive.
     std::bitset<32> per_primitive_generics{};
+    /// Screen-linear generics the fragment stage reads: the last vertex stage writes them times
+    /// w, the fragment stage reads them perspective-correct times FragCoord.w (see
+    /// ScreenLinearGenerics in vk_pipeline_cache.cpp).
+    std::bitset<32> screen_linear_generics{};
     std::map<IR::Attribute, IR::Attribute> previous_stage_legacy_stores_mapping;
 
     bool convert_depth_mode{};

@@ -210,7 +210,9 @@ bool ValidatePath(const fs::path& path) {
     }
 
 #ifdef _WIN32
-    if (path.u16string().size() >= MAX_PATH) {
+    // The manifest declares longPathAware, so the OS limit is 32767 UTF-16 units once the
+    // LongPathsEnabled system setting is on; without it the file APIs themselves fail at 260.
+    if (path.u16string().size() >= 32767) {
         LOG_ERROR(Common_Filesystem, "Input path is too long, path={}", PathToUTF8String(path));
         return false;
     }

@@ -129,3 +129,18 @@ TEST_CASE("Synthesized standard font draws the controller button icons", "[font]
     }
     CHECK_FALSE(GlyphIndex(font, 0xE0AF).has_value());
 }
+
+TEST_CASE("Switch 2 system data ids reuse the synthesized Switch 1 archives", "[font]") {
+    const auto size = [](u64 id) {
+        const auto archive = FileSys::SystemArchive::SynthesizeSystemArchive(id);
+        REQUIRE(archive != nullptr);
+        return archive->GetSize();
+    };
+    const auto empty = size(0x0400000000000849); // unknown Switch 2 data: empty archive
+    REQUIRE(size(0x0400000000000811) == size(0x0100000000000811));
+    REQUIRE(size(0x0400000000000811) > empty);
+    // Known name without a generator (BrowserDll) still falls back to the empty archive.
+    REQUIRE(size(0x0400000000000803) == empty);
+    // Only the Switch 2 (04) prefix is remapped.
+    REQUIRE(FileSys::SystemArchive::SynthesizeSystemArchive(0x0500000000000811) == nullptr);
+}

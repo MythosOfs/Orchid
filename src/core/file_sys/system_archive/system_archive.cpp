@@ -78,7 +78,15 @@ constexpr inline SystemArchiveDescriptor GetSystemArchive(u64 title_id) {
 }
 
 VirtualFile SynthesizeSystemArchive(const u64 title_id) {
-    auto const desc = GetSystemArchive(title_id);
+    auto desc = GetSystemArchive(title_id);
+    // Switch 2 firmware (23.0.1 inventory) ships the Switch 1 system data under the same id with
+    // a 04 prefix (fonts 04...0810-0814, time zones 04...080E, ...): serve what we synthesize.
+    if (desc.name == nullptr && (title_id >> 56) == 0x04) {
+        const auto nx = GetSystemArchive((title_id & 0x00FF'FFFF'FFFF'FFFF) | 0x0100'0000'0000'0000);
+        if (nx.supplier != nullptr) {
+            desc = nx;
+        }
+    }
     if (desc.name == nullptr) {
         // Not a system archive Eden knows (fmt throws on a null string, ending the process).
         // Switch 2 system data (ids 04...) is not installed with Switch 1 firmware, and titles

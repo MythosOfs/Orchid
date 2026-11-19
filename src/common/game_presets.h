@@ -70,7 +70,8 @@ inline void SetGraphicsBaseSettings(Values& settings) {
     session(settings.use_asynchronous_shaders, true);
     session(settings.astc_recompression, AstcRecompression::Bc3);
     session(settings.vram_usage_mode, VramUsageMode::Conservative);
-    session(settings.vsync_mode, VSyncMode::FifoRelaxed);
+    // VSync stays the user's choice: a forced FIFO Relaxed tore whenever a frame missed the
+    // vblank, a near-fixed line at 60 fps on a 60 Hz display (issue 167, Hyrule Warriors).
     session(settings.scaling_filter, ScalingFilter::ScaleForce);
     session(settings.anti_aliasing, AntiAliasing::Fxaa);
 }

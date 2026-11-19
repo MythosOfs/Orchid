@@ -31,7 +31,7 @@ void CheckPreset(const Settings::Values& settings) {
     CHECK(settings.astc_recompression.GetValue() == Settings::AstcRecompression::Bc3);
     CHECK(settings.vram_usage_mode.GetValue() == Settings::VramUsageMode::Conservative);
     CHECK_FALSE(settings.use_reactive_flushing.GetValue());
-    CHECK(settings.vsync_mode.GetValue() == Settings::VSyncMode::FifoRelaxed);
+    CHECK(settings.vsync_mode.GetValue() == Settings::VSyncMode::Immediate);
     CHECK(settings.gpu_fence_behavior.GetValue() == Settings::GpuFenceBehavior::Balanced);
     CHECK(settings.async_presentation.GetValue());
     CHECK(settings.scaling_filter.GetValue() == Settings::ScalingFilter::ScaleForce);
@@ -126,7 +126,8 @@ TEST_CASE("Every visual quality retains each title's compatibility settings and 
             CHECK(settings->use_asynchronous_shaders.GetValue());
             CHECK(settings->vram_usage_mode.GetValue() == Settings::VramUsageMode::Conservative);
             CHECK(settings->use_reactive_flushing.GetValue() == legacy);
-            CHECK(settings->vsync_mode.GetValue() == Settings::VSyncMode::FifoRelaxed);
+            // The user's VSync choice survives every preset (issue 167).
+            CHECK(settings->vsync_mode.GetValue() == Settings::VSyncMode::Immediate);
             CHECK(settings->scaling_filter.GetValue() == Settings::ScalingFilter::ScaleForce);
             switch (preset.program_id) {
             case Settings::DonkeyKongBananzaProgramId:

@@ -9,7 +9,9 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
+#include <span>
 
 #include "common/common_types.h"
 #include "core/hle/service/nvdrv/nvdata.h"
@@ -25,6 +27,11 @@ public:
         fence.fences[2].id = -1;
         fence.fences[3].id = -1;
         return fence;
+    }
+
+    /// The fences in use. The count comes from the guest's parcel and may exceed the array.
+    std::span<const Service::Nvidia::NvFence> Active() const {
+        return {fences.data(), std::min<size_t>(num_fences, fences.size())};
     }
 
     u32 num_fences{};

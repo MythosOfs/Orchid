@@ -136,3 +136,40 @@ TEST_CASE("The guest mirror gets every value, and moved syncpoints are reported 
     manager->IncrementGuest(70);
     REQUIRE(page[70] == 2);
 }
+
+TEST_CASE("Actions and waits on a syncpoint past the table count as reached",
+          "[video_core][syncpoint_manager]") {
+    const auto manager = std::make_unique<SyncpointManager>();
+    constexpr u32 Past = SyncpointManager::NUM_MAX_SYNCPOINTS;
+    bool guest = false;
+    bool host = false;
+    // A fence id from the guest's parcel: the composite waits for this action, so it must run.
+    REQUIRE(manager->RegisterGuestAction(Past, 1, [&guest] { guest = true; }) == 0);
+    REQUIRE(guest);
+    REQUIRE(manager->RegisterHostAction(Past + 1, 1, [&host] { host = true; }) == 0);
+    REQUIRE(host);
+    manager->DeregisterGuestAction(Past, 1);
+    manager->DeregisterHostAction(Past + 1, 1);
+    manager->WaitGuest(Past, 1); // returns instead of waiting forever
+    manager->WaitHost(Past + 1, 1);
+    REQUIRE(manager->IsReadyGuest(Past, 1));
+    REQUIRE(manager->IsReadyHost(Past + 1, 1));
+
+    // Valid ids keep waiting for their value.
+    bool valid = false;
+    const auto guest_handle =
+        manager->RegisterGuestAction(Past - 1, 1, [&valid] { valid = true; });
+    REQUIRE(guest_handle != 0);
+    REQUIRE_FALSE(valid);
+    REQUIRE_FALSE(manager->IsReadyGuest(Past - 1, 1));
+    const auto host_handle = manager->RegisterHostAction(Past - 1, 1, [&valid] { valid = true; });
+    REQUIRE(host_handle != 0);
+    REQUIRE_FALSE(manager->IsReadyHost(Past - 1, 1));
+    manager->DeregisterGuestAction(Past - 1, guest_handle);
+    manager->DeregisterHostAction(Past - 1, host_handle);
+    manager->IncrementGuest(Past - 1);
+    manager->IncrementHost(Past - 1);
+    REQUIRE_FALSE(valid);
+    REQUIRE(manager->IsReadyGuest(Past - 1, 1));
+    REQUIRE(manager->IsReadyHost(Past - 1, 1));
+}

@@ -17,13 +17,13 @@ static thread_local bool running_on_this_thread = false;
 // The puller's fence action and the 3D sync_info register take the syncpoint id from the guest's
 // command stream (24 and 16 bits): an id past the table indexed unrelated memory as an action list
 // and crashed in Increment.
-static bool IsValidSyncpoint(u32 syncpoint_id) {
+bool SyncpointManager::IsValidSyncpoint(u32 syncpoint_id) {
     if (syncpoint_id < SyncpointManager::NUM_MAX_SYNCPOINTS) [[likely]] {
         return true;
     }
     static std::atomic_flag logged;
     if (!logged.test_and_set()) {
-        LOG_ERROR(HW_GPU, "Syncpoint {} is out of range, increment dropped (logged once)",
+        LOG_ERROR(HW_GPU, "Syncpoint {} is out of range, ignored (logged once)",
                   syncpoint_id);
     }
     return false;
@@ -73,10 +73,16 @@ void SyncpointManager::DeregisterAction(std::list<RegisteredAction>& action_stor
 }
 
 void SyncpointManager::DeregisterGuestAction(u32 syncpoint_id, const ActionHandle& handle) {
+    if (!IsValidSyncpoint(syncpoint_id)) {
+        return;
+    }
     DeregisterAction(guest_action_storage[syncpoint_id], handle);
 }
 
 void SyncpointManager::DeregisterHostAction(u32 syncpoint_id, const ActionHandle& handle) {
+    if (!IsValidSyncpoint(syncpoint_id)) {
+        return;
+    }
     DeregisterAction(host_action_storage[syncpoint_id], handle);
 }
 
@@ -106,10 +112,16 @@ void SyncpointManager::IncrementHost(u32 syncpoint_id) {
 }
 
 void SyncpointManager::WaitGuest(u32 syncpoint_id, u32 expected_value) {
+    if (!IsValidSyncpoint(syncpoint_id)) {
+        return;
+    }
     Wait(syncpoints_guest[syncpoint_id], wait_guest_cv, expected_value);
 }
 
 void SyncpointManager::WaitHost(u32 syncpoint_id, u32 expected_value) {
+    if (!IsValidSyncpoint(syncpoint_id)) {
+        return;
+    }
     Wait(syncpoints_host[syncpoint_id], wait_host_cv, expected_value);
 }
 

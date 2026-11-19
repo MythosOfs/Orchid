@@ -21,6 +21,9 @@ class SyncpointManager {
 public:
     static constexpr size_t NUM_MAX_SYNCPOINTS = 192;
 
+    /// False (logged once) for an id past the tables; such ids come from guest data.
+    static bool IsValidSyncpoint(u32 syncpoint_id);
+
     u32 GetGuestSyncpointValue(u32 id) const {
         return syncpoints_guest[id].load(std::memory_order_acquire);
     }
@@ -42,12 +45,21 @@ public:
 
     template <typename Func>
     ActionHandle RegisterGuestAction(u32 syncpoint_id, u32 expected_value, Func&& action) {
+        if (!IsValidSyncpoint(syncpoint_id)) {
+            // No such syncpoint to wait on: count it as reached, or a composite never runs.
+            action();
+            return {};
+        }
         return RegisterAction(syncpoints_guest[syncpoint_id], guest_action_storage[syncpoint_id],
                               expected_value, std::move(action));
     }
 
     template <typename Func>
     ActionHandle RegisterHostAction(u32 syncpoint_id, u32 expected_value, Func&& action) {
+        if (!IsValidSyncpoint(syncpoint_id)) {
+            action();
+            return {};
+        }
         return RegisterAction(syncpoints_host[syncpoint_id], host_action_storage[syncpoint_id],
                               expected_value, std::move(action));
     }
@@ -77,11 +89,13 @@ public:
     void WaitHost(u32 syncpoint_id, u32 expected_value);
 
     bool IsReadyGuest(u32 syncpoint_id, u32 expected_value) const {
-        return syncpoints_guest[syncpoint_id].load(std::memory_order_acquire) >= expected_value;
+        return !IsValidSyncpoint(syncpoint_id) ||
+               syncpoints_guest[syncpoint_id].load(std::memory_order_acquire) >= expected_value;
     }
 
     bool IsReadyHost(u32 syncpoint_id, u32 expected_value) const {
-        return syncpoints_host[syncpoint_id].load(std::memory_order_acquire) >= expected_value;
+        return !IsValidSyncpoint(syncpoint_id) ||
+               syncpoints_host[syncpoint_id].load(std::memory_order_acquire) >= expected_value;
     }
 
 private:

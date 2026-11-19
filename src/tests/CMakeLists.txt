@@ -61,6 +61,7 @@ add_executable(tests
     core/vfs_real.cpp
     core/nvnflinger_fence.cpp
     core/partition_filesystem.cpp
+    core/romfs.cpp
     core/internal_network/network.cpp
     video_core/shader_object_pool.cpp
     video_core/aftermath_dump.cpp

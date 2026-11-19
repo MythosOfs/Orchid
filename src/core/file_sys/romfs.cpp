@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
+#include <optional>
 
 #include "common/assert.h"
 #include "common/common_types.h"
@@ -63,10 +64,17 @@ struct RomFSTraversalContext {
     VirtualFile file;
     std::vector<u8> directory_meta;
     std::vector<u8> file_meta;
+    // Entries left to visit. A valid table visits each entry once, so a link cycle runs out.
+    size_t directories_left{};
+    size_t files_left{};
 };
 
+// A Switch path holds at most 0x300 bytes and each level adds at least "/x".
+constexpr size_t MaxDirectoryDepth = 0x180;
+
 template <typename EntryType, auto Member>
-std::pair<EntryType, std::string> GetEntry(const RomFSTraversalContext& ctx, size_t offset) {
+std::optional<std::pair<EntryType, std::string>> GetEntry(const RomFSTraversalContext& ctx,
+                                                          size_t offset) {
     const size_t entry_end = offset + sizeof(EntryType);
     const std::vector<u8>& vec = ctx.*Member;
     const size_t size = vec.size();
@@ -74,56 +82,62 @@ std::pair<EntryType, std::string> GetEntry(const RomFSTraversalContext& ctx, siz
     EntryType entry{};
 
     if (entry_end > size) {
-        return {};
+        return std::nullopt;
     }
     std::memcpy(&entry, data + offset, sizeof(EntryType));
 
     const size_t name_length = (std::min)(entry_end + entry.name_length, size) - entry_end;
     std::string name(reinterpret_cast<const char*>(data + entry_end), name_length);
 
-    return {entry, std::move(name)};
+    return std::pair{entry, std::move(name)};
 }
 
-std::pair<DirectoryEntry, std::string> GetDirectoryEntry(const RomFSTraversalContext& ctx,
-                                                         size_t directory_offset) {
+std::optional<std::pair<DirectoryEntry, std::string>> GetDirectoryEntry(
+    const RomFSTraversalContext& ctx, size_t directory_offset) {
     return GetEntry<DirectoryEntry, &RomFSTraversalContext::directory_meta>(ctx, directory_offset);
 }
 
-std::pair<FileEntry, std::string> GetFileEntry(const RomFSTraversalContext& ctx,
-                                               size_t file_offset) {
+std::optional<std::pair<FileEntry, std::string>> GetFileEntry(const RomFSTraversalContext& ctx,
+                                                              size_t file_offset) {
     return GetEntry<FileEntry, &RomFSTraversalContext::file_meta>(ctx, file_offset);
 }
 
-void ProcessFile(const RomFSTraversalContext& ctx, u32 this_file_offset,
+void ProcessFile(RomFSTraversalContext& ctx, u32 this_file_offset,
                  std::shared_ptr<VectorVfsDirectory>& parent) {
-    while (this_file_offset != ROMFS_ENTRY_EMPTY) {
+    while (this_file_offset != ROMFS_ENTRY_EMPTY && ctx.files_left != 0) {
         auto entry = GetFileEntry(ctx, this_file_offset);
-
-        parent->AddFile(std::make_shared<OffsetVfsFile>(ctx.file, entry.first.size,
-                                                        entry.first.offset + ctx.header.data_offset,
-                                                        std::move(entry.second)));
-
-        this_file_offset = entry.first.sibling;
+        if (!entry) {
+            break;
+        }
+        --ctx.files_left;
+        parent->AddFile(std::make_shared<OffsetVfsFile>(
+            ctx.file, entry->first.size, entry->first.offset + ctx.header.data_offset,
+            std::move(entry->second)));
+        this_file_offset = entry->first.sibling;
     }
 }
 
-void ProcessDirectory(const RomFSTraversalContext& ctx, u32 this_dir_offset,
-                      std::shared_ptr<VectorVfsDirectory>& parent) {
-    while (this_dir_offset != ROMFS_ENTRY_EMPTY) {
+void ProcessDirectory(RomFSTraversalContext& ctx, u32 this_dir_offset,
+                      std::shared_ptr<VectorVfsDirectory>& parent, size_t depth) {
+    while (this_dir_offset != ROMFS_ENTRY_EMPTY && ctx.directories_left != 0) {
         auto entry = GetDirectoryEntry(ctx, this_dir_offset);
+        if (!entry) {
+            break;
+        }
+        --ctx.directories_left;
         auto current = std::make_shared<VectorVfsDirectory>(
-            std::vector<VirtualFile>{}, std::vector<VirtualDir>{}, entry.second);
+            std::vector<VirtualFile>{}, std::vector<VirtualDir>{}, entry->second);
 
-        if (entry.first.child_file != ROMFS_ENTRY_EMPTY) {
-            ProcessFile(ctx, entry.first.child_file, current);
+        if (entry->first.child_file != ROMFS_ENTRY_EMPTY) {
+            ProcessFile(ctx, entry->first.child_file, current);
         }
 
-        if (entry.first.child_dir != ROMFS_ENTRY_EMPTY) {
-            ProcessDirectory(ctx, entry.first.child_dir, current);
+        if (entry->first.child_dir != ROMFS_ENTRY_EMPTY && depth + 1 < MaxDirectoryDepth) {
+            ProcessDirectory(ctx, entry->first.child_dir, current, depth + 1);
         }
 
         parent->AddDirectory(current);
-        this_dir_offset = entry.first.sibling;
+        this_dir_offset = entry->first.sibling;
     }
 }
 } // Anonymous namespace
@@ -144,12 +158,25 @@ VirtualDir ExtractRomFS(VirtualFile file) {
         return nullptr;
     }
 
+    const u64 file_size = file->GetSize();
+    // The table locations come from the image; ReadBytes allocates the size it is given.
+    const auto fits = [file_size](const TableLocation& table) {
+        return table.offset <= file_size && table.size <= file_size - table.offset;
+    };
+    if (!fits(ctx.header.directory_meta) || !fits(ctx.header.file_meta)) {
+        return nullptr;
+    }
     ctx.file = file;
     ctx.directory_meta =
         file->ReadBytes(ctx.header.directory_meta.size, ctx.header.directory_meta.offset);
     ctx.file_meta = file->ReadBytes(ctx.header.file_meta.size, ctx.header.file_meta.offset);
+    ctx.directories_left = ctx.directory_meta.size() / sizeof(DirectoryEntry);
+    ctx.files_left = ctx.file_meta.size() / sizeof(FileEntry);
+    if (!GetDirectoryEntry(ctx, 0)) {
+        return nullptr;
+    }
 
-    ProcessDirectory(ctx, 0, root_container);
+    ProcessDirectory(ctx, 0, root_container, 0);
 
     if (auto root = root_container->GetSubdirectory(""); root) {
         return root;

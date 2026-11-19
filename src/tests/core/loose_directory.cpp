@@ -288,6 +288,24 @@ TEST_CASE("Loose add-on content resolves nested extracted program data", "[loose
         LooseTestDirectory::Put(addon / "0/updates/65536/program/0/romfs/data.bin", "payload");
         LooseTestDirectory::Put(addon / "0/updates/x1/program/0/romfs/data.bin", "invalid");
     }
+    SECTION("a version name too long for a number is skipped") {
+        LooseTestDirectory::Put(addon / "0/romfs/data.bin", "payload");
+        LooseTestDirectory::Put(addon / "123456789012345678901234567890/romfs/data.bin", "invalid");
+    }
+    SECTION("a patch name too long for a number is skipped") {
+        LooseTestDirectory::Put(addon / "0/base/program/0/romfs/data.bin", "old");
+        LooseTestDirectory::Put(addon / "0/updates/65536/program/0/romfs/data.bin", "payload");
+        LooseTestDirectory::Put(
+            addon / "0/updates/123456789012345678901234567890/program/0/romfs/data.bin", "invalid");
+    }
+    SECTION("newest version wins when created first") {
+        LooseTestDirectory::Put(addon / "65536/romfs/data.bin", "payload");
+        LooseTestDirectory::Put(addon / "0/romfs/data.bin", "old");
+    }
+    SECTION("a patch without program data keeps the base") {
+        LooseTestDirectory::Put(addon / "0/base/program/0/romfs/data.bin", "payload");
+        LooseTestDirectory::Put(addon / "0/updates/65536/readme.txt", "invalid");
+    }
     FileSys::RealVfsFilesystem vfs;
     const auto dir = vfs.OpenDirectory(exefs.string());
     const auto entries = Loader::FindLooseAOC(dir, 0x0100FF500E34A000ULL);

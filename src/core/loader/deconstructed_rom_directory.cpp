@@ -12,6 +12,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string_view>
 #include "common/logging.h"
 #include "common/random.h"
@@ -397,6 +398,17 @@ std::string RomFSProductVersion(const FileSys::VirtualDir& romfs_dir) {
     return fmt::format("{}.{}.{}", best[0], best[1], best[2]);
 }
 
+// A folder name that is entirely a decimal number fitting u64; std::stoull would throw on a
+// longer one and abort the boot.
+std::optional<u64> ParseDecimalName(std::string_view name) {
+    u64 value{};
+    const auto parsed = std::from_chars(name.data(), name.data() + name.size(), value);
+    if (name.empty() || parsed.ec != std::errc{} || parsed.ptr != name.data() + name.size()) {
+        return std::nullopt;
+    }
+    return value;
+}
+
 } // namespace
 
 // Extracted add-on content of a loose dump: <game>/dlc/<aoc title id>/<version>/romfs. Switch 2
@@ -424,8 +436,8 @@ std::vector<std::pair<u64, FileSys::VirtualDir>> FindLooseAOC(const FileSys::Vir
         FileSys::VirtualDir romfs_dir;
         u64 best_version = 0;
         for (const auto& version_dir : aoc_dir->GetSubdirectories()) {
-            const auto& version = version_dir->GetName();
-            if (version.empty() || version.find_first_not_of("0123456789") != std::string::npos) {
+            const auto version = ParseDecimalName(version_dir->GetName());
+            if (!version) {
                 continue;
             }
             auto candidate = version_dir->GetSubdirectory("romfs");
@@ -453,22 +465,22 @@ std::vector<std::pair<u64, FileSys::VirtualDir>> FindLooseAOC(const FileSys::Vir
             if (const auto updates = version_dir->GetSubdirectory("updates")) {
                 u64 best_patch = 0;
                 for (const auto& patch_dir : updates->GetSubdirectories()) {
-                    const auto& patch = patch_dir->GetName();
-                    if (patch.empty() || patch.find_first_not_of("0123456789") != std::string::npos) {
+                    const auto patch = ParseDecimalName(patch_dir->GetName());
+                    if (!patch) {
                         continue;
                     }
                     const auto programs = patch_dir->GetSubdirectory("program");
                     const auto zero = programs != nullptr ? programs->GetSubdirectory("0") : nullptr;
                     const auto patched = zero != nullptr ? zero->GetSubdirectory("romfs") : nullptr;
-                    if (patched != nullptr && std::stoull(patch) >= best_patch) {
+                    if (patched != nullptr && *patch >= best_patch) {
                         candidate = patched;
-                        best_patch = std::stoull(patch);
+                        best_patch = *patch;
                     }
                 }
             }
-            if (candidate != nullptr && (romfs_dir == nullptr || std::stoull(version) >= best_version)) {
+            if (candidate != nullptr && (romfs_dir == nullptr || *version >= best_version)) {
                 romfs_dir = candidate;
-                best_version = std::stoull(version);
+                best_version = *version;
             }
         }
         if (romfs_dir == nullptr) {

@@ -32,6 +32,7 @@
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/submission_package.h"
 #include "core/loader/loader.h"
+#include "core/loader/nx.h"
 #include "core/loader/loose_directory.h"
 
 #include "qt_common/config/uisettings.h"
@@ -276,9 +277,9 @@ QList<QStandardItem*> MakeGameListEntry(const std::string& path, const std::stri
     auto const file_type = loader.GetFileType();
     auto const file_type_string = QString::fromStdString(Loader::GetFileTypeString(file_type));
 
-    // NUP metadata belongs to the file, not the title-ID-only persistent cache.
+    // NX and NUP metadata belongs to the file, not the title-ID-only persistent cache.
     QString patch_versions =
-        file_type == Loader::FileType::NUP
+        (file_type == Loader::FileType::NUP || file_type == Loader::FileType::NX)
             ? FormatPatchNameVersions(patch, loader, loader.IsRomFSUpdatable())
             : GetGameListCachedObject(
                   fmt::format("{:016X}", patch.GetTitleID()), "pv.txt", [&patch, &loader] {
@@ -432,9 +433,7 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::vector<std::fi
         }
 
         if (target == ScanTarget::PopulateGameList &&
-            (file_type == Loader::FileType::XCI || file_type == Loader::FileType::XCZ ||
-             file_type == Loader::FileType::NSP || file_type == Loader::FileType::NSZ ||
-             file_type == Loader::FileType::NUP) &&
+            Loader::IsContainerType(file_type) &&
             !Loader::IsBootableGameContainer(file, file_type)) {
             return;
         }
@@ -447,6 +446,8 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::vector<std::fi
                 provider->AddEntry(FileSys::TitleType::Application,
                                    FileSys::GetCRTypeFromNCAType(FileSys::NCA{file}.GetType()),
                                    program_id, file);
+            } else if (file_type == Loader::FileType::NX) {
+                static_cast<Loader::AppLoader_NX&>(*loader).RegisterContent(*provider);
             } else if (Settings::values.ext_content_from_game_dirs.GetValue() &&
                        (file_type == Loader::FileType::XCI ||
                         file_type == Loader::FileType::XCZ ||

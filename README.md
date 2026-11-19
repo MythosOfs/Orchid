@@ -34,6 +34,10 @@ Mario Tennis Fever first, plus the shader, kernel and graphics work other games 
   <a href="#license">License</a>
 </p>
 
+Orchid opens NXFormat (`.nx`) game archives directly from the file picker or a game directory.
+The reader comes from [nxformat](https://github.com/fab918/nxformat), with the loader adapted
+from [Lichii](https://github.com/sheepbun/Lichii/tree/2f0c8df47af2a4de0477839ed54c80b260377ea8).
+
 ## Project scope
 
 Orchid's support and development focus is on demonstrably improving these games:

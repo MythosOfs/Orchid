@@ -132,6 +132,8 @@ add_library(core STATIC
     file_sys/program_metadata.h
     file_sys/registered_cache.cpp
     file_sys/registered_cache.h
+    file_sys/nx_content.cpp
+    file_sys/nx_content.h
     file_sys/nup_container.cpp
     file_sys/nup_container.h
     file_sys/nup_writer.cpp
@@ -1167,6 +1169,8 @@ add_library(core STATIC
     loader/nsp.h
     loader/nup.cpp
     loader/nup.h
+    loader/nx.cpp
+    loader/nx.h
     loader/xci.cpp
     loader/xci.h
     memory.cpp
@@ -1243,6 +1247,7 @@ target_link_libraries(core PRIVATE
     RenderDoc::API
     ZLIB::ZLIB)
 
+target_include_directories(core PRIVATE "${PROJECT_SOURCE_DIR}/externals/nxformat")
 target_link_libraries(core PUBLIC httplib::httplib zstd::zstd)
 
 if (ENABLE_WEB_SERVICE)

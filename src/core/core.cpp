@@ -63,6 +63,7 @@
 #include "core/internal_network/network.h"
 #include "core/loader/loader.h"
 #include "core/loader/nup.h"
+#include "core/loader/nx.h"
 #include "core/memory.h"
 #include "core/memory/cheat_engine.h"
 #include "core/perf_stats.h"
@@ -130,6 +131,10 @@ bool IsSwitch2Program(Core::System& system, const FileSys::VirtualFilesystem& vf
     const auto file = GetGameFileFromPath(vfs, filepath);
     if (file == nullptr) {
         return false;
+    }
+
+    if (Loader::AppLoader_NX::IdentifyType(file) == Loader::FileType::NX) {
+        return Loader::AppLoader_NX::ReadPlatform(file, program_id) == 2;
     }
 
     FileSys::ProgramMetadata metadata;

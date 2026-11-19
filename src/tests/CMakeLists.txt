@@ -57,6 +57,7 @@ add_executable(tests
     core/ncz_decompressor.cpp
     core/ldn.cpp
     core/internal_network/socket_proxy.cpp
+    core/nx_archive.cpp
     core/nup_writer.cpp
     core/loose_directory.cpp
     core/priority_queue.cpp
@@ -177,6 +178,9 @@ target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2WithMain
 
 # Reference texts of the expect tests (tests/expect.h); ORCHID_EXPECT_UPDATE=1 rewrites them.
 target_compile_definitions(tests PRIVATE ORCHID_EXPECT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/expect")
+
+target_compile_definitions(tests PRIVATE
+    ORCHID_NX_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/core/nx_fixtures")
 
 add_test(NAME tests COMMAND tests)
 

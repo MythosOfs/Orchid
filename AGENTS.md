@@ -86,11 +86,20 @@ build directory and diff base yourself.
 
 ```sh
 orchid-agent-test -- "<matching Catch2 filter>"
-# Other build directories or already committed changes:
-orchid-agent-test --build-dir build-local --base origin/main -- "<filter>"
-# Test-only changes: name the matching production file:
+# Already committed changes:
+orchid-agent-test --base origin/main -- "<filter>"
+# Test-only changes: name the matching production file (its changed lines come first):
 orchid-agent-test --file src/common/example.h -- "<filter>"
+# Exact lines of the new logic:
+orchid-agent-test --line src/common/example.h:42 --line src/common/example.h:57 -- "<filter>"
 ```
+
+- Build directory: `build-local` when configured, else `build` (`--build-dir` overrides). It needs
+  the tests target: `./tools/build-local.sh -DYUZU_TESTS=ON -DBUILD_TESTING=ON` once per worktree.
+- Mutant rebuild timeout defaults to 180 s (`ORCHID_MUTATION_BUILD_TIMEOUT_MS`, at most 300000).
+- When the automatic pick lands on lines no unit test loads (e.g. `texture_cache.h`), run again
+  with `--line` on the new logic; more than three lines need `--lines N`. A red or incomplete
+  run blocks the push like a failing test; hand-made mutants do not stand in for it.
 
 - The runner builds and tests normally, then mutates a limited selection of production code with
   dumbmutate in a private source copy. Default: at most three changed lines, at least 80 % of
@@ -229,8 +238,14 @@ Before starting a release build, boot every game listed under "Project scope" in
 once and play it briefly into real gameplay (not the title or main menu). Commits, pushes to
 `main` and pull requests need no gate: the full gate takes about an hour, too long for every
 change. A fix for a specific game is still verified in that game's real gameplay (its route
-from the table above, or by hand) before the commit.
+from the table above, or by hand) before the commit. CI builds run only for a release, started by
+hand (`release-binaries`); pushes start none.
 
+- Release freeze: before the gate, write the SHA under test to `~/Orchid/release-freeze`; delete
+  the file after publication. While it exists, the local pre-push hook refuses pushes to `main`
+  from every worktree (other sessions commit and push afterwards; the release session pushes its
+  own fixes with `ORCHID_RELEASE_PUSH=1`). Why: on 2026-11-18 a push during the 0.11 gate forced a
+  second hour-long gate.
 - Run it with `gate_start(bin=<build>)`: every game registered with `gate_set` (see `gate_list`)
   is booted, played along its route into gameplay and on for about a minute, and stopped; the
   result gives pass / review / fail per game with reasons and one contact sheet of all last

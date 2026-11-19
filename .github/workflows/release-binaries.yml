@@ -1,16 +1,10 @@
 name: release-binaries
 
-# Releases are manual: Actions > release-binaries > Run workflow, or
-# `gh workflow run release-binaries.yml --ref <branch>`. A push to main builds every platform
-# without publishing, only to keep the compiler caches warm: a release built right after it hits
-# the cache for nearly every object, so the Windows jobs take minutes instead of most of an hour.
-# Pull requests never start a build.
+# Builds run only for releases, started by hand: Actions > release-binaries > Run workflow, or
+# `gh workflow run release-binaries.yml --ref <branch>`. Pushes and pull requests never start one
+# (the maintainer's choice, 2026-11-19). Without the old cache-warming push builds, a release after
+# many commits misses more of the compiler cache, so its Windows jobs take longer.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
   workflow_dispatch:
     inputs:
       publish_release:
@@ -28,7 +22,7 @@ permissions:
 env:
   PGO_LLVM_VERSION: "23.1.4"
 
-# A newer push cancels the older cache build; a release never cancels or waits for one.
+# A second run on the same ref cancels the first.
 concurrency:
   group: release-binaries-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true

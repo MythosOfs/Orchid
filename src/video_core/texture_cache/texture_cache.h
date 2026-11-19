@@ -1727,6 +1727,12 @@ bool TextureCache<P>::HasAsyncFlushWork() const noexcept {
 }
 
 template <class P>
+bool TextureCache<P>::HasUncommittedBufferDownloads() const noexcept {
+    return std::ranges::any_of(uncommitted_downloads,
+                               [](const PendingDownload& download) { return !download.is_swizzle; });
+}
+
+template <class P>
 bool TextureCache<P>::ShouldWaitAsyncFlushes() const noexcept {
     return !committed_downloads.empty() && !committed_downloads.front().empty();
 }
@@ -1822,8 +1828,7 @@ void TextureCache<P>::PopAsyncFlushes() {
                 const BufferDownload& buffer_info = slot_buffer_downloads[download_info.object_id];
                 std::span<u8> download_span =
                     download_buffer.mapped_span.subspan(download_buffer.offset);
-                gpu_memory->WriteBlockUnsafe(buffer_info.address, download_span.data(),
-                                             buffer_info.size);
+                WriteHostRuns(buffer_info.destination, download_span.data());
                 slot_buffer_downloads.erase(download_info.object_id);
             }
         }
@@ -1981,7 +1986,9 @@ void TextureCache<P>::DownloadImageIntoBuffer(typename TextureCache<P>::Image* i
                                               std::span<const VideoCommon::BufferImageCopy> copies,
                                               GPUVAddr address, size_t size) {
     if constexpr (IMPLEMENTS_ASYNC_DOWNLOADS) {
-        const BufferDownload new_buffer_download{address, size};
+        const BufferDownload new_buffer_download{GatherHostRuns(
+            address, size, Core::DEVICE_PAGESIZE,
+            [this](GPUVAddr page) { return gpu_memory->GetPointer<u8>(page); })};
         auto slot = slot_buffer_downloads.insert(new_buffer_download);
         const PendingDownload new_download{false, uncommitted_async_buffers.size(), slot};
         uncommitted_downloads.emplace_back(new_download);

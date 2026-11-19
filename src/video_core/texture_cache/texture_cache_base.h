@@ -304,6 +304,9 @@ public:
     /// Whether CommitAsyncFlushes would commit anything (downloads or their buffers).
     [[nodiscard]] bool HasAsyncFlushWork() const noexcept;
 
+    /// Whether an uncommitted download copies an image into guest buffer memory (DMA).
+    [[nodiscard]] bool HasUncommittedBufferDownloads() const noexcept;
+
     /// Return true when the caller should wait for async downloads
     [[nodiscard]] bool ShouldWaitAsyncFlushes() const noexcept;
 
@@ -583,8 +586,7 @@ private:
     u32 swizzle_slices_per_batch = 0;
 
     struct BufferDownload {
-        GPUVAddr address;
-        size_t size;
+        HostRuns destination;
     };
 
     using PendingDownload = PendingImageDownload<Image>;

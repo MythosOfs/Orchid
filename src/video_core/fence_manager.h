@@ -91,11 +91,24 @@ public:
                 return false;
             }
         }
-        const bool delay_fence = Settings::IsGPUFenceBehaviorDefault() ? Settings::IsGPULevelHigh() : Settings::IsGPUFenceBehaviorBalanced() || Settings::IsGPUFenceBehaviorAccurate();
+        bool delay_fence = Settings::IsGPUFenceBehaviorDefault() ? Settings::IsGPULevelHigh() : Settings::IsGPUFenceBehaviorBalanced() || Settings::IsGPUFenceBehaviorAccurate();
         if constexpr (!can_async_check) {
             TryReleasePendingFences<false>();
         }
-        auto [should_flush, committed_flushes] = CommitCacheFlushes();
+        auto [should_flush, committed_flushes, buffer_downloads] = CommitCacheFlushes();
+        // An image copied into guest buffer memory is read by the guest CPU once this fence's
+        // syncpoint moves: released early, Pokemon Pokopia JPEG-encoded its photo buffer before
+        // the copy landed and saved photos with stale bands (issue 58). Later callbacks wait
+        // too until it ran: a syncpoint is a counter, a later increment would release the wait.
+        if (!delay_fence && (buffer_downloads ||
+                             ordered_fences_in_flight.load(std::memory_order_acquire) != 0)) {
+            delay_fence = true;
+            ordered_fences_in_flight.fetch_add(1, std::memory_order_relaxed);
+            func = [this, callback = std::move(func)] {
+                callback();
+                ordered_fences_in_flight.fetch_sub(1, std::memory_order_release);
+            };
+        }
         // Delayed fences (Balanced/Accurate, e.g. Mario Tennis Fever's default) run their callback
         // only after every earlier fence's operations. With nothing to download and no earlier
         // fence still being released, such a fence would be stubbed and run the callback at once
@@ -370,6 +383,7 @@ private:
     struct CacheFlushes {
         bool should_flush;  ///< Downloads to wait for: the fence must reach the host GPU
         u8 committed;       ///< TextureFlushes, BufferFlushes: the caches that committed downloads
+        bool buffer_downloads; ///< An image is downloaded into guest buffer memory (DMA)
     };
 
     /// Commits the texture and buffer caches' downloads for a new fence (the query cache's are
@@ -383,6 +397,7 @@ private:
         {
             std::scoped_lock lock{texture_cache.mutex};
             flushes.should_flush = texture_cache.HasUncommittedFlushes();
+            flushes.buffer_downloads = texture_cache.HasUncommittedBufferDownloads();
             if (texture_cache.HasAsyncFlushWork()) {
                 texture_cache.CommitAsyncFlushes();
                 flushes.committed |= TextureFlushes;
@@ -429,6 +444,8 @@ private:
     u32 skipped_fences{}; ///< Empty fences skipped since the last one made (GPU thread only)
     /// Fences queued whose operations have not run yet (NoFenceInFlight).
     std::atomic<size_t> fences_in_flight{};
+    /// Fast fences delayed for an image download into guest buffer memory, and those after them.
+    std::atomic<size_t> ordered_fences_in_flight{};
 
     std::mutex guard;
     std::mutex ring_guard;

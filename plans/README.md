@@ -12,6 +12,10 @@ checking is listed under "Findings not planned yet"; ask for a plan with
 Plans 001, 002 and 005 (the security findings) landed on `main` before this folder was
 committed.
 
+Second run on 2026-11-19 against commit `07d884a918` (155 commits after the first): the
+maintainer chose findings 10, 11 and 24-30 (plus 16 in part); they are plans 006-014. Their
+in-scope files did not overlap with any open plan.
+
 ## Execution order & status
 
 | Plan | Title | Priority | Effort | Depends on | Status |
@@ -21,6 +25,15 @@ committed.
 | [003](003-extract-multi-program-nup-archives.md) | NUP archives of Switch 2 Edition dumps can be extracted again | P1 | S | — | DONE (reviewed 2026-11-10, on main as `nup: extract multi-program archives into program/<index>`) |
 | [004](004-lower-high-offset-64-bit-constant-loads.md) | 64-bit constant loads at offsets 0x8000 and above read the right bytes | P2 | S | — | DONE (reviewed 2026-11-11, on main as `ampere: load 64-bit constants past 0x7fff as two 32-bit reads` plus `tests: pin the write mask of the two-read 64-bit constant load`) |
 | [005](005-zip-extraction-without-archive-symlinks.md) | Zip extraction never creates links from the archive | P2 | S | — | DONE (reviewed 2026-11-10, pushed to main as `b709dffe15`) |
+| [006](006-build-and-run-every-test-source.md) | Every test source in `src/tests` is built and run, and a forgotten one fails the configure | P1 | S | — | TODO |
+| [007](007-guest-fences-stay-inside-the-syncpoint-tables.md) | Guest fence counts and syncpoint ids cannot index past the syncpoint tables | P1 | S | — | TODO |
+| [008](008-pfs-headers-cannot-read-past-their-tables.md) | A PFS0/HFS0 header cannot make the parser read past its tables or loop forever | P1 | S | — | TODO |
+| [009](009-romfs-extraction-always-terminates.md) | RomFS extraction always terminates, and a damaged table fails instead of hanging | P1 | S-M | — | TODO |
+| [010](010-pipeline-cache-rejects-malformed-records.md) | A damaged pipeline cache file is deleted instead of crashing the emulator at boot | P1 | S-M | — | TODO |
+| [011](011-flat-allocator-skips-fixed-ranges.md) | `FlatAllocator::Allocate` never overlaps a fixed allocation (investigate first) | P2 | S-M | — | TODO |
+| [012](012-pchtxt-parser-stays-inside-its-lines.md) | The `.pchtxt` patch parser stays inside each line and never throws on a short one | P2 | S | — | TODO |
+| [013](013-loose-addon-version-names-never-throw.md) | An add-on version folder name too long for a number is skipped instead of aborting the boot | P3 | S | — | TODO |
+| [014](014-host-memory-falls-back-cleanly-without-memfd.md) | Without a memfd, `HostMemory` uses its plain-buffer fallback | P3 | S | — | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale — finding fixed independently or approach abandoned)
 
@@ -75,6 +88,15 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
   for saves, so the same gate is a sensible check there too. 002, 003 and 005 only run during
   install, extract or import actions.
 
+- Plans 006-014 (2026-11-19) touch different production files and do not depend on each other.
+  006 edits `src/tests/CMakeLists.txt` and 007-012 each add one line to it; in separate
+  worktrees each later one rebases over a small conflict at most. Run them one after
+  another on one machine (one full build at a time).
+- Do 006 first if possible: its configure check then catches a new test file a later plan forgets
+  to list. Plans written after it already list their files.
+- 007 and 011 change code every game runs (syncpoints, GPU address allocation). `AGENTS.md` needs
+  no gameplay gate for commits; a reviewer may still ask for one boot through the test subagent.
+
 ## What was audited
 
 Effort level: standard. Four read-only passes, then every finding in the tables below was checked
@@ -93,6 +115,14 @@ parsing, the SPIR-V backend, the OpenGL renderer, `src/android`, `src/dynarmic`,
 the dedicated room server, macOS packaging. Dependency versions were not checked against an
 advisory database (no network in the audit).
 
+Run 2 (2026-11-19, commit `07d884a918`, effort standard): four read-only passes over the 155
+commits since `a6597b1ef2` (core, loaders and frontend; GPU and shader recompiler), over host-side
+parsers the first run left out (XCI/NSP/NCA/PFS/RomFS/NPDM/CNMT, cheats, save import, pipeline
+cache files), and over tests, docs and CI, plus a recheck of findings 6-23. Every finding below was
+opened and checked by the advisor. Not audited in run 2: `src/yuzu/modern` (experimental UI), the
+hero-art image import, the dynarmic changes, `nx2:aud:u`, `nsp.cpp`, `geometry_exit.h` in detail,
+the rest of `lower_to_maxwell.h`, Android, `externals/`. No advisory database check (no network).
+
 ## Findings not planned yet
 
 Checked against the code; ordered by leverage. "Investigate" means the code pattern is real but
@@ -104,23 +134,25 @@ whether it happens in practice is not shown yet.
 | 7 | A game title with a line break can add keys to a created `.desktop` shortcut | security | The shortcut may run a different command | S | LOW | `src/qt_common/util/game.cpp:112-120,440-445` |
 | 8 | Guest-requested external URLs are opened with any scheme and without asking | security | A modified game can make the host open `file:` or custom-scheme URLs | S | LOW | `src/yuzu/applets/qt_web_browser.cpp:422-427` |
 | 9 | GDB stub listens on all interfaces; the `M` packet trusts its declared size | security | With the stub enabled (off by default), any LAN host reads and writes guest memory, and a short payload over-reads the host heap | S | LOW | `src/core/debugger/debugger.cpp:146`, `src/core/debugger/gdbstub.cpp:260-270` |
-| 10 | `.pchtxt` parser reads past string views and throws on a short `@n` line | bug | A mod file from the internet crashes the emulator at boot | S | LOW | `src/core/file_sys/ips_layer.cpp:165,185,207` |
-| 11 | Loose-dump folder names are parsed with `std::stoull` without a length limit | bug | A numeric folder name of 20+ digits aborts the boot instead of being skipped | S | LOW | `src/core/loader/deconstructed_rom_directory.cpp:358-366` (the same file already uses `from_chars` at 156-163) |
+| 10 | `.pchtxt` parser reads past string views and throws on a short `@n` line | bug | A mod file from the internet crashes the emulator at boot | S | LOW | → plan 012 (rechecked 2026-11-19, still at `ips_layer.cpp:165,185,207`) |
+| 11 | Loose-dump add-on version and patch names are parsed with `std::stoull` without a length limit | bug | A numeric folder name of 20+ digits aborts the boot instead of being skipped | S | LOW | → plan 013 (moved to `deconstructed_rom_directory.cpp:463-471`) |
 | 12 | Nx2 list-copy requests keep a `BufferId` that a buffer join can delete before the copy | bug (investigate) | Copy from a freed or reused buffer slot: device loss or wrong data, only when a join falls between note and copy | S-M | MED (GPU split path, needs the match gate) | `src/video_core/buffer_cache/buffer_cache.h:2121,2146,2848`; `DeleteBuffer` never touches `nx2_list_copy_requests` |
 | 13 | Updater installs the downloaded build without a digest check; releases publish no checksums | security | Integrity rests on TLS and GitHub alone | M | LOW | `src/yuzu/updater/update_dialog.cpp:96-108,171-181` |
-| 14 | Contributor docs point at a branch and files that do not exist; README says commits start no build and that Orbitals does not launch | docs | First steps for a contributor fail; public compatibility table contradicts the code | S | LOW | `CONTRIBUTING.md:22,44`, `docs/Development.md:10,18`, `docs/Build.md:244`, `README.md:67,85,109` versus `release-binaries.yml:8-13` |
+| 14 | Contributor docs point at a branch and a file that do not exist; README says commits start no build | docs | First steps for a contributor fail | S | LOW | 2026-11-19: Orbitals row and most of CONTRIBUTING fixed; still wrong `docs/Development.md:10,18` (`master`), `docs/Build.md:244` (PR builds), `CONTRIBUTING.md:22` (`docs/CODEOWNERS` missing), `CONTRIBUTING.md:44` (`nx2` branch), `README.md:67-68` versus `release-binaries.yml:9-13` (pushes to `main` build) |
 | 15 | The PGO profile `orchid.profdata` has no documented retrain procedure in the repository | dx | 436 commits since the last retrain on 2026-11-03; a stale profile only shows as a slower PGO build | S | LOW | `orchid.profdata`, `.github/workflows/release-binaries.yml:303,431,502`; no `llvm-profdata` or `fprofile-generate` in `docs/` or `tools/` |
-| 16 | Two debug-stream checks are never run: `debug_stream_contract.cpp` and `unmapped_trace_integration.py` | tests | They can stop compiling or passing without anyone noticing | S | LOW | `src/tests/debug_stream_contract.cpp` is in no CMake list; the script is only mentioned in `NX2_UNMAPPED_READ_TRACE.md:7` |
+| 16 | `unmapped_trace_integration.py` is never run (the other half, `debug_stream_contract.cpp`, → plan 006) | tests | It can stop passing without anyone noticing | S | LOW | the script is only mentioned in `NX2_UNMAPPED_READ_TRACE.md:7` |
 | 17 | A release can be published from a commit whose unit tests were never built | dx | The four release configurations pass `-DYUZU_TESTS=OFF`; the test workflow is manual | S | LOW | `.github/workflows/release-binaries.yml` (4 occurrences), `.github/workflows/tests.yml:5-6` |
-| 18 | A rejected compute program throws twice and reads up to 8 KiB of GPU memory on every dispatch | perf (measure first) | Titles that dispatch a rejected kernel each frame (the tensor stand-in path) pay it per frame; likely well under 1 % | S | LOW | `src/video_core/shader_cache.cpp:236-250,341-345`, `src/video_core/engines/kepler_compute.cpp:558-570`; the graphics path already has the fast path at `shader_cache.cpp:147` |
-| 19 | `alias_modification_tick` is not lowered when no alias turned out newer, so the alias walk repeats per sample | perf (measure first) | One image with many aliases is walked on every use until it is next modified | S | LOW | `src/video_core/texture_cache/texture_cache.h:4088-4110` |
+| 18 | A rejected compute program throws twice and reads up to 8 KiB of GPU memory on every dispatch | perf (measure first) | Titles that dispatch a rejected kernel each frame (the tensor stand-in path) pay it per frame; likely well under 1 % | S | LOW | `src/video_core/shader_cache.cpp:236-250,341-345`, `src/video_core/engines/kepler_compute.cpp:558-570`; the graphics path already has the fast path at `shader_cache.cpp:147`. 2026-11-19: the GPU re-read is now rate-limited to 250 ms (`RecheckRejection`, `shader_cache.cpp:254-350`); the two throws per dispatch remain |
+| 19 | `alias_modification_tick` is not lowered when no alias turned out newer, so the alias walk repeats per sample | perf (measure first) | One image with many aliases is walked on every use until it is next modified | S | LOW | `src/video_core/texture_cache/texture_cache.h:4217-4234` (moved; unchanged) |
 | 20 | About 166 `EDEN_*` environment switches, about 100 of them findable only by reading source; one documented switch no longer exists in code | dx | No list, no way to tell what a switch does | M | LOW | `grep -rhoE '"EDEN_[A-Z0-9_]+"' src`; `EDEN_NX2_FENCE_GUEST_SLEEP` only in `docs/performance/TargetGames.md:449,471` |
 | 21 | `nx2:gpu` commands 211, 101, 429 and 911 use guest ranges and counts without bounds | bug (investigate) | A misdecoded request maps wrong memory or loops for a long time instead of failing visibly | S | LOW | `src/core/hle/service/nx2_gsv.h:523-589,3522-3536,3677-3695`; the sparse path checks its ranges in `nx2_sparse_region.h:46-52` |
-| 22 | Tennis fps SVC hooks drop the replaced instruction when their address check fails | bug (investigate) | A store or load of the game is skipped silently; only when the patched code runs with another base register | S-M | LOW | `src/core/hle/kernel/svc.cpp:2697-2700,2734-2750,2790-2793` |
+| 22 | ~~Tennis fps SVC hooks drop the replaced instruction~~ | — | — | — | — | FIXED: the hooks were removed with the Mario Tennis Fever frame rate patch (`e9d4b5b795`) |
 | 23 | `SubSparseMap` unmaps page groups while holding `m_region_mutex`, against the comment in the same file | bug (investigate) | Possible rare deadlock; no second lock holder was traced | M | MED | `src/core/hle/service/nx2_gsv.h:752-788,801-898,948-951` |
+| 31 | `VirtualRangeCache::ApplyDeferred` compares every cached entry with every pending unmap | perf (measure first) | Up to 65536 × 4096 compares in one query after an unmap burst, on the GPU thread | S-M | LOW | `src/video_core/buffer_cache/virtual_range_cache.h:147-165` (limits at :31-33) |
+| 32 | The feedback-loop check treats another view of the bound colour image differently from the depth case | bug (investigate) | A draw sampling another mip/layer of the active colour target gets neither a barrier nor a shadow copy; may be by design | S-M | MED | `src/video_core/texture_cache/texture_cache.h:742-763` (colour `continue` at :756-758, depth `return true` at :761) |
 
-Suggested next batch: 6 and 14 (cheap, no emulator risk), then 10 and 11 (small parser fixes
-with unit tests), then 7, 8 and 9.
+Findings 24-30 of run 2 are plans 006-014 (24 → 007, 25 → 008, 26 → 009, 27 → 010, 28 → 006,
+29 → 011, 30 → 014). Suggested next batch: 6 and 14 (cheap, no emulator risk), then 7, 8 and 9.
 
 ## Direction (options for the maintainer, not ranked against the bugs)
 
@@ -146,6 +178,24 @@ with unit tests), then 7, 8 and 9.
   `.github/fork-scan-skip` with a generic reason. Trade-off: a path filter can hide the rare
   relevant commit that also touches such a path. Effort: S-M (coarse).
 
+Added 2026-11-19:
+
+- **Fuzz targets for the file parsers.** The two runs found seven host-side parser bugs (PFS,
+  RomFS, pipeline cache, pchtxt, NCZ, NUP, real VFS), all in files users download.
+  `tools/fuzzsettings.*` already shows a fuzz harness in this repository. A few libFuzzer targets
+  (`PartitionFilesystem`, `ExtractRomFS`, `IPSwitchCompiler`, `LoadPipelines`) built only with
+  `-DYUZU_FUZZ=ON` would find this class mechanically. Trade-off: clang-only, and a corpus has to
+  be kept outside the repository. Effort: M (coarse).
+- **Pull request decoding out of `nx2_gsv.h`.** The file is about 3,800 lines; findings 21 and 23
+  and the `nx2:syncpt` handlers sit inside session classes that need a `Core::System` to test.
+  `nx2_sparse_region.h` (with `src/tests/video_core/nx2_sparse_tiles.cpp`) already shows the
+  pattern: argument decoding and bounds checks as free functions with unit tests. Trade-off: the
+  file is under active work; extract one handler at a time with its fix. Effort: M (coarse).
+- **`docs/Release.md` runbook.** Releases involve the gameplay gate, release notes
+  (`update-release-notes.yml`), tests that the release workflow does not build (finding 17) and a
+  PGO profile with no documented retrain (finding 15). One page with the order of steps keeps
+  `README.md:67`-style drift out. Effort: S.
+
 ## Findings considered and rejected
 
 - `ReinterpretImage` scales the copy width by `bpp_out / bpp_in` for D32S8 sources
@@ -168,3 +218,25 @@ with unit tests), then 7, 8 and 9.
   unconfirmed without network access; not reported as findings.
 - HLE stubs that report success, per-title patches and defaults, `EDEN_*` switches as a
   mechanism, old names in identifiers: settled decisions of this project.
+- (2026-11-19) `CNMT::Serialize` sized by a parsed `table_offset` (`nca_metadata.cpp:106-127`):
+  writes stay in bounds by construction; the allocation is at most about 4 GiB and only on repack.
+- (2026-11-19) XCI `hfs_offset` past the file wraps the partition size (`card_image.cpp:43-44`):
+  `OffsetVfsFile` clamps every read; no memory error found.
+- (2026-11-19) NPDM `kac_size` resizes before the read check (`program_metadata.cpp:110-115`): at
+  most 4 GiB, then a clean error status.
+- (2026-11-19) `nx2:syncpt` slot maps grow with guest slot ids, and TIPC 201 ignores `mode`: the
+  guest only exhausts its own session; host1x counters are 32 bit, so the truncation matches them.
+- (2026-11-19) `VirtualRangeCache::MakeKey` collisions for `as_id >= 2^16`: entries re-check
+  `as_id`, address and size, so a collision is a miss, not wrong data.
+- (2026-11-19) `DMAClear` passes `static_cast<u32>(size)` to `FindBuffer`: needs a clear above
+  16 GiB.
+- (2026-11-19) Static `reset_programs` map in the Bananza reset workaround (`vk_rasterizer.cpp:398`):
+  bounded by the title's vertex shader count.
+- (2026-11-19) `ReplaceColorFeedbackViews` uses `std::ranges::find` without an end check
+  (`texture_cache.h:706-708`): the view is registered with its image by construction.
+- (2026-11-19) `Fiber::YieldTo` with an expired `weak_from`, NUP raw records whose `extent_size`
+  differs from `size`: no path that produces them was found.
+- (2026-11-19) Checked and clean: cheat text parser, `QtCommon::Compress::extractDir`, Android
+  save import, BKTR/indirect storage, NUP container parse and extraction, the syncpoint manager's
+  wake logic, `StatefulThreadWorker`, `MultiLevelPageTable` moves, `EDEN_AUTO_BUTTONS` parser,
+  FMUL FMZ+SAT, compare-exchange loops, quad index buffer, fence manager stop path.

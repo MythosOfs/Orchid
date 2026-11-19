@@ -25,7 +25,7 @@ in-scope files did not overlap with any open plan.
 | [003](003-extract-multi-program-nup-archives.md) | NUP archives of Switch 2 Edition dumps can be extracted again | P1 | S | — | DONE (reviewed 2026-11-10, on main as `nup: extract multi-program archives into program/<index>`) |
 | [004](004-lower-high-offset-64-bit-constant-loads.md) | 64-bit constant loads at offsets 0x8000 and above read the right bytes | P2 | S | — | DONE (reviewed 2026-11-11, on main as `ampere: load 64-bit constants past 0x7fff as two 32-bit reads` plus `tests: pin the write mask of the two-read 64-bit constant load`) |
 | [005](005-zip-extraction-without-archive-symlinks.md) | Zip extraction never creates links from the archive | P2 | S | — | DONE (reviewed 2026-11-10, pushed to main as `b709dffe15`) |
-| [006](006-build-and-run-every-test-source.md) | Every test source in `src/tests` is built and run, and a forgotten one fails the configure | P1 | S | — | TODO |
+| [006](006-build-and-run-every-test-source.md) | Every test source in `src/tests` is built and run, and a forgotten one fails the configure | P1 | S | — | DONE (2026-11-19: `[fmz]` 4/4, `debug_stream_contract` 3/3 in CTest, orphan check fails the configure; mutation 100 % on the FMZ guard lines) |
 | [007](007-guest-fences-stay-inside-the-syncpoint-tables.md) | Guest fence counts and syncpoint ids cannot index past the syncpoint tables | P1 | S | — | TODO |
 | [008](008-pfs-headers-cannot-read-past-their-tables.md) | A PFS0/HFS0 header cannot make the parser read past its tables or loop forever | P1 | S | — | TODO |
 | [009](009-romfs-extraction-always-terminates.md) | RomFS extraction always terminates, and a damaged table fails instead of hanging | P1 | S-M | — | TODO |

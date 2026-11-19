@@ -134,6 +134,7 @@ add_executable(tests
     video_core/ampere_yoshi_uniform_gather.cpp
     video_core/ampere_yoshi_cbuf_carry.cpp
     video_core/maxwell_shr.cpp
+    video_core/maxwell_fmz.cpp
     video_core/ampere_release_guards.cpp
     video_core/ampere_release_f2i.cpp
     video_core/ampere_uniform_immediate_shift.cpp
@@ -179,6 +180,25 @@ target_link_libraries(stall_diagnostics_session PRIVATE common ${PLATFORM_LIBRAR
 add_test(NAME stall_diagnostics_enabled COMMAND ${CMAKE_COMMAND} -E env
     EDEN_NX2_STALL_DIAGNOSTICS=1 $<TARGET_FILE:stall_diagnostics_session> enabled)
 
+# Standalone: the frame telemetry and handle trace streams read their switches once per process.
+add_executable(debug_stream_contract debug_stream_contract.cpp)
+target_link_libraries(debug_stream_contract PRIVATE common ${PLATFORM_LIBRARIES} Threads::Threads)
+if (NOT MSVC)
+    target_compile_options(debug_stream_contract PRIVATE -Wno-sign-compare)
+endif()
+set(debug_stream_contract_dir "${CMAKE_CURRENT_BINARY_DIR}/debug_stream_contract")
+add_test(NAME debug_stream_contract_clean
+    COMMAND ${CMAKE_COMMAND} -E rm -rf "${debug_stream_contract_dir}")
+set_tests_properties(debug_stream_contract_clean PROPERTIES FIXTURES_SETUP debug_stream_contract_dir)
+add_test(NAME debug_stream_contract_disabled
+    COMMAND debug_stream_contract "${debug_stream_contract_dir}" disabled)
+add_test(NAME debug_stream_contract_enabled
+    COMMAND debug_stream_contract "${debug_stream_contract_dir}")
+set_tests_properties(debug_stream_contract_disabled debug_stream_contract_enabled
+    PROPERTIES FIXTURES_REQUIRED debug_stream_contract_dir)
+# The disabled run checks that nothing is created, so it runs before the enabled one.
+set_tests_properties(debug_stream_contract_enabled PROPERTIES DEPENDS debug_stream_contract_disabled)
+
 # needed for vma
 if (NOT MSVC)
     target_compile_options(tests PRIVATE
@@ -187,3 +207,17 @@ if (NOT MSVC)
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-unused-parameter>
         $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-missing-field-initializers>)
 endif()
+
+# A test source in no target is never built or run (maxwell_fmz.cpp and debug_stream_contract.cpp
+# sat unbuilt this way). Every .cpp here must belong to one of the targets above.
+file(GLOB_RECURSE test_sources RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS "*.cpp")
+set(listed_test_sources common/host_memory_commit.cpp) # added above on Windows only
+foreach(test_target IN ITEMS tests stall_diagnostics_session debug_stream_contract)
+    get_target_property(target_sources ${test_target} SOURCES)
+    list(APPEND listed_test_sources ${target_sources})
+endforeach()
+foreach(test_source IN LISTS test_sources)
+    if (NOT test_source IN_LIST listed_test_sources)
+        message(FATAL_ERROR "src/tests/${test_source} belongs to no test target; list it in src/tests/CMakeLists.txt")
+    endif()
+endforeach()

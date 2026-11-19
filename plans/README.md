@@ -33,7 +33,7 @@ in-scope files did not overlap with any open plan.
 | [011](011-flat-allocator-skips-fixed-ranges.md) | `FlatAllocator::Allocate` never overlaps a fixed allocation (investigate first) | P2 | S-M | — | DONE (2026-11-19: overlap reproduced (0x28 instead of 0x30), `[flat_allocator]` 7/7 (3 more than planned, for mutants), full suite 764 cases; mutation 100 % on the new loop) |
 | [012](012-pchtxt-parser-stays-inside-its-lines.md) | The `.pchtxt` patch parser stays inside each line and never throws on a short one | P2 | S | — | DONE (2026-11-19: `[ipswitch]` 4/4, full suite 768 cases; mutation 100 % on lines 166/167/188 and 210) |
 | [013](013-loose-addon-version-names-never-throw.md) | An add-on version folder name too long for a number is skipped instead of aborting the boot | P3 | S | — | DONE (2026-11-19: `[loose_directory]` 11 cases (two sections more than planned, for mutants), full suite 768 cases; mutation 92.3 % on lines 405/406/475/481, one equivalent survivor) |
-| [014](014-host-memory-falls-back-cleanly-without-memfd.md) | Without a memfd, `HostMemory` uses its plain-buffer fallback | P3 | S | — | TODO |
+| [014](014-host-memory-falls-back-cleanly-without-memfd.md) | Without a memfd, `HostMemory` uses its plain-buffer fallback | P3 | S | — | DONE (2026-11-19: `HostMemory*` 16 cases, full suite 769 cases, GUI builds; mutation 100 % on lines 594/596/599) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJECTED (with one-line rationale — finding fixed independently or approach abandoned)
 

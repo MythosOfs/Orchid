@@ -589,29 +589,18 @@ public:
 #else
         fd = memfd_create("HostMemory", 0);
 #endif
-        bool use_anon = false;
-        if (fd <= 0) {
+        // Fastmem maps the backing a second time, which only a shared file allows. Without one,
+        // HostMemory falls back to a plain buffer.
+        if (fd < 0) {
             LOG_WARNING(Common_Memory, "memfd_create: {}", strerror(errno));
-            use_anon = true;
+            return false;
         }
-        if (!use_anon) {
-            // Defined to extend the file with zeros
-            int ret = ftruncate(fd, backing_size);
-            if (ret != 0) {
-                LOG_WARNING(Common_Memory, "ftruncate: {} (likely out-of-emory)", strerror(errno));
-                use_anon = true;
-            }
+        // Defined to extend the file with zeros
+        if (ftruncate(fd, backing_size) != 0) {
+            LOG_WARNING(Common_Memory, "ftruncate: {} (likely out-of-memory)", strerror(errno));
+            return false; // Release() closes fd
         }
-        if (use_anon) {
-            LOG_WARNING(Common_Memory, "Using private mappings instead of shared ones");
-            backing_base = static_cast<u8*>(mmap(nullptr, backing_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE | MAP_NOCORE, -1, 0));
-            if (fd > 0) {
-                fd = -1;
-                close(fd);
-            }
-        } else {
-            backing_base = static_cast<u8*>(mmap(nullptr, backing_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_NOCORE, fd, 0));
-        }
+        backing_base = static_cast<u8*>(mmap(nullptr, backing_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_NOCORE, fd, 0));
         if (backing_base == MAP_FAILED) {
             LOG_CRITICAL(HW_Memory, "mmap failed: {}", strerror(errno));
             return false;

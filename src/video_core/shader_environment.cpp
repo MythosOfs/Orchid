@@ -49,6 +49,11 @@ constexpr std::array<char, 8> MAGIC_NUMBER{'y', 'u', 'z', 'u', 'c', 'a', 'c', 'h
 
 constexpr size_t INST_SIZE = sizeof(u64);
 
+// Bounds for records read back from a pipeline cache file. A graphics pipeline writes at most
+// Maxwell's six programs; no Maxwell or native program comes near 64 MiB of code.
+constexpr u32 MaxCachedEnvironments = 6;
+constexpr u64 MaxCachedCodeSize = u64{64} << 20;
+
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 
 static u64 MakeCbufKey(u32 index, u32 offset) {
@@ -1166,6 +1171,13 @@ void FileEnvironment::Deserialize(std::ifstream& file) {
         .read(reinterpret_cast<char*>(&read_highest), sizeof(read_highest))
         .read(reinterpret_cast<char*>(&viewport_transform_state), sizeof(viewport_transform_state))
         .read(reinterpret_cast<char*>(&stage), sizeof(stage));
+    // Every record the writer produces holds the code from its lowest to its highest read
+    // address (CachedSizeBytes). Anything else is damaged and must not size the vector or
+    // ReadInstruction's index; the failure makes LoadPipelines delete the file.
+    if (read_highest < read_lowest || code_size > MaxCachedCodeSize ||
+        code_size != u64{read_highest} - read_lowest + INST_SIZE) {
+        throw std::ios_base::failure("Malformed shader record in pipeline cache");
+    }
     code.resize(Common::DivCeil(code_size, sizeof(u64)));
     file.read(reinterpret_cast<char*>(code.data()), code_size);
     for (size_t i = 0; i < num_texture_types; ++i) {
@@ -1385,6 +1397,9 @@ void LoadPipelines(
         }
         u32 num_envs{};
         file.read(reinterpret_cast<char*>(&num_envs), sizeof(num_envs));
+        if (num_envs == 0 || num_envs > MaxCachedEnvironments) {
+            throw std::ios_base::failure("Malformed pipeline record in pipeline cache");
+        }
         std::vector<FileEnvironment> envs(num_envs);
         for (FileEnvironment& env : envs) {
             env.Deserialize(file);

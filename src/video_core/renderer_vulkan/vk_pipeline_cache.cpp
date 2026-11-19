@@ -774,7 +774,8 @@ std::unordered_map<u64, u8> LoadUsedPipelines(const std::filesystem::path& path,
         !file.read(reinterpret_cast<char*>(&count), sizeof(count))) {
         return used;
     }
-    used.reserve(count);
+    // The count comes from the file; the loop below stops at its end anyway.
+    used.reserve((std::min)(count, u32{65536}));
     for (u32 i = 0; i < count; ++i) {
         u64 hash{};
         u8 age{};

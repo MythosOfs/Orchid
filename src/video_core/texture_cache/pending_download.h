@@ -69,7 +69,9 @@ HostRuns GatherHostRuns(u64 address, size_t size, size_t page_size, GetPointer&&
     HostRuns runs;
     for (size_t offset = 0; offset < size;) {
         const u64 current = address + offset;
-        const size_t chunk = (std::min)(size - offset, page_size - (current & (page_size - 1)));
+        // size_t, not u64: they are different types on macOS.
+        const size_t chunk =
+            (std::min<size_t>)(size - offset, page_size - (current & (page_size - 1)));
         u8* const pointer = get_pointer(current);
         if (!runs.empty() && (runs.back().first == nullptr) == (pointer == nullptr) &&
             (pointer == nullptr || runs.back().first + runs.back().second == pointer)) {

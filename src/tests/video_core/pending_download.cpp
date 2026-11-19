@@ -23,8 +23,13 @@ TEST_CASE("Queued buffer downloads land in the host pages mapped when they were 
     // Starts and ends inside a page.
     const u64 address = 4;
     const size_t size = PAGE * 5 - 8;
+    // One lookup per page touched; a chunk that stops advancing fails here instead of hanging.
+    int lookups = 0;
     const VideoCommon::HostRuns runs =
-        VideoCommon::GatherHostRuns(address, size, PAGE, get_pointer);
+        VideoCommon::GatherHostRuns(address, size, PAGE, [&](u64 page_address) {
+            REQUIRE(++lookups <= 5);
+            return get_pointer(page_address);
+        });
     REQUIRE(runs.size() == 4);
     CHECK(runs[0] == std::pair{&host[4], PAGE * 2 - 4});
     CHECK(runs[1] == std::pair{&host[PAGE * 4], PAGE});
@@ -48,8 +53,11 @@ TEST_CASE("Queued buffer downloads land in the host pages mapped when they were 
 
 TEST_CASE("Unmapped pages next to each other form one skipped run",
           "[video_core][pending_download]") {
-    const VideoCommon::HostRuns runs = VideoCommon::GatherHostRuns(
-        0, PAGE * 3, PAGE, [](u64) -> u8* { return nullptr; });
+    int lookups = 0;
+    const VideoCommon::HostRuns runs = VideoCommon::GatherHostRuns(0, PAGE * 3, PAGE, [&](u64) {
+        REQUIRE(++lookups <= 3);
+        return static_cast<u8*>(nullptr);
+    });
     REQUIRE(runs.size() == 1);
     CHECK(runs[0] == std::pair<u8*, size_t>{nullptr, PAGE * 3});
 }

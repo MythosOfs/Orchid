@@ -22,6 +22,7 @@
 #include "video_core/cache_types.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
 #include "video_core/invalidation_accumulator.h"
+#include "video_core/nx2.h"
 #include "video_core/pte_kind.h"
 
 namespace VideoCore {
@@ -184,6 +185,9 @@ public:
 
     const u8* GetSpan(const GPUVAddr src_addr, const std::size_t size) const;
     u8* GetSpan(const GPUVAddr src_addr, const std::size_t size);
+
+    /// Switch 2: the maps of this address space the GPU thread has not applied yet.
+    Nx2QueuedMaps queued_maps;
 
 private:
     template <typename FuncMapped, typename FuncReserved, typename FuncUnmapped>

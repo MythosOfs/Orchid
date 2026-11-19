@@ -498,6 +498,11 @@ NvResult nvhost_gpu::SubmitGPFIFOImpl(IoctlSubmitGpfifo& params, Tegra::CommandL
             size_t offset = 0;
             for (const auto& entry : entries.command_lists) {
                 entries.submitted_offsets.push_back(static_cast<u32>(offset));
+                // Checked before the read: a map applied in between is gone from the queue.
+                if (channel_state->memory_manager->queued_maps.Overlaps(
+                        entry.addr, entry.size * sizeof(u32))) {
+                    entries.snapshot_suspensions = Tegra::CommandList::SnapshotBeforeMap;
+                }
                 channel_state->memory_manager->ReadBlockUnsafe(
                     entry.addr, entries.submitted_words.data() + offset, entry.size * sizeof(u32));
                 offset += entry.size;

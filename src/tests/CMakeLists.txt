@@ -83,6 +83,7 @@ add_executable(tests
     video_core/nx2_sparse_image_write.cpp
     video_core/nx2_command_sync.cpp
     video_core/nx2_command_ranges.cpp
+    video_core/nx2_queued_maps.cpp
     video_core/physical_alias.cpp
     video_core/h264_packet.cpp
     video_core/framebuffer_clear_layers.cpp

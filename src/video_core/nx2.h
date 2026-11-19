@@ -169,6 +169,40 @@ inline bool Nx2CheckCommandPagesFirst() {
     return enabled;
 }
 
+/// GPU address ranges whose map is queued for the GPU thread (GPU::MapInOrder) and not applied
+/// yet. Until then a read through the address space finds them unmapped, or finds what was mapped
+/// there before. Pokemon Pokopia maps its compute queue's command memory and submits from it at
+/// once: with the GPU thread still busy (first frame, pipelines being built) the words copied at
+/// submit time were zeros, the queue's first lists ran as nothing and the game waited forever on
+/// their releases (black screen after one frame, issue 113).
+class Nx2QueuedMaps {
+public:
+    void Add(GPUVAddr address, u64 size) {
+        std::scoped_lock lk{mutex};
+        ranges.emplace_back(address, size);
+    }
+
+    /// The GPU thread applied one map of exactly this range.
+    void Remove(GPUVAddr address, u64 size) {
+        std::scoped_lock lk{mutex};
+        if (const auto it = std::ranges::find(ranges, std::pair{address, size});
+            it != ranges.end()) {
+            ranges.erase(it);
+        }
+    }
+
+    [[nodiscard]] bool Overlaps(GPUVAddr address, u64 size) const {
+        std::scoped_lock lk{mutex};
+        return std::ranges::any_of(ranges, [&](const auto& range) {
+            return address < range.first + range.second && range.first < address + size;
+        });
+    }
+
+private:
+    mutable std::mutex mutex;
+    std::vector<std::pair<GPUVAddr, u64>> ranges;
+};
+
 // NVN2 queues release their progress values into the second page of a two-page GPU-accessible
 // region and GPU acquires read the same offsets in the first page (the CPU polls the second).
 // Something on the console copies one into the other; until that is known, the puller mirrors

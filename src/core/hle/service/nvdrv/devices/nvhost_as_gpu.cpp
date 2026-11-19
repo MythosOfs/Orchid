@@ -254,8 +254,11 @@ void nvhost_as_gpu::Nx2Map(u64 gpu_address, u64 cpu_address, u64 size) {
                  device_pointer != nullptr && device_pointer == cpu_pointer);
     }
     nx2_gpu_views.Map(gpu_address, cpu_address, size);
+    // Command lists submitted from this memory before the GPU thread gets here are copied late.
+    gmmu->queued_maps.Add(gpu_address, size);
     Nx2GpuCommandScope::Run(system.GPU(), [gmmu = gmmu.get(), gpu_address, device_address, size] {
         gmmu->Map(gpu_address, device_address, size, Tegra::PTEKind::PITCH, false);
+        gmmu->queued_maps.Remove(gpu_address, size);
     }, true); // map: before later command lists are read
     LOG_DEBUG(Service_NVDRV, "Switch 2 GPU mapping {:#x}+{:#x} -> CPU {:#x}", gpu_address, size,
               cpu_address);

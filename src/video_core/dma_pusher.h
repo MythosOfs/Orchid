@@ -133,6 +133,11 @@ struct CommandList final {
     /// that waited behind one, reads memory instead: games write the commands it runs before they
     /// release the acquire.
     u64 snapshot_suspensions = 0;
+    /// snapshot_suspensions of a list whose memory had a map still queued for the GPU thread when
+    /// it was submitted (Nx2QueuedMaps), so the words copied then are not the list's. Odd, like a
+    /// copy made during a suspension: the GPU thread copies the words when it gets to the list,
+    /// after the map.
+    static constexpr u64 SnapshotBeforeMap = ~u64{0};
 };
 
 namespace GpfifoCapture {

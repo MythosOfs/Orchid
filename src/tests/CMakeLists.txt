@@ -59,6 +59,7 @@ add_executable(tests
     core/loose_directory.cpp
     core/priority_queue.cpp
     core/vfs_vector.cpp
+    core/ips_switch.cpp
     core/vfs_real.cpp
     core/nvnflinger_fence.cpp
     core/partition_filesystem.cpp

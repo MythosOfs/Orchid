@@ -162,7 +162,9 @@ void IPSwitchCompiler::Parse(std::span<u8 const> bytes) {
             // yes, @nsobid too -- NSO Build ID Specifier
             case 'n':
             case 'N':
-                nso_build_id = Common::HexStringToArray<0x20>(fmt::format("{:0<64}", line.substr(8)));
+                // "@nsobid-" is 8 characters; a shorter line has no id.
+                nso_build_id = Common::HexStringToArray<0x20>(
+                    fmt::format("{:0<64}", line.size() > 8 ? line.substr(8) : std::string_view{}));
                 break;
             // @stop
             case 's':
@@ -182,7 +184,8 @@ void IPSwitchCompiler::Parse(std::span<u8 const> bytes) {
             case 'f':
             case 'F': {
                 if (line.starts_with("@flag offset_shift")) {
-                    offset_shift = std::strtoll(line.data() + 19, nullptr, 0);  // Offset Shift Flag
+                    // The line is a view into the file: copy it so strtoll stops at its end.
+                    offset_shift = std::strtoll(std::string{line.substr(18)}.c_str(), nullptr, 0);
                 } else if (line.starts_with("@flag print_values")) {
                     //print_values = true; // Force printing of applied values
                 }
@@ -204,7 +207,7 @@ void IPSwitchCompiler::Parse(std::span<u8 const> bytes) {
         } else if (patches.empty()) {
             LOG_WARNING(Loader, "Invalid line not in a patch {}", line);
         } else {
-            size_t offset = size_t(std::strtoul(line.data(), nullptr, 16));
+            size_t offset = size_t(std::strtoul(std::string{line}.c_str(), nullptr, 16));
             offset += size_t(offset_shift);
             if (auto const first_quote = line.find_first_of("\"\'"); first_quote != std::string::npos) {
                 // string replacement

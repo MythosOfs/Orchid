@@ -311,25 +311,21 @@ ALLOC_MEMBER(VaType)::Allocate(VaType size) {
         if (alloc_end_predecessor->virt <= current_linear_alloc_end) {
             alloc_start = current_linear_alloc_end;
         } else {
-            // Skip over fixed any mappings in front of us
-            while (alloc_end_successor != this->blocks.end()) {
-                if (alloc_end_successor->virt - alloc_end_predecessor->virt < size ||
-                    alloc_end_predecessor->Mapped()) {
+            // A fixed allocation lies inside the linear range: take the first free run from
+            // there on that is large enough. The last block's run ends at the VA limit.
+            while (true) {
+                const VaType run_end{alloc_end_successor == this->blocks.end()
+                                         ? this->va_limit
+                                         : alloc_end_successor->virt};
+                if (alloc_end_predecessor->Unmapped() &&
+                    run_end - alloc_end_predecessor->virt >= size) {
                     alloc_start = alloc_end_predecessor->virt;
                     break;
                 }
-
-                alloc_end_predecessor = alloc_end_successor++;
-
-                // Use the VA limit to calculate if we can fit in the final block since it has no
-                // successor
                 if (alloc_end_successor == this->blocks.end()) {
-                    alloc_end = alloc_end_predecessor->virt + size;
-
-                    if (alloc_end >= alloc_end_predecessor->virt && alloc_end <= this->va_limit) {
-                        alloc_start = alloc_end_predecessor->virt;
-                    }
+                    break;
                 }
+                alloc_end_predecessor = alloc_end_successor++;
             }
         }
     }

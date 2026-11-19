@@ -13,6 +13,7 @@ add_executable(tests
     common/container_hash.cpp
     common/event.cpp
     common/fibers.cpp
+    common/flat_allocator.cpp
     common/game_presets.cpp
     common/hitch_diagnostic.cpp
     common/host_memory.cpp

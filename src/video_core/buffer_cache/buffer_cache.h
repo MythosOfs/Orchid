@@ -2998,6 +2998,9 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
                                              bool diagnostic_target) const {
     namespace diag = ComputeBindingDiagnostic;
     auto* const trace = diagnostic_target ? diag::current : nullptr;
+    // Read before the page tables are: a binding resolved while a mapping changes is stored
+    // under the generation before the change and never found again.
+    const u64 generation = gpu_memory->GpuMappingGeneration();
     const auto descriptor = ReadStorageBufferDescriptor(*gpu_memory, ssbo_addr, native_compute);
     const GPUVAddr gpu_addr = descriptor[0];
     if (trace)
@@ -3008,6 +3011,37 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
             trace->binding_state = diag::BindingState::NullPointer;
         return NULL_BINDING;
     }
+    // Every draw and dispatch resolves each of its storage buffers again: a kind lookup, two
+    // translations and, for native compute, two page walks over up to 8 MiB. The answer holds
+    // until a mapping changes. A traced binding is resolved in full for its record.
+    if (trace) {
+        return ResolveStorageBufferBinding(descriptor, cbuf_index, is_written, native_compute,
+                                           trace);
+    }
+    const StorageBindingKey key{
+        .address_space = gpu_memory->GetID(),
+        .generation = generation,
+        .pointer = gpu_addr,
+        .next_word = descriptor[1],
+        .alignment = runtime.GetStorageBufferAlignment(),
+        .is_written = is_written,
+        .native_compute = native_compute,
+    };
+    if (const Binding* const cached = storage_bindings.Find(key)) {
+        return *cached;
+    }
+    const Binding binding =
+        ResolveStorageBufferBinding(descriptor, cbuf_index, is_written, native_compute, nullptr);
+    storage_bindings.Insert(key, binding);
+    return binding;
+}
+
+template <class P>
+Binding BufferCache<P>::ResolveStorageBufferBinding(
+    const std::array<u64, 2>& descriptor, u32 cbuf_index, bool is_written, bool native_compute,
+    ComputeBindingDiagnostic::Record* trace) const {
+    namespace diag = ComputeBindingDiagnostic;
+    const GPUVAddr gpu_addr = descriptor[0];
 
     const auto size = [&]() -> u32 {
         const u64 layout_size = gpu_memory->GetMemoryLayoutSize(gpu_addr);

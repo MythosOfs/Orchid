@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstring>
 #include <iterator>
+#include <string_view>
 #include <utility>
 
 #include "common/logging.h"
@@ -43,9 +44,14 @@ PartitionFilesystem::PartitionFilesystem(VirtualFile file) {
 
     is_hfs = pfs_header.magic == Common::MakeMagic('H', 'F', 'S', '0');
 
-    std::size_t entry_size = is_hfs ? sizeof(HFSEntry) : sizeof(PFSEntry);
-    std::size_t metadata_size =
-        sizeof(Header) + (pfs_header.num_entries * entry_size) + pfs_header.strtab_size;
+    const u64 entry_size = is_hfs ? sizeof(HFSEntry) : sizeof(PFSEntry);
+    const u64 metadata_size =
+        sizeof(Header) + u64{pfs_header.num_entries} * entry_size + pfs_header.strtab_size;
+    // The header's counts come from the file: check them before they size a read.
+    if (metadata_size > file->GetSize()) {
+        status = Loader::ResultStatus::ErrorIncorrectPFSFileSize;
+        return;
+    }
 
     // Actually read in now...
     std::vector<u8> file_data = file->ReadBytes(metadata_size);
@@ -60,12 +66,22 @@ PartitionFilesystem::PartitionFilesystem(VirtualFile file) {
     std::size_t entries_offset = sizeof(Header);
     std::size_t strtab_offset = entries_offset + (pfs_header.num_entries * entry_size);
     content_offset = strtab_offset + pfs_header.strtab_size;
-    for (u16 i = 0; i < pfs_header.num_entries; i++) {
+    for (u32 i = 0; i < pfs_header.num_entries; i++) {
         FSEntry entry;
 
         memcpy(&entry, &file_data[entries_offset + (i * entry_size)], sizeof(FSEntry));
-        std::string name(
-            reinterpret_cast<const char*>(&file_data[strtab_offset + entry.strtab_offset]));
+        if (entry.strtab_offset >= pfs_header.strtab_size) {
+            status = Loader::ResultStatus::ErrorBadPFSHeader;
+            offsets.clear();
+            sizes.clear();
+            pfs_files.clear();
+            return;
+        }
+        // A name ends at its zero byte or at the end of the table, never beyond it.
+        const std::string_view table{
+            reinterpret_cast<const char*>(&file_data[strtab_offset + entry.strtab_offset]),
+            pfs_header.strtab_size - entry.strtab_offset};
+        std::string name{table.substr(0, table.find('\0'))};
 
         offsets.insert_or_assign(name, content_offset + entry.offset);
         sizes.insert_or_assign(name, entry.size);

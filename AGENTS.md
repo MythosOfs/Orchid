@@ -215,12 +215,13 @@ Terra it was clearly weaker at computer use.
 - Its `state/` cleans itself at every boot (`cleanup`): profile clones of runs after 2 days, whole
   runs and bundles after 14 days. Screenshots, logs and frame times of a run stay until then.
 
-### Gameplay gate: only before a release or a PR
+### Gameplay gate: only before a release
 
-Before starting a release build and before opening or pushing a pull request, boot every game
-listed under "Project scope" in `README.md` once and play it briefly into real gameplay (not the
-title or main menu). Plain commits and pushes to `main` need no gate, including the maintainer's
-own commits.
+Before starting a release build, boot every game listed under "Project scope" in `README.md`
+once and play it briefly into real gameplay (not the title or main menu). Commits, pushes to
+`main` and pull requests need no gate: the full gate takes about an hour, too long for every
+change. A fix for a specific game is still verified in that game's real gameplay (its route
+from the table above, or by hand) before the commit.
 
 - Run it with `gate_start(bin=<build>)`: every game registered with `gate_set` (see `gate_list`)
   is booted, played along its route into gameplay and on for about a minute, and stopped; the
@@ -231,10 +232,10 @@ own commits.
   too small). After a gate you accept, `gate_accept` stores its runs as the new baselines.
 - Pass: each game renders correctly (characters, world, HUD, text without missing glyphs), runs
   without hang, crash or device loss, and its log shows no new errors compared with the last good
-  build. A game that worked in the last good build and fails now blocks the release or PR.
+  build. A game that worked in the last good build and fails now blocks the release.
 - The test subagent runs it and returns screenshots and log excerpts. The main agent looks at
   the key screenshots and decides pass or fail.
-- Fail: no release or PR; find the regression, fix it, run the gate again.
+- Fail: no release; find the regression, fix it, run the gate again.
 
 ### Performance measurements
 

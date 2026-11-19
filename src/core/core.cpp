@@ -28,7 +28,6 @@
 #include "core/device_memory.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/fs_filesystem.h"
-#include "core/file_sys/nup_container.h"
 #include "core/loader/loose_directory.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/program_metadata.h"
@@ -63,6 +62,7 @@
 #include "core/hle/service/sm/sm.h"
 #include "core/internal_network/network.h"
 #include "core/loader/loader.h"
+#include "core/loader/nup.h"
 #include "core/memory.h"
 #include "core/memory/cheat_engine.h"
 #include "core/perf_stats.h"
@@ -133,23 +133,9 @@ bool IsSwitch2Program(Core::System& system, const FileSys::VirtualFilesystem& vf
     }
 
     FileSys::ProgramMetadata metadata;
-    if (FileSys::NupContainer::IsNupFile(file)) {
-        FileSys::NupContainer nup{file};
-        if (nup.GetStatus() != Loader::ResultStatus::Success) {
-            return false;
-        }
-        // The ExeFS AppLoader_NUP boots: the update's over the base's, or a standalone update.
-        std::optional<std::size_t> program;
-        if (const auto update = nup.FindEnabledUpdatePackage();
-            update && nup.GetExeFSDir(*update) != nullptr) {
-            program = update;
-        } else if (const auto base = nup.FindBasePackage();
-                   base && nup.GetExeFSDir(*base) != nullptr) {
-            program = base;
-        }
-        const auto exefs = program ? nup.GetExeFSDir(*program) : nullptr;
-        const auto npdm = exefs != nullptr ? exefs->GetFile("main.npdm") : nullptr;
-        return npdm != nullptr && metadata.Load(npdm) == Loader::ResultStatus::Success &&
+    if (Loader::AppLoader_NUP::IdentifyType(file) == Loader::FileType::NUP) {
+        Loader::AppLoader_NUP loader{file};
+        return loader.ReadProgramMetadata(metadata) == Loader::ResultStatus::Success &&
                metadata.IsSwitch2();
     }
 

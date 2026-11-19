@@ -48,6 +48,7 @@ public:
     bool IsRomFSUpdatable() const override;
     ResultStatus ReadProgramId(u64& out_program_id) override;
     ResultStatus ReadProgramIds(std::vector<u64>& out_program_ids) override;
+    ResultStatus ReadProgramMetadata(FileSys::ProgramMetadata& out) override;
     ResultStatus ReadIcon(std::vector<u8>& buffer) override;
     ResultStatus ReadTitle(std::string& title) override;
     ResultStatus ReadDisplayVersion(std::string& version) override;
@@ -62,6 +63,7 @@ private:
 
     std::unique_ptr<FileSys::NACP> nacp_file;
     FileSys::VirtualFile icon_file;
+    FileSys::VirtualDir edition_romfs;
     u64 base_title_id{};
     std::string display_version;
     std::string title_override;

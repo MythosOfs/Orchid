@@ -168,6 +168,7 @@ public:
 
     VirtualDir GetExeFSDir(std::size_t package_index);
     VirtualDir GetRomFSDir(std::size_t package_index);
+    VirtualDir GetPackageSubdirectory(std::size_t package_index, std::string_view name);
 
     std::vector<std::size_t> FindAddonPackages(u64 program_id) const;
 

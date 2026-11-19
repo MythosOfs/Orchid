@@ -22,6 +22,7 @@
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/nup_container.h"
 #include "core/file_sys/nup_writer.h"
+#include "core/file_sys/program_metadata.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/vfs/vfs_real.h"
@@ -851,6 +852,86 @@ TEST_CASE("NUP falls back from incomplete edition programs", "[nup]") {
         REQUIRE(Read(nup.GetExeFSDir(*update)->GetFile("main")) == "update 2 main");
         REQUIRE(FileSys::Nup::DumpRootFromMain(root / "Base/ExeFS/main") == root);
     }
+}
+
+TEST_CASE("NUP boots program1 from a standalone legacy update", "[nup][nup-program1]") {
+    TempDir t;
+    constexpr u64 legacy_id = 0x0100ABCD00010000ULL;
+    constexpr u64 edition_id = TitleId + 1;
+    const auto root = t.path / "Game";
+    const auto update = root / "updates/65536";
+    const auto program = update / "program1";
+    Put(update / "exefs/main", "legacy executable");
+    Put(update / "exefs/main.npdm", Npdm(legacy_id));
+    Put(update / "romfs/shared", "legacy data");
+    Put(update / "romfs/legacy", "legacy-only data");
+    Put(program / "romfs/shared", "edition data");
+
+    bool boot_edition = true;
+    SECTION("Matching native program") {
+        Put(program / "exefs/main", "edition executable");
+        Put(program / "exefs/main.npdm", NativeNpdm(edition_id));
+    }
+    SECTION("Missing executable") {
+        boot_edition = false;
+        Put(program / "exefs/main.npdm", NativeNpdm(edition_id));
+    }
+    SECTION("Unrelated title") {
+        boot_edition = false;
+        Put(program / "exefs/main", "other executable");
+        Put(program / "exefs/main.npdm", NativeNpdm(edition_id + 0x2000));
+    }
+    SECTION("Non-native metadata") {
+        boot_edition = false;
+        Put(program / "exefs/main", "other executable");
+        auto npdm = NativeNpdm(edition_id);
+        npdm.replace(0x300, 4, "ACID");
+        Put(program / "exefs/main.npdm", npdm);
+    }
+
+    FileSys::NACP control;
+    control.raw.dlc_base_title_id = legacy_id + 0x1000;
+    const auto bytes = control.GetRawBytes();
+    Put(program / "control/Acd_1/control.nacp",
+        std::string_view{reinterpret_cast<const char*>(bytes.data()), bytes.size()});
+    Put(root / "dlc/0100ABCD00011001/0/romfs/addon", "addon data");
+
+    const auto archive = t.path / "Game.nup";
+    REQUIRE(FileSys::Nup::PackDump(root, archive) == FileSys::Nup::PackResult::Success);
+    FileSys::RealVfsFilesystem real;
+    const auto file = real.OpenFile(archive.string(), FileSys::OpenMode::Read);
+    NupContainer nup{file};
+    REQUIRE_FALSE(nup.FindBasePackage());
+    REQUIRE(nup.FindBestUpdatePackage() == std::size_t{0});
+    REQUIRE(nup.GetPackages()[0].title_id == legacy_id);
+
+    Loader::AppLoader_NUP loader{file};
+    u64 program_id{};
+    REQUIRE(loader.ReadProgramId(program_id) == Loader::ResultStatus::Success);
+    REQUIRE(program_id == (boot_edition ? edition_id : legacy_id));
+    if (boot_edition) {
+        FileSys::ProgramMetadata metadata;
+        REQUIRE(loader.ReadProgramMetadata(metadata) == Loader::ResultStatus::Success);
+        REQUIRE(metadata.IsSwitch2());
+        REQUIRE(metadata.GetTitleID() == edition_id);
+        FileSys::NACP restored;
+        REQUIRE(loader.ReadControlData(restored) == Loader::ResultStatus::Success);
+        REQUIRE(restored.GetDLCBaseTitleId() == legacy_id + 0x1000);
+    }
+
+    FileSys::VirtualFile romfs;
+    REQUIRE(loader.ReadRomFS(romfs) == Loader::ResultStatus::Success);
+    const auto image = FileSys::ExtractRomFS(romfs);
+    REQUIRE(image);
+    REQUIRE(Read(image->GetFile("legacy")) == "legacy-only data");
+    REQUIRE(Read(image->GetFile("shared")) == (boot_edition ? "edition data" : "legacy data"));
+    const auto patches = loader.ReadEmbeddedPatches();
+    REQUIRE(std::ranges::any_of(patches, [](const auto& patch) {
+        return patch.type == FileSys::PatchType::DLC && patch.title_id == legacy_id + 0x1001;
+    }));
+    REQUIRE(std::ranges::any_of(patches, [](const auto& patch) {
+        return patch.type == FileSys::PatchType::Edition && patch.title_id == edition_id;
+    }) == boot_edition);
 }
 
 TEST_CASE("NUP UI metadata belongs to each container and never invents a base update", "[nup]") {

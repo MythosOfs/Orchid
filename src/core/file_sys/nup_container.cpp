@@ -884,6 +884,21 @@ VirtualDir NupContainer::BuildPackageDir(u32 dir_index) {
     return out;
 }
 
+VirtualDir NupContainer::GetPackageSubdirectory(std::size_t package_index, std::string_view name) {
+    if (package_index >= packages.size()) {
+        return nullptr;
+    }
+    const auto& root = dirs[packages[package_index].root_dir];
+    const u64 end = static_cast<u64>(root.first_child) + root.child_count;
+    for (u64 slot = root.first_child; slot < end; ++slot) {
+        const u32 child = children[slot];
+        if (child < dirs.size() && dirs[child].name == name) {
+            return BuildPackageDir(child);
+        }
+    }
+    return nullptr;
+}
+
 VirtualDir NupContainer::GetExeFSDir(std::size_t package_index) {
     if (package_index >= packages.size() || packages[package_index].exefs_dir == NoDir) {
         return nullptr;

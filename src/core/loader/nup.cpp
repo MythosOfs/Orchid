@@ -13,6 +13,7 @@
 #include "core/file_sys/common_funcs.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
+#include "core/file_sys/program_metadata.h"
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/vfs/vfs_vector.h"
@@ -117,9 +118,10 @@ AppLoader_NUP::AppLoader_NUP(FileSys::VirtualFile file_)
 
     // The program comes from the base package; a standalone update container
     // (SPEC §4.1.2) carries a complete patched tree and boots on its own.
+    const bool has_base_exefs = base_index && nup->GetExeFSDir(*base_index) != nullptr;
     std::optional<std::size_t> program_index;
     std::optional<std::size_t> exefs_index;
-    if (base_index && nup->GetExeFSDir(*base_index) != nullptr) {
+    if (has_base_exefs) {
         program_index = base_index;
         exefs_index = update_index && nup->GetExeFSDir(*update_index) != nullptr
                           ? update_index
@@ -139,11 +141,35 @@ AppLoader_NUP::AppLoader_NUP(FileSys::VirtualFile file_)
     base_title_id = program.title_id;
     has_program = true;
 
-    const auto exefs = nup->GetExeFSDir(*exefs_index);
+    auto exefs = nup->GetExeFSDir(*exefs_index);
     if (exefs == nullptr || exefs->GetFile("main") == nullptr ||
         exefs->GetFile("main.npdm") == nullptr) {
         LOG_ERROR(Loader, "NUP package has no usable ExeFS");
         return;
+    }
+
+    // Older packers kept program1 as an auxiliary member of the standalone update.
+    // Keep that update's RomFS as a fallback for an edition that only adds code.
+    FileSys::VirtualFile edition_control;
+    if (!has_base_exefs && (base_title_id >> 56) == 0x01) {
+        if (const auto edition = nup->GetPackageSubdirectory(*exefs_index, "program1")) {
+            const auto edition_exefs = edition->GetSubdirectory("exefs");
+            const auto npdm = edition_exefs ? edition_exefs->GetFile("main.npdm") : nullptr;
+            FileSys::ProgramMetadata metadata;
+            if (npdm && edition_exefs->GetFile("main") &&
+                metadata.Load(npdm) == ResultStatus::Success && metadata.IsSwitch2() &&
+                metadata.GetTitleID() ==
+                    FileSys::GetBaseTitleIDWithProgramIndex(
+                        FileSys::WithPlatformOf(base_title_id, 0x0400000000000000ULL), 1)) {
+                base_title_id = metadata.GetTitleID();
+                exefs = edition_exefs;
+                edition_romfs = edition->GetSubdirectory("romfs");
+                const auto control = edition->GetDirectoryRelative("control/Acd_1");
+                edition_control = control ? control->GetFile("control.nacp") : nullptr;
+                LOG_INFO(Loader, "NUP standalone update: using embedded Switch 2 program {:016X}",
+                         base_title_id);
+            }
+        }
     }
     secondary_loader = std::make_unique<AppLoader_DeconstructedRomDirectory>(exefs, true);
 
@@ -155,8 +181,9 @@ AppLoader_NUP::AppLoader_NUP(FileSys::VirtualFile file_)
         display_version = program.display_version.empty() ? DecodeVersion(program.version)
                                                           : program.display_version;
     }
-    nacp_file = BuildNacp(program, display_version);
-    if (!program.nacp.empty()) {
+    nacp_file = edition_control ? std::make_unique<FileSys::NACP>(edition_control)
+                                : BuildNacp(program, display_version);
+    if (edition_control || !program.nacp.empty()) {
         title_override = program.title_name;
     }
     if (nacp_file != nullptr && !program.icon.empty()) {
@@ -303,7 +330,8 @@ ResultStatus AppLoader_NUP::ReadRomFS(FileSys::VirtualFile& out_file) {
         update_index ? nup->GetRomFSDir(*update_index) : FileSys::VirtualDir{};
     // A standalone update carries the complete merged tree; a base+update pair
     // overlays the update onto the base (SPEC §4.1.4).
-    const auto merged = FileSys::NupContainer::MergeShadowDirs(base_romfs, update_romfs);
+    const auto merged = NupContainer::MergeShadowDirs(
+        NupContainer::MergeShadowDirs(base_romfs, update_romfs), edition_romfs);
     if (merged == nullptr) {
         return ResultStatus::ErrorNoRomFS;
     }
@@ -333,6 +361,11 @@ ResultStatus AppLoader_NUP::ReadProgramIds(std::vector<u64>& out_program_ids) {
     }
     out_program_ids.push_back(base_title_id);
     return ResultStatus::Success;
+}
+
+ResultStatus AppLoader_NUP::ReadProgramMetadata(FileSys::ProgramMetadata& out) {
+    return secondary_loader ? secondary_loader->ReadProgramMetadata(out)
+                            : ResultStatus::ErrorNotInitialized;
 }
 
 ResultStatus AppLoader_NUP::ReadIcon(std::vector<u8>& buffer) {

@@ -51,6 +51,10 @@ public:
 
     [[nodiscard]] virtual std::string GetDeviceVendor() const = 0;
 
+    [[nodiscard]] virtual bool IsNvidiaTuringOrNewer() const {
+        return false;
+    }
+
     // Getter/setter functions:
     // ------------------------
 

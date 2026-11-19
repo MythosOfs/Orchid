@@ -119,17 +119,25 @@ MCP does this already), keep runs short, end the emulator afterwards. The laptop
 tests; it may only compile (see "Builds: PC or laptop"). The maintainer tests only the final build
 before a release.
 
-### Test runs go to a test subagent
+### Every emulator run goes to the Sol test subagent
 
-Routine test runs (boot a game, drive the `orchid` MCP, `orchid-test-run`, screenshots, sound
-recordings, collecting logs, CSV and `summary.txt`) go to a test subagent on GPT-6.2 Sol
-(`gpt-6.2-sol`), reasoning effort `medium`, started with `delegate_task` on the Codex provider.
-It runs on the maintainer's ChatGPT subscription and spares the Claude limits. The maintainer
-chose Sol over GPT-6.1 Terra on 2026-11-18 (better at this work). Not the default `low`: for
-Terra it was clearly weaker at computer use.
+Every run that starts the emulator (boot a game, drive the `orchid` MCP, `orchid-test-run`,
+repro and diagnosis runs while debugging, screenshots, sound recordings, collecting logs, CSV
+and `summary.txt`) goes to a test subagent on GPT-6.2 Sol (`gpt-6.2-sol`), reasoning effort
+`medium`, started with `delegate_task` on the Codex provider. It runs on the maintainer's
+ChatGPT subscription and spares the Claude limits. The maintainer chose Sol over GPT-6.1 Terra
+on 2026-11-18 (better at this work). Not the default `low`: for Terra it was clearly weaker at
+computer use.
 
+- This section is the maintainer's standing, explicit request for that subagent. It holds in
+  every harness, also where the harness's own rules allow subagents only when the user asks
+  (Devin ran a whole debugging session's boots itself on that ground, 2026-11-19).
+- `delegate_task` is a T3 Code tool. Where it is not among your tools, call it on the `t3-code`
+  MCP server (`orchestrator_capabilities` first, for the provider and option names). If Sol
+  cannot be reached, report that and run a test yourself only with the maintainer's go-ahead.
 - The main agent (Fable or Opus) writes the brief up front: game, scene, exact steps, what to
-  record, return format (file paths, raw numbers, screenshot paths).
+  record, return format (file paths, raw numbers, screenshot paths). While debugging, one brief
+  per experiment (build, snapshot, settings, environment variables, what to wait for).
 - The subagent returns data only. The main agent decides: regression or not, root cause, code
   changes, whether to ship. When a screenshot decides the outcome, look at it yourself.
 - All rules in this file apply to the subagent run (`agent-run`, `orchid-test-run` for performance

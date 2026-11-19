@@ -169,13 +169,12 @@ void LoadOverrides(std::uint64_t program_id, const VideoCore::RendererBase& rend
     LoadEarlyOverrides(program_id);
     Settings::values.preemptive_cpu_reads = false;
 
-    // Issue 164: a flat cyan band covers the lower screen in Kirby's opening forest on NVIDIA
-    // with Vulkan (GTX 1070, driver 560.94); not seen on RADV. Cause unknown; the shader
-    // environment skips the fog paths of the affected composite shader instead. Assigned once:
-    // shader workers read it while the configuration dialog calls this mid-game.
+    // Keep the workaround for the GTX 1070 from issue 164. On Turing with the proprietary
+    // driver the band does not reproduce, and skipping the fog removes the DLC effect (#174).
+    // Shader workers read this while the configuration dialog can call this mid-game.
     Settings::values.kirby_fog_workaround =
         static_cast<TitleID>(program_id) == TitleID::KirbyForgottenLandNintendoSwitch2Edition &&
-        env.vendor == GPUVendor::Nvidia &&
+        env.vendor == GPUVendor::Nvidia && !renderer.IsNvidiaTuringOrNewer() &&
         Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::Vulkan;
 
     switch (static_cast<TitleID>(program_id)) {

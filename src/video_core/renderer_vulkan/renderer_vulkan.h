@@ -59,6 +59,11 @@ public:
         return device.GetDriverName();
     }
 
+    [[nodiscard]] bool IsNvidiaTuringOrNewer() const override {
+        return device.GetDriverID() == VK_DRIVER_ID_NVIDIA_PROPRIETARY &&
+               device.GetNvidiaArch() >= NvidiaArchitecture::Arch_Turing;
+    }
+
     // Enhanced platform-specific initialization
     void InitializePlatformSpecific();
 

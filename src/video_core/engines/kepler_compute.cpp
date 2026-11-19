@@ -558,11 +558,17 @@ bool KeplerCompute::DispatchNativeCompute(const NativeQmdScheduler::Descriptor& 
     try {
         rasterizer->DispatchCompute();
     } catch (const Shader::Exception& error) {
+        const std::string_view what{error.what()};
         static std::unordered_set<std::string> logged;
         if (logged.insert(error.what()).second) {
-            LOG_ERROR(HW_GPU, "Native compute shader rejected: {}", error.what());
+            if (what.find("cooperative path unavailable") != std::string_view::npos) {
+                LOG_INFO(HW_GPU, "Tensor-core program replaced by an upscale, the normal path without "
+                                 "EDEN_NX2_TENSOR: {}", what);
+            } else {
+                LOG_ERROR(HW_GPU, "Native compute shader rejected: {}", what);
+            }
         }
-        if (std::string_view{error.what()}.find("matrix multiply") != std::string_view::npos) {
+        if (what.find("matrix multiply") != std::string_view::npos) {
             DescribeNativeResources(qmd);
             // The console runs this on tensor cores; stand in with a plain upscale of its input.
             return UpscaleInsteadOfNativeProgram();
@@ -776,7 +782,7 @@ bool KeplerCompute::UpscaleInsteadOfNativeProgram() {
             }
         }
         known->second = threshold && exponent;
-        LOG_INFO(HW_GPU, "Upscale fallback for program {:#x}: {}", program,
+        LOG_INFO(HW_GPU, "Upscale for tensor-core program {:#x}: {}", program,
                  known->second ? "decodes sRGB like the program" : "plain copy");
     }
     Fermi2D::Config config{

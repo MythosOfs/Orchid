@@ -291,7 +291,8 @@ void RendererVulkan::Report() const {
     LOG_INFO(Render_Vulkan, "Driver: {}", driver_name);
     LOG_INFO(Render_Vulkan, "Device: {}", model_name);
     LOG_INFO(Render_Vulkan, "Vulkan: {}", api_version);
-    LOG_INFO(Render_Vulkan, "Available VRAM: {:.2f} GiB", available_vram);
+    LOG_INFO(Render_Vulkan, "VRAM limit for caches: {:.2f} GiB (driver budget minus a reserve, "
+                            "capped unless VRAM usage is Aggressive)", available_vram);
 }
 
 vk::Buffer RendererVulkan::RenderToBuffer(std::span<const Tegra::FramebufferConfig> framebuffers,

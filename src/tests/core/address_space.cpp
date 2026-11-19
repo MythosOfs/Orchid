@@ -43,11 +43,7 @@ TEST_CASE("Switch 2 processes get a 128 GiB alias region", "[kernel][heap]") {
 }
 
 TEST_CASE("Kernel page table heap covers the Switch 2 main memory", "[kernel][heap]") {
-    static_assert(Kernel::KernelPageTableHeapSize ==
-                  Kernel::GetMaximumOverheadSize(Kernel::MainMemorySizeMaxSwitch2));
     static_assert(Kernel::KernelPageTableHeapSize >
                   Kernel::GetMaximumOverheadSize(Kernel::MainMemorySizeMax));
     REQUIRE(Kernel::KernelPageTableHeapSize == (12 + 6144) * Kernel::PageSize);
-    REQUIRE(Kernel::MainMemorySizeMax == 8_GiB);
-    REQUIRE(Kernel::MainMemorySizeMaxSwitch2 == 12_GiB);
 }

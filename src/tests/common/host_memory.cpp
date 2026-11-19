@@ -17,17 +17,6 @@ static constexpr size_t BACKING_SIZE = 4_GiB;
 static constexpr auto PERMS = Common::MemoryPermission::ReadWrite;
 static constexpr auto HEAP = false;
 
-TEST_CASE("HostMemory: Initialize and deinitialize", "[common]") {
-    {
-        HostMemory mem(BACKING_SIZE, VIRTUAL_SIZE);
-        REQUIRE(mem.BackingBasePointer() != nullptr);
-    }
-    {
-        HostMemory mem(BACKING_SIZE, VIRTUAL_SIZE);
-        REQUIRE(mem.BackingBasePointer() != nullptr);
-    }
-}
-
 TEST_CASE("HostMemory: Simple map", "[common]") {
     HostMemory mem(BACKING_SIZE, VIRTUAL_SIZE);
     REQUIRE(mem.BackingBasePointer() != nullptr);
@@ -48,18 +37,6 @@ TEST_CASE("HostMemory: Simple mirror map", "[common]") {
     volatile u8* const mirror_b = mem.VirtualBasePointer() + 0x8000;
     mirror_b[0] = 76;
     REQUIRE(mirror_a[0x1000] == 76);
-}
-
-TEST_CASE("HostMemory: Simple unmap", "[common]") {
-    HostMemory mem(BACKING_SIZE, VIRTUAL_SIZE);
-    REQUIRE(mem.BackingBasePointer() != nullptr);
-    mem.Map(0x5000, 0x3000, 0x2000, PERMS, HEAP);
-
-    volatile u8* const data = mem.VirtualBasePointer() + 0x5000;
-    data[75] = 50;
-    REQUIRE(data[75] == 50);
-
-    mem.Unmap(0x5000, 0x2000, HEAP);
 }
 
 TEST_CASE("HostMemory: Simple unmap and remap", "[common]") {

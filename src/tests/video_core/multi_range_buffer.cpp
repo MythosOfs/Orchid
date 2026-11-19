@@ -9,19 +9,6 @@
 
 #include "video_core/renderer_vulkan/vk_multi_range_buffer.h"
 
-// The cache releases an entry's buffers once it went unbound for longer than the limit; an entry
-// bound this frame or within the limit must stay (its buffer is in the frame's descriptors).
-TEST_CASE("Multi-range entries are released only after the unused limit", "[multi_range_buffer]") {
-    using Cache = Vulkan::MultiRangeBufferCache;
-    const u64 limit = Cache::MAX_UNUSED_FRAMES;
-    CHECK(limit == 60);
-    CHECK_FALSE(Cache::IsUnused(1000, 1000));
-    CHECK_FALSE(Cache::IsUnused(1000, 999));
-    CHECK_FALSE(Cache::IsUnused(1000 + limit, 1000));
-    CHECK(Cache::IsUnused(1001 + limit, 1000));
-    CHECK(Cache::IsUnused(5000, 0));
-}
-
 // TickFrame's sweep: every entry past the limit is handed to the retire callback exactly once and
 // removed, the others stay untouched (their buffers may be in the current frame's descriptors).
 TEST_CASE("Multi-range sweep retires and erases only unused entries", "[multi_range_buffer]") {

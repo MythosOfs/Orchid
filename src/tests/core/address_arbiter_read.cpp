@@ -32,7 +32,6 @@ TEST_CASE("64-bit address arbiter reads reject wrapping ranges", "[core][address
     std::int64_t value = -1;
 
     // This address is 8-byte aligned and lies above the kernel virtual address range.
-    CHECK((max - 7) % 8 == 0);
     CHECK_FALSE(Kernel::IsKernelAddress(max - 7));
     CHECK_FALSE(Kernel::Detail::ReadArbiterValue64(memory, max - 7, value));
     CHECK(memory.checks == 0);

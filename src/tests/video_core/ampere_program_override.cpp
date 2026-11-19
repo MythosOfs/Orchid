@@ -29,6 +29,23 @@ void SetWord(std::vector<u8>& bytes, size_t index, u32 value) {
     std::memcpy(bytes.data() + index * sizeof(u32), &value, sizeof(value));
 }
 
+// Writes the current OV3 layout that DecodeProgramOverride reads.
+std::vector<u8> EncodeProgramOverride(std::span<const Instruction> source,
+                                     const LoweredProgram& program) {
+    if (!program || program.source_size != source.size_bytes() || program.source_instruction_offsets.size() != source.size()) return {};
+    const std::array<u32, 7> header{0x4e454445, 0x3330564f,
+        static_cast<u32>(source.size_bytes()), static_cast<u32>(program.instructions.size()),
+        program.required_texture_buffer, static_cast<u32>(program.source_instruction_offsets.size()),
+        program.required_surface_buffer};
+    std::vector<u8> bytes(sizeof(header) + source.size_bytes() + program.instructions.size() * 8 + program.source_instruction_offsets.size() * 4);
+    std::memcpy(bytes.data(), header.data(), sizeof(header));
+    std::memcpy(bytes.data() + sizeof(header), source.data(), source.size_bytes());
+    std::memcpy(bytes.data() + sizeof(header) + source.size_bytes(), program.instructions.data(), program.instructions.size() * 8);
+    std::memcpy(bytes.data() + sizeof(header) + source.size_bytes() + program.instructions.size() * 8,
+                program.source_instruction_offsets.data(), program.source_instruction_offsets.size() * 4);
+    return bytes;
+}
+
 std::vector<u8> Fixture(u32 version) {
     if (version != 0x3330564f)
         return LegacyFixture(version);

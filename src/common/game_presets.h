@@ -54,17 +54,17 @@ inline constexpr u64 SuperMarioBrosWonderProgramId = 0x010015100B514000ULL;
 inline constexpr u64 KirbyForgottenLandProgramId = 0x01004D300C5AE000ULL;
 
 namespace Detail {
-inline auto SessionSetter(bool global) {
-    return [global](auto& setting, auto value) {
-        setting.SetGlobal(global);
+inline auto SessionSetter() {
+    return [](auto& setting, auto value) {
+        setting.SetGlobal(false);
         setting.SetValue(value);
     };
 }
 
 /// Shared graphics baseline. Do not impose native GPU synchronization or clock settings here:
 /// Programs with the Switch 1 layout retain those preferences.
-inline void SetGraphicsBaseSettings(Values& settings, bool global) {
-    const auto session = SessionSetter(global);
+inline void SetGraphicsBaseSettings(Values& settings) {
+    const auto session = SessionSetter();
     session(settings.renderer_backend, RendererBackend::Vulkan);
     session(settings.resolution_setup, ResolutionSetup::Res1X);
     session(settings.use_asynchronous_shaders, true);
@@ -75,33 +75,33 @@ inline void SetGraphicsBaseSettings(Values& settings, bool global) {
     session(settings.anti_aliasing, AntiAliasing::Fxaa);
 }
 
-inline void SetSwitch2BaseSettings(Values& settings, bool global) {
-    SetGraphicsBaseSettings(settings, global);
-    const auto session = SessionSetter(global);
+inline void SetSwitch2BaseSettings(Values& settings) {
+    SetGraphicsBaseSettings(settings);
+    const auto session = SessionSetter();
     session(settings.gpu_accuracy, GpuAccuracy::Low);
     session(settings.use_reactive_flushing, false);
 }
 } // namespace Detail
 
-inline void SetDonkeyKongBananzaRecommendedSettings(Values& settings, bool global) {
-    Detail::SetSwitch2BaseSettings(settings, global);
-    const auto session = Detail::SessionSetter(global);
+inline void SetDonkeyKongBananzaRecommendedSettings(Values& settings) {
+    Detail::SetSwitch2BaseSettings(settings);
+    const auto session = Detail::SessionSetter();
     // The game picks its resolution and swap interval from GPU timestamps (game_settings.cpp).
     session(settings.gpu_clock, GpuClock::Boost);
     session(settings.fps30_patch, true);
 }
 
-inline void SetHyruleWarriorsRecommendedSettings(Values& settings, bool global) {
-    Detail::SetSwitch2BaseSettings(settings, global);
-    const auto session = Detail::SessionSetter(global);
+inline void SetHyruleWarriorsRecommendedSettings(Values& settings) {
+    Detail::SetSwitch2BaseSettings(settings);
+    const auto session = Detail::SessionSetter();
     // A faster CPU clock speeds the game itself up (game_settings.cpp).
     session(settings.cpu_clock, CpuClock::Normal);
     session(settings.gpu_fence_behavior, GpuFenceBehavior::Balanced);
 }
 
-inline void SetMarioTennisFeverRecommendedSettings(Values& settings, bool global) {
-    Detail::SetSwitch2BaseSettings(settings, global);
-    const auto session = Detail::SessionSetter(global);
+inline void SetMarioTennisFeverRecommendedSettings(Values& settings) {
+    Detail::SetSwitch2BaseSettings(settings);
+    const auto session = Detail::SessionSetter();
     // Balanced fences keep the characters visible; presenting from its own thread keeps 60 fps.
     session(settings.gpu_fence_behavior, GpuFenceBehavior::Balanced);
     session(settings.async_presentation, true);
@@ -110,7 +110,7 @@ inline void SetMarioTennisFeverRecommendedSettings(Values& settings, bool global
 struct GamePreset {
     u64 program_id;
     const char* name;
-    void (*apply)(Values& settings, bool global);
+    void (*apply)(Values& settings);
 };
 
 inline constexpr GamePreset GamePresets[] = {
@@ -166,8 +166,8 @@ inline bool ApplyGamePreset(Values& settings, u64 program_id, GamePresetQuality 
     if (preset == nullptr) {
         return false;
     }
-    preset->apply(settings, false);
-    const auto session = Detail::SessionSetter(false);
+    preset->apply(settings);
+    const auto session = Detail::SessionSetter();
     // Tiers by host class: Low for weak GPUs, Standard for mid-range, High for high-end cards.
     // Measured on a RX 9070 XT at the fps cap (Mario Tennis Fever, Wonder, Bananza, Hyrule
     // Warriors, Pokopia): SMAA and 16x anisotropy each cost 0-2 points of GPU load at 1x, so
@@ -195,10 +195,6 @@ inline bool ApplyGamePreset(Values& settings, u64 program_id, GamePresetQuality 
         break;
     }
     return true;
-}
-
-inline bool ApplyGamePreset(Values& settings, u64 program_id, bool accepted) {
-    return accepted && ApplyGamePreset(settings, program_id, GamePresetQuality::Standard);
 }
 
 } // namespace Settings

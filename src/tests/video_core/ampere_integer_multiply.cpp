@@ -294,7 +294,6 @@ TEST_CASE("Ampere high IMAD adds a register pair before selecting the high word"
             const u32 expected = static_cast<u32>((u64{values[0]} * values[1] + addend) >> 32);
             machine.Run(lowered.instructions);
             REQUIRE(machine.Read(10) == expected);
-            if (values[0] == 214748336U) REQUIRE(expected == 214748364U);
             CheckUnchanged(before, machine, 10, 1);
         }
     }

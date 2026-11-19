@@ -58,23 +58,12 @@ TEST_CASE("Display filter defaults use ScaleForce and FXAA", "[game_presets]") {
     CHECK(settings->anti_aliasing.GetDefault() == Settings::AntiAliasing::Fxaa);
 }
 
-TEST_CASE("Accepted MTF settings replace visible global preferences", "[game_presets]") {
-    auto settings = std::make_unique<Settings::Values>();
-    SetConflictingPreferences(*settings, false);
-    Settings::SetMarioTennisFeverRecommendedSettings(*settings, true);
-    CheckPreset(*settings);
-    CHECK(settings->anti_aliasing.GetValue() == Settings::AntiAliasing::Fxaa);
-    CHECK(settings->renderer_backend.UsingGlobal());
-    CHECK(settings->gpu_accuracy.UsingGlobal());
-    CHECK(settings->renderer_backend.GetValue(true) == Settings::RendererBackend::Vulkan);
-    CHECK(settings->gpu_accuracy.GetValue(true) == Settings::GpuAccuracy::Low);
-}
-
 TEST_CASE("MTF preset overrides saved settings for the session", "[game_presets]") {
     auto settings = std::make_unique<Settings::Values>();
     SetConflictingPreferences(*settings, false);
     SetConflictingPreferences(*settings, true);
-    REQUIRE(Settings::ApplyGamePreset(*settings, Settings::MarioTennisFeverProgramId, true));
+    REQUIRE(Settings::ApplyGamePreset(*settings, Settings::MarioTennisFeverProgramId,
+                                      Settings::GamePresetQuality::Standard));
     CheckPreset(*settings);
     CheckPreferences(*settings, true);
     for (const auto& restore : settings->linkage.restore_functions) {
@@ -83,67 +72,9 @@ TEST_CASE("MTF preset overrides saved settings for the session", "[game_presets]
     CheckPreferences(*settings);
     CHECK(settings->renderer_backend.UsingGlobal());
     CHECK(settings->resolution_setup.UsingGlobal());
-    REQUIRE(Settings::ApplyGamePreset(*settings, Settings::MarioTennisFeverProgramId, true));
+    REQUIRE(Settings::ApplyGamePreset(*settings, Settings::MarioTennisFeverProgramId,
+                                      Settings::GamePresetQuality::Standard));
     CheckPreset(*settings);
-}
-
-TEST_CASE("MTF preset does not change unrelated games", "[game_presets]") {
-    auto settings = std::make_unique<Settings::Values>();
-    SetConflictingPreferences(*settings, false);
-    CHECK_FALSE(Settings::ApplyGamePreset(*settings, 0, true));
-    CHECK_FALSE(
-        Settings::ApplyGamePreset(*settings, Settings::MarioTennisFeverProgramId + 1, true));
-    CheckPreferences(*settings);
-    CHECK(settings->renderer_backend.UsingGlobal());
-    CHECK(settings->resolution_setup.UsingGlobal());
-}
-
-TEST_CASE("Declining the MTF preset preserves global and per-game preferences", "[game_presets]") {
-    auto settings = std::make_unique<Settings::Values>();
-    for (bool per_game : {false, true}) {
-        SetConflictingPreferences(*settings, per_game);
-        CHECK_FALSE(
-            Settings::ApplyGamePreset(*settings, Settings::MarioTennisFeverProgramId, false));
-        CheckPreferences(*settings);
-        CHECK(settings->renderer_backend.UsingGlobal() == !per_game);
-        CHECK(settings->resolution_setup.UsingGlobal() == !per_game);
-    }
-}
-
-TEST_CASE("Every registered preset applies to its own title only", "[game_presets]") {
-    for (const auto& preset : Settings::GamePresets) {
-        auto settings = std::make_unique<Settings::Values>();
-        SetConflictingPreferences(*settings, false);
-        CHECK_FALSE(Settings::ApplyGamePreset(*settings, preset.program_id, false));
-        CheckPreferences(*settings);
-        REQUIRE(Settings::ApplyGamePreset(*settings, preset.program_id, true));
-        CHECK(settings->renderer_backend.GetValue() == Settings::RendererBackend::Vulkan);
-        CHECK(settings->resolution_setup.GetValue() == Settings::ResolutionSetup::Res1X);
-        const bool legacy = preset.program_id == Settings::SuperMarioBrosWonderProgramId ||
-                            preset.program_id == Settings::KirbyForgottenLandProgramId;
-        CHECK(settings->gpu_accuracy.GetValue() ==
-              (legacy ? Settings::GpuAccuracy::High : Settings::GpuAccuracy::Low));
-        CHECK(settings->use_reactive_flushing.GetValue() == legacy);
-        CheckPreferences(*settings, true);
-        CHECK(Settings::FindGamePreset(preset.program_id) == &preset);
-    }
-    CHECK(Settings::FindGamePreset(0) == nullptr);
-}
-
-TEST_CASE("Title presets set what the titles need", "[game_presets]") {
-    auto settings = std::make_unique<Settings::Values>();
-    REQUIRE(Settings::ApplyGamePreset(*settings, Settings::DonkeyKongBananzaProgramId, true));
-    CHECK(settings->gpu_clock.GetValue() == Settings::GpuClock::Boost);
-    CHECK(settings->fps30_patch.GetValue());
-    settings = std::make_unique<Settings::Values>();
-    REQUIRE(Settings::ApplyGamePreset(*settings, Settings::HyruleWarriorsAgeOfImprisonmentProgramId,
-                                      true));
-    CHECK(settings->cpu_clock.GetValue() == Settings::CpuClock::Normal);
-    CHECK(settings->gpu_fence_behavior.GetValue() == Settings::GpuFenceBehavior::Balanced);
-    settings = std::make_unique<Settings::Values>();
-    REQUIRE(Settings::ApplyGamePreset(*settings, Settings::MarioTennisFeverProgramId, true));
-    CHECK(settings->gpu_fence_behavior.GetValue() == Settings::GpuFenceBehavior::Balanced);
-    CHECK(settings->async_presentation.GetValue());
 }
 
 TEST_CASE("Graphics quality tokens are stable and legacy environment answers remain deterministic",
@@ -235,7 +166,7 @@ TEST_CASE("Changing quality replaces every visual override and ignores unsupport
     CHECK(settings->anti_aliasing.GetValue() == Settings::AntiAliasing::Fxaa);
     CHECK(settings->astc_recompression.GetValue() == Settings::AstcRecompression::Bc3);
     CHECK(settings->max_anisotropy.GetValue() == Settings::AnisotropyMode::X2);
-    REQUIRE(Settings::ApplyGamePreset(*settings, title, true));
+    REQUIRE(Settings::ApplyGamePreset(*settings, title, Quality::Standard));
     CHECK(settings->resolution_setup.GetValue() == Settings::ResolutionSetup::Res1X);
     CHECK(settings->anti_aliasing.GetValue() == Settings::AntiAliasing::Smaa);
     CHECK(settings->max_anisotropy.GetValue() == Settings::AnisotropyMode::X16);

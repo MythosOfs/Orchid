@@ -43,25 +43,6 @@ void QueuePacket(Network::ProxySocket& socket, Network::Protocol protocol,
 
 } // namespace
 
-TEST_CASE("Room UDP sockets receive queued datagrams with recv", "[core][sockets]") {
-    Network::ProxySocket socket;
-    BindSocket(socket, Network::Protocol::UDP);
-    REQUIRE(socket.SetNonBlock(true) == Network::Errno::SUCCESS);
-
-    const std::array<u8, 4> payload{1, 2, 3, 4};
-    QueuePacket(socket, Network::Protocol::UDP, payload);
-
-    std::array<u8, 4> received{};
-    const auto [count, error] = socket.Recv(0, received);
-    REQUIRE(error == Network::Errno::SUCCESS);
-    REQUIRE(count == static_cast<int>(payload.size()));
-    REQUIRE(received == payload);
-
-    const auto [empty_count, empty_error] = socket.Recv(0, received);
-    REQUIRE(empty_count == -1);
-    REQUIRE(empty_error == Network::Errno::AGAIN);
-}
-
 TEST_CASE("Room sockets peek without consuming", "[core][sockets]") {
     Network::ProxySocket socket;
     BindSocket(socket, Network::Protocol::UDP);
@@ -75,7 +56,7 @@ TEST_CASE("Room sockets peek without consuming", "[core][sockets]") {
             std::pair<s32, Network::Errno>{4, Network::Errno::SUCCESS});
     REQUIRE(socket.Recv(0, received) == std::pair<s32, Network::Errno>{4, Network::Errno::SUCCESS});
     REQUIRE(received == payload);
-    REQUIRE(socket.Recv(0, received).second == Network::Errno::AGAIN);
+    REQUIRE(socket.Recv(0, received) == std::pair<s32, Network::Errno>{-1, Network::Errno::AGAIN});
 }
 
 TEST_CASE("Room UDP sockets truncate oversized datagrams", "[core][sockets]") {

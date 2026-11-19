@@ -45,7 +45,6 @@ TEST_CASE("Nx2 destroyed sparse regions cannot accept stale backing", "[nx2_mapp
     const auto old = regions.at(Address).BeginBacking(0);
     REQUIRE(old);
     regions.erase(Address);
-    CHECK(regions.find(Address) == regions.end());
     regions.emplace(Address, Nx2SparseRegion{0x1000, 2});
     auto& replacement = regions.at(Address);
     CHECK_FALSE(replacement.FinishBacking(*old, true));

@@ -635,21 +635,6 @@ TEST_CASE("MemoryTracker: FlushCachedWrites batching") {
     REQUIRE(rasterizer.Count() == WORD * 2 / PAGE - 3);
 }
 
-TEST_CASE("DeviceMemoryManager: UpdatePagesCachedBatch basic") {
-    Core::DeviceMemory device_memory;
-    Tegra::MaxwellDeviceMemoryManager manager(device_memory);
-    // empty should be a no-op
-    std::vector<std::pair<DAddr, size_t>> empty;
-    manager.UpdatePagesCachedBatch(empty, 1);
-
-    // small ranges should be accepted and not crash
-    std::vector<std::pair<DAddr, size_t>> ranges;
-    ranges.emplace_back(0, Core::Memory::YUZU_PAGESIZE);
-    ranges.emplace_back(Core::Memory::YUZU_PAGESIZE, Core::Memory::YUZU_PAGESIZE);
-    manager.UpdatePagesCachedBatch(ranges, 1);
-    SUCCEED("UpdatePagesCachedBatch executed without error");
-}
-
 TEST_CASE("MemoryTracker: repeated indirect rewrites keep historical command-page tracking",
           "[video_core][nx2_command_sync][mkw_sync]") {
     Tegra::Nx2ClearGpuWrittenPages();

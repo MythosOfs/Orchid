@@ -11,7 +11,6 @@ namespace {
 
 template <typename Header>
 void CheckNrrLayout(size_t signed_offset, size_t header_size) {
-    REQUIRE(sizeof(Header) == header_size);
     REQUIRE(Header::GetSignedAreaOffset() == signed_offset);
 
     std::array<u8, sizeof(Header)> bytes{};

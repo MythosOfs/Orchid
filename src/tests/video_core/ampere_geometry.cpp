@@ -46,7 +46,6 @@ TEST_CASE("Ampere IMAD exit capture includes the complete Bananza handler",
                                   : ProgramCaptureState::Result::Continue;
         REQUIRE(capture.Observe(BananzaExitHandlerProgram[index], index) == expected);
     }
-    REQUIRE(sizeof(BananzaExitHandlerProgram) == 0x740);
 }
 
 TEST_CASE("Ampere IMAD exit capture requires exact carry fields", "[video_core][ampere]") {

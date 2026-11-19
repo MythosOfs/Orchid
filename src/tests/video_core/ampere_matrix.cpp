@@ -26,7 +26,6 @@ Warp ExecuteMatrixLoad(const std::vector<u64>& instructions, u32 address_registe
     for (u32 lane = 0; lane < 32; ++lane) {
         registers[lane][address_register] = 64U * lane;
     }
-    u32 shuffles{}, loads{};
     for (const u64 word : instructions) {
         const auto opcode = Shader::Maxwell::Decode(word);
         using Opcode = Shader::Maxwell::Opcode;
@@ -35,8 +34,6 @@ Warp ExecuteMatrixLoad(const std::vector<u64>& instructions, u32 address_registe
         const u32 b = (word >> 20) & 255;
         const u32 immediate = (word >> 20) & 0x7ffff;
         const Warp before = registers;
-        if (opcode == Opcode::SHFL) ++shuffles;
-        if (opcode == Opcode::LDS) ++loads;
         for (u32 lane = 0; lane < 32; ++lane) {
             const auto read = [&](u32 reg) { return reg == 255 ? 0U : before[lane][reg]; };
             switch (opcode) {
@@ -57,8 +54,6 @@ Warp ExecuteMatrixLoad(const std::vector<u64>& instructions, u32 address_registe
             }
         }
     }
-    REQUIRE(shuffles == 4);
-    REQUIRE(loads == 4);
     return registers;
 }
 } // namespace

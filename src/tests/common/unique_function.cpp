@@ -35,21 +35,11 @@ TEST_CASE("UniqueFunction", "[common]") {
         func();
         REQUIRE(value == 5);
     }
-    SECTION("Capture pointer") {
-        int value = 0;
-        int* pointer = &value;
-        Common::UniqueFunction<void> func = [pointer] { *pointer = 5; };
-        func();
-        REQUIRE(value == 5);
-    }
     SECTION("Move object") {
         Noisy noisy;
-        REQUIRE(noisy.state == "Default constructed");
-
         Common::UniqueFunction<void> func = [noisy_inner = std::move(noisy)] {
             REQUIRE(noisy_inner.state == "Move constructed");
         };
-        REQUIRE(noisy.state == "Moved away");
         func();
     }
     SECTION("Move construct function") {

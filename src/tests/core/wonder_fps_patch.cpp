@@ -209,7 +209,6 @@ TEST_CASE("Wonder audit separates slow frames and settled continuous above-30 ru
 
 TEST_CASE("Display mode capability reports VRR only when asked", "[game_fps]") {
     // The sdk's QueryDisplayVrrSupported shifts the refresh rate flags right by 63.
-    CHECK(Settings::DisplayRefreshRateFlags(true) >> 63 == 1);
     CHECK(Settings::DisplayRefreshRateFlags(true) == 0x8000000000000000ULL);
     CHECK(Settings::DisplayRefreshRateFlags(false) == 0);
 }

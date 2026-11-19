@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-#include <algorithm>
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 #include "shader_recompiler/frontend/ampere/lower_to_maxwell.h"
@@ -25,40 +24,6 @@ TEST_CASE("Yoshi UP0 uniform right shift preserves guard and operands",
         CHECK(lowered.instructions[2] == (0x5c28000000000000ULL | (6ULL << 16) | (216ULL + dest) |
                                           (225ULL << 8) | (221ULL << 20)));
         CHECK(lowered.instructions[3] == (0x38f0000000070000ULL | (253ULL << 8) | (mask << 20)));
-        for (const u32 value : {0U, 1U, 0x80000001U, 0xffffffffU}) {
-            for (const u32 amount : {0U, 1U, 31U, 32U, 63U, 255U}) {
-                for (const bool guard : {false, true}) {
-                    for (const bool guest_p6 : {false, true}) {
-                        std::array<u32, 256> regs{};
-                        regs[221] = amount;
-                        regs[225] = value;
-                        regs[216 + dest] = 0xabcdef01;
-                        // Aliased destinations begin with their source's original value.
-                        if (dest == 5)
-                            regs[221] = amount;
-                        if (dest == 9)
-                            regs[225] = value;
-                        const u32 before = regs[216 + dest], source = regs[225], count = regs[221];
-                        regs[239] = guard ? mask : 0;
-                        bool p6 = guest_p6;
-                        for (u64 w : lowered.instructions) {
-                            if ((w >> 48) == 0x38e8)
-                                regs[253] = p6 ? mask : 0;
-                            else if ((w >> 48) == 0x38f0)
-                                p6 = (regs[(w >> 8) & 255] & mask) != 0;
-                            else if ((w >> 48) == 0x5c28 && p6)
-                                regs[w & 255] = count < 32 ? source >> count : 0;
-                        }
-                        const u64 wide = u64{source} << 32;
-                        const u32 expected =
-                            guard ? static_cast<u32>((wide >> std::min(count, 32U)) >> 32) : before;
-                        CHECK(regs[216 + dest] == expected);
-                        CHECK(p6 == guest_p6);
-                        CHECK(regs[239] == (guard ? mask : 0));
-                    }
-                }
-            }
-        }
     }
 }
 

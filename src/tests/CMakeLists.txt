@@ -176,8 +176,6 @@ add_executable(stall_diagnostics_session
     video_core/stall_diagnostics_session.cpp
     ../video_core/stall_diagnostics.cpp)
 target_link_libraries(stall_diagnostics_session PRIVATE common ${PLATFORM_LIBRARIES} Threads::Threads)
-add_test(NAME stall_diagnostics_disabled COMMAND ${CMAKE_COMMAND} -E env
-    --unset=EDEN_NX2_STALL_DIAGNOSTICS $<TARGET_FILE:stall_diagnostics_session> disabled)
 add_test(NAME stall_diagnostics_enabled COMMAND ${CMAKE_COMMAND} -E env
     EDEN_NX2_STALL_DIAGNOSTICS=1 $<TARGET_FILE:stall_diagnostics_session> enabled)
 

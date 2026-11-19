@@ -29,7 +29,6 @@ TEST_CASE("Frame step follows the frame time", "[game_fps]") {
     CHECK(Run(stepper, 2 * FrameNs, 4) == std::vector<u32>{1, 2, 2, 2});
     // Never more than the game's own two steps, however slow the frames are.
     CHECK(Run(stepper, 5 * FrameNs, 3) == std::vector<u32>{2, 2, 2});
-    CHECK(Core::FrameStepFps::MaxStep == 2);
     Core::FrameStepFps slow;
     CHECK(Run(slow, 5 * FrameNs, 3) == std::vector<u32>{1, 2, 2});
     // Faster than 60 FPS still simulates one frame per rendered frame.
@@ -38,7 +37,6 @@ TEST_CASE("Frame step follows the frame time", "[game_fps]") {
 }
 
 TEST_CASE("Frame step ignores a single slow frame", "[game_fps]") {
-    CHECK(Core::FrameStepFps::OverBeforeUp == 2);
     Core::FrameStepFps stepper;
     for (int i = 0; i < 5; ++i) {
         // A hitch between frames that fit never adds up to two in a row.

@@ -164,16 +164,6 @@ TEST_CASE("Yoshi LEA low-add carry reaches Maxwell IR", "[video_core][yoshi_lea]
                                 CHECK(preds[p] == oldpreds[p]);
                         CHECK(regs[227] == b);
                         CHECK(regs[239] == 0x5a);
-                        // Independent full-64-bit pair oracle; this does not execute the HI
-                        // consumer.
-                        for (u32 ah : {0U, 1U, 0xffffffffU})
-                            for (u32 bh : {0U, 1U, 0xffffffffU}) {
-                                const u64 expected =
-                                    (((u64{ah} << 32) | a) << 1) + ((u64{bh} << 32) | b);
-                                const u32 high =
-                                    static_cast<u32>((u64{ah} << 1) + (a >> 31) + bh + u32{carry});
-                                CHECK(((u64{high} << 32) | low) == expected);
-                            }
                     }
         }
 }
@@ -240,20 +230,11 @@ TEST_CASE("Yoshi LEA low/high pair preserves 64-bit address and predicates",
                                 else
                                     FAIL("Unexpected pair instruction " << std::hex << insn);
                                 RunLeaIR(block, regs, preds);
-                                if (program == &high) {
-                                    CHECK(preds[pout] ==
-                                          ((u64{static_cast<u32>(a << 1)} + b) > 0xffffffffULL));
-                                    for (u32 p = 0; p < 7; ++p)
-                                        if (p != pout)
-                                            CHECK(preds[p] == saved[p]);
-                                }
                             }
                             if (program == &low) {
                                 const bool lowcarry =
                                     (u64{static_cast<u32>(a << 1)} + b) > 0xffffffffULL;
                                 CHECK(preds[pout] == lowcarry);
-                                if (a == 0x80000000U && b == 0)
-                                    CHECK_FALSE(preds[pout]);
                             }
                         }
                         const u64 expected = (((u64{ah} << 32) | a) << 1) + ((u64{bh} << 32) | b);

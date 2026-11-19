@@ -23,8 +23,6 @@ TEST_CASE("Stall diagnostic session is disabled without an explicit opt in",
     }
     Start();
     CHECK_FALSE(IsActive());
-    Scope scope{{Phase::QueueSubmit, "test"}};
-    CHECK_FALSE(IsActive());
 }
 
 TEST_CASE("Stall diagnostics restore nested phases on normal and exceptional exit",

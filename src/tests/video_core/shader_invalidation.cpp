@@ -2,8 +2,6 @@
 
 #include <algorithm>
 #include <array>
-#include <chrono>
-#include <iostream>
 #include <memory>
 #include <random>
 #include <vector>
@@ -55,7 +53,6 @@ TEST_CASE("Instruction cache invalidation snapshots accepted and rejected shader
     cache->InvalidateRegions(ranges);
     REQUIRE(cache->GetShaderCodeRanges().empty());
     REQUIRE_FALSE(ShaderCacheTestAccess::Find(*cache, accepted));
-    REQUIRE(ranges.size() == 2);
 }
 
 TEST_CASE("Shader batch invalidation matches sequential cache contents", "[shader_invalidation]") {
@@ -109,42 +106,4 @@ TEST_CASE("Shader empty batches preserve pending invalidations", "[shader_invali
     const std::array unrelated{std::pair<DAddr, size_t>{address + 0x100000, 4096}};
     cache->InvalidateRegions(unrelated);
     REQUIRE_FALSE(ShaderCacheTestAccess::Find(*cache, address));
-}
-
-TEST_CASE("Shader invalidation CPU benchmark", "[.][cache_bench]") {
-    Core::DeviceMemory memory;
-    Tegra::MaxwellDeviceMemoryManager device_memory{memory};
-    auto batched = ShaderCacheTestAccess::Create(device_memory);
-    auto sequential = ShaderCacheTestAccess::Create(device_memory);
-    std::vector<std::pair<DAddr, size_t>> writes;
-    constexpr VAddr base = 0x100000;
-    for (unsigned slot = 0; slot < 768; ++slot) {
-        writes.emplace_back(base + slot * 65536, 1);
-    }
-    double sequential_ms{}, batched_ms{};
-    for (unsigned repeat = 0; repeat < 20; ++repeat) {
-        for (unsigned slot = 0; slot < 1024; ++slot) {
-            const auto address = base + slot * 65536;
-            if (!ShaderCacheTestAccess::Find(*batched, address)) {
-                ShaderCacheTestAccess::Register(*batched, address, 64, slot);
-                ShaderCacheTestAccess::Register(*sequential, address, 64, slot);
-            }
-        }
-        auto start = std::chrono::steady_clock::now();
-        for (const auto& [address, size] : writes) {
-            sequential->InvalidateRegion(address, size);
-        }
-        sequential_ms +=
-            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
-                .count();
-        start = std::chrono::steady_clock::now();
-        batched->InvalidateRegions(writes);
-        batched_ms +=
-            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
-                .count();
-        REQUIRE_FALSE(ShaderCacheTestAccess::Find(*batched, base));
-        REQUIRE(ShaderCacheTestAccess::Find(*batched, base + 1023 * 65536));
-    }
-    std::cout << "Shader invalidation: sequential=" << sequential_ms << " ms batched=" << batched_ms
-              << " ms (CPU only, not gameplay FPS)\n";
 }

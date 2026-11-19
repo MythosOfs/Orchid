@@ -14,7 +14,6 @@ TEST_CASE("Frame gap attribution separates the prior service from current fence 
     CHECK(metrics.composite_us == 1'000);
     CHECK(metrics.pace_us == 12'000);
     CHECK(metrics.service_us == 17'000);
-    CHECK(metrics.gap_us == metrics.external_us + metrics.previous_service_us);
     const auto first = MeasureFrame(current, nullptr);
     CHECK(first.gap_us == 0);
     CHECK(first.external_us == 0);

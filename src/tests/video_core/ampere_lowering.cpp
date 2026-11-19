@@ -140,23 +140,6 @@ TEST_CASE("Ampere integer-to-float conversions take immediates", "[video_core][a
     REQUIRE(static_cast<bool>(LowerToMaxwell(code)));
 }
 
-TEST_CASE("Ampere Yoshi immediate I2F preserves a half destination",
-          "[video_core][ampere][yoshi_frnd]") {
-    std::array<Instruction, 2> code{{
-        {{0x00197906, 0xffffffff, 0x00200c00, 0x000fe200}}, EXIT,
-    }};
-    const auto lowered = LowerToMaxwell(code);
-    REQUIRE(lowered);
-    REQUIRE(lowered.instructions.size() == 3);
-    const u64 conversion = FindMaxwell(lowered, 0x5cb, 52);
-    REQUIRE(((conversion >> 8) & 3) == 1); // F16 destination
-    REQUIRE(((conversion >> 10) & 3) == 2); // 32-bit integer source
-    REQUIRE(((conversion >> 13) & 1) == 1); // signed source
-    REQUIRE(((conversion >> 20) & 255) == 250);
-    code[0].words[2] ^= 1U << 11; // invalid destination format zero
-    REQUIRE_FALSE(LowerToMaxwell(code));
-}
-
 TEST_CASE("Ampere SUST.P keeps its channel mask", "[video_core][ampere]") {
     // SUST.P.2D.STRONG.SM.R.IGN [R6], R4, 0x0, 0x59
     const std::array<Instruction, 2> code{{
@@ -486,6 +469,7 @@ TEST_CASE("Yoshi immediate signed integer converts to half precision",
             CHECK(((conversion >> 10) & 3) == 2); // 32-bit integer source
             CHECK(((conversion >> 13) & 1) == 1); // signed
             CHECK(((conversion >> 39) & 3) == rounding);
+            CHECK(((conversion >> 20) & 255) == 250); // the immediate's scratch register
         }
     for (u32 format : {0U, 3U}) {
         const Instruction invalid{{0x00197906, 0xffffffffU,

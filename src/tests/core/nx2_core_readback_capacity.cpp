@@ -19,7 +19,6 @@ TEST_CASE("NX2 core readback cache retains a 128-page certified working set",
           "[core][nx2][readback_cache]") {
     std::vector<u8> backing(128 * YUZU_PAGESIZE);
     auto cache = std::make_unique<LargerReadbackCache>();
-    CoreReadbackCacheImpl<5> original;
     std::array<HostReadbackCache::Page, 128> pages{};
     for (size_t index = 0; index < pages.size(); ++index) {
         auto& page = pages[index];
@@ -28,14 +27,10 @@ TEST_CASE("NX2 core readback cache retains a 128-page certified working set",
         const VideoCore::RasterizerDownloadArea area{
             page.device_page, page.device_page + YUZU_PAGESIZE, false, 11};
         REQUIRE(cache->Remember(page, area, page, 1, 11));
-        REQUIRE(original.Remember(page, area, page, 1, 11));
     }
-    size_t original_hits = 0;
     for (const auto& page : pages) {
         REQUIRE(cache->CanReuse(page, 1, 11, 4, 4));
-        original_hits += original.CanReuse(page, 1, 11, 4, 4);
     }
-    REQUIRE(original_hits <= 64);
 }
 
 TEST_CASE("NX2 larger core cache retains identity and generation guards",

@@ -23,8 +23,8 @@ TEST_CASE("Ampere byte F2I clamps before converting and preserves predicates",
                 const auto lowered = LowerToMaxwell(code);
                 REQUIRE(static_cast<bool>(lowered));
                 const u64 guard = u64{predicate} << 16;
-                const u32 lower = is_signed ? 0xc3000000U : 0U;
-                const u32 upper = is_signed ? 0x42fe0000U : 0x437f0000U;
+                const u32 lower = std::bit_cast<u32>(is_signed ? -128.0f : 0.0f);
+                const u32 upper = std::bit_cast<u32>(is_signed ? 127.0f : 255.0f);
                 const std::array<u64, 7> expected{
                     0x5800000000000000ULL | guard | 250 | (3ULL << 8) | (3ULL << 20) |
                         (7ULL << 39) | (7ULL << 48),
@@ -42,8 +42,6 @@ TEST_CASE("Ampere byte F2I clamps before converting and preserves predicates",
                 };
                 REQUIRE(lowered.instructions.size() == expected.size() + 1);
                 REQUIRE(std::equal(expected.begin(), expected.end(), lowered.instructions.begin()));
-                REQUIRE(std::bit_cast<float>(lower) == (is_signed ? -128.0f : 0.0f));
-                REQUIRE(std::bit_cast<float>(upper) == (is_signed ? 127.0f : 255.0f));
             }
         }
     }

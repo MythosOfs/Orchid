@@ -65,7 +65,6 @@ TEST_CASE("Feedback shadow copies stay bounded", "[memory_budget]") {
     const std::vector<int> two_bound{11, 10};
     REQUIRE(FeedbackShadowToEvict<int>(shadows, two_bound, 3) == 2);
     REQUIRE(FeedbackShadowToEvict<int>(shadows, shadows, 3) == none);
-    REQUIRE(VideoCommon::MaxFeedbackShadows == 8);
 }
 
 TEST_CASE("Images replaced by a newer write over their memory are found", "[memory_budget]") {

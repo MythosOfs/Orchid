@@ -21,19 +21,6 @@ TEST_CASE("GPU time reports show when the work was submitted", "[video_core][rep
     REQUIRE(Nx2ReportTimeNs(9'000, 4'000, 3'000) == 4'000);
 }
 
-TEST_CASE("The running list's submit time is what reports show", "[video_core][report_time]") {
-    Tegra::CommandList list;
-    list.submit_ns = 1'234;
-    Nx2NoteRunningList(list);
-    REQUIRE(Tegra::g_nx2_list_submit_ns.load() == 1'234);
-    // A list without a submit time keeps the last one.
-    Nx2NoteRunningList(Tegra::CommandList{});
-    REQUIRE(Tegra::g_nx2_list_submit_ns.load() == 1'234);
-    list.submit_ns = 5'678;
-    Nx2NoteRunningList(list);
-    REQUIRE(Tegra::g_nx2_list_submit_ns.load() == 5'678);
-}
-
 TEST_CASE("Reports show the running list's submit time and never go back", "[video_core][report_time]") {
     Tegra::Nx2ReportClock clock;
     Tegra::CommandList list;
@@ -48,4 +35,7 @@ TEST_CASE("Reports show the running list's submit time and never go back", "[vid
     list.submit_ns = 1'500;
     Tegra::Nx2NoteRunningList(list);
     REQUIRE(clock.Next(9'500) == 2'000);
+    // A list without a submit time keeps the last one.
+    Tegra::Nx2NoteRunningList(Tegra::CommandList{});
+    REQUIRE(clock.Next(9'800) == 2'000);
 }

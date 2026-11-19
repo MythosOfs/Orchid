@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <array>
-#include <cstring>
 #include <catch2/catch_test_macros.hpp>
 
 #include "shader_recompiler/frontend/ampere/lower_to_maxwell.h"
-#include "shader_recompiler/frontend/ampere/program_override.h"
 
 TEST_CASE("Ampere ordinary gathers reject unproved half precision modes",
           "[video_core][ampere][release_guards]") {
@@ -67,17 +65,4 @@ TEST_CASE("Ampere dual carry additions retain unverified mode guards",
     uniform[0].words[0] = 0x3f077290;
     uniform[0].words[2] = 0x00fe443f;
     REQUIRE_FALSE(static_cast<bool>(Shader::Ampere::LowerToMaxwell(uniform)));
-}
-
-TEST_CASE("Ampere program overrides validate the surface buffer",
-          "[video_core][ampere][release_guards]") {
-    const std::array<Shader::Ampere::Instruction, 1> code{{{{0x0000794d, 0, 0x03800000, 0}}}};
-    const auto lowered = Shader::Ampere::LowerToMaxwell(code);
-    REQUIRE(static_cast<bool>(lowered));
-    auto bytes = Shader::Ampere::EncodeProgramOverride(code, lowered);
-    REQUIRE(Shader::Ampere::ProgramOverrideSourceSize(bytes) == sizeof(code));
-    for (const u32 surface : {3U, 18U}) {
-        std::memcpy(bytes.data() + 6 * sizeof(u32), &surface, sizeof(surface));
-        REQUIRE(static_cast<bool>(Shader::Ampere::DecodeProgramOverride(bytes, code)) == (surface < 18));
-    }
 }

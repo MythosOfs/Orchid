@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <array>
-#include <chrono>
 #include <cstring>
-#include <iostream>
 #include <limits>
 #include <random>
 #include <catch2/catch_test_macros.hpp>
@@ -139,40 +137,4 @@ TEST_CASE("Descriptor limits clear exposed slots after shrink and growth", "[des
         CHECK(table.Read(memory, 0).second);
         CHECK_FALSE(table.Read(memory, 0).second);
     }
-}
-
-TEST_CASE("Descriptor invalidation CPU benchmark", "[.][cache_bench]") {
-    DescriptorMemory memory;
-    const auto measure = [&](bool deferred) {
-        std::array<VideoCommon::DescriptorTable<u64>, 5> tables;
-        for (auto& table : tables) {
-            REQUIRE(table.Synchronize(0x1000, 127));
-        }
-        void (*volatile invalidate)(VideoCommon::DescriptorTable<u64>&) =
-            deferred ? +[](VideoCommon::DescriptorTable<u64>& table) { table.Invalidate(); }
-                     : +[](VideoCommon::DescriptorTable<u64>& table) {
-                           std::ranges::fill(table.read_descriptors, 0);
-                       };
-        size_t changed{};
-        const auto start = std::chrono::steady_clock::now();
-        for (unsigned batch = 0; batch < 2000; ++batch) {
-            for (unsigned deletion = 0; deletion < 50; ++deletion) {
-                for (auto& table : tables) {
-                    invalidate(table);
-                }
-            }
-            for (auto& table : tables) {
-                changed += table.Read(memory, 0).second;
-            }
-        }
-        const auto ms =
-            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
-                .count();
-        REQUIRE(changed == 10000);
-        return ms;
-    };
-    const double eager = measure(false);
-    const double deferred = measure(true);
-    std::cout << "Descriptor bitmap invalidation: eager=" << eager << " ms deferred=" << deferred
-              << " ms (CPU only, not gameplay FPS)\n";
 }

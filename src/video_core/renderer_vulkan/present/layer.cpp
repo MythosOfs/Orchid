@@ -227,13 +227,16 @@ void Layer::CreateRawImages(const Device& device, const Tegra::FramebufferConfig
 }
 
 void Layer::RefreshResources(const Device& device, const Tegra::FramebufferConfig& framebuffer) {
+    // The staging buffer holds rows of stride pixels.
     if (framebuffer.width == raw_width && framebuffer.height == raw_height &&
-        framebuffer.pixel_format == pixel_format && !raw_images.empty()) {
+        framebuffer.stride == raw_stride && framebuffer.pixel_format == pixel_format &&
+        !raw_images.empty()) {
         return;
     }
 
     raw_width = framebuffer.width;
     raw_height = framebuffer.height;
+    raw_stride = framebuffer.stride;
     pixel_format = framebuffer.pixel_format;
     anti_alias.emplace<std::monostate>();
 

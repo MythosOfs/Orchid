@@ -33,8 +33,6 @@ private:
     Kernel::KSharedMemory* guest_hid_memory{};
 };
 
-// Switch 2 stream play (GameShare), stpl:u. Command 0 (u32 0x12) opens the user service the SDK
-// keeps for the process; without an object the first nn::streamplay call jumps through null.
 class INx2StreamPlayService final : public ServiceFramework<INx2StreamPlayService> {
 public:
     explicit INx2StreamPlayService(Core::System& system_)
@@ -55,4 +53,4 @@ private:
     }
 };
 
-} // namespace Service
+}

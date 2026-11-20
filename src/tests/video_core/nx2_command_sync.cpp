@@ -9,7 +9,7 @@
 namespace {
 constexpr u64 Page = u64{1} << Tegra::Nx2WrittenPageBits;
 constexpr u64 AddressSpace = u64{1} << 36;
-} // Anonymous namespace
+}
 
 TEST_CASE("GPU-written command pages are tracked per page over the whole range",
           "[video_core][nx2_command_sync]") {
@@ -92,11 +92,9 @@ TEST_CASE("Only a page's first GPU write moves the written generation",
     Tegra::Nx2MarkGpuWritten(32 * Page, 2 * Page);
     const u64 after_first = Tegra::g_nx2_gpu_written_generation.load();
     REQUIRE(after_first > before);
-    // The same pages again, and a part of them: nothing new.
     Tegra::Nx2MarkGpuWritten(32 * Page, 2 * Page);
     Tegra::Nx2MarkGpuWritten(33 * Page + 16, 64);
     REQUIRE(Tegra::g_nx2_gpu_written_generation.load() == after_first);
-    // A page next to them is new.
     Tegra::Nx2MarkGpuWritten(34 * Page, 4);
     REQUIRE(Tegra::g_nx2_gpu_written_generation.load() > after_first);
 }

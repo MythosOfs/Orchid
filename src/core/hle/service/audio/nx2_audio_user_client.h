@@ -13,12 +13,6 @@
 
 namespace Service::Audio {
 
-// Switch 2 "aud:u" (nn::audio::CreateUserClientSessionByHipc). The SDK reaches the Switch 1
-// audio interfaces through it: command 2 returns an object used exactly like
-// IAudioRendererManager (vtable slot 1 = GetWorkBufferSize with a Switch 1 parameter block), so
-// it is backed by Eden's audren:u implementation. Command 1 is nn::audio::OpenAudioOut's
-// manager, called like IAudioOutManager (slot 1 = OpenAudioOut), backed by audout:u. The nx2: name
-// keeps unknown commands auto-stubbed and logged.
 class INx2AudioUserClient final : public ServiceFramework<INx2AudioUserClient> {
 public:
     explicit INx2AudioUserClient(Core::System& system_)
@@ -33,10 +27,6 @@ public:
     }
 
 private:
-    // The managers must be the registered audin:u / audout:u / audren:u instances. A fresh
-    // IAudioOutManager owns its own AudioCore::AudioOut::Manager, but AudioManager accepts only
-    // the first registered buffer-release callback, so sessions opened through a second manager
-    // never release buffers: the title queues 3 silent buffers and its audio thread stalls.
     template <typename T>
     std::shared_ptr<T> SharedManager(const char* name) {
         auto manager = system.ServiceManager().GetService<T>(name);
@@ -66,4 +56,4 @@ private:
     }
 };
 
-} // namespace Service::Audio
+}

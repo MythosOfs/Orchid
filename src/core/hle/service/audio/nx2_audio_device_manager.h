@@ -34,17 +34,9 @@
 
 namespace Service::Audio {
 
-// Switch 2 sound mixer streams (nn::audio::sysmix, behind audsmx:u). A stream is a ring buffer in
-// the game's own memory: CreateStream hands over its address and size (4 KiB aligned), OpenStream
-// its format and length in frames, and once the streams are engaged the system takes frames out of
-// the ring at the stream's sample rate. Stereo and six-channel 48 kHz S16 or F32 streams play
-// through a host sink stream of their own (Star Fox has all its sound there); other formats are drained in real time
-// so the game still sees its audio being played (Switch Sports' menu movie feeds one).
-// The ring's shared indices, in frames modulo (frame count + 1): the system's read index at
-// buffer + 0x44, the game's write index at buffer + 0x1004; the frames start at buffer + 0x1040.
 struct Nx2SysmixStream {
     u32 id{};
-    u32 owner{}; ///< the user session whose timer drains it
+    u32 owner{};
     u64 buffer{};
     u64 size{};
     u32 sample_type{};
@@ -54,10 +46,10 @@ struct Nx2SysmixStream {
     bool open{};
     bool engaged{};
     double owed_frames{};
-    u32 data_mode{};      ///< command 7's mode; 0 leaves the data event alone
-    s32 data_threshold{}; ///< free frames that signal the data event
+    u32 data_mode{};
+    s32 data_threshold{};
     f32 gain{1.0f};
-    AudioCore::Sink::SinkStream* host{}; ///< plays the frames, null for formats it can't take
+    AudioCore::Sink::SinkStream* host{};
     u64 host_tag{};
     Kernel::KEvent* state_event{};
     Kernel::KEvent* data_event{};
@@ -69,14 +61,11 @@ struct Nx2SysmixStreams {
     u32 next_id{1};
 };
 
-// Streams are created through audsmx:u but started and stopped through auddmg:u (AttachStream and
-// DetachStream), so both services share one list.
 inline std::shared_ptr<Nx2SysmixStreams> Nx2SysmixStreamList() {
     static const auto list = std::make_shared<Nx2SysmixStreams>();
     return list;
 }
 
-// Call with the list locked.
 inline void Nx2SysmixCloseHost(Core::System& system, Nx2SysmixStream& stream) {
     if (stream.host) {
         system.AudioCore().GetOutputSink().CloseStream(stream.host);
@@ -84,19 +73,6 @@ inline void Nx2SysmixCloseHost(Core::System& system, Nx2SysmixStream& stream) {
     }
 }
 
-// Switch 2 virtual output devices (nn::audio::ListVirtualOutputDevices and friends), reached through
-// the object auddmg:u command 0 returns. Eden plays everything through one stereo 48 kHz output, so
-// there is one virtual device. The nx2: name keeps the other commands auto-stubbed and logged.
-// - 0(u32): u32 count, the device names in the out buffer (0x100 bytes each).
-// - 100(u32): the default device's name in the out buffer.
-// - 300(16-byte stream format, name buffer): whether the format is supported (result only).
-// - 401(u32, name buffer): the device's 0x228-byte property block in the out buffer. The sdk hands
-//   the game the name, the channel count (0x108) and the u64 at 0x218; with the zeroed placeholder
-//   reply it saw 0 channels and Switch Sports failed to set up audio (2153-1604).
-// - 500(16 bytes, name buffer): an event signalled when the device's state changes.
-// - 700(u32 stream id, u32 device functionality, name buffer): attach a sysmix stream to the
-//   device, which starts it (nn::audio::devmgr::AttachStream, behind OutputStream Start).
-// - 800(u32 stream id): detach it again (Stop).
 class INx2AudioVirtualDeviceManager final : public ServiceFramework<INx2AudioVirtualDeviceManager> {
 public:
     explicit INx2AudioVirtualDeviceManager(Core::System& system_)
@@ -152,17 +128,11 @@ private:
     }
 
     void IsStreamFormatSupported(HLERequestContext& ctx) {
-        // Unplayable formats are still drained in real time, so every format stays "supported"
-        // (Switch Sports' menu movie relies on that).
         LOG_DEBUG(Service_Audio, "called");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
-    // Property block: name (0x000), u32 type (0x100, 3), u32 (0x104, 2), u32 channel count
-    // (0x108), u32 sample rate (0x10c), physical output name (0x110), its id (0x210), u64 latency
-    // in ns (0x218), u32 device id (0x220). The sdk's output streams pass the device id to
-    // sysmix CreateStream, which refuses 0 (Switch Sports failed with 2153-1604 on a zero there).
     void GetVirtualOutputDeviceProperties(HLERequestContext& ctx) {
         std::array<u8, 0x228> block{};
         const auto name = ctx.ReadBuffer(0);
@@ -172,8 +142,8 @@ private:
         };
         put32(0x100, 3);
         put32(0x104, 2);
-        put32(0x108, 2);     // stereo
-        put32(0x10c, 48000); // Hz
+        put32(0x108, 2);
+        put32(0x10c, 48000);
         CopyName(block.data() + 0x110, PhysicalDeviceName);
         const u64 latency_ns = 10'000'000;
         std::memcpy(block.data() + 0x218, &latency_ns, sizeof(latency_ns));
@@ -226,7 +196,6 @@ private:
     Kernel::KEvent* state_event;
 };
 
-// Switch 2 "auddmg:u": command 0 (16 bytes and the pid) returns the virtual device manager.
 class INx2AudioDeviceManagerService final : public ServiceFramework<INx2AudioDeviceManagerService> {
 public:
     explicit INx2AudioDeviceManagerService(Core::System& system_)
@@ -248,13 +217,6 @@ private:
     }
 };
 
-// The stream object IUserSession command 1 returns. Commands (ids, request -> reply):
-// - 0(u32 sample type, u32 channels, u32 sample rate, u32 frames, u32 prefill, u32 flags): open.
-// - 1: close. 2: u32 state. 3: f32 gain. 4(f32 gain, s64 ramp ns): set the gain.
-// - 5 / 6: acquire (copy handle) / release the state-change event.
-// - 7(u32 mode, s32 threshold) / 8: acquire (copy handle) / release the data event.
-// - 9(s64 ns): clock the stream. 10(s32 frames) -> u32: prime. 11(s32 frames) -> u32: purge.
-// - 12(name buffer): rename.
 class INx2SysmixStreamSession final : public ServiceFramework<INx2SysmixStreamSession> {
 public:
     explicit INx2SysmixStreamSession(Core::System& system_, std::shared_ptr<Nx2SysmixStreams> streams_,
@@ -285,7 +247,6 @@ public:
     }
 
     ~INx2SysmixStreamSession() override {
-        // The drain timer signals these events under the lock: unlist the stream first.
         {
             std::scoped_lock lk{streams->mutex};
             streams->streams.erase(stream->id);
@@ -298,7 +259,6 @@ public:
     }
 
 private:
-    // States the session reports: 0 created, 1 open, 2 open and engaged.
     void OpenStream(HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto sample_type = rp.Pop<u32>();
@@ -391,8 +351,6 @@ private:
         const auto threshold = rp.Pop<s32>();
         LOG_INFO(Service_Audio, "stream {} data event: mode {}, threshold {}", stream->id, mode, threshold);
         {
-            // The game waits on this before its first write, so signal it at once when the ring
-            // already has room (it is empty right after OpenStream); the drain timer keeps it up.
             std::scoped_lock lk{streams->mutex};
             stream->data_mode = mode;
             stream->data_threshold = threshold;
@@ -423,10 +381,6 @@ private:
     std::shared_ptr<Nx2SysmixStream> stream;
 };
 
-// The session audsmx:u command 0 returns. Commands:
-// - 1(u32, u32 creation flags, u64 pid, u64 buffer address, u64 buffer size, name buffer):
-//   u32 stream id and the stream object.
-// - 2 / 3(buffer of u32 stream ids): engage / disengage those streams.
 class INx2SysmixUserSession final : public ServiceFramework<INx2SysmixUserSession> {
 public:
     explicit INx2SysmixUserSession(Core::System& system_) : ServiceFramework{system_, "nx2:audsmx:u:session"} {
@@ -457,11 +411,8 @@ private:
     static constexpr u64 ReadIndexOffset = 0x44;
     static constexpr u64 WriteIndexOffset = 0x1004;
     static constexpr u64 PayloadOffset = 0x1040;
-    // Blocks of about 5 ms the host may hold; past that the frames stay in the ring and the game
-    // waits for room, so a host that plays slower than emulated time doesn't overflow its buffer.
     static constexpr u32 MaxHostBlocks = 6;
 
-    // Copies `count` frames from ring slot `read` on (wrapping at `capacity`) to the host as S16.
     static void PlayFrames(Core::System& system, Nx2SysmixStream& stream, u32 read, u32 count,
                            u32 capacity) {
         const bool is_float = stream.sample_type == static_cast<u32>(AudioCore::SampleFormat::PcmFloat);
@@ -484,10 +435,6 @@ private:
         stream.host->AppendBuffer(block, samples);
     }
 
-    // Takes up to one interval's worth of frames out of each engaged ring (frames owed while a ring
-    // is empty are dropped, as an underrun plays silence), and signals the data event of every open
-    // stream with at least its threshold of free frames, engaged or not: the game fills the ring
-    // before it engages the stream.
     static void Drain(Core::System& system, Nx2SysmixStreams& state, u32 owner) {
         std::scoped_lock lk{state.mutex};
         auto& memory = system.ApplicationMemory();
@@ -512,8 +459,6 @@ private:
                     taken = 0;
                 }
                 if (taken != 0) {
-                    // Consume even if the copy fails: a stalled ring would also stop the
-                    // data event below and hang the game's audio thread.
                     if (stream->host) {
                         PlayFrames(system, *stream, read, taken, capacity);
                     }
@@ -589,7 +534,6 @@ private:
     std::shared_ptr<Core::Timing::EventType> drain_timer;
 };
 
-// Switch 2 "audsmx:u": command 0 (16 bytes, the pid and a copy handle) returns the user session.
 class INx2AudioSoundMixerService final : public ServiceFramework<INx2AudioSoundMixerService> {
 public:
     explicit INx2AudioSoundMixerService(Core::System& system_)
@@ -611,4 +555,4 @@ private:
     }
 };
 
-} // namespace Service::Audio
+}

@@ -21,7 +21,7 @@ struct Readback {
     VideoCore::RasterizerDownloadArea area{0x8000, 0x9000, false, 11};
     HostReadbackCache cache;
 };
-} // namespace
+}
 
 TEST_CASE("NX2 host readback cache requires an actual completed whole page",
           "[core][nx2][readback_cache]") {

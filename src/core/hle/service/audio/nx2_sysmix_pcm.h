@@ -19,7 +19,6 @@ inline bool IsPlayable(u32 type, u32 channels, u32 rate) {
             type == static_cast<u32>(AudioCore::SampleFormat::PcmFloat));
 }
 
-// Keep interleaved FL, FR, C, LFE, BL, BR order for SinkStream's existing downmix.
 inline std::vector<s16> ConvertPcm(std::span<const u8> raw, bool is_float, f32 gain) {
     const auto bytes = is_float ? sizeof(f32) : sizeof(s16);
     std::vector<s16> samples(raw.size() / bytes);
@@ -39,7 +38,6 @@ inline std::vector<s16> ConvertPcm(std::span<const u8> raw, bool is_float, f32 g
     return samples;
 }
 
-// The reader takes a payload-relative byte offset. Failed copies must not consume the ring.
 template <typename Reader>
 bool ReadRing(std::span<u8> raw, u32 read, u32 count, u32 capacity, u32 frame_bytes,
               Reader&& reader) {
@@ -52,4 +50,4 @@ bool ReadRing(std::span<u8> raw, u32 read, u32 count, u32 capacity, u32 frame_by
            (first_bytes == raw.size() || reader(0, raw.subspan(first_bytes)));
 }
 
-} // namespace Service::Audio::Sysmix
+}

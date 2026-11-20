@@ -120,8 +120,6 @@ std::vector<Target> FindThreads(const std::vector<std::string>& patterns) {
     return targets;
 }
 
-// Walks a suspended thread's stack from its context. Nothing here may allocate: the thread
-// could be paused holding the heap lock.
 unsigned Walk(CONTEXT context, std::array<DWORD64, MaxDepth>& frames) {
     unsigned depth = 0;
     while (depth < MaxDepth && context.Rip != 0) {
@@ -129,8 +127,6 @@ unsigned Walk(CONTEXT context, std::array<DWORD64, MaxDepth>& frames) {
         DWORD64 image_base{};
         const PRUNTIME_FUNCTION function = RtlLookupFunctionEntry(context.Rip, &image_base, nullptr);
         if (function == nullptr) {
-            // A leaf function (no unwind data): its return address is on top of the stack. JIT
-            // code has none either; past the first frame, stop there.
             if (depth != 1) {
                 break;
             }
@@ -257,7 +253,6 @@ void Report(const std::vector<Target>& targets, const std::vector<Sample>& sampl
     }
     std::fclose(file);
 
-    // <out>.folded: every distinct stack with its count, root first ("thread;a;b;c count").
     std::map<std::string, unsigned> folded;
     for (const Sample& sample : samples) {
         std::string line = targets[sample.thread].name;
@@ -311,7 +306,7 @@ void Run(std::vector<std::string> patterns, double start, double seconds, std::s
     }
 }
 
-} // Anonymous namespace
+}
 
 void StartFromEnvironment() {
     const char* names = std::getenv("EDEN_NX2_SAMPLE");
@@ -325,12 +320,12 @@ void StartFromEnvironment() {
         .detach();
 }
 
-} // namespace Nx2Sampler
+}
 
 #else
 
 namespace Nx2Sampler {
 void StartFromEnvironment() {}
-} // namespace Nx2Sampler
+}
 
 #endif

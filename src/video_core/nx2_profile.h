@@ -13,12 +13,10 @@
 #include "common/logging.h"
 #include "common/cpu_features.h"
 
-// EDEN_NX2_GPU_PROFILE: time where the GPU thread spends its time. Each zone counts its own
-// (exclusive) time, nested zones excluded; every 10 s the thread logs each zone's share.
 namespace VideoCommon::Nx2Profile {
 
 enum class Zone : u32 {
-    Other, ///< GPU thread time outside every zone below (register writes, command parsing)
+    Other,
     Idle,
     PendingSleep,
     ResumePending,
@@ -46,11 +44,11 @@ enum class Zone : u32 {
     DynamicState,
     DrawRecord,
     TextureUpload,
-    Fence,        ///< Fences made (SignalFence)
-    FenceSkipped, ///< Empty fences not made
-    Method,       ///< Engine method calls (what a split GPU thread's back half would run)
-    SplitDrain,   ///< Split GPU thread: the front waits for the back (gpu_split.h)
-    SplitWait,    ///< Split GPU thread: the back waits for work
+    Fence,
+    FenceSkipped,
+    Method,
+    SplitDrain,
+    SplitWait,
     Count,
 };
 
@@ -69,8 +67,6 @@ inline bool Enabled() {
     return enabled;
 }
 
-// Nanoseconds; from the host's own counter where the wall clock reads it directly (the zones
-// run ~150,000 times a second, and QueryPerformanceCounter cost ~5% of the GPU thread).
 inline u64 Now() {
     return static_cast<u64>(Common::g_wall_clock.GetTimeNS().count());
 }
@@ -78,8 +74,8 @@ inline u64 Now() {
 struct ThreadData {
     std::array<u64, static_cast<size_t>(Zone::Count)> exclusive_ns{};
     std::array<u64, static_cast<size_t>(Zone::Count)> count{};
-    std::array<u64, 8> counters{}; ///< See Counter
-    u64 child_ns{};    ///< Time of the zones nested in the current one
+    std::array<u64, 8> counters{};
+    u64 child_ns{};
     u64 window_start{};
 };
 
@@ -118,20 +114,17 @@ private:
     u64 parent_child_ns{};
 };
 
-/// Amounts counted on the GPU thread, logged per second with the zones.
 enum class Counter : u32 {
-    DownloadBytes,  ///< Buffer data copied back from the host GPU at fences
-    DownloadCopies, ///< Buffer ranges copied back
-    DmaReadBytes,   ///< Guest memory the native MME read with DMA
-    DownloadBytesOnDmaPages, ///< Of DownloadBytes: on pages the MME has DMA-read
-    MethodWrites,   ///< 3D register writes (Maxwell3D::CallMethod below the macro range)
-    SameValueWrites, ///< Of MethodWrites: the register already held the value
-    AcquireChecks,  ///< Semaphore acquires evaluated
-    AcquireWaits,   ///< Of AcquireChecks: not met yet (the channel waits)
+    DownloadBytes,
+    DownloadCopies,
+    DmaReadBytes,
+    DownloadBytesOnDmaPages,
+    MethodWrites,
+    SameValueWrites,
+    AcquireChecks,
+    AcquireWaits,
 };
 
-/// Device pages (4 KiB) the native MME has DMA-read since start (GPU thread only; filled only
-/// while profiling): which buffer downloads anything on the GPU thread reads back.
 inline std::unordered_set<u64>& DmaReadPages() {
     static std::unordered_set<u64> pages;
     return pages;
@@ -143,8 +136,6 @@ inline void Add(Counter counter, u64 amount) {
     }
 }
 
-/// Called by the GPU thread (and the split's back thread) between commands: logs and resets
-/// the totals every 10 s.
 inline void Report(const char* thread_name = "GPU thread") {
     if (!Enabled()) {
         return;
@@ -160,7 +151,6 @@ inline void Report(const char* thread_name = "GPU thread") {
     if (window < 10'000'000'000ULL) {
         return;
     }
-    // Time in no zone at all is the wall time minus the zones' totals.
     u64 zoned{};
     for (size_t i = 1; i < data.exclusive_ns.size(); ++i) {
         zoned += data.exclusive_ns[i];
@@ -171,7 +161,6 @@ inline void Report(const char* thread_name = "GPU thread") {
         if (data.exclusive_ns[i] == 0 && data.count[i] == 0) {
             continue;
         }
-        // Per second of wall time: milliseconds spent and calls made.
         const double ms = static_cast<double>(data.exclusive_ns[i]) * 1000.0 / window;
         const double calls = static_cast<double>(data.count[i]) * 1e9 / window;
         line += fmt::format(" | {} {:.1f} ms ({:.0f}/s)", zone_names[i], ms, calls);
@@ -193,4 +182,4 @@ inline void Report(const char* thread_name = "GPU thread") {
     data.window_start = now;
 }
 
-} // namespace VideoCommon::Nx2Profile
+}

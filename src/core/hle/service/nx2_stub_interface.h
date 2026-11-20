@@ -15,9 +15,6 @@
 
 namespace Service {
 
-// Prefix of placeholder interfaces for Switch 2-only IPC. ReportUnimplementedFunction answers
-// every call on such an interface with an empty success, so boot can go on while the log shows
-// which commands are used.
 inline constexpr std::string_view Nx2StubPrefix = "nx2:";
 
 class INx2StubInterface final : public ServiceFramework<INx2StubInterface> {
@@ -25,7 +22,6 @@ public:
     explicit INx2StubInterface(Core::System& system_, const char* name)
         : ServiceFramework{system_, name} {}
 
-    // Names must outlive the interface, so they are interned here.
     static const char* InternName(std::string name) {
         static std::mutex mutex;
         static std::deque<std::string> names;
@@ -39,8 +35,6 @@ public:
     }
 };
 
-// Handler for an unknown Switch 2 command that returns an interface: hands back a stub named
-// after the owning service and the command id.
 inline void ReturnNx2StubInterface(Core::System& system, HLERequestContext& ctx,
                                    std::string_view owner) {
     const char* name =
@@ -52,4 +46,4 @@ inline void ReturnNx2StubInterface(Core::System& system, HLERequestContext& ctx,
     rb.PushIpcInterface<INx2StubInterface>(ctx, system, name);
 }
 
-} // namespace Service
+}

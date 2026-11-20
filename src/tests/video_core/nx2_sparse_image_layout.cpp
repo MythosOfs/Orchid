@@ -22,7 +22,7 @@ VideoCommon::ImageInfo MakeImage(u32 width, u32 height) {
     return info;
 }
 
-} // namespace
+}
 
 TEST_CASE("Sparse texture byte ranges select host tiles from guest GOB columns",
           "[nx2_sparse_image]") {

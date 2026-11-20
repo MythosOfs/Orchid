@@ -8,10 +8,8 @@
 namespace {
 constexpr GPUVAddr Base = 0x3185333000;
 constexpr u64 Size = 0x80000;
-} // Anonymous namespace
+}
 
-// Issue 113: Pokemon Pokopia maps its compute queue's command memory and submits from it right
-// away. While the GPU thread was still busy with the first frame, the map was queued behind it.
 TEST_CASE("A command list inside a map still queued for the GPU thread is found",
           "[video_core][nx2_queued_maps]") {
     Tegra::Nx2QueuedMaps maps;
@@ -41,7 +39,6 @@ TEST_CASE("Each applied map ends one queued map of its range and leaves the othe
     maps.Add(Base, Size);
     maps.Add(Base, Size);
     maps.Add(Base + 2 * Size, Size);
-    // Not a queued range: nothing ends.
     maps.Remove(Base, Size / 2);
     maps.Remove(Base + Size, Size);
     CHECK(maps.Overlaps(Base, 4));

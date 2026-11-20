@@ -33,4 +33,4 @@ private:
     std::function<void()> rollback;
 };
 
-} // namespace Service::Nvidia::Devices
+}

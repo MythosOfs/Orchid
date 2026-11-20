@@ -18,18 +18,10 @@
 
 namespace Tegra {
 
-// Set once a Switch 2 (Ampere, NVN2) driver is talking to the GPU. Its command streams use
-// Ampere classes and the Turing+ macro ISA, which Eden's Maxwell engines don't implement.
 inline std::atomic<bool> g_nx2_ampere{false};
 
-// The running title, for the few places that must behave differently per game.
 inline std::atomic<u64> g_nx2_program_id{0};
 
-// Titles whose guest side reads GPU-written buffer data through a path the buffer cache does not
-// see, so their buffers must be copied back to guest memory at every fence
-// (BufferCache::AsyncBufferDownloads, EDEN_NX2_BUFFER_DOWNLOADS). 0400A3A01EE4C000 is Pokemon
-// Pokopia: with the copy-back off its sky is black or flickers. Open work: find what reads it,
-// then the list goes.
 inline bool Nx2NeedsBufferDownloads() {
     switch (g_nx2_program_id.load(std::memory_order_relaxed)) {
     case 0x0400A3A01EE4C000ULL:
@@ -39,15 +31,8 @@ inline bool Nx2NeedsBufferDownloads() {
     }
 }
 
-// Device pages the GPU has written through the buffer cache (shader stores, copies), ever. Title 1
-// runs command lists the GPU writes each frame (20-byte entries its culling fills in); read
-// without a flush they are stale and the draws behind them (trees) go missing. The bits never
-// clear: the dispatch that rewrites a page may still be queued on the split's back when its front
-// reads the command list. One bit per 4 KiB of the 36-bit device address space (2 MiB).
 inline constexpr u64 Nx2WrittenPageBits = 12;
 inline std::array<std::atomic<u64>, (u64{1} << (36 - Nx2WrittenPageBits)) / 64> g_nx2_gpu_written_pages{};
-/// Counts the times pages were marked GPU-written for the first time: it stops moving once a
-/// title has written all the memory it reuses (Nx2CheckCommandPagesFirst).
 inline std::atomic<u64> g_nx2_gpu_written_generation{};
 
 inline void Nx2MarkGpuWritten(u64 device_address, u64 size) {
@@ -70,10 +55,6 @@ inline void Nx2MarkGpuWritten(u64 device_address, u64 size) {
     }
 }
 
-// GPU-written device pages the front has read command lists from (same layout as above). The
-// buffer cache copies these pages into host memory right after the compute or copy work that
-// writes them and submits, so the front reads the copy once the GPU is done instead of draining
-// the split and flushing the caches (BufferCache::Nx2ReadListCopy).
 inline std::array<std::atomic<u64>, (u64{1} << (36 - Nx2WrittenPageBits)) / 64> g_nx2_command_list_pages{};
 inline std::atomic<bool> g_nx2_has_command_list_pages{false};
 
@@ -98,7 +79,6 @@ inline void Nx2MarkCommandListPage(u64 device_address) {
     return (g_nx2_command_list_pages[page / 64].load(std::memory_order_relaxed) >> (page % 64)) & 1;
 }
 
-/// A new emulation session starts: no page has been written by its GPU yet.
 inline void Nx2ClearGpuWrittenPages() {
     for (auto& word : g_nx2_gpu_written_pages) {
         word.store(0, std::memory_order_relaxed);
@@ -145,12 +125,6 @@ void Nx2SynchronizeGpuWrittenCommands(GPUVAddr address, size_t size, Drain&& dra
     if (Nx2HasGpuWrittenPage(address, size, translate)) flush();
 }
 
-/// Whether the GPU thread split's front may check a command list's GPU-written page bits before
-/// waiting for the back, once no page has been marked for the first time in a while
-/// (DmaPusher::FlushGpuWrittenCommands). Draining first for every GPFIFO entry stalled Mario Tennis
-/// Fever's front ~40% of the time and serialized Donkey Kong Bananza's front and back (~270,000
-/// drains a second); checking first misses only a page's very first GPU write while it is still
-/// queued on the back. EDEN_NX2_CMD_DRAIN=1 always drains first.
 inline bool Nx2CheckCommandPagesFirst() {
     static const bool drain_first = [] {
         const char* value = std::getenv("EDEN_NX2_CMD_DRAIN");
@@ -159,8 +133,6 @@ inline bool Nx2CheckCommandPagesFirst() {
     return !drain_first;
 }
 
-/// Whether acquires that a release still queued for the split's back meets skip the drain
-/// (GpuSplit::NoteQueuedRelease). EDEN_NX2_ACQUIRE_QUEUED=1 turns it on.
 [[nodiscard]] inline bool Nx2AcquireQueuedEnabled() {
     static const bool enabled = [] {
         const char* value = std::getenv("EDEN_NX2_ACQUIRE_QUEUED");
@@ -169,12 +141,6 @@ inline bool Nx2CheckCommandPagesFirst() {
     return enabled;
 }
 
-/// GPU address ranges whose map is queued for the GPU thread (GPU::MapInOrder) and not applied
-/// yet. Until then a read through the address space finds them unmapped, or finds what was mapped
-/// there before. Pokemon Pokopia maps its compute queue's command memory and submits from it at
-/// once: with the GPU thread still busy (first frame, pipelines being built) the words copied at
-/// submit time were zeros, the queue's first lists ran as nothing and the game waited forever on
-/// their releases (black screen after one frame, issue 113).
 class Nx2QueuedMaps {
 public:
     void Add(GPUVAddr address, u64 size) {
@@ -182,7 +148,6 @@ public:
         ranges.emplace_back(address, size);
     }
 
-    /// The GPU thread applied one map of exactly this range.
     void Remove(GPUVAddr address, u64 size) {
         std::scoped_lock lk{mutex};
         if (const auto it = std::ranges::find(ranges, std::pair{address, size});
@@ -203,12 +168,8 @@ private:
     std::vector<std::pair<GPUVAddr, u64>> ranges;
 };
 
-// NVN2 queues release their progress values into the second page of a two-page GPU-accessible
-// region and GPU acquires read the same offsets in the first page (the CPU polls the second).
-// Something on the console copies one into the other; until that is known, the puller mirrors
-// releases that land in a second page. Every queue has such a region, so keep a small table.
 inline constexpr size_t Nx2MaxSemaphoreRegions = 32;
-inline std::array<std::atomic<u64>, Nx2MaxSemaphoreRegions> g_nx2_semaphore_regions{}; // starts
+inline std::array<std::atomic<u64>, Nx2MaxSemaphoreRegions> g_nx2_semaphore_regions{};
 
 inline void Nx2AddSemaphoreRegion(u64 start) {
     for (auto& region : g_nx2_semaphore_regions) {
@@ -224,7 +185,6 @@ inline void Nx2AddSemaphoreRegion(u64 start) {
     }
 }
 
-/// The region's memory was destroyed: stop mirroring into it.
 inline void Nx2RemoveSemaphoreRegion(u64 start) {
     for (auto& region : g_nx2_semaphore_regions) {
         u64 expected = start;
@@ -232,18 +192,12 @@ inline void Nx2RemoveSemaphoreRegion(u64 start) {
     }
 }
 
-/// A new emulation session starts: no queue has a region yet.
 inline void Nx2ClearSemaphoreRegions() {
     for (auto& region : g_nx2_semaphore_regions) {
         region.store(0);
     }
 }
 
-// Switch 2 sparse regions (nx2:gpu 214, word 7 bit 0x200: title 1's terrain texture arrays and
-// layer pools, 170 MB-5.8 GB each, of which the game fills a little) get memory per block when the
-// GPU first writes there, not in full. nx2:gpu installs the handler and the span its regions cover;
-// the GPU memory manager calls Nx2BackSparseWrite before each write, with the bytes it writes
-// (blocks nobody wrote that only get zeros need no memory: they read zero already).
 using Nx2SparseBackingHandler = std::function<void(u64 gpu_address, u64 size, const u8* data)>;
 inline std::recursive_mutex g_nx2_sparse_backing_mutex;
 inline Nx2SparseBackingHandler g_nx2_sparse_backing;
@@ -257,7 +211,6 @@ inline void Nx2SetSparseBacking(Nx2SparseBackingHandler handler) {
     g_nx2_sparse_high.store(0);
 }
 
-/// Widens the span that writes are checked against (a new lazily backed region).
 inline void Nx2AddSparseSpan(u64 gpu_address, u64 size) {
     u64 low = g_nx2_sparse_low.load();
     while (gpu_address < low && !g_nx2_sparse_low.compare_exchange_weak(low, gpu_address)) {
@@ -279,19 +232,13 @@ inline void Nx2BackSparseWrite(u64 gpu_address, u64 size, const void* data) {
     }
 }
 
-// Which blocks of each sparse region have been written (got memory), for the texture cache: an
-// image over blocks nobody wrote is all zeros and needs no device memory. Its own lock, taken last:
-// the texture cache asks with its lock held, and nx2:gpu updates it holding only its region mutex.
 struct Nx2SparseRegionState {
     u64 size;
     u64 block_size;
     std::vector<bool> written;
-    /// Once the game maps its own memory into the region (nx2:gpu 216): which tiles it maps.
-    /// Only those hold data then (writes elsewhere are dropped, as on the console).
     std::vector<bool> mapped_pages;
 };
 
-/// Coverage granularity of accepted guest GPU mappings, independent of host sparse blocks.
 inline constexpr u64 Nx2SparseMappingPageSize = 4ULL << 10;
 inline std::mutex g_nx2_sparse_state_mutex;
 inline std::map<u64, Nx2SparseRegionState> g_nx2_sparse_state;
@@ -310,7 +257,6 @@ inline void Nx2SparseRegionDestroyed(u64 gpu_address) {
     g_nx2_sparse_state.erase(gpu_address);
 }
 
-/// A new emulation session: the previous game's regions are gone (nvdrv's Module clears them).
 inline void Nx2ClearSparseRegions() {
     std::scoped_lock lk{g_nx2_sparse_state_mutex};
     g_nx2_sparse_state.clear();
@@ -324,8 +270,6 @@ inline void Nx2SparseBlockWritten(u64 region_address, u64 block) {
     }
 }
 
-/// True unless the block of the region at region_address is known to hold nothing (no write from
-/// the CPU or the GPU yet).
 inline bool Nx2SparseBlockIsWritten(u64 region_address, u64 block) {
     std::scoped_lock lk{g_nx2_sparse_state_mutex};
     const auto it = g_nx2_sparse_state.find(region_address);
@@ -333,8 +277,6 @@ inline bool Nx2SparseBlockIsWritten(u64 region_address, u64 block) {
            it->second.written[block];
 }
 
-/// The game maps its own memory over [offset, +size) of the region at region_address (mapped), or
-/// unmaps it there.
 inline void Nx2SparseTilesMapped(u64 region_address, u64 offset, u64 size, bool mapped) {
     std::scoped_lock lk{g_nx2_sparse_state_mutex};
     const auto it = g_nx2_sparse_state.find(region_address);
@@ -355,9 +297,6 @@ inline void Nx2SparseTilesMapped(u64 region_address, u64 offset, u64 size, bool 
     }
 }
 
-/// The parts of [gpu_address, +size), which lies in one sparse region, that can hold data: the
-/// tiles the game maps there if it maps any, otherwise the blocks written. As (offset from
-/// gpu_address, size) runs.
 inline std::vector<std::pair<u64, u64>> Nx2SparseDataRanges(u64 gpu_address, u64 size) {
     std::vector<std::pair<u64, u64>> ranges;
     std::scoped_lock lk{g_nx2_sparse_state_mutex};
@@ -391,7 +330,6 @@ inline std::vector<std::pair<u64, u64>> Nx2SparseDataRanges(u64 gpu_address, u64
     return ranges;
 }
 
-/// True when [gpu_address, +size) lies in one sparse region.
 inline bool Nx2InSparseRegion(u64 gpu_address, u64 size) {
     if (size == 0 || gpu_address + size <= g_nx2_sparse_low.load(std::memory_order_relaxed) ||
         gpu_address >= g_nx2_sparse_high.load(std::memory_order_relaxed)) [[likely]] {
@@ -406,8 +344,6 @@ inline bool Nx2InSparseRegion(u64 gpu_address, u64 size) {
     return gpu_address + size <= it->first + it->second.size;
 }
 
-/// The GPU renders into [gpu_address, +size): count its blocks as written, so images made there
-/// later get memory (their contents live in the host image, not in guest memory).
 inline void Nx2SparseMarkWritten(u64 gpu_address, u64 size) {
     if (size == 0 || gpu_address + size <= g_nx2_sparse_low.load(std::memory_order_relaxed) ||
         gpu_address >= g_nx2_sparse_high.load(std::memory_order_relaxed)) [[likely]] {
@@ -427,7 +363,6 @@ inline void Nx2SparseMarkWritten(u64 gpu_address, u64 size) {
     }
 }
 
-/// True when [gpu_address, +size) lies in one sparse region and none of it has been written.
 inline bool Nx2SparseUnwritten(u64 gpu_address, u64 size) {
     if (size == 0 || gpu_address + size <= g_nx2_sparse_low.load(std::memory_order_relaxed) ||
         gpu_address >= g_nx2_sparse_high.load(std::memory_order_relaxed)) [[likely]] {
@@ -452,12 +387,8 @@ inline bool Nx2SparseUnwritten(u64 gpu_address, u64 size) {
     return true;
 }
 
-/// Channels suspended on a semaphore acquire. A console channel polls and sees every release;
-/// Eden writes releases in bursts when fences signal and resumes waiters only between command
-/// lists, so an acquire-equal could miss its value. Writes latch the waiters they satisfy.
 class Nx2SemaphoreWaiters {
 public:
-    // Puller GpuSemaphoreOperation values.
     static constexpr u32 AcquireEqual = 0x1;
     static constexpr u32 AcquireGequal = 0x4;
     static constexpr u32 AcquireMask = 0x8;
@@ -492,7 +423,6 @@ public:
                                    [owner](const Waiter& w) { return w.owner == owner && w.latched; });
     }
 
-    /// A GPU write of `value` to the u32 at `device_address`.
     void OnWrite(u64 device_address, u32 value) {
         if (count.load(std::memory_order_acquire) == 0) {
             return;
@@ -532,4 +462,4 @@ private:
     std::atomic<size_t> count{};
 };
 
-} // namespace Tegra
+}

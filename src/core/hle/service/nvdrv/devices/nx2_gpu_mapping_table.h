@@ -203,9 +203,6 @@ private:
         return std::nullopt;
     }
 
-    // The ranges reaching [gpu, gpu + size). An update only changes that window, so comparing it
-    // alone gives the same changes as comparing the whole table (thousands of ranges, once per
-    // map or unmap while a course streams in).
     struct Window {
         std::vector<Range> mappings;
         std::vector<Range> leases;
@@ -305,4 +302,4 @@ private:
     u64 next_lease{1};
 };
 
-} // namespace Service::Nvidia::Devices
+}

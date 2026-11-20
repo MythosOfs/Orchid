@@ -38,7 +38,6 @@ std::optional<NvdecCommon::VideoCodec> CodecFromMime(std::string_view mime) {
     if (mime.find("vp8") != std::string_view::npos) {
         return NvdecCommon::VideoCodec::VP8;
     }
-    // "video/av01" or "video/av1". FFmpeg decodes AV1 with libdav1d.
     if (mime.find("av01") != std::string_view::npos || mime.find("av1") != std::string_view::npos) {
         return NvdecCommon::VideoCodec::AV1;
     }
@@ -48,7 +47,7 @@ std::optional<NvdecCommon::VideoCodec> CodecFromMime(std::string_view mime) {
     return std::nullopt;
 }
 
-} // namespace
+}
 
 std::optional<Nx2VideoConfiguration> ParseNx2VideoConfiguration(std::span<const u8> configuration) {
     if (configuration.empty()) {
@@ -101,7 +100,6 @@ std::optional<Nx2VideoConfiguration> ParseNx2VideoConfiguration(std::span<const 
 
 bool IsH264Stream(std::span<const u8> data) {
     if (data.size() >= 4) {
-        // Annex-B 3-byte start code: 00 00 01 <nal_header>
         if (data[0] == 0 && data[1] == 0 && data[2] == 1) {
             const u8 nal_type = data[3] & 0x1F;
             if ((data[3] & 0x80) == 0 && nal_type >= 1 && nal_type <= 23) {
@@ -110,14 +108,12 @@ bool IsH264Stream(std::span<const u8> data) {
         }
     }
     if (data.size() >= 5) {
-        // Annex-B 4-byte start code: 00 00 00 01 <nal_header>
         if (data[0] == 0 && data[1] == 0 && data[2] == 0 && data[3] == 1) {
             const u8 nal_type = data[4] & 0x1F;
             if ((data[4] & 0x80) == 0 && nal_type >= 1 && nal_type <= 23) {
                 return true;
             }
         }
-        // avcC / MP4 length-prefixed NAL unit: [u32 be length] <nal_header>
         const u32 nalu_len = (static_cast<u32>(data[0]) << 24) |
                              (static_cast<u32>(data[1]) << 16) |
                              (static_cast<u32>(data[2]) << 8) |
@@ -130,7 +126,6 @@ bool IsH264Stream(std::span<const u8> data) {
         }
     }
     if (data.size() >= 7) {
-        // avcC configuration record: version=1, profile, compat, level, lengthSizeMinusOne | 0xFC, numSPS | 0xE0
         if (data[0] == 1 && (data[4] & 0xFC) == 0xFC && (data[5] & 0xE0) == 0xE0 && (data[5] & 0x1F) > 0) {
             return true;
         }
@@ -147,10 +142,8 @@ struct Nx2VideoDecoder::Impl {
     SwsContext* scaler{};
     bool open{};
     H264PacketConverter h264_packets;
-    /// Timestamps of submitted frames not yet output. Frames copied back from a host GPU decoder
-    /// lose theirs and take the earliest one instead.
     std::multiset<u64> pending_pts;
-    std::vector<u8> packet; ///< FFmpeg reads up to AV_INPUT_BUFFER_PADDING_SIZE past the data
+    std::vector<u8> packet;
 
     ~Impl() {
         sws_freeContext(scaler);
@@ -222,14 +215,12 @@ void Nx2VideoDecoder::Decode(std::span<const u8> data, u64 pts, std::vector<Nx2P
     impl->packet.assign(data.size() + AV_INPUT_BUFFER_PADDING_SIZE, 0);
     std::memcpy(impl->packet.data(), data.data(), data.size());
 
-    // Convert MP4/avcC length-prefixed NALUs to Annex-B start codes for FFmpeg if needed.
     if (impl->codec == NvdecCommon::VideoCodec::H264) {
         impl->h264_packets.Convert(std::span<u8>{impl->packet.data(), data.size()});
     }
 
     FFmpeg::Packet packet{std::span<const u8>{impl->packet.data(), data.size()}};
     packet.GetPacket()->pts = static_cast<s64>(pts);
-    // Hidden VP9 frames never come out: keep the set from growing over a long movie.
     if (impl->pending_pts.size() >= 64) {
         impl->pending_pts.erase(impl->pending_pts.begin());
     }
@@ -261,7 +252,6 @@ void Nx2VideoDecoder::Render(const Nx2Picture& picture, Nx2PictureFormat format,
     const u64 needed = format == Nx2PictureFormat::Nv12
                            ? chroma_offset + pitch * ((u64{height} + 1) / 2)
                            : pitch * height;
-    // NV12 chroma rows hold interleaved U/V pairs, so odd widths write one extra byte.
     const u64 min_pitch = format == Nx2PictureFormat::Nv12 ? u64{(width + 1) / 2} * 2 : 0;
     if (width == 0 || height == 0 || pitch < min_pitch || out.size() < needed) {
         return;
@@ -269,9 +259,6 @@ void Nx2VideoDecoder::Render(const Nx2Picture& picture, Nx2PictureFormat format,
     const AVPixelFormat target = format == Nx2PictureFormat::Nv12    ? AV_PIX_FMT_NV12
                                  : format == Nx2PictureFormat::Rgba8 ? AV_PIX_FMT_RGBA
                                                                      : AV_PIX_FMT_BGRA;
-    // Frames copied back from a host GPU decoder are already NV12. Copy them as they are:
-    // FFmpeg 6.1's swscale leaves the chroma plane of an NV12 to NV12 copy at zero, which shows
-    // the movies green.
     if (target == AV_PIX_FMT_NV12 && f->format == AV_PIX_FMT_NV12 &&
         static_cast<u32>(f->width) == width && static_cast<u32>(f->height) == height) {
         for (u32 y = 0; y < height; ++y) {
@@ -283,8 +270,6 @@ void Nx2VideoDecoder::Render(const Nx2Picture& picture, Nx2PictureFormat format,
         }
         return;
     }
-    // Software-decoded frames are planar: interleave U and V ourselves instead of using swscale.
-    // Full-range frames stay on the swscale path so they are converted to limited range.
     if (target == AV_PIX_FMT_NV12 && f->format == AV_PIX_FMT_YUV420P &&
         f->color_range != AVCOL_RANGE_JPEG && static_cast<u32>(f->width) == width &&
         static_cast<u32>(f->height) == height) {
@@ -313,13 +298,10 @@ void Nx2VideoDecoder::Render(const Nx2Picture& picture, Nx2PictureFormat format,
                   av_get_pix_fmt_name(target));
         return;
     }
-    // The YUVJ formats are full range even when the frame leaves its range unset.
     const bool full_range_source =
         f->color_range == AVCOL_RANGE_JPEG || f->format == AV_PIX_FMT_YUVJ420P ||
         f->format == AV_PIX_FMT_YUVJ422P || f->format == AV_PIX_FMT_YUVJ444P ||
         f->format == AV_PIX_FMT_YUVJ440P || f->format == AV_PIX_FMT_YUVJ411P;
-    // The stream's matrix and range; untagged HD video is BT.709. NV12 output is limited range.
-    // Set for every frame: the cached scaler keeps the previous frame's details otherwise.
     int space = SWS_CS_ITU601;
     if (f->colorspace == AVCOL_SPC_BT709 ||
         (f->colorspace == AVCOL_SPC_UNSPECIFIED && f->height >= 720)) {
@@ -339,4 +321,4 @@ void Nx2VideoDecoder::Render(const Nx2Picture& picture, Nx2PictureFormat format,
     sws_scale(impl->scaler, f->data, f->linesize, 0, f->height, planes.data(), strides.data());
 }
 
-} // namespace Tegra::Host1x
+}

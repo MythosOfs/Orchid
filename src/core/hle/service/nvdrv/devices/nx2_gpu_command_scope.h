@@ -42,8 +42,6 @@ public:
     Nx2GpuCommandScope(const Nx2GpuCommandScope&) = delete;
     Nx2GpuCommandScope& operator=(const Nx2GpuCommandScope&) = delete;
 
-    /// `map`: the command maps GPU memory, so its batch goes through MapInOrder (with the GPU
-    /// split it runs before the front reads later command lists). Fakes without it use RunInOrder.
     template <typename GPU>
     static void Run(GPU& gpu, std::function<void()>&& command, bool map = false) {
         if (!current) {
@@ -133,4 +131,4 @@ private:
     std::function<void()> batch;
 };
 
-} // namespace Service::Nvidia::Devices
+}

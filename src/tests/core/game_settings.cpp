@@ -238,3 +238,39 @@ TEST_CASE("GameSettings: Kirby fog workaround preserves fog on Turing and newer"
     CHECK(workaround(kirby, nvidia, Settings::RendererBackend::Vulkan));
     CHECK_FALSE(workaround(0x0400FF500E34A001ULL, nvidia, Settings::RendererBackend::Vulkan));
 }
+
+TEST_CASE("GameSettings: Donkey Kong Bananza and Star Fox keep the normal CPU clock when inherited",
+          "[game_settings]") {
+    auto& cpu_clock = Settings::values.cpu_clock;
+    SettingSnapshot saved_clock{cpu_clock};
+    SettingSnapshot saved_accuracy{Settings::values.gpu_accuracy};
+    SettingSnapshot saved_reactive{Settings::values.use_reactive_flushing};
+    SettingSnapshot saved_gpu_clock{Settings::values.gpu_clock};
+    const bool old_preemptive = Settings::values.preemptive_cpu_reads;
+    SCOPE_EXIT {
+        Settings::values.preemptive_cpu_reads = old_preemptive;
+    };
+    cpu_clock.SetGlobal(true);
+    cpu_clock.SetValue(Settings::CpuClock::Boost);
+    FakeWindow window;
+    FakeRenderer renderer{window};
+    const std::uint64_t title_id = GENERATE(0x040074A01BF12000ULL, 0x0400E88025B1A000ULL);
+
+    SECTION("Global Boost is overridden to Normal for the session") {
+        Core::GameSettings::LoadOverrides(title_id, renderer);
+        CHECK(cpu_clock.GetValue() == Settings::CpuClock::Normal);
+        CHECK_FALSE(cpu_clock.UsingGlobal());
+        CHECK(cpu_clock.GetValue(true) == Settings::CpuClock::Boost);
+    }
+    SECTION("An explicit per-game CPU clock stays authoritative") {
+        cpu_clock.SetGlobal(false);
+        cpu_clock.SetValue(Settings::CpuClock::Overclock);
+        Core::GameSettings::LoadOverrides(title_id, renderer);
+        CHECK(cpu_clock.GetValue() == Settings::CpuClock::Overclock);
+    }
+    SECTION("Another title keeps the inherited Boost CPU clock") {
+        Core::GameSettings::LoadOverrides(title_id + 1, renderer);
+        CHECK(cpu_clock.GetValue() == Settings::CpuClock::Boost);
+        CHECK(cpu_clock.UsingGlobal());
+    }
+}

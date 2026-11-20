@@ -3,6 +3,7 @@
 #include <array>
 #include <memory>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include "common/game_presets.h"
 
 namespace {
@@ -306,4 +307,29 @@ TEST_CASE("Supported native Wonder does not require an unsupported-game warning"
     CHECK_FALSE(Settings::IsSupportedGame(0x01002B00111A2000ULL));
     CHECK_FALSE(Settings::IsSupportedGame(0x010074F013262000ULL));
     CHECK_FALSE(Settings::IsSupportedGame(0x0100000000001234ULL));
+}
+
+TEST_CASE("Bananza and Star Fox presets override inherited CPU clock without replacing per-game choices",
+          "[game_presets]") {
+    const u64 id = GENERATE(Settings::DonkeyKongBananzaProgramId, Settings::StarFoxProgramId);
+    CAPTURE(id);
+    SECTION("Inherited global Boost is overridden to Normal for the session") {
+        auto settings = std::make_unique<Settings::Values>();
+        settings->cpu_clock.SetGlobal(true);
+        settings->cpu_clock.SetValue(Settings::CpuClock::Boost);
+        REQUIRE(Settings::ApplyGamePreset(*settings, id, Settings::GamePresetQuality::Standard));
+        CHECK(settings->cpu_clock.GetValue() == Settings::CpuClock::Normal);
+        CHECK_FALSE(settings->cpu_clock.UsingGlobal());
+        CHECK(settings->cpu_clock.GetValue(true) == Settings::CpuClock::Boost);
+    }
+    SECTION("Explicit per-game Overclock is preserved") {
+        auto settings = std::make_unique<Settings::Values>();
+        settings->cpu_clock.SetGlobal(true);
+        settings->cpu_clock.SetValue(Settings::CpuClock::Boost);
+        settings->cpu_clock.SetGlobal(false);
+        settings->cpu_clock.SetValue(Settings::CpuClock::Overclock);
+        REQUIRE(Settings::ApplyGamePreset(*settings, id, Settings::GamePresetQuality::Standard));
+        CHECK(settings->cpu_clock.GetValue() == Settings::CpuClock::Overclock);
+        CHECK_FALSE(settings->cpu_clock.UsingGlobal());
+    }
 }

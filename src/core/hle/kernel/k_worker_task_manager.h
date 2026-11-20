@@ -21,6 +21,7 @@ public:
     KWorkerTaskManager();
 
     static void AddTask(KernelCore& kernel, WorkerType type, KWorkerTask* task);
+    void WaitForTasks();
 
 private:
     void AddTask(KernelCore& kernel, KWorkerTask* task);

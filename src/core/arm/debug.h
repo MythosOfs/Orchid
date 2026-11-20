@@ -4,6 +4,7 @@
 #pragma once
 
 #include <optional>
+#include <thread>
 
 #include "core/hle/kernel/k_thread.h"
 #include "core/loader/loader.h"
@@ -35,6 +36,6 @@ std::vector<BacktraceEntry> GetBacktraceFromContext(Kernel::KProcess* process,
 std::vector<BacktraceEntry> GetBacktrace(const Kernel::KThread* thread);
 
 // ponytail: diagnostics, EDEN_PKP_BT=1 only. Samples guest thread PC/LR/backtrace every 2 s from t=10 s, no pausing.
-void StartPkpSampler(System& system);
+std::jthread StartPkpSampler(System& system);
 
 } // namespace Core

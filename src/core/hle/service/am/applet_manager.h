@@ -42,6 +42,8 @@ public:
     explicit AppletManager(Core::System& system);
     ~AppletManager();
 
+    void ClearPendingProcess();
+
     void CreateAndInsertByFrontendAppletParameters(std::unique_ptr<Process> process,
                                                    const FrontendAppletParameters& params);
     void RequestExit();

@@ -90,6 +90,10 @@ struct KernelCore::Impl {
     }
 
     void Initialize(KernelCore& kernel) {
+        {
+            std::scoped_lock lk{server_lock};
+            accepting_servers = true;
+        }
         hardware_timer.emplace(kernel);
         hardware_timer->Initialize();
 
@@ -144,6 +148,8 @@ struct KernelCore::Impl {
         };
 
         CloseServices();
+        // Guest service threads may have queued exit work while the CPU cores were stopping.
+        worker_task_manager.WaitForTasks();
 
         if (application_process) {
             // A process still referenced here is never finalized, so its memory stays mapped in
@@ -227,9 +233,13 @@ struct KernelCore::Impl {
     }
 
     void CloseServices() {
-        // Ensures all servers gracefully shutdown.
-        std::scoped_lock lk{server_lock};
-        server_managers.clear();
+        // Reject late registrations while waiting for the current servers to shut down.
+        std::vector<std::unique_ptr<Service::ServerManager>> servers;
+        {
+            std::scoped_lock lk{server_lock};
+            accepting_servers = false;
+            servers.swap(server_managers);
+        }
     }
 
     void InitializePhysicalCores() {
@@ -818,6 +828,7 @@ struct KernelCore::Impl {
     ::Common::unordered_set<KAutoObject*> registered_in_use_objects;
 
     std::mutex server_lock;
+    bool accepting_servers{};
     std::vector<std::unique_ptr<Service::ServerManager>> server_managers;
 
     std::array<std::optional<Kernel::PhysicalCore>, Core::Hardware::NUM_CPU_CORES> cores;
@@ -1027,10 +1038,11 @@ void KernelCore::RunServer(std::unique_ptr<Service::ServerManager>&& server_mana
 
     {
         std::scoped_lock lk{impl->server_lock};
-        if (impl->is_shutting_down) {
+        if (!impl->accepting_servers) {
             return;
         }
 
+        manager->m_loop_scheduled = true;
         impl->server_managers.emplace_back(std::move(server_manager));
     }
 
@@ -1279,6 +1291,8 @@ void KernelCore::SuspendEmulation(bool suspended) {
 
 void KernelCore::ShutdownCores() {
     impl->TerminateAllProcesses();
+    // An already-terminating process can still be using guest memory on the exit worker.
+    impl->worker_task_manager.WaitForTasks();
     KScopedSchedulerLock lk{*this};
     for (auto* thread : impl->shutdown_threads)
         void(thread->Run(*this));

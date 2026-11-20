@@ -38,6 +38,7 @@ add_executable(tests
     core/address_arbiter_read.cpp
     core/address_space.cpp
     core/builtin_font_glyphs.cpp
+    core/cheat_parser.cpp
     core/core_timing.cpp
     core/filesystem_buffer_bounds.cpp
     core/page_heap.cpp

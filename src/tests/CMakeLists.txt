@@ -72,6 +72,7 @@ add_executable(tests
     core/nvnflinger_fence.cpp
     core/partition_filesystem.cpp
     core/romfs.cpp
+    core/time_zone_fallback.cpp
     core/internal_network/network.cpp
     video_core/shader_object_pool.cpp
     video_core/aftermath_dump.cpp
@@ -181,7 +182,7 @@ if (WIN32)
     target_sources(tests PRIVATE common/host_memory_commit.cpp)
 endif()
 
-target_link_libraries(tests PRIVATE common core input_common video_core)
+target_link_libraries(tests PRIVATE common core input_common video_core tz)
 target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2WithMain Threads::Threads)
 
 # Reference texts of the expect tests (tests/expect.h); ORCHID_EXPECT_UPDATE=1 rewrites them.

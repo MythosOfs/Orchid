@@ -227,9 +227,9 @@ void Layer::CreateRawImages(const Device& device, const Tegra::FramebufferConfig
 }
 
 void Layer::RefreshResources(const Device& device, const Tegra::FramebufferConfig& framebuffer) {
-    // The staging buffer holds rows of stride pixels.
+    // The staging buffer holds image_count slots of raw_stride pixel rows; a smaller stride fits.
     if (framebuffer.width == raw_width && framebuffer.height == raw_height &&
-        framebuffer.stride == raw_stride && framebuffer.pixel_format == pixel_format &&
+        framebuffer.stride <= raw_stride && framebuffer.pixel_format == pixel_format &&
         !raw_images.empty()) {
         return;
     }
@@ -239,11 +239,7 @@ void Layer::RefreshResources(const Device& device, const Tegra::FramebufferConfi
     raw_stride = framebuffer.stride;
     pixel_format = framebuffer.pixel_format;
 
-    // The last composite may still sample the raw images and the anti-aliasing pass: the ticks
-    // saved per layer predate it. Rare (size, stride or format changes), so wait for all work.
-    if (!raw_images.empty()) {
-        scheduler.Finish();
-    }
+    // Waits for the GPU work of the last frames, which may still use the anti-aliasing pass.
     ReleaseRawImages();
     anti_alias.emplace<std::monostate>();
     CreateStagingBuffer(device, framebuffer);
@@ -329,7 +325,8 @@ u64 Layer::CalculateBufferSize(const Tegra::FramebufferConfig& framebuffer) cons
 
 u64 Layer::GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer,
                              size_t image_index) const {
-    return GetSizeInBytes(framebuffer) * image_index;
+    // Fixed slots: a smaller stride must not move a slot onto one the GPU may still read.
+    return u64{raw_stride} * framebuffer.height * GetBytesPerPixel(framebuffer) * image_index;
 }
 
 void Layer::SetMatrixData(const Device& device, PresentPushConstants& data, const Layout::FramebufferLayout& layout) const {
@@ -390,7 +387,7 @@ void Layer::UpdateRawImage(const Tegra::FramebufferConfig& framebuffer, size_t i
     const u32 block_height_log2 = fp16_block_height.value_or(default_block_height_log2);
     const u32 bytes_per_pixel = GetBytesPerPixel(framebuffer);
     const u64 linear_size{GetSizeInBytes(framebuffer)};
-    if (fp16 && !fp16_block_height) {
+    if (fp16 && (!fp16_block_height || !host_ptr)) {
         std::ranges::fill(mapped_span.subspan(image_offset, linear_size), u8{});
         buffer.Flush();
     } else if (host_ptr) {

@@ -259,6 +259,16 @@ void KMemoryManager::MarkDirty(KPhysicalAddress address, size_t num_pages) {
                                              num_pages * PageSize);
 }
 
+void KMemoryManager::ReleaseFreed(KPhysicalAddress address, size_t num_pages) {
+    // A stopped game's heap otherwise keeps its RAM in the idle frontend until the next game
+    // allocates it (issue 59). Free pages hold no kernel objects (those live in the slab region),
+    // so nothing reads them before the next allocation clears them.
+    if (m_system.Kernel().IsShuttingDown()) {
+        m_system.DeviceMemory().buffer.Discard(GetInteger(address) - Core::DramMemoryMap::Base,
+                                               num_pages * PageSize);
+    }
+}
+
 Result KMemoryManager::AllocatePageGroupImpl(KPageGroup* out, size_t num_pages, Pool pool,
                                              Direction dir, bool unoptimized, bool random) {
     // Choose a heap based on our page size request.

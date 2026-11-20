@@ -46,7 +46,6 @@
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
 #include "core/hle/result.h"
-#include "core/hle/service/hle_ipc.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/memory.h"
@@ -91,10 +90,6 @@ struct KernelCore::Impl {
     }
 
     void Initialize(KernelCore& kernel) {
-        {
-            std::scoped_lock lk{server_lock};
-            accepting_servers = true;
-        }
         hardware_timer.emplace(kernel);
         hardware_timer->Initialize();
 
@@ -149,8 +144,6 @@ struct KernelCore::Impl {
         };
 
         CloseServices();
-        // Guest service threads may have queued exit work while the CPU cores were stopping.
-        worker_task_manager.WaitForTasks();
 
         if (application_process) {
             // A process still referenced here is never finalized, so its memory stays mapped in
@@ -234,14 +227,9 @@ struct KernelCore::Impl {
     }
 
     void CloseServices() {
-        // Reject late registrations while waiting for the current servers to shut down.
-        std::vector<std::unique_ptr<Service::ServerManager>> servers;
-        {
-            std::scoped_lock lk{server_lock};
-            accepting_servers = false;
-            nx2_gsv_server = nullptr;
-            servers.swap(server_managers);
-        }
+        // Ensures all servers gracefully shutdown.
+        std::scoped_lock lk{server_lock};
+        server_managers.clear();
     }
 
     void InitializePhysicalCores() {
@@ -830,8 +818,6 @@ struct KernelCore::Impl {
     ::Common::unordered_set<KAutoObject*> registered_in_use_objects;
 
     std::mutex server_lock;
-    bool accepting_servers{};
-    Service::ServerManager* nx2_gsv_server{};
     std::vector<std::unique_ptr<Service::ServerManager>> server_managers;
 
     std::array<std::optional<Kernel::PhysicalCore>, Core::Hardware::NUM_CPU_CORES> cores;
@@ -1036,34 +1022,19 @@ void KernelCore::UnregisterInUseObject(KAutoObject* object) {
     impl->registered_in_use_objects.erase(object);
 }
 
-void KernelCore::RunServer(std::unique_ptr<Service::ServerManager>&& server_manager,
-                           bool is_nx2_gsv) {
+void KernelCore::RunServer(std::unique_ptr<Service::ServerManager>&& server_manager) {
     auto* manager = server_manager.get();
 
     {
         std::scoped_lock lk{impl->server_lock};
-        if (!impl->accepting_servers) {
+        if (impl->is_shutting_down) {
             return;
         }
 
-        manager->m_loop_scheduled = true;
         impl->server_managers.emplace_back(std::move(server_manager));
-        if (is_nx2_gsv) {
-            impl->nx2_gsv_server = manager;
-        }
     }
 
     manager->LoopProcess();
-}
-
-void KernelCore::RegisterNx2GsvSession(KServerSession& session,
-                                       Service::ServerManager& fallback_server,
-                                       std::shared_ptr<Service::SessionRequestHandler> handler) {
-    std::scoped_lock lk{impl->server_lock};
-    auto& server = impl->nx2_gsv_server ? *impl->nx2_gsv_server : fallback_server;
-    auto manager = std::make_shared<Service::SessionRequestManager>(*this, server);
-    manager->SetSessionHandler(std::move(handler));
-    server.RegisterSession(&session, std::move(manager));
 }
 
 u32 KernelCore::CreateNewObjectID() {
@@ -1308,8 +1279,6 @@ void KernelCore::SuspendEmulation(bool suspended) {
 
 void KernelCore::ShutdownCores() {
     impl->TerminateAllProcesses();
-    // An already-terminating process can still be using guest memory on the exit worker.
-    impl->worker_task_manager.WaitForTasks();
     KScopedSchedulerLock lk{*this};
     for (auto* thread : impl->shutdown_threads)
         void(thread->Run(*this));

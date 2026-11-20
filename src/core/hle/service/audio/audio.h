@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include "common/polyfill_thread.h"
-
 namespace Core {
 class System;
 }
@@ -18,6 +16,6 @@ class ServiceManager;
 
 namespace Service::Audio {
 
-void LoopProcess(Core::System& system, std::stop_token token);
+void LoopProcess(Core::System& system);
 
 } // namespace Service::Audio

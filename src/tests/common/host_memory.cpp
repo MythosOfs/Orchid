@@ -6,6 +6,10 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#ifdef __linux__
+#include <sys/mman.h>
+#endif
+
 #include "common/host_memory.h"
 #include "common/literals.h"
 
@@ -186,3 +190,35 @@ TEST_CASE("HostMemory: Partial sparse middle unmap and check bindings", "[common
     REQUIRE(ptr[0x0000] == 19);
     REQUIRE(ptr[0x3fff] == 12);
 }
+
+#ifdef __linux__
+static bool Resident(const u8* address) {
+    unsigned char vec = 0;
+    REQUIRE(mincore(const_cast<u8*>(address), 0x1000, &vec) == 0);
+    return (vec & 1) != 0;
+}
+
+TEST_CASE("HostMemory: Discard gives the backing back and keeps it dirty", "[common][discard]") {
+    HostMemory mem(BACKING_SIZE, VIRTUAL_SIZE);
+    u8* const backing = mem.BackingBasePointer();
+    mem.Map(0x40000, 0x20000, 0x3000, PERMS, HEAP);
+    volatile u8* const view = mem.VirtualBasePointer() + 0x40000;
+    mem.MarkUsed(0x20000, 0x3000);
+    mem.MarkDirty(0x20000, 0x3000);
+    view[0x0000] = 11;
+    view[0x1000] = 22;
+    view[0x2000] = 33;
+    REQUIRE(Resident(backing + 0x21000));
+
+    mem.Discard(0x21000, 0x1000);
+    REQUIRE(!Resident(backing + 0x21000));
+    REQUIRE(view[0x1000] == 0);
+    REQUIRE(view[0x0000] == 11);
+    REQUIRE(view[0x2000] == 33);
+
+    // Written again after the discard: the next allocation must still clear it.
+    view[0x1000] = 44;
+    mem.ClearBackingRegion(0x21000, 0x1000, 0);
+    REQUIRE(view[0x1000] == 0);
+}
+#endif

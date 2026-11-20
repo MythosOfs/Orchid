@@ -8,7 +8,6 @@
 #include <cstring>
 
 #include "common/demangle.h"
-#include "common/polyfill_thread.h"
 #include "core/arm/debug.h"
 #include "core/arm/symbols.h"
 #include "core/core.h"
@@ -431,13 +430,14 @@ static void LogLastSvc(System& system, Kernel::KProcess* app, const Kernel::KThr
 }
 
 // ponytail: diagnostics only. Racy snapshot (no scheduler lock, no pause); fine for a one-off trace.
-std::jthread StartPkpSampler(System& system) {
+void StartPkpSampler(System& system) {
     if (std::getenv("EDEN_PKP_BT") == nullptr) {
-        return {};
+        return;
     }
-    return std::jthread([&system](std::stop_token stop) {
+    std::thread([&system] {
         const auto t0 = std::chrono::steady_clock::now();
-        while (Common::StoppableTimedWait(stop, std::chrono::seconds(2))) {
+        for (;;) {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
             const double t = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
             if (t < 10.0) {
                 continue;
@@ -477,7 +477,7 @@ std::jthread StartPkpSampler(System& system) {
                          SafeRead32(system.ApplicationMemory(), r[21]));
             }
         }
-    });
+    }).detach();
 }
 
 } // namespace Core

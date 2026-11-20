@@ -910,6 +910,16 @@ void HostMemory::ClearBackingRegion(size_t physical_offset, size_t length, u32 f
     }
 }
 
+void HostMemory::Discard([[maybe_unused]] size_t physical_offset,
+                         [[maybe_unused]] size_t length) {
+#ifdef __linux__
+    ASSERT(physical_offset <= backing_size && length <= backing_size - physical_offset);
+    if (impl && length != 0) {
+        impl->PunchHole(physical_offset, length);
+    }
+#endif
+}
+
 void HostMemory::MarkUsed(size_t physical_offset, size_t length) {
     if (length == 0) {
         return;

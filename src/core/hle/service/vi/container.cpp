@@ -5,26 +5,30 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "core/core.h"
+#include "core/hle/service/nvdrv/nvdrv_interface.h"
 #include "core/hle/service/nvnflinger/buffer_queue_producer.h"
 #include "core/hle/service/nvnflinger/hos_binder_driver.h"
 #include "core/hle/service/nvnflinger/hos_binder_driver_server.h"
 #include "core/hle/service/nvnflinger/surface_flinger.h"
+#include "core/hle/service/sm/sm.h"
 #include "core/hle/service/vi/container.h"
 #include "core/hle/service/vi/vi_results.h"
 
 namespace Service::VI {
 
-Container::Container(Core::System& system,
-                     std::shared_ptr<Nvnflinger::IHOSBinderDriver> binder_driver,
-                     const std::shared_ptr<Nvidia::Module>& nvdrv)
-    : m_binder_driver{std::move(binder_driver)} {
+Container::Container(Core::System& system) {
     m_displays.CreateDisplay(DisplayName{"Default"});
     m_displays.CreateDisplay(DisplayName{"External"});
     m_displays.CreateDisplay(DisplayName{"Edid"});
     m_displays.CreateDisplay(DisplayName{"Internal"});
     m_displays.CreateDisplay(DisplayName{"Null"});
 
+    m_binder_driver =
+        system.ServiceManager().GetService<Nvnflinger::IHOSBinderDriver>("dispdrv", true);
     m_surface_flinger = m_binder_driver->GetSurfaceFlinger();
+
+    const auto nvdrv =
+        system.ServiceManager().GetService<Nvidia::NVDRV>("nvdrv:s", true)->GetModule();
     m_shared_buffer_manager.emplace(system, *this, nvdrv);
 
     m_displays.ForEachDisplay(

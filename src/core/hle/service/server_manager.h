@@ -24,7 +24,6 @@ class System;
 
 namespace Kernel {
 class KEvent;
-class KernelCore;
 class KServerPort;
 class KServerSession;
 } // namespace Kernel
@@ -96,8 +95,6 @@ private:
     std::optional<MultiWaitHolder> m_deferral_holder{};
 
     // Host state tracking
-    friend class Kernel::KernelCore;
-    bool m_loop_scheduled{};
     Common::Event m_stopped{};
     std::vector<std::jthread> m_threads{};
     std::stop_source m_stop_source{};

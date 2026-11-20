@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <atomic>
 #include <memory>
-#include <thread>
 #include <utility>
 
 #include "game_settings.h"
@@ -199,18 +198,22 @@ struct System::Impl {
 
     void ReinitializeIfNecessary(System& system) {
         const bool must_reinitialize =
+            !device_memory.has_value() ||
             is_multicore != Settings::values.use_multi_core.GetValue() ||
             // Any change of size: the device memory was made for the old one. Switch 2 titles force
             // 12 GiB, and with 6-10 GiB configured the kernel handed out memory past its end.
             memory_layout != Settings::values.memory_layout_mode.GetValue();
 
-        if (must_reinitialize) {
-            LOG_DEBUG(Kernel, "Re-initializing");
-            Initialize(system);
-        } else if (!device_memory) {
-            // A same-layout reload can restore RAM without resetting core timing.
-            device_memory.emplace();
+        if (!must_reinitialize) {
+            return;
         }
+
+        LOG_DEBUG(Kernel, "Re-initializing");
+
+        is_multicore = Settings::values.use_multi_core.GetValue();
+        memory_layout = Settings::values.memory_layout_mode.GetValue();
+
+        Initialize(system);
     }
 
     void RefreshTime(System& system) {
@@ -451,13 +454,12 @@ struct System::Impl {
         SystemResultStatus init_result{SetupForApplicationProcess(system, emu_window)};
         if (init_result != SystemResultStatus::Success) {
             LOG_CRITICAL(Core, "Failed to initialize system (Error {})!", int(init_result));
-            process.reset();
             ShutdownMainProcess();
             return init_result;
         }
         // Waiting for GPU before initializing CPU
         cpu_manager.Initialize();
-        pkp_sampler = Core::StartPkpSampler(system);
+        Core::StartPkpSampler(system); // ponytail: EDEN_PKP_BT diagnostics only
 
         // Initialize cheat engine
         if (cheat_engine) {
@@ -507,7 +509,6 @@ struct System::Impl {
 
     void ShutdownMainProcess() {
         SetShuttingDown(true);
-        pkp_sampler = {};
         Common::ADPF::Shutdown();
 
         // Reset per-game flags
@@ -527,8 +528,8 @@ struct System::Impl {
         cheat_engine.reset();
         kernel.SuspendEmulation(true);
         kernel.CloseServices();
-        services.reset();
         kernel.ShutdownCores();
+        services.reset();
         service_manager.reset();
         fs_controller.Reset();
         core_timing.ClearPendingEvents();
@@ -542,12 +543,6 @@ struct System::Impl {
         }
         cpu_manager.Shutdown();
         debugger.reset();
-        applet_manager.ClearPendingProcess();
-        {
-            std::scoped_lock lk{general_channel_mutex};
-            general_channel_event.reset();
-            general_channel_context.reset();
-        }
         kernel.Shutdown();
         stop_event = {};
         Network::RestartSocketOperations();
@@ -559,11 +554,6 @@ struct System::Impl {
 
         // Reset all glue registrations
         arp_manager.ResetAll();
-
-        // Destroy the backing after kernel teardown so touched pages are freed while idle.
-        if (Settings::CurrentProgramIsSwitch2()) {
-            device_memory.reset();
-        }
 
         LOG_DEBUG(Core, "Shutdown OK");
     }
@@ -654,15 +644,11 @@ struct System::Impl {
     std::atomic_bool exit_locked{};
     std::atomic_bool exit_requested{};
     std::atomic_bool nvdec_active{};
-    std::jthread pkp_sampler;
 
     void EnsureGeneralChannelInitialized(System& system) {
         if (!general_channel_event) {
             general_channel_context.emplace(system, "GeneralChannel");
             general_channel_event.emplace(*general_channel_context);
-            if (!general_channel.empty()) {
-                general_channel_event->Signal(kernel);
-            }
         }
     }
 };
@@ -796,12 +782,10 @@ Kernel::KProcess* System::ApplicationProcess() {
 }
 
 Core::DeviceMemory& System::DeviceMemory() {
-    ASSERT(impl->device_memory.has_value());
     return *impl->device_memory;
 }
 
 const Core::DeviceMemory& System::DeviceMemory() const {
-    ASSERT(impl->device_memory.has_value());
     return *impl->device_memory;
 }
 
@@ -1117,12 +1101,12 @@ void System::PushGeneralChannelData(std::vector<u8>&& data) {
 
 bool System::TryPopGeneralChannel(std::vector<u8>& out_data) {
     std::scoped_lock lk{impl->general_channel_mutex};
-    if (impl->general_channel.empty()) {
+    if (!impl->general_channel_event || impl->general_channel.empty()) {
         return false;
     }
     out_data = std::move(impl->general_channel.back());
     impl->general_channel.pop_back();
-    if (impl->general_channel_event && impl->general_channel.empty()) {
+    if (impl->general_channel.empty()) {
         impl->general_channel_event->Clear(impl->kernel);
     }
     return true;

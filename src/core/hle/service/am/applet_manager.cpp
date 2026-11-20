@@ -231,11 +231,6 @@ void PushInShowSoftwareKeyboard(Core::System& system, AppletStorageChannel& chan
 AppletManager::AppletManager(Core::System& system) : m_system(system) {}
 AppletManager::~AppletManager() = default;
 
-void AppletManager::ClearPendingProcess() {
-    std::scoped_lock lk{m_lock};
-    m_pending_process.reset();
-}
-
 void AppletManager::CreateAndInsertByFrontendAppletParameters(
     std::unique_ptr<Process> process, const FrontendAppletParameters& params) {
     {

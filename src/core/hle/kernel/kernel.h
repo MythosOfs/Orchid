@@ -33,7 +33,6 @@ struct EventType;
 
 namespace Service {
 class ServerManager;
-class SessionRequestHandler;
 }
 
 namespace Service::SM {
@@ -197,10 +196,7 @@ public:
     void UnregisterInUseObject(KAutoObject* object);
 
     // Runs the given server manager until shutdown.
-    void RunServer(std::unique_ptr<Service::ServerManager>&& server_manager,
-                   bool is_nx2_gsv = false);
-    void RegisterNx2GsvSession(KServerSession& session, Service::ServerManager& fallback_server,
-                               std::shared_ptr<Service::SessionRequestHandler> handler);
+    void RunServer(std::unique_ptr<Service::ServerManager>&& server_manager);
 
     /// Gets the current host_thread/guest_thread pointer.
     KThread* GetCurrentEmuThread() const;

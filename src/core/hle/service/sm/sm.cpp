@@ -79,7 +79,6 @@ Result ServiceManager::RegisterService(Kernel::KServerPort** out_server_port, st
 
     service_ports.emplace(name, std::addressof(port->GetClientPort()));
     registered_services.emplace(name, handler);
-    service_registered.notify_all();
     if (deferral_event) {
         deferral_event->Signal(kernel);
     }

@@ -22,7 +22,7 @@ namespace Service::Audio {
 
 class IAudioController final : public ServiceFramework<IAudioController> {
 public:
-    IAudioController(Core::System& system_, std::shared_ptr<Set::ISystemSettingsServer> settings);
+    explicit IAudioController(Core::System& system_);
     ~IAudioController() override;
 
 private:

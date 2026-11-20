@@ -1550,6 +1550,10 @@ void ConfigureInputPlayer::mousePressEvent(QMouseEvent* event) {
 }
 
 void ConfigureInputPlayer::wheelEvent(QWheelEvent* event) {
+    if (!input_setter) {
+        event->ignore();
+        return;
+    }
     const int x = event->angleDelta().x();
     const int y = event->angleDelta().y();
     input_subsystem->GetMouse()->MouseWheelChange(x, y);

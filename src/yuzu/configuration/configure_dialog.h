@@ -66,6 +66,7 @@ signals:
 
 private:
     void changeEvent(QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
     void RetranslateUI();
 
     void HandleApplyButtonClicked();

@@ -16,6 +16,7 @@
 #include <QAbstractButton>
 #include <QCheckBox>
 #include <QPushButton>
+#include <QShowEvent>
 #include <QString>
 #include <QTimer>
 
@@ -104,6 +105,15 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id_, const std::st
 }
 
 ConfigurePerGame::~ConfigurePerGame() = default;
+
+void ConfigurePerGame::showEvent(QShowEvent* event) {
+    QList<QWidget*> pages{ui->groupBox};
+    for (int index = 0; index < ui->tabWidget->count(); ++index) {
+        pages.push_back(ui->tabWidget->widget(index));
+    }
+    ConfigurationShared::FitToScreen(this, pages);
+    QDialog::showEvent(event);
+}
 
 void ConfigurePerGame::ApplyConfiguration() {
     for (const auto tab : *tab_group) {

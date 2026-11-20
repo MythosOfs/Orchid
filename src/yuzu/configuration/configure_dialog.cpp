@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
+#include <QShowEvent>
 #include "common/logging.h"
 #include "common/settings.h"
 #include "common/settings_enums.h"
@@ -118,6 +119,18 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
 }
 
 ConfigureDialog::~ConfigureDialog() = default;
+
+void ConfigureDialog::showEvent(QShowEvent* event) {
+    if (isWindow()) {
+        QList<QWidget*> pages;
+        for (int row = 0; row < ui->selectorList->count(); ++row) {
+            const QVariant tabs = ui->selectorList->item(row)->data(Qt::UserRole);
+            pages.append(qvariant_cast<QList<QWidget*>>(tabs));
+        }
+        ConfigurationShared::FitToScreen(this, pages);
+    }
+    QDialog::showEvent(event);
+}
 
 void ConfigureDialog::SetConfiguration() {}
 

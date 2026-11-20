@@ -54,7 +54,7 @@ public:
     explicit Layer(const Device& device, MemoryAllocator& memory_allocator, Scheduler& scheduler,
                    Tegra::MaxwellDeviceMemoryManager& device_memory, size_t image_count,
                    VkExtent2D output_size, VkDescriptorSetLayout layout,
-                   const PresentFilters& filters);
+                   const PresentFilters& filters, bool hdr_output);
     ~Layer();
 
     /// Prepares layer descriptors and push constants. The layer is converted to the frame's

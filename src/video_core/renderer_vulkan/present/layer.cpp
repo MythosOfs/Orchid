@@ -66,7 +66,7 @@ VkFormat GetFormat(const Tegra::FramebufferConfig& framebuffer) {
 
 } // Anonymous namespace
 
-Layer::Layer(const Device& device, MemoryAllocator& memory_allocator_, Scheduler& scheduler_, Tegra::MaxwellDeviceMemoryManager& device_memory_, size_t image_count_, VkExtent2D output_size, VkDescriptorSetLayout layout, const PresentFilters& filters_)
+Layer::Layer(const Device& device, MemoryAllocator& memory_allocator_, Scheduler& scheduler_, Tegra::MaxwellDeviceMemoryManager& device_memory_, size_t image_count_, VkExtent2D output_size, VkDescriptorSetLayout layout, const PresentFilters& filters_, bool hdr_output)
     : memory_allocator(memory_allocator_)
     , scheduler(scheduler_)
     , device_memory(device_memory_)
@@ -75,13 +75,16 @@ Layer::Layer(const Device& device, MemoryAllocator& memory_allocator_, Scheduler
 {
     CreateDescriptorPool(device);
     CreateDescriptorSets(device, layout);
-    if (filters.get_scaling_filter() == Settings::ScalingFilter::Fsr) {
+    // An HDR frame bypasses the upscalers: do not allocate their images.
+    const auto scaling_filter = hdr_output ? Settings::ScalingFilter::Bilinear
+                                           : filters.get_scaling_filter();
+    if (scaling_filter == Settings::ScalingFilter::Fsr) {
         sr_filter.emplace<FSR>(device, memory_allocator, image_count, output_size);
-    } else if (filters.get_scaling_filter() == Settings::ScalingFilter::Sgsr) {
+    } else if (scaling_filter == Settings::ScalingFilter::Sgsr) {
         sr_filter.emplace<SGSR>(device, memory_allocator, image_count, output_size, false);
-    } else if (filters.get_scaling_filter() == Settings::ScalingFilter::SgsrEdge) {
+    } else if (scaling_filter == Settings::ScalingFilter::SgsrEdge) {
         sr_filter.emplace<SGSR>(device, memory_allocator, image_count, output_size, true);
-    } else if (filters.get_scaling_filter() == Settings::ScalingFilter::Fsr3) {
+    } else if (scaling_filter == Settings::ScalingFilter::Fsr3) {
         sr_filter.emplace<FSR3>(device, memory_allocator, image_count, output_size);
     }
 }

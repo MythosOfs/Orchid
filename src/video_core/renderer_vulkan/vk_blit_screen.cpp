@@ -7,6 +7,7 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <mutex>
 #include <vulkan/vulkan_core.h>
 #include "common/settings.h"
 #include "video_core/framebuffer_config.h"
@@ -34,8 +35,11 @@ BlitScreen::BlitScreen(Tegra::MaxwellDeviceMemoryManager& device_memory_, const 
 BlitScreen::~BlitScreen() = default;
 
 void BlitScreen::WaitIdle(const Device& device) {
-    present_manager.WaitPresent();
     scheduler.Finish();
+    present_manager.WaitPresent();
+    // vkDeviceWaitIdle needs every queue externally synchronized: the present thread submits and
+    // presents under this mutex.
+    std::scoped_lock lock{scheduler.submit_mutex};
     device.GetLogical().WaitIdle();
 }
 
@@ -174,7 +178,8 @@ void BlitScreen::DrawToFrame(const Device& device, RasterizerVulkan& rasterizer,
         layers.clear();
         for (size_t i = 0; i < framebuffers.size(); ++i) {
             layers.emplace_back(device, memory_allocator, scheduler, device_memory, image_count,
-                                window_size, window_adapt->GetDescriptorSetLayout(), filters);
+                                window_size, window_adapt->GetDescriptorSetLayout(), filters,
+                                output.IsHdr());
         }
     }
 

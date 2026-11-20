@@ -179,6 +179,12 @@ if (WIN32)
     target_sources(tests PRIVATE common/host_memory_commit.cpp)
 endif()
 
+if (ENABLE_LIBUSB AND LINUX)
+    target_sources(tests PRIVATE input_common/gc_adapter_libusb.cpp)
+    target_link_libraries(tests PRIVATE libusb::usb)
+    target_link_options(tests PRIVATE -Wl,--wrap=libusb_init,--wrap=libusb_exit,--wrap=libusb_open_device_with_vid_pid)
+endif()
+
 target_link_libraries(tests PRIVATE common core input_common video_core)
 target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2WithMain Threads::Threads)
 
@@ -229,7 +235,7 @@ endif()
 # A test source in no target is never built or run (maxwell_fmz.cpp and debug_stream_contract.cpp
 # sat unbuilt this way). Every .cpp here must belong to one of the targets above.
 file(GLOB_RECURSE test_sources RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS "*.cpp")
-set(listed_test_sources common/host_memory_commit.cpp) # added above on Windows only
+set(listed_test_sources common/host_memory_commit.cpp input_common/gc_adapter_libusb.cpp) # added above on Windows / Linux only
 foreach(test_target IN ITEMS tests stall_diagnostics_session debug_stream_contract)
     get_target_property(target_sources ${test_target} SOURCES)
     list(APPEND listed_test_sources ${target_sources})

@@ -14,6 +14,7 @@
 
 #include <fmt/ranges.h>
 
+#include "common/display_hdr.h"
 #include "common/logging.h"
 #include <ranges>
 #include "common/scope_exit.h"
@@ -35,6 +36,7 @@
 #include "video_core/renderer_vulkan/vk_state_tracker.h"
 #include "video_core/renderer_vulkan/vk_swapchain.h"
 #include "video_core/textures/decoders.h"
+#include "video_core/vulkan_common/vk_enum_string_helper.h"
 #include "video_core/vulkan_common/vulkan_debug_callback.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_instance.h"
@@ -108,6 +110,64 @@ std::string BuildCommaSeparatedExtensions(
     return fmt::format("{}", fmt::join(available_extensions, ","));
 }
 
+// The swapchain format and colour space to present in: an HDR pair the surface lists while HDR
+// output is on (Off/On/Auto with the monitor's state), else SDR. wanted_hdr, when given, tells
+// whether HDR output is on, whatever the surface lists.
+#ifdef __ANDROID__
+// Always SDR: the present thread replaces the surface and its window there, so neither can be
+// asked from here.
+VkSurfaceFormatKHR ChooseOutputFormat(const vk::PhysicalDevice&, const vk::SurfaceKHR&,
+                                      const Core::Frontend::EmuWindow&, bool,
+                                      bool* wanted_hdr = nullptr, bool = false) {
+    if (wanted_hdr) {
+        *wanted_hdr = false;
+    }
+    return {VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+}
+#else
+VkSurfaceFormatKHR ChooseOutputFormat(const vk::PhysicalDevice& physical,
+                                      const vk::SurfaceKHR& surface,
+                                      [[maybe_unused]] const Core::Frontend::EmuWindow& window,
+                                      bool warn, bool* wanted_hdr = nullptr,
+                                      bool sdr_only = false) {
+    auto& monitor = Common::DisplayHdrMonitor::Instance();
+#ifdef _WIN32
+    if (Settings::values.hdr_mode.GetValue() != Settings::HdrMode::Off) {
+        monitor.Watch(window.GetWindowInfo().render_surface);
+    }
+#endif
+    const auto output = Common::ResolveHdrOutput(
+        monitor.Current(), Settings::values.hdr_mode.GetValue(),
+        Settings::values.hdr_peak_luminance.GetValue(),
+        Settings::values.hdr_reference_white.GetValue());
+    if (wanted_hdr) {
+        *wanted_hdr = output.enabled;
+    }
+    if (output.enabled && !sdr_only) {
+        try {
+            const auto formats = physical.GetSurfaceFormatsKHR(*surface);
+            const auto hdr =
+                ChooseHdrSurfaceFormat(formats, Settings::values.hdr_swapchain.GetValue());
+            if (hdr) {
+                return *hdr;
+            }
+            if (warn) {
+                LOG_WARNING(Render_Vulkan,
+                            "HDR output is on, but the surface lists no HDR10 or scRGB format");
+            }
+        } catch (const vk::Exception& exception) {
+            // A lost surface is the present thread's to recover; present SDR until it has.
+            if (warn) {
+                LOG_WARNING(Render_Vulkan, "HDR output is on, but the surface formats could not "
+                                           "be read ({})",
+                            exception.what());
+            }
+        }
+    }
+    return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+}
+#endif
+
 } // Anonymous namespace
 
 Device CreateDevice(const vk::Instance& instance, const vk::InstanceDispatch& dld, VkSurfaceKHR surface) {
@@ -175,7 +235,8 @@ try
                 device,
                 scheduler,
                render_window.GetFramebufferLayout().width,
-               render_window.GetFramebufferLayout().height)
+               render_window.GetFramebufferLayout().height,
+               ChooseOutputFormat(device.GetPhysical(), surface, render_window, true))
     , present_manager(instance,
                       render_window,
                       device,
@@ -242,25 +303,30 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
     RenderScreenshot(framebuffers);
     Frame* frame = present_manager.GetRenderFrame();
 
+    const HdrPresent output = UpdateHdrPresent();
+    frame->color_space = output.color_space;
+
     scheduler.RequestOutsideRenderPassOperationContext();
     blit_swapchain.DrawToFrame(device, rasterizer, frame, framebuffers,
-                               render_window.GetFramebufferLayout(),
-                               present_manager.SwapchainImageCount(),
-                               swapchain.GetImageViewFormat());
+                              render_window.GetFramebufferLayout(),
+                              present_manager.SwapchainImageCount(), output_format.format, output);
 
 #ifdef HAS_LSFG
-    void(frame_gen.WantedGenerations(present_manager.MaxExtraFrames()));
+    if (output.IsHdr()) {
+        frame_gen.Pause();
+    } else {
+        void(frame_gen.WantedGenerations(present_manager.MaxExtraFrames()));
 
-    frame_gen.Process(device, frame, present_manager.SwapchainImageFormat(),
-                      GuestExtent(framebuffers));
+        frame_gen.Process(device, frame, frame->image_format, GuestExtent(framebuffers));
 
-    const size_t generated_frames = frame_gen.GeneratedFrameCount();
-    for (size_t generation = 0; generation < generated_frames; ++generation) {
-        Frame* generated = present_manager.GetRenderFrame();
-        blit_swapchain.PrepareFrame(device, generated, render_window.GetFramebufferLayout());
-        frame_gen.GenerateInto(device, generated, generation);
-        scheduler.Flush(*generated->render_ready);
-        present_manager.Present(generated);
+        const size_t generated_frames = frame_gen.GeneratedFrameCount();
+        for (size_t generation = 0; generation < generated_frames; ++generation) {
+            Frame* generated = present_manager.GetRenderFrame();
+            blit_swapchain.PrepareFrame(device, generated, render_window.GetFramebufferLayout());
+            frame_gen.GenerateInto(device, generated, generation);
+            scheduler.Flush(*generated->render_ready);
+            present_manager.Present(generated);
+        }
     }
 #endif
 
@@ -273,6 +339,68 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
 
     gpu.RendererFrameEndNotify();
     rasterizer.TickFrame();
+}
+
+HdrPresent RendererVulkan::UpdateHdrPresent() {
+    const auto& monitor = Common::DisplayHdrMonitor::Instance();
+    const u64 key = (monitor.Generation() << 8) |
+                    (u64{static_cast<u8>(Settings::values.hdr_mode.GetValue())} << 4) |
+                    static_cast<u8>(Settings::values.hdr_swapchain.GetValue());
+    const u32 luminance_key = (u32{Settings::values.hdr_peak_luminance.GetValue()} << 16) |
+                              Settings::values.hdr_reference_white.GetValue();
+    // A new swapchain may sit on a surface that lists other formats: pick again after each.
+    const u64 swapchain_count = swapchain.GetCreationCount();
+    const bool settings_changed =
+        key != output_format_key || luminance_key != output_luminance_key;
+    // While HDR output is on but the surface listed no pair, ask again every few seconds: a
+    // surface can gain one without a new swapchain (the compositor turned colour management on).
+    constexpr u32 RetryFrames = 240;
+    const bool retry = output_hdr_missing && ++output_retry_frames >= RetryFrames;
+    if (!settings_changed && swapchain_count == output_swapchain_count && !retry) {
+        return {output_format.colorSpace, output_reference_white, output_peak};
+    }
+    output_format_key = key;
+    output_luminance_key = luminance_key;
+    output_swapchain_count = swapchain_count;
+    output_retry_frames = 0;
+    const auto previous = output_format;
+    // When the presenter just had to create an SDR swapchain for an HDR frame, stay with SDR
+    // until the next retry whatever the surface lists by now: a surface that keeps changing its
+    // mind then costs one swapchain per retry, not one per frame.
+    const u64 fallbacks = swapchain.GetHdrFallbackCount();
+    const bool fell_back = fallbacks != output_fallback_count && !settings_changed;
+    output_fallback_count = fallbacks;
+    bool wanted_hdr{};
+    output_format = ChooseOutputFormat(device.GetPhysical(), surface, render_window,
+                                       settings_changed, &wanted_hdr, fell_back);
+    output_hdr_missing = wanted_hdr && output_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    const auto told = CaptureHdrPresent();
+    output_reference_white = told.reference_white;
+    output_peak = told.peak;
+    if (previous.format != output_format.format ||
+        previous.colorSpace != output_format.colorSpace) {
+        if (output_format.colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            LOG_INFO(Render_Vulkan,
+                     "HDR output: {} {}, reference white {} nits, peak {} nits. Anti-aliasing, "
+                     "post-processing, upscaling filters and frame generation are off",
+                     string_VkFormat(output_format.format),
+                     string_VkColorSpaceKHR(output_format.colorSpace), output_reference_white,
+                     output_peak);
+        } else {
+            LOG_INFO(Render_Vulkan, "HDR output: SDR {}", string_VkFormat(output_format.format));
+        }
+    }
+    return {output_format.colorSpace, output_reference_white, output_peak};
+}
+
+HdrPresent RendererVulkan::CaptureHdrPresent() const {
+    // The luminances the game was told (nx2:vi2 QueryDisplayHdrStatus / PaperWhite).
+    const auto told = Common::ResolveHdrOutput(Common::DisplayHdrMonitor::Instance().Current(),
+                                               Settings::HdrMode::On,
+                                               Settings::values.hdr_peak_luminance.GetValue(),
+                                               Settings::values.hdr_reference_white.GetValue());
+    return {VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, static_cast<f32>(told.reference_white),
+            static_cast<f32>(told.peak_luminance)};
 }
 
 void RendererVulkan::Report() const {
@@ -312,7 +440,8 @@ vk::Buffer RendererVulkan::RenderToBuffer(std::span<const Tegra::FramebufferConf
     }();
 
     auto dst_buffer = CreateWrappedBuffer(memory_allocator, buffer_size, MemoryUsage::Download);
-    blit_capture.DrawToFrame(device, rasterizer, &frame, framebuffers, layout, 1, format);
+    blit_capture.DrawToFrame(device, rasterizer, &frame, framebuffers, layout, 1, format,
+                             CaptureHdrPresent());
 
     scheduler.RequestOutsideRenderPassOperationContext();
     scheduler.Record([&](vk::CommandBuffer cmdbuf) {
@@ -405,7 +534,7 @@ void RendererVulkan::RenderAppletCaptureLayer(
     constexpr size_t CaptureResourceSets = 3;
     scheduler.RequestOutsideRenderPassOperationContext();
     blit_applet.DrawToFrame(device, rasterizer, &applet_frame, capture_layers, VideoCore::Capture::Layout,
-                            CaptureResourceSets, CaptureFormat);
+                            CaptureResourceSets, CaptureFormat, CaptureHdrPresent());
 }
 
 } // namespace Vulkan

@@ -12,6 +12,7 @@ add_executable(tests
     common/describe_exception.cpp
     common/game_log.cpp
     common/container_hash.cpp
+    common/display_hdr.cpp
     common/event.cpp
     common/fibers.cpp
     common/flat_allocator.cpp
@@ -43,6 +44,7 @@ add_executable(tests
     core/page_heap.cpp
     core/read_traps.cpp
     core/gpu_dirty_memory_manager.cpp
+    core/nx2_image_layout.cpp
     core/nx2_readback_cache.cpp
     core/nx2_core_readback_capacity.cpp
     core/game_settings.cpp
@@ -83,6 +85,7 @@ add_executable(tests
     video_core/astc_recompression_override.cpp
     video_core/nx2_video_configuration.cpp
     video_core/nx2_decoder_image.cpp
+    video_core/hdr_output.cpp
     video_core/nx2_present.cpp
     video_core/nx2_gpu_mappings.cpp
     video_core/nx2_sparse_mappings.cpp

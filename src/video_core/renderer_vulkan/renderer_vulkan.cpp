@@ -361,7 +361,8 @@ HdrPresent RendererVulkan::UpdateHdrPresent() {
     // next retry or a changed setting, whatever the surface lists meanwhile: a surface that keeps
     // changing its mind then costs a swapchain per retry, not one per frame.
     const u64 fallbacks = swapchain.GetHdrFallbackCount();
-    if (fallbacks != output_fallback_count) {
+    const bool fell_back = fallbacks != output_fallback_count;
+    if (fell_back) {
         output_fallback_count = fallbacks;
         output_sdr_only = true;
         output_retry_frames = 0;
@@ -370,7 +371,8 @@ HdrPresent RendererVulkan::UpdateHdrPresent() {
     }
     // A new swapchain may sit on a surface that lists other formats: pick again after each.
     const u64 swapchain_count = swapchain.GetCreationCount();
-    if (!first && !settings_changed && !retry && swapchain_count == output_swapchain_count) {
+    if (!first && !settings_changed && !retry && !fell_back &&
+        swapchain_count == output_swapchain_count) {
         return {output_format.colorSpace, output_reference_white, output_peak};
     }
     output_format_key = key;

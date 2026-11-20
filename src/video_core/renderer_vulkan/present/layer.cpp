@@ -238,9 +238,10 @@ void Layer::RefreshResources(const Device& device, const Tegra::FramebufferConfi
     raw_height = framebuffer.height;
     raw_stride = framebuffer.stride;
     pixel_format = framebuffer.pixel_format;
-    anti_alias.emplace<std::monostate>();
 
+    // Waits for the GPU work of the last frames, which may still use the anti-aliasing pass.
     ReleaseRawImages();
+    anti_alias.emplace<std::monostate>();
     CreateStagingBuffer(device, framebuffer);
     CreateRawImages(device, framebuffer);
 }

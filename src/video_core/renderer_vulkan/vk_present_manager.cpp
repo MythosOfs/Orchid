@@ -712,6 +712,8 @@ void PresentManager::CopyToSwapchainImpl(Frame* frame) {
     } catch (const vk::Exception& except) {
         LOG_WARNING(Render_Vulkan, "Present failed ({}); recreating with the next frame",
                     except.what());
+        // The guest is told HDR only while an HDR swapchain presents.
+        Common::DisplayHdrMonitor::Instance().SetPresentingHdr(false);
         surface_recreation_pending = true;
     }
 }

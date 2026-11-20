@@ -15,6 +15,7 @@
 
 #include "common/display_hdr.h"
 #include "common/logging.h"
+#include "common/scope_exit.h"
 #include "common/game_fps.h"
 #include "common/settings.h"
 #include "common/settings_enums.h"
@@ -253,11 +254,13 @@ bool Swapchain::Create(
             LOG_WARNING(Render_Vulkan, "The HDR swapchain could not be created ({}), presenting SDR",
                         exception.what());
             Destroy();
+            SCOPE_EXIT {
+                requested_format = requested_format_;
+                requested_color_space = requested_color_space_;
+            };
             requested_format = VK_FORMAT_B8G8R8A8_UNORM;
             requested_color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
             CreateSwapchain(capabilities);
-            requested_format = requested_format_;
-            requested_color_space = requested_color_space_;
         }
         CreateSemaphores();
     } catch (...) {

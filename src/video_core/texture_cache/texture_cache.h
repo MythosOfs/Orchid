@@ -1621,6 +1621,8 @@ std::pair<typename P::ImageView*, bool> TextureCache<P>::TryFindFramebufferImage
             // A game told the display is HDR presents a 10-bit image (Ocarina of Time); an
             // 8-bit view of it showed its bits as false colors.
             return PixelFormat::A2B10G10R10_UNORM;
+        case Service::android::PixelFormat::RgbaFp16:
+            return PixelFormat::R16G16B16A16_FLOAT;
         default:
             return PixelFormat::A8B8G8R8_UNORM;
         }

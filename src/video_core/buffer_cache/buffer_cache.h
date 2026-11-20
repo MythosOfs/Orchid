@@ -3008,6 +3008,37 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
             trace->binding_state = diag::BindingState::NullPointer;
         return NULL_BINDING;
     }
+    // The device ranges are reusable while the page table is stable. A legacy remap can
+    // be inside its rasterizer callback with some pages already changed.
+    const auto generation = gpu_memory->StableMappingGeneration();
+    if (trace || !generation) {
+        return ResolveStorageBufferBinding(descriptor, cbuf_index, is_written, native_compute,
+                                           trace);
+    }
+    const StorageBindingKey key{
+        .address_space = gpu_memory->GetID(),
+        .generation = *generation,
+        .pointer = gpu_addr,
+        .next_word = descriptor[1],
+        .alignment = runtime.GetStorageBufferAlignment(),
+        .is_written = is_written,
+        .native_compute = native_compute,
+    };
+    if (const Binding* const cached = storage_bindings.Find(key)) {
+        return *cached;
+    }
+    const Binding binding =
+        ResolveStorageBufferBinding(descriptor, cbuf_index, is_written, native_compute, nullptr);
+    storage_bindings.Insert(key, binding);
+    return binding;
+}
+
+template <class P>
+Binding BufferCache<P>::ResolveStorageBufferBinding(
+    const std::array<u64, 2>& descriptor, u32 cbuf_index, bool is_written, bool native_compute,
+    ComputeBindingDiagnostic::Record* trace) const {
+    namespace diag = ComputeBindingDiagnostic;
+    const GPUVAddr gpu_addr = descriptor[0];
 
     const auto size = [&]() -> u32 {
         const u64 layout_size = gpu_memory->GetMemoryLayoutSize(gpu_addr);

@@ -6,11 +6,14 @@
 #include <barrier>
 #include <chrono>
 #include <cstring>
+#include <functional>
 #include <future>
 #include <memory>
+#include <optional>
 #include <thread>
 #include <vector>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/device_memory.h"
@@ -19,9 +22,11 @@
 #include "core/memory.h"
 #include "video_core/buffer_cache/buffer_cache.h"
 #include "video_core/buffer_cache/memory_tracker_base.h"
+#include "video_core/gpu.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
 #include "video_core/memory_manager.h"
 #include "video_core/nx2.h"
+#include "video_core/renderer_null/null_rasterizer.h"
 
 namespace {
 struct FixtureRuntime;
@@ -49,6 +54,9 @@ struct FixtureStage {
         : buffer(std::move(buffer_)), mapped_span(buffer->bytes) {}
 };
 struct FixtureRuntime {
+    u32 GetStorageBufferAlignment() const {
+        return 256;
+    }
     bool out_of_bounds{};
     std::vector<std::pair<u64, u64>> copied;
     struct DeferredStage {
@@ -158,11 +166,95 @@ struct FixtureParams {
 // and channel execution are not involved in ObtainCPUBuffer/GetFlushArea/CommitAsyncFlushes.
 struct NativeFixtureCache : VideoCommon::BufferCache<FixtureParams> {
     using VideoCommon::BufferCache<FixtureParams>::BufferCache;
+    using VideoCommon::BufferCache<FixtureParams>::StorageBufferBinding;
     void SetAddressSpace(Tegra::MemoryManager& memory) {
         gpu_memory = &memory;
     }
 };
+
+struct BindingRasterizer : Null::RasterizerNull {
+    using Null::RasterizerNull::RasterizerNull;
+    std::function<void()> on_mapping_change;
+
+    void ModifyGPUMemory(size_t, GPUVAddr, u64) override {
+        if (on_mapping_change) {
+            on_mapping_change();
+        }
+    }
+};
 } // namespace
+
+TEST_CASE("BufferCache: storage bindings follow device remaps and guest descriptor writes",
+          "[video_core][buffer_cache][storage_binding]") {
+    const bool old_multi_core = Settings::values.use_multi_core.GetValue();
+    SCOPE_EXIT { Settings::values.use_multi_core.SetValue(old_multi_core); };
+    Settings::values.use_multi_core.SetValue(false);
+    Core::System system;
+    system.Initialize();
+    Kernel::KProcess process(system.Kernel());
+    SCOPE_EXIT { system.Kernel().UnregisterKernelObject(&process); };
+    auto& cpu = process.GetMemory();
+    auto& table = process.GetPageTable().GetImpl();
+    table.Resize(32, 12);
+    cpu.SetCurrentPageTable(process);
+    constexpr u64 phys = 0x80000, guest = 0x200000, device = 0x100000;
+    constexpr u64 extent = 0x60000;
+    system.DeviceMemory().buffer.ClearBackingRegion(phys, extent, 0);
+    cpu.MapMemoryRegion(table, Common::ProcessAddress{guest}, extent,
+                        Common::PhysicalAddress{Core::DramMemoryMap::Base + phys},
+                        Common::MemoryPermission::ReadWrite, false);
+    Tegra::MaxwellDeviceMemoryManager manager(system.DeviceMemory());
+    manager.Map(device, guest, extent, manager.RegisterProcess(&cpu));
+    Tegra::GPU gpu(system, false, false);
+    BindingRasterizer rasterizer(gpu);
+    Tegra::MemoryManager address_space(system, manager);
+    address_space.BindRasterizer(&rasterizer);
+    FixtureRuntime runtime;
+    auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+    cache->SetAddressSpace(address_space);
+
+    const bool big_pages = GENERATE(false, true);
+    CAPTURE(big_pages);
+    const u32 page = big_pages ? 0x10000 : 0x1000;
+    constexpr GPUVAddr descriptor = 0x300000, target = 0x400000;
+    constexpr DAddr new_device = device + 0x30000;
+    address_space.Map(descriptor, device + 0x50000, page, Tegra::PTEKind::PITCH, big_pages);
+    address_space.Map(target, device, 2 * page, Tegra::PTEKind::PITCH, big_pages);
+    address_space.Write<u64>(descriptor, target);
+    address_space.Write<u64>(descriptor + 8, 128);
+    const auto native = [&] { return cache->StorageBufferBinding(descriptor, 0, true, true); };
+    const auto graphics = [&] { return cache->StorageBufferBinding(descriptor, 0, true); };
+    CHECK(graphics().size == 128);
+    address_space.Write<u64>(descriptor + 8, 512);
+    CHECK(graphics().size == 512);
+    const auto initial = native();
+    REQUIRE(initial.device_addr == device);
+    REQUIRE(initial.size == 2 * page);
+    REQUIRE(initial.physical_size == 2 * page);
+
+    // The callback runs after the first page points at its new backing, before Map returns.
+    // The same bare pointer now spans two adjacent GPU pages at disjoint device addresses.
+    const auto initial_generation = address_space.StableMappingGeneration();
+    REQUIRE(initial_generation.has_value());
+    std::optional<VideoCommon::Binding> during_remap;
+    rasterizer.on_mapping_change = [&] {
+        CHECK_FALSE(address_space.StableMappingGeneration().has_value());
+        during_remap = native();
+    };
+    address_space.Map(target, new_device, page, Tegra::PTEKind::PITCH, big_pages);
+    const auto next_generation = address_space.StableMappingGeneration();
+    REQUIRE(next_generation.has_value());
+    CHECK(*next_generation != *initial_generation);
+    REQUIRE(during_remap.has_value());
+    CHECK(during_remap->device_addr == new_device);
+    CHECK(during_remap->size == 2 * page);
+    CHECK(during_remap->physical_size == page);
+    const auto after = native();
+    CHECK(after.device_addr == new_device);
+    CHECK(after.size == 2 * page);
+    CHECK(after.physical_size == page);
+}
+
 TEST_CASE("BufferCache: readback spanning separate buffers", "[video_core][buffer_cache]") {
     const bool old_multi_core = Settings::values.use_multi_core.GetValue();
     SCOPE_EXIT {

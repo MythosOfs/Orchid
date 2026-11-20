@@ -40,8 +40,10 @@
 #include "shader_recompiler/shader_info.h"
 #include "video_core/buffer_cache/buffer_base.h"
 #include "video_core/buffer_cache/sparse_uniform_upload.h"
+#include "video_core/buffer_cache/storage_binding_cache.h"
 #include "video_core/buffer_cache/virtual_range_cache.h"
 #include "video_core/control/channel_state_cache.h"
+#include "video_core/compute_binding_diagnostic.h"
 #include "video_core/nx2.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/dirty_flags.h"
@@ -494,6 +496,11 @@ public:
         recent[next++ % recent.size()] = {device_addr, size, removals};
     }
 
+protected:
+    [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
+                                               bool is_written, bool native_compute = false,
+                                               bool diagnostic_target = false) const;
+
 private:
     /// Recycle completed readbacks on the GPU owner thread with mutex held.
     void ReleaseCompletedAsyncBuffers();
@@ -640,9 +647,10 @@ private:
 
     void DeleteBuffer(BufferId buffer_id, bool do_not_mark = false);
 
-    [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
-                                               bool is_written, bool native_compute = false,
-                                               bool diagnostic_target = false) const;
+    [[nodiscard]] Binding ResolveStorageBufferBinding(const std::array<u64, 2>& descriptor,
+                                                      u32 cbuf_index, bool is_written,
+                                                      bool native_compute,
+                                                      ComputeBindingDiagnostic::Record* trace) const;
 
     [[nodiscard]] TextureBufferBinding GetTextureBufferBinding(GPUVAddr gpu_addr, u32 size,
                                                                PixelFormat format);
@@ -838,6 +846,7 @@ private:
     };
     Common::LeastRecentlyUsedCache<LRUItemParams> lru_cache;
     VirtualRangeCache virtual_ranges;
+    mutable StorageBindingCache<Binding> storage_bindings;
     std::vector<MultiRangeSegment> graphics_segments;
     std::vector<MultiRangeSegment> compute_segments;
     u64 frame_tick = 0;

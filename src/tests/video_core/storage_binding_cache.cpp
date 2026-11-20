@@ -118,15 +118,15 @@ TEST_CASE("Storage binding cache spreads page-aligned pointers over its sets",
     const auto cache = std::make_unique<Cache>();
     constexpr u32 count = 256;
     for (u32 i = 0; i < count; ++i) {
-        Key key = BASE;
-        key.pointer = 0x4000'0000ULL + u64{i} * 0x1000;
-        cache->Insert(key, i);
+        Key page_key = BASE;
+        page_key.pointer = 0x4000'0000ULL + u64{i} * 0x1000;
+        cache->Insert(page_key, i);
     }
     u32 kept = 0;
     for (u32 i = 0; i < count; ++i) {
-        Key key = BASE;
-        key.pointer = 0x4000'0000ULL + u64{i} * 0x1000;
-        const u32* const hit = cache->Find(key);
+        Key page_key = BASE;
+        page_key.pointer = 0x4000'0000ULL + u64{i} * 0x1000;
+        const u32* const hit = cache->Find(page_key);
         kept += hit != nullptr && *hit == i ? 1 : 0;
     }
     CHECK(kept == count);

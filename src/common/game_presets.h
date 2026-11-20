@@ -127,8 +127,8 @@ inline void SetStarFoxRecommendedSettings(Values& settings) {
 inline void SetYoshiMysteriousBookRecommendedSettings(Values& settings) {
     Detail::SetSwitch2BaseSettings(settings);
     const auto session = Detail::SessionSetter();
-    // Without reactive flushing the game ends itself (2162-0001) seconds into loading a save,
-    // with both saves tried: 7 of 7 runs, 0 of 8 with it on (issue 181, RX 9070 XT).
+    // Loading a save stalls with 2162-0001 without reactive flushing: 7 of 7 runs with two
+    // saves, 0 of 8 with it on (issue 181, RX 9070 XT).
     session(settings.use_reactive_flushing, true);
 }
 

@@ -157,6 +157,44 @@ TEST_CASE("Orbitals uses coherent native defaults while preserving custom settin
     }
 }
 
+TEST_CASE("Yoshi keeps reactive flushing unless the game's own setting turns it off",
+          "[game_settings]") {
+    auto& reactive = Settings::values.use_reactive_flushing;
+    SettingSnapshot saved_reactive{reactive};
+    const bool old_preemptive = Settings::values.preemptive_cpu_reads;
+    SCOPE_EXIT {
+        Settings::values.preemptive_cpu_reads = old_preemptive;
+    };
+    reactive.SetGlobal(true);
+    reactive.SetValue(false);
+    FakeWindow window;
+    FakeRenderer renderer{window};
+    constexpr u64 yoshi = 0x0400245021D2C000ULL;
+
+    SECTION("An inherited global off is overridden at boot and after the properties dialog") {
+        Core::GameSettings::LoadEarlyOverrides(yoshi);
+        CHECK(reactive.GetValue());
+        CHECK_FALSE(reactive.UsingGlobal());
+        CHECK_FALSE(reactive.GetValue(true));
+        reactive.SetGlobal(true);
+        Core::GameSettings::LoadOverrides(yoshi, renderer);
+        CHECK(reactive.GetValue());
+        CHECK_FALSE(reactive.GetValue(true));
+    }
+    SECTION("An explicit per-game choice remains authoritative") {
+        reactive.SetGlobal(false);
+        reactive.SetValue(false);
+        Core::GameSettings::LoadEarlyOverrides(yoshi);
+        Core::GameSettings::LoadOverrides(yoshi, renderer);
+        CHECK_FALSE(reactive.GetValue());
+    }
+    SECTION("A different title retains its inherited setting") {
+        Core::GameSettings::LoadEarlyOverrides(yoshi + 0x1000);
+        CHECK_FALSE(reactive.GetValue());
+        CHECK(reactive.UsingGlobal());
+    }
+}
+
 TEST_CASE("Wonder and Kirby Switch 2 Editions get the split-friendly GPU defaults", "[game_settings]") {
     auto& accuracy = Settings::values.gpu_accuracy;
     auto& fences = Settings::values.gpu_fence_behavior;

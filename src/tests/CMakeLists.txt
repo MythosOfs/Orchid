@@ -188,6 +188,13 @@ if (WIN32)
 endif()
 
 target_link_libraries(tests PRIVATE common core input_common video_core tz)
+
+if (ENABLE_QT)
+    target_sources(tests PRIVATE qt_common/qt_config_ban_list.cpp)
+    target_link_libraries(tests PRIVATE qt_common input_common Qt6::Core SimpleIni::SimpleIni)
+    # QtConfig rewrites global Settings/UISettings, so it runs in its own process.
+    add_test(NAME qt_config_ban_list COMMAND tests "[qt_config]")
+endif()
 target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2WithMain Threads::Threads)
 
 # Reference texts of the expect tests (tests/expect.h); ORCHID_EXPECT_UPDATE=1 rewrites them.
@@ -237,7 +244,8 @@ endif()
 # A test source in no target is never built or run (maxwell_fmz.cpp and debug_stream_contract.cpp
 # sat unbuilt this way). Every .cpp here must belong to one of the targets above.
 file(GLOB_RECURSE test_sources RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS "*.cpp")
-set(listed_test_sources common/host_memory_commit.cpp) # added above on Windows only
+set(listed_test_sources common/host_memory_commit.cpp # added above on Windows only
+    qt_common/qt_config_ban_list.cpp) # added above with the Qt frontend only
 foreach(test_target IN ITEMS tests stall_diagnostics_session debug_stream_contract)
     get_target_property(target_sources ${test_target} SOURCES)
     list(APPEND listed_test_sources ${target_sources})

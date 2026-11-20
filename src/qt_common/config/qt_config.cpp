@@ -378,15 +378,15 @@ void QtConfig::ReadMultiplayerValues() {
     for (int i = 0; i < size; ++i) {
         SetArrayIndex(i);
         UISettings::values.multiplayer_ban_list.first[i] =
-            ReadStringSetting(std::string("username"), std::string(""));
+            ReadStringSetting(std::string("username"));
     }
     EndArray();
 
     size = BeginArray(std::string("ip_ban_list"));
     UISettings::values.multiplayer_ban_list.second.resize(size);
     for (int i = 0; i < size; ++i) {
-        UISettings::values.multiplayer_ban_list.second[i] =
-            ReadStringSetting("username", std::string(""));
+        SetArrayIndex(i);
+        UISettings::values.multiplayer_ban_list.second[i] = ReadStringSetting(std::string("ip"));
     }
     EndArray();
 

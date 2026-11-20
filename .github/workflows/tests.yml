@@ -87,6 +87,11 @@ jobs:
         shell: bash
         run: build/tests/bin/tests.exe --reporter console --durations yes
 
+      - name: Run tests in their own process
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: build/tests/bin/tests.exe "[service]" --reporter console --durations yes
+
       - name: Run dynarmic tests
         shell: bash
         run: build/tests/bin/dynarmic_tests.exe --durations yes

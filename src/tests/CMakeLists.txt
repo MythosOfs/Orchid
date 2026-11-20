@@ -78,6 +78,7 @@ add_executable(tests
     core/nax_hmac.cpp
     core/romfs.cpp
     core/time_zone_fallback.cpp
+    core/service_auto_stub.cpp
     core/internal_network/network.cpp
     video_core/shader_object_pool.cpp
     video_core/aftermath_dump.cpp
@@ -209,6 +210,7 @@ target_compile_definitions(tests PRIVATE
     ORCHID_NX_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/core/nx_fixtures")
 
 add_test(NAME tests COMMAND tests)
+add_test(NAME service_auto_stub COMMAND tests "[service]")
 
 # Separate processes exercise the cached opt-in and destruction order without a GPU or profile.
 add_executable(stall_diagnostics_session

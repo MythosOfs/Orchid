@@ -128,6 +128,12 @@ MCP does this already), keep runs short, end the emulator afterwards. The laptop
 tests; it may only compile (see "Builds: PC or laptop"). The maintainer tests only the final build
 before a release.
 
+Use the Orchid harness's private display and virtual input for every automated run, including
+benchmarks and delegated runs. Keep the maintainer's mouse, keyboard, window focus and active
+desktop free. If a measurement requires the active desktop, report the limitation. A desktop run
+requires explicit permission for that individual run. Include the private-display requirement in
+every test brief.
+
 ### Every emulator run goes to the Sol test subagent
 
 Every run that starts the emulator (boot a game, drive the `orchid` MCP, `orchid-test-run`,
@@ -149,8 +155,7 @@ computer use.
   per experiment (build, snapshot, settings, environment variables, what to wait for).
 - The subagent returns data only. The main agent decides: regression or not, root cause, code
   changes, whether to ship. When a screenshot decides the outcome, look at it yourself.
-- All rules in this file apply to the subagent run (`agent-run`, `orchid-test-run` for performance
-  numbers, short runs, end the emulator afterwards).
+- All rules in this file apply to the subagent run (private display and input, short runs, end the emulator afterwards).
 - Basis (2026-11-10): 21 Orchid screenshots classified by scene type (gameplay, cutscene, menu,
   loading, title, black screen, error dialog): Terra `medium` 21/21, Haiku 5.5 21/21 (Sol not
   measured yet). Not covered: subtle rendering artifacts and small status-bar text; check those
@@ -262,19 +267,9 @@ hand (`release-binaries`); pushes start none.
 
 ### Performance measurements
 
-- Every reported number comes from `orchid-test-run <label> <binary|AppImage> -g <game>`. It
-  freezes `agent-work.slice` (parallel builds and emulators of other sessions) for the duration,
-  thaws it afterwards, and records MangoHud CSV, per-thread CPU, log, settings and a verdict in
-  `~/orchid-perf/<date>-<label>/summary.txt`. Compare runs with `orchid-perf-summary <dir>...`.
-  Plain `agent-run` is not a valid measurement while other builds may run. The visible window on
-  the desktop is expected.
-- Unattended: `desktop_run_start(label, bin, game, snapshot, route)` of the `orchid` MCP runs
-  `orchid-test-run` with a clone of the snapshot and replays the route's button presses by time
-  (`EDEN_AUTO_BUTTONS`; play the route once with `route_play` before, that records the times). It
-  returns `summary.txt` and a screenshot of the window; where the run ended is known only from
-  that screenshot. An AppImage works as `bin`, so this also covers the release build in a real
-  window. The frame times of a normal `boot` are guest work on a software-presented private
-  display: good for comparing two runs there, not a number to report.
+- Compare builds using the same private harness display, snapshot, route and settings. Report
+  guest frame times as private-display measurements. Record the scene, sampling window, host
+  contention and screenshots. Desktop FPS requires a separately authorized desktop measurement.
 - Measure in the real scene (an actual match or gameplay, not menus or videos) at 1x resolution
   scaling, and judge against the fps cap. Loop (baseline first, one change per run): skill
   `orchid-fps-bench`.

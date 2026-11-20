@@ -96,10 +96,13 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
         {"nvservices", &Nvidia::LoopProcess},
         {"bsdsocket",  &Sockets::LoopProcess},
     })
-        kernel.RunOnHostCoreProcess(std::string(e.first), [&system, f = e.second] { f(system); }).detach();
-    kernel.RunOnHostCoreProcess("vi",         [&, token] { VI::LoopProcess(system, token); }).detach();
+        host_threads.emplace_back(
+            kernel.RunOnHostCoreProcess(std::string(e.first), [&system, f = e.second] { f(system); }));
+    host_threads.emplace_back(
+        kernel.RunOnHostCoreProcess("vi", [&system, token] { VI::LoopProcess(system, token); }));
     // Switch 2 graphics system sessions (vi2 presents wait for GPU fences and vblanks there).
-    kernel.RunOnHostCoreProcess("nx2:gsv",    [&system] { RunNx2GsvServer(system); }).detach();
+    host_threads.emplace_back(
+        kernel.RunOnHostCoreProcess("nx2:gsv", [&system] { RunNx2GsvServer(system); }));
     // Avoid cold clones of lambdas -- succintly
     for (auto const& e : std::vector<std::pair<std::string_view, void (*)(Core::System&)>>{
         {"sm",         &SM::LoopProcess},

@@ -28,6 +28,10 @@ void KWorkerTask::DoWorkerTask(KernelCore& kernel) {
 
 KWorkerTaskManager::KWorkerTaskManager() : m_waiting_thread(1, "KWorkerTaskManager") {}
 
+void KWorkerTaskManager::WaitForTasks() {
+    m_waiting_thread.WaitForRequests();
+}
+
 void KWorkerTaskManager::AddTask(KernelCore& kernel, WorkerType type, KWorkerTask* task) {
     ASSERT(type <= WorkerType::Count);
     kernel.WorkerTaskManager().AddTask(kernel, task);

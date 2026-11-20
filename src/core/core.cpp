@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <atomic>
 #include <memory>
+#include <thread>
 #include <utility>
 
 #include "game_settings.h"
@@ -326,6 +327,11 @@ struct System::Impl {
     void InitializeKernel(System& system) {
         LOG_DEBUG(Core, "initialized OK");
 
+        // Recreate released guest RAM without restarting the timing thread at the same layout.
+        if (!device_memory.has_value()) {
+            device_memory.emplace();
+        }
+
         // Setting changes may require a full system reinitialization (e.g., disabling multicore).
         ReinitializeIfNecessary(system);
         kernel.Initialize();
@@ -454,12 +460,13 @@ struct System::Impl {
         SystemResultStatus init_result{SetupForApplicationProcess(system, emu_window)};
         if (init_result != SystemResultStatus::Success) {
             LOG_CRITICAL(Core, "Failed to initialize system (Error {})!", int(init_result));
+            process.reset();
             ShutdownMainProcess();
             return init_result;
         }
         // Waiting for GPU before initializing CPU
         cpu_manager.Initialize();
-        Core::StartPkpSampler(system); // ponytail: EDEN_PKP_BT diagnostics only
+        pkp_sampler = Core::StartPkpSampler(system);
 
         // Initialize cheat engine
         if (cheat_engine) {
@@ -509,6 +516,7 @@ struct System::Impl {
 
     void ShutdownMainProcess() {
         SetShuttingDown(true);
+        pkp_sampler = {};
         Common::ADPF::Shutdown();
 
         // Reset per-game flags
@@ -543,6 +551,12 @@ struct System::Impl {
         }
         cpu_manager.Shutdown();
         debugger.reset();
+        applet_manager.ClearPendingProcess();
+        {
+            std::scoped_lock lk{general_channel_mutex};
+            general_channel_event.reset();
+            general_channel_context.reset();
+        }
         kernel.Shutdown();
         stop_event = {};
         Network::RestartSocketOperations();
@@ -554,6 +568,11 @@ struct System::Impl {
 
         // Reset all glue registrations
         arp_manager.ResetAll();
+
+        // Destroy the backing after kernel teardown so touched pages are freed while idle.
+        if (Settings::CurrentProgramIsSwitch2()) {
+            device_memory.reset();
+        }
 
         LOG_DEBUG(Core, "Shutdown OK");
     }
@@ -644,11 +663,15 @@ struct System::Impl {
     std::atomic_bool exit_locked{};
     std::atomic_bool exit_requested{};
     std::atomic_bool nvdec_active{};
+    std::jthread pkp_sampler;
 
     void EnsureGeneralChannelInitialized(System& system) {
         if (!general_channel_event) {
             general_channel_context.emplace(system, "GeneralChannel");
             general_channel_event.emplace(*general_channel_context);
+            if (!general_channel.empty()) {
+                general_channel_event->Signal(kernel);
+            }
         }
     }
 };

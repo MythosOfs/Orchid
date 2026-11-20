@@ -39,6 +39,7 @@ add_executable(tests
     core/address_space.cpp
     core/builtin_font_glyphs.cpp
     core/core_timing.cpp
+    core/device_memory_lifetime.cpp
     core/filesystem_buffer_bounds.cpp
     core/page_heap.cpp
     core/read_traps.cpp

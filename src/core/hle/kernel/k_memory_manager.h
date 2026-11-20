@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <tuple>
 
 #include "common/common_funcs.h"
@@ -66,6 +67,10 @@ public:
     Pool GetPool(KPhysicalAddress address) const {
         return this->GetManager(address).GetPool();
     }
+
+    /// The kernel is shutting down: gives the host back the RAM of every free page now and of
+    /// every page freed later, until the next kernel replaces this manager.
+    void ReleaseFreeMemory();
 
     void Open(KPhysicalAddress address, size_t num_pages) {
         // Repeatedly open references until we've done so for all pages.
@@ -217,6 +222,10 @@ private:
         void Free(KPhysicalAddress addr, size_t num_pages) {
             m_heap.Free(addr, num_pages);
         }
+        template <typename F>
+        void ForEachFreeBlock(F&& f) {
+            m_heap.ForEachFreeBlock(std::forward<F>(f));
+        }
 
         void SetInitialUsedHeapSize(size_t reserved_size) {
             m_heap.SetInitialUsedSize(reserved_size);
@@ -345,8 +354,9 @@ private:
 private:
     void MarkUsed(KPhysicalAddress address, size_t num_pages);
     void MarkDirty(KPhysicalAddress address, size_t num_pages);
-    /// Pages that just became free; gives their RAM back to the host while the kernel shuts down.
+    /// Pages that just became free; gives their RAM back to the host after ReleaseFreeMemory.
     void ReleaseFreed(KPhysicalAddress address, size_t num_pages);
+    void Discard(KPhysicalAddress address, size_t num_pages);
 
     Impl& GetManager(KPhysicalAddress address) {
         return m_managers[m_memory_layout.GetPhysicalLinearRegion(address).GetAttributes()];
@@ -379,6 +389,7 @@ private:
     Core::System& m_system;
     const KMemoryLayout& m_memory_layout;
     PoolArray<KLightLock> m_pool_locks;
+    std::atomic_bool m_released{};
     std::array<Impl*, MaxManagerCount> m_pool_managers_head{};
     std::array<Impl*, MaxManagerCount> m_pool_managers_tail{};
     std::array<Impl, MaxManagerCount> m_managers;

@@ -51,3 +51,44 @@ TEST_CASE("Linear graphics backing allocation reuses released pages", "[kernel][
     }
     REQUIRE(heap.GetFreeSize() == HeapSize);
 }
+
+TEST_CASE("Page heap visits every free page once and keeps it free", "[kernel][heap][free_blocks]") {
+    constexpr size_t HeapSize = 64_MiB;
+    constexpr auto HeapStart = Kernel::KPhysicalAddress{0x80000000};
+    Kernel::KPageHeap heap;
+    const auto management_size = Kernel::KPageHeap::CalculateManagementOverheadSize(HeapSize);
+    heap.Initialize(HeapStart, HeapSize,
+                    Kernel::KVirtualAddress{std::numeric_limits<uintptr_t>::max() - management_size},
+                    management_size);
+    heap.Free(HeapStart, HeapSize / Kernel::PageSize);
+
+    // Leave used pages of several block sizes between the free ones.
+    const auto big = heap.AllocateBlock(Kernel::KPageHeap::GetBlockIndex(512), false);
+    const auto mid = heap.AllocateBlock(Kernel::KPageHeap::GetBlockIndex(16), false);
+    const auto small = heap.AllocateBlock(0, false);
+    REQUIRE((big != 0 && mid != 0 && small != 0));
+    const size_t free_size = heap.GetFreeSize();
+
+    std::set<uintptr_t> visited;
+    size_t visited_size = 0;
+    heap.ForEachFreeBlock([&](Kernel::KPhysicalAddress block, size_t num_pages) {
+        for (size_t page = 0; page < num_pages; ++page) {
+            const uintptr_t address = GetInteger(block) + page * Kernel::PageSize;
+            REQUIRE(visited.insert(address).second);
+            REQUIRE(!(address >= GetInteger(big) && address < GetInteger(big) + 2_MiB));
+            REQUIRE(!(address >= GetInteger(mid) && address < GetInteger(mid) + 64_KiB));
+            REQUIRE(address != GetInteger(small));
+        }
+        visited_size += num_pages * Kernel::PageSize;
+    });
+    REQUIRE(visited_size == free_size);
+    REQUIRE(heap.GetFreeSize() == free_size);
+
+    // Still one coalesced heap after giving the used pages back.
+    heap.Free(big, 512);
+    heap.Free(mid, 16);
+    heap.Free(small, 1);
+    REQUIRE(heap.GetFreeSize() == HeapSize);
+    REQUIRE(heap.AllocateBlock(Kernel::KPageHeap::GetBlockIndex(HeapSize / 2 / Kernel::PageSize),
+                               false) != 0);
+}

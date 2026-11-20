@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <utility>
 #include <vector>
 
 #include "common/alignment.h"
@@ -71,6 +72,21 @@ public:
     }
 
     void Free(KPhysicalAddress addr, size_t num_pages);
+
+    /// Calls f(address, num_pages) for every free block; the same pages are free afterwards.
+    template <typename F>
+    void ForEachFreeBlock(F&& f) {
+        std::vector<std::pair<KPhysicalAddress, size_t>> blocks;
+        for (size_t i = 0; i < m_num_blocks; i++) {
+            while (const KPhysicalAddress block = m_blocks[i].PopBlock(false)) {
+                blocks.emplace_back(block, m_blocks[i].GetNumPages());
+            }
+        }
+        for (const auto& [block, num_pages] : blocks) {
+            f(block, num_pages);
+            this->Free(block, num_pages);
+        }
+    }
 
     static size_t CalculateManagementOverheadSize(size_t region_size) {
         return CalculateManagementOverheadSize(region_size, MemoryBlockPageShifts.data(),

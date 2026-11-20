@@ -55,6 +55,11 @@ public:
         return generation.load(std::memory_order_acquire);
     }
 
+    /// Counts the changes of the monitor's reading alone, without the swapchain's HDR state.
+    [[nodiscard]] u64 DisplayGeneration() const {
+        return display_generation.load(std::memory_order_acquire);
+    }
+
     /// Stores a reading; returns true, and bumps the generation, when it differs from the last.
     bool Update(const std::optional<DisplayHdrInfo>& info);
 
@@ -72,6 +77,7 @@ private:
     std::mutex watch_mutex; ///< orders Watch against the polling thread's readings
     std::optional<DisplayHdrInfo> current;
     std::atomic<u64> generation{};
+    std::atomic<u64> display_generation{};
     std::atomic<void*> window{};
     std::atomic<bool> presenting_hdr{};
     std::jthread thread;

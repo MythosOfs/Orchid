@@ -172,3 +172,50 @@ TEST_CASE("The background colour sits at the reference white on a linear HDR tar
     REQUIRE(std::abs(linear[1] - 0.214041f * 2.5f) < 1e-4f);
     REQUIRE(std::abs(linear[2] - 0.03f / 12.92f * 2.5f) < 1e-6f);
 }
+
+TEST_CASE("A native FP16 image is detiled only when its blocks fit its allocation",
+          "[hdr_output]") {
+    using Tegra::Fp16DetileBlockHeight;
+    Tegra::FramebufferConfig image{};
+    image.width = 256;
+    image.height = 64;
+    image.stride = 256;
+    image.pixel_format = Service::android::PixelFormat::RgbaFp16;
+    // 16 rows per block: 2048 bytes a row, 64 rows.
+    image.block_height_log2 = 1;
+    image.allocation_size = 2048 * 64;
+    REQUIRE(Fp16DetileBlockHeight(image) == 1U);
+    // One byte short of its rows.
+    image.allocation_size = 2048 * 64 - 1;
+    REQUIRE_FALSE(Fp16DetileBlockHeight(image));
+    // 128 rows per block round the 64 rows up to 128.
+    image.block_height_log2 = 4;
+    image.allocation_size = 2048 * 64;
+    REQUIRE_FALSE(Fp16DetileBlockHeight(image));
+    image.allocation_size = 2048 * 128;
+    REQUIRE(Fp16DetileBlockHeight(image) == 4U);
+    // An unknown allocation is not checked; 256 rows per block is the largest.
+    image.allocation_size = 0;
+    image.block_height_log2 = 5;
+    REQUIRE(Fp16DetileBlockHeight(image) == 5U);
+    image.block_height_log2 = 6;
+    REQUIRE_FALSE(Fp16DetileBlockHeight(image));
+    // A block height below one GOB has no value.
+    image.block_height_log2 = std::nullopt;
+    REQUIRE_FALSE(Fp16DetileBlockHeight(image));
+    // Rows are padded to whole 64-byte GOBs: 250 pixels need 2000 bytes, 2048 with padding.
+    image.block_height_log2 = 0;
+    image.stride = 250;
+    image.height = 8;
+    image.allocation_size = 2048 * 8;
+    REQUIRE(Fp16DetileBlockHeight(image) == 0U);
+    image.allocation_size = 2000 * 8;
+    REQUIRE_FALSE(Fp16DetileBlockHeight(image));
+    // Sizes above 32 bits do not wrap: 65536 x 65536 pixels are 2^35 bytes.
+    image.stride = 65536;
+    image.height = 65536;
+    image.allocation_size = u64{1} << 34;
+    REQUIRE_FALSE(Fp16DetileBlockHeight(image));
+    image.allocation_size = u64{1} << 35;
+    REQUIRE(Fp16DetileBlockHeight(image) == 0U);
+}

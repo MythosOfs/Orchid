@@ -169,4 +169,11 @@ TEST_CASE("A swapchain HDR change counts as a display change", "[display_hdr]") 
     REQUIRE(monitor.Generation() == 1);
     monitor.SetPresentingHdr(false);
     REQUIRE(monitor.Generation() == 2);
+    // The monitor's own reading did not change.
+    REQUIRE(monitor.DisplayGeneration() == 0);
+    REQUIRE(monitor.Update(DisplayHdrInfo{.hdr_enabled = true}));
+    REQUIRE(monitor.DisplayGeneration() == 1);
+    REQUIRE(monitor.Generation() == 3);
+    REQUIRE_FALSE(monitor.Update(DisplayHdrInfo{.hdr_enabled = true}));
+    REQUIRE(monitor.DisplayGeneration() == 1);
 }

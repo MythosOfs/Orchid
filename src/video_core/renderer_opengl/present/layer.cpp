@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include "video_core/framebuffer_config.h"
 #include "video_core/present.h"
 #include "video_core/renderer_opengl/gl_blit_screen.h"
@@ -135,21 +136,22 @@ FramebufferTextureInfo Layer::LoadFBToScreenInfo(const Tegra::FramebufferConfig&
 
     // TODO(Rodrigo): Read this from HLE
     constexpr u32 default_block_height_log2 = 4;
-    // A native FP16 image is detiled with its own block height and GOB order, and left out when
-    // that would read past its allocation.
+    // A native FP16 image is detiled with its own block height and GOB order. One that cannot be
+    // read that way is shown black.
     const bool fp16 = framebuffer.pixel_format == Service::android::PixelFormat::RgbaFp16;
-    const u32 block_height_log2 =
-        fp16 ? framebuffer.block_height_log2.value_or(default_block_height_log2)
-             : default_block_height_log2;
+    const auto fp16_block_height = fp16 ? Tegra::Fp16DetileBlockHeight(framebuffer) : std::nullopt;
+    const u32 block_height_log2 = fp16_block_height.value_or(default_block_height_log2);
     const auto pixel_format{
         VideoCore::Surface::PixelFormatFromGPUPixelFormat(framebuffer.pixel_format)};
     const u32 bytes_per_pixel{VideoCore::Surface::BytesPerBlock(pixel_format)};
-    const u64 size_in_bytes{Tegra::Texture::CalculateSize(
-        true, bytes_per_pixel, framebuffer.stride, framebuffer.height, 1, block_height_log2, 0)};
     const u8* const host_ptr{device_memory.GetPointer<u8>(framebuffer_addr)};
-    const bool fits = !fp16 || framebuffer.allocation_size == 0 ||
-                      size_in_bytes <= framebuffer.allocation_size;
-    if (host_ptr && fits) {
+    if (fp16 && !fp16_block_height) {
+        std::ranges::fill(gl_framebuffer_data, u8{});
+    } else if (host_ptr) {
+        const u64 size_in_bytes{Tegra::Texture::CalculateSize(true, bytes_per_pixel,
+                                                              framebuffer.stride,
+                                                              framebuffer.height, 1,
+                                                              block_height_log2, 0)};
         const std::span<const u8> input_data(host_ptr, size_in_bytes);
         Tegra::Texture::UnswizzleTexture(gl_framebuffer_data, input_data, bytes_per_pixel,
                                          framebuffer.width, framebuffer.height, 1,

@@ -239,7 +239,26 @@ bool Swapchain::Create(
         }
         Destroy();
 
-        CreateSwapchain(capabilities);
+        try {
+            CreateSwapchain(capabilities);
+        } catch (const vk::Exception& exception) {
+            // An HDR swapchain needs more memory than an SDR one: present SDR rather than stop.
+            // The request stays HDR, so this counts as a fallback below.
+            const VkResult result = exception.GetResult();
+            if (requested_color_space == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ||
+                (result != VK_ERROR_OUT_OF_DEVICE_MEMORY &&
+                 result != VK_ERROR_OUT_OF_HOST_MEMORY)) {
+                throw;
+            }
+            LOG_WARNING(Render_Vulkan, "The HDR swapchain could not be created ({}), presenting SDR",
+                        exception.what());
+            Destroy();
+            requested_format = VK_FORMAT_B8G8R8A8_UNORM;
+            requested_color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+            CreateSwapchain(capabilities);
+            requested_format = requested_format_;
+            requested_color_space = requested_color_space_;
+        }
         CreateSemaphores();
     } catch (...) {
         monitor.SetPresentingHdr(false);

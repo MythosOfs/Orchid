@@ -145,28 +145,28 @@ FramebufferTextureInfo Layer::LoadFBToScreenInfo(const Tegra::FramebufferConfig&
         VideoCore::Surface::PixelFormatFromGPUPixelFormat(framebuffer.pixel_format)};
     const u32 bytes_per_pixel{VideoCore::Surface::BytesPerBlock(pixel_format)};
     const u8* const host_ptr{device_memory.GetPointer<u8>(framebuffer_addr)};
-    // The upload below reads rows of stride pixels.
-    const size_t upload_size = size_t{framebuffer.stride} * framebuffer.height * bytes_per_pixel;
-    if (gl_framebuffer_data.size() < upload_size) {
-        gl_framebuffer_data.resize(upload_size);
-    }
+    // Rows of the detiled image, and of the upload below.
+    const u32 row_length = fp16 && fp16_block_height ? framebuffer.stride : framebuffer.width;
     if (fp16 && !fp16_block_height) {
         std::ranges::fill(gl_framebuffer_data, u8{});
     } else if (host_ptr) {
+        const size_t upload_size = size_t{row_length} * framebuffer.height * bytes_per_pixel;
+        if (gl_framebuffer_data.size() < upload_size) {
+            gl_framebuffer_data.resize(upload_size);
+        }
         const u64 size_in_bytes{Tegra::Texture::CalculateSize(true, bytes_per_pixel,
                                                               framebuffer.stride,
                                                               framebuffer.height, 1,
                                                               block_height_log2, 0)};
         const std::span<const u8> input_data(host_ptr, size_in_bytes);
         Tegra::Texture::UnswizzleTexture(gl_framebuffer_data, input_data, bytes_per_pixel,
-                                         fp16 ? framebuffer.stride : framebuffer.width,
-                                         framebuffer.height, 1,
+                                         row_length, framebuffer.height, 1,
                                          block_height_log2, 0, 1,
                                          fp16 && framebuffer.native_tiling);
     }
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(framebuffer.stride));
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(row_length));
 
     // Update existing texture
     // TODO: Test what happens on hardware when you change the framebuffer dimensions so that

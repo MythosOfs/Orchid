@@ -222,9 +222,8 @@ private:
         void Free(KPhysicalAddress addr, size_t num_pages) {
             m_heap.Free(addr, num_pages);
         }
-        template <typename F>
-        void ForEachFreeBlock(F&& f) {
-            m_heap.ForEachFreeBlock(std::forward<F>(f));
+        void ForEachFreeBlock(const std::function<void(KPhysicalAddress, size_t)>& f) {
+            m_heap.ForEachFreeBlock(f);
         }
 
         void SetInitialUsedHeapSize(size_t reserved_size) {

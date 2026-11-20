@@ -14,8 +14,8 @@ class KWorkerTask;
 class KWorkerTaskManager final {
 public:
     enum class WorkerType : u32 {
-        Exit,
-        Count,
+        ExitThread,
+        ExitProcess,
     };
 
     KWorkerTaskManager();
@@ -24,10 +24,8 @@ public:
     void WaitForTasks();
 
 private:
-    void AddTask(KernelCore& kernel, KWorkerTask* task);
-
-private:
-    Common::ThreadWorker m_waiting_thread;
+    Common::ThreadWorker m_thread_exit_worker{1, "KThreadExit"};
+    Common::ThreadWorker m_process_exit_worker{1, "KProcessExit"};
 };
 
 } // namespace Kernel

@@ -90,7 +90,6 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     // BEGONE cold clones of lambdas, for I have merged you all into a SINGLE lambda instead of
     // spamming lambdas like it's some kind of lambda calculus class
     for (auto const& e : std::vector<std::pair<std::string_view, void (*)(Core::System&)>>{
-        {"audio",      &Audio::LoopProcess},
         {"FS",         &FileSystem::LoopProcess},
         {"ldn",        &LDN::LoopProcess},
         {"nvservices", &Nvidia::LoopProcess},
@@ -98,6 +97,8 @@ Services::Services(std::shared_ptr<SM::ServiceManager>& sm, Core::System& system
     })
         host_threads.emplace_back(
             kernel.RunOnHostCoreProcess(std::string(e.first), [&system, f = e.second] { f(system); }));
+    host_threads.emplace_back(
+        kernel.RunOnHostCoreProcess("audio", [&system, token] { Audio::LoopProcess(system, token); }));
     host_threads.emplace_back(
         kernel.RunOnHostCoreProcess("vi", [&system, token] { VI::LoopProcess(system, token); }));
     // Switch 2 graphics system sessions (vi2 presents wait for GPU fences and vblanks there).

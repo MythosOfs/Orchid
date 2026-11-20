@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "core/hle/service/nx2_gsv_server.h"
 #include "common/alignment.h"
 #include "common/div_ceil.h"
 #include "common/hitch_diagnostic.h"
@@ -100,11 +99,8 @@ inline Kernel::KClientSession* CreateRawSession(Core::System& system, HLERequest
     Kernel::KSession::Register(kernel, session);
 
     // On the graphics system's own host thread when it runs (nx2_gsv_server.h).
-    ServerManager* const gsv_server = g_nx2_gsv_server.load(std::memory_order_acquire);
-    ServerManager& server = gsv_server != nullptr ? *gsv_server : ctx.GetManager()->GetServerManager();
-    auto manager = std::make_shared<SessionRequestManager>(kernel, server);
-    manager->SetSessionHandler(std::move(iface));
-    server.RegisterSession(&session->GetServerSession(), manager);
+    kernel.RegisterNx2GsvSession(session->GetServerSession(), ctx.GetManager()->GetServerManager(),
+                                 std::move(iface));
     return &session->GetClientSession();
 }
 

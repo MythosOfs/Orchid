@@ -533,7 +533,7 @@ void KProcess::Exit(KernelCore& kernel) {
         this->StartTermination(kernel);
 
         // Register the process as a work task.
-        kernel.WorkerTaskManager().AddTask(kernel, KWorkerTaskManager::WorkerType::Exit, this);
+        kernel.WorkerTaskManager().AddTask(kernel, KWorkerTaskManager::WorkerType::ExitProcess, this);
     }
 
     // Exit the current thread.
@@ -567,7 +567,7 @@ Result KProcess::Terminate(KernelCore& kernel) {
             this->FinishTermination(kernel);
         } else {
             // Register the process as a work task.
-            kernel.WorkerTaskManager().AddTask(kernel, KWorkerTaskManager::WorkerType::Exit, this);
+            kernel.WorkerTaskManager().AddTask(kernel, KWorkerTaskManager::WorkerType::ExitProcess, this);
         }
     }
 

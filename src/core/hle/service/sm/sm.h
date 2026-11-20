@@ -7,12 +7,14 @@
 #pragma once
 
 #include <chrono>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <string>
 #include "common/container/unordered_map.h"
 #include <concepts>
 
+#include "common/polyfill_thread.h"
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/svc.h"
 #include "core/hle/result.h"
@@ -88,6 +90,19 @@ public:
         return std::static_pointer_cast<T>(it->second());
     }
 
+    // Host startup waits must wake even if the guest clock has stopped.
+    template <std::derived_from<SessionRequestHandler> T>
+    std::shared_ptr<T> WaitForService(const std::string& name, std::stop_token stop) const {
+        std::unique_lock l{lock};
+        const bool registered = service_registered.wait(l, stop, [&] {
+            return registered_services.contains(name);
+        });
+        if (!registered || stop.stop_requested()) {
+            return nullptr;
+        }
+        return std::static_pointer_cast<T>(registered_services.at(name)());
+    }
+
     void InvokeControlRequest(HLERequestContext& context);
 
     void SetDeferralEvent(Kernel::KEvent* deferral_event_) {
@@ -100,6 +115,7 @@ private:
 
     /// Map of registered services, retrieved using GetServicePort.
     mutable std::mutex lock;
+    mutable std::condition_variable_any service_registered;
     ::Common::unordered_map<std::string, SessionRequestHandlerFactory> registered_services;
     ::Common::unordered_map<std::string, Kernel::KClientPort*> service_ports;
 

@@ -46,6 +46,7 @@
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
 #include "core/hle/result.h"
+#include "core/hle/service/hle_ipc.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/memory.h"
@@ -238,6 +239,7 @@ struct KernelCore::Impl {
         {
             std::scoped_lock lk{server_lock};
             accepting_servers = false;
+            nx2_gsv_server = nullptr;
             servers.swap(server_managers);
         }
     }
@@ -829,6 +831,7 @@ struct KernelCore::Impl {
 
     std::mutex server_lock;
     bool accepting_servers{};
+    Service::ServerManager* nx2_gsv_server{};
     std::vector<std::unique_ptr<Service::ServerManager>> server_managers;
 
     std::array<std::optional<Kernel::PhysicalCore>, Core::Hardware::NUM_CPU_CORES> cores;
@@ -1033,7 +1036,8 @@ void KernelCore::UnregisterInUseObject(KAutoObject* object) {
     impl->registered_in_use_objects.erase(object);
 }
 
-void KernelCore::RunServer(std::unique_ptr<Service::ServerManager>&& server_manager) {
+void KernelCore::RunServer(std::unique_ptr<Service::ServerManager>&& server_manager,
+                           bool is_nx2_gsv) {
     auto* manager = server_manager.get();
 
     {
@@ -1044,9 +1048,22 @@ void KernelCore::RunServer(std::unique_ptr<Service::ServerManager>&& server_mana
 
         manager->m_loop_scheduled = true;
         impl->server_managers.emplace_back(std::move(server_manager));
+        if (is_nx2_gsv) {
+            impl->nx2_gsv_server = manager;
+        }
     }
 
     manager->LoopProcess();
+}
+
+void KernelCore::RegisterNx2GsvSession(KServerSession& session,
+                                       Service::ServerManager& fallback_server,
+                                       std::shared_ptr<Service::SessionRequestHandler> handler) {
+    std::scoped_lock lk{impl->server_lock};
+    auto& server = impl->nx2_gsv_server ? *impl->nx2_gsv_server : fallback_server;
+    auto manager = std::make_shared<Service::SessionRequestManager>(*this, server);
+    manager->SetSessionHandler(std::move(handler));
+    server.RegisterSession(&session, std::move(manager));
 }
 
 u32 KernelCore::CreateNewObjectID() {

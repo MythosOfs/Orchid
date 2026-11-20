@@ -17,6 +17,8 @@
 #include "core/hle/service/audio/hardware_opus_decoder_manager.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
+#include "core/hle/service/set/system_settings_server.h"
+#include "core/hle/service/sm/sm.h"
 
 namespace Service::Audio {
 
@@ -184,7 +186,13 @@ public:
     }
 };
 
-void LoopProcess(Core::System& system) {
+void LoopProcess(Core::System& system, std::stop_token token) {
+    auto settings =
+        system.ServiceManager().WaitForService<Set::ISystemSettingsServer>("set:sys", token);
+    if (!settings) {
+        return;
+    }
+
     auto server_manager = std::make_unique<ServerManager>(system);
 
     server_manager->RegisterNamedService("aud:a", std::make_shared<IAudioSystemManagerForApplet>(system), 30);
@@ -201,7 +209,7 @@ void LoopProcess(Core::System& system) {
     server_manager->RegisterNamedService("audout:a", std::make_shared<IAudioOutManagerForApplet>(system), 30);
     server_manager->RegisterNamedService("auddev", std::make_shared<IAudioSnoopManager>(system), 30);
     // Depends on audout:u and audin:u on ctor!
-    server_manager->RegisterNamedService("audctl", std::make_shared<IAudioController>(system), 30);
+    server_manager->RegisterNamedService("audctl", std::make_shared<IAudioController>(system, std::move(settings)), 30);
     server_manager->RegisterNamedService("audrec:a", std::make_shared<IFinalOutputRecorderManagerForApplet>(system), 30);
     server_manager->RegisterNamedService("audrec:u", std::make_shared<IFinalOutputRecorderManager>(system), 30);
     server_manager->RegisterNamedService("audren:u", std::make_shared<IAudioRendererManager>(system), 30);

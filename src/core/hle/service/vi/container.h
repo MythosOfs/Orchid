@@ -21,6 +21,10 @@ namespace Service::android {
 class BufferQueueProducer;
 }
 
+namespace Service::Nvidia {
+class Module;
+}
+
 namespace Service::Nvnflinger {
 class IHOSBinderDriver;
 class SurfaceFlinger;
@@ -36,7 +40,8 @@ class SharedBufferManager;
 
 class Container {
 public:
-    explicit Container(Core::System& system);
+    Container(Core::System& system, std::shared_ptr<Nvnflinger::IHOSBinderDriver> binder_driver,
+              const std::shared_ptr<Nvidia::Module>& nvdrv);
     ~Container();
 
     void OnTerminate();

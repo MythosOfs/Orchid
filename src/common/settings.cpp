@@ -242,6 +242,10 @@ AstcRecompression GetAstcRecompression() {
     return astc_recompression_override.value_or(values.astc_recompression.GetValue());
 }
 
+std::optional<AstcRecompression> GetAstcRecompressionOverride() {
+    return astc_recompression_override;
+}
+
 void SetAstcRecompressionOverride(std::optional<AstcRecompression> recompression) {
     astc_recompression_override = recompression;
 }

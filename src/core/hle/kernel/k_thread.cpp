@@ -1215,7 +1215,7 @@ namespace Kernel {
             this->StartTermination(kernel);
 
             // Register the thread as a work task.
-            KWorkerTaskManager::AddTask(kernel, KWorkerTaskManager::WorkerType::Exit, this);
+            KWorkerTaskManager::AddTask(kernel, KWorkerTaskManager::WorkerType::ExitThread, this);
         }
 
         UNREACHABLE_MSG("KThread::Exit() would return");

@@ -199,22 +199,18 @@ struct System::Impl {
 
     void ReinitializeIfNecessary(System& system) {
         const bool must_reinitialize =
-            !device_memory.has_value() ||
             is_multicore != Settings::values.use_multi_core.GetValue() ||
             // Any change of size: the device memory was made for the old one. Switch 2 titles force
             // 12 GiB, and with 6-10 GiB configured the kernel handed out memory past its end.
             memory_layout != Settings::values.memory_layout_mode.GetValue();
 
-        if (!must_reinitialize) {
-            return;
+        if (must_reinitialize) {
+            LOG_DEBUG(Kernel, "Re-initializing");
+            Initialize(system);
+        } else if (!device_memory) {
+            // A same-layout reload can restore RAM without resetting core timing.
+            device_memory.emplace();
         }
-
-        LOG_DEBUG(Kernel, "Re-initializing");
-
-        is_multicore = Settings::values.use_multi_core.GetValue();
-        memory_layout = Settings::values.memory_layout_mode.GetValue();
-
-        Initialize(system);
     }
 
     void RefreshTime(System& system) {
@@ -326,11 +322,6 @@ struct System::Impl {
 
     void InitializeKernel(System& system) {
         LOG_DEBUG(Core, "initialized OK");
-
-        // Recreate released guest RAM without restarting the timing thread at the same layout.
-        if (!device_memory.has_value()) {
-            device_memory.emplace();
-        }
 
         // Setting changes may require a full system reinitialization (e.g., disabling multicore).
         ReinitializeIfNecessary(system);
@@ -536,8 +527,8 @@ struct System::Impl {
         cheat_engine.reset();
         kernel.SuspendEmulation(true);
         kernel.CloseServices();
-        kernel.ShutdownCores();
         services.reset();
+        kernel.ShutdownCores();
         service_manager.reset();
         fs_controller.Reset();
         core_timing.ClearPendingEvents();
@@ -805,10 +796,12 @@ Kernel::KProcess* System::ApplicationProcess() {
 }
 
 Core::DeviceMemory& System::DeviceMemory() {
+    ASSERT(impl->device_memory.has_value());
     return *impl->device_memory;
 }
 
 const Core::DeviceMemory& System::DeviceMemory() const {
+    ASSERT(impl->device_memory.has_value());
     return *impl->device_memory;
 }
 
@@ -1124,12 +1117,12 @@ void System::PushGeneralChannelData(std::vector<u8>&& data) {
 
 bool System::TryPopGeneralChannel(std::vector<u8>& out_data) {
     std::scoped_lock lk{impl->general_channel_mutex};
-    if (!impl->general_channel_event || impl->general_channel.empty()) {
+    if (impl->general_channel.empty()) {
         return false;
     }
     out_data = std::move(impl->general_channel.back());
     impl->general_channel.pop_back();
-    if (impl->general_channel.empty()) {
+    if (impl->general_channel_event && impl->general_channel.empty()) {
         impl->general_channel_event->Clear(impl->kernel);
     }
     return true;

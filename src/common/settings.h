@@ -1015,6 +1015,7 @@ bool CurrentProgramIsSwitch2();
 // The ASTC recompression in effect: astc_recompression, unless the renderer picked another one
 // for the running program (the configuration is left as is). The core clears it on load.
 AstcRecompression GetAstcRecompression();
+std::optional<AstcRecompression> GetAstcRecompressionOverride();
 void SetAstcRecompressionOverride(std::optional<AstcRecompression> recompression);
 
 bool IsOpenGL();

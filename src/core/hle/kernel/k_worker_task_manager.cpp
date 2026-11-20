@@ -26,20 +26,20 @@ void KWorkerTask::DoWorkerTask(KernelCore& kernel) {
     }
 }
 
-KWorkerTaskManager::KWorkerTaskManager() : m_waiting_thread(1, "KWorkerTaskManager") {}
+KWorkerTaskManager::KWorkerTaskManager() = default;
 
 void KWorkerTaskManager::WaitForTasks() {
-    m_waiting_thread.WaitForRequests();
+    m_process_exit_worker.WaitForRequests();
+    m_thread_exit_worker.WaitForRequests();
 }
 
 void KWorkerTaskManager::AddTask(KernelCore& kernel, WorkerType type, KWorkerTask* task) {
-    ASSERT(type <= WorkerType::Count);
-    kernel.WorkerTaskManager().AddTask(kernel, task);
-}
-
-void KWorkerTaskManager::AddTask(KernelCore& kernel, KWorkerTask* task) {
+    auto& manager = kernel.WorkerTaskManager();
+    // Process exit can wait for threads whose exit work must run independently.
+    auto& worker = type == WorkerType::ExitThread ? manager.m_thread_exit_worker
+                                                 : manager.m_process_exit_worker;
     KScopedSchedulerLock sl(kernel);
-    m_waiting_thread.QueueWork([&kernel, task]() {
+    worker.QueueWork([&kernel, task]() {
         // Do the task.
         task->DoWorkerTask(kernel);
     });

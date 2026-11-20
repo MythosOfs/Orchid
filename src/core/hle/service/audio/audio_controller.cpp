@@ -17,8 +17,10 @@
 
 namespace Service::Audio {
 
-IAudioController::IAudioController(Core::System& system_)
-    : ServiceFramework{system_, "audctl"}, service_context{system, "audctl"} {
+IAudioController::IAudioController(Core::System& system_,
+                                   std::shared_ptr<Set::ISystemSettingsServer> settings)
+    : ServiceFramework{system_, "audctl"}, service_context{system, "audctl"},
+      m_set_sys{std::move(settings)} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, D<&IAudioController::GetTargetVolume>, "GetTargetVolume"},
@@ -86,8 +88,6 @@ IAudioController::IAudioController(Core::System& system_)
 
     RegisterHandlers(functions);
 
-    m_set_sys =
-        system.ServiceManager().GetService<Service::Set::ISystemSettingsServer>("set:sys", true);
     notification_event = service_context.CreateEvent("IAudioController:NotificationEvent");
 
     // Probably shouldn't do this in constructor?

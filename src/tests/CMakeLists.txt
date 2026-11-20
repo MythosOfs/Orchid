@@ -10,6 +10,7 @@ add_executable(tests
     common/bit_util.cpp
     common/cityhash.cpp
     common/describe_exception.cpp
+    common/game_log.cpp
     common/container_hash.cpp
     common/event.cpp
     common/fibers.cpp
@@ -97,6 +98,7 @@ add_executable(tests
     video_core/h264_packet.cpp
     video_core/framebuffer_clear_layers.cpp
     video_core/vertex_repack.cpp
+    video_core/vulkan_device_version.cpp
     video_core/query_copy.cpp
     video_core/multi_range_buffer.cpp
     video_core/shader_reuse_environment.cpp

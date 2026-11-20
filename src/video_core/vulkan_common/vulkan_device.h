@@ -1211,6 +1211,24 @@ FN_MAX_LIMIT_LIST
                features.bit16_storage.storageBuffer16BitAccess;
     }
 
+    [[nodiscard]] static constexpr u32 MakeNvidiaDriverVersion(u32 major, u32 minor,
+                                                               u32 secondary = 0,
+                                                               u32 tertiary = 0) noexcept {
+        return (major << 22) | (minor << 14) | (secondary << 6) | tertiary;
+    }
+
+    [[nodiscard]] static constexpr bool HasBrokenVertexInputDynamicState(
+        VkDriverId driver_id, u32 driver_version) noexcept {
+        if (driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {
+            const u32 version = (driver_version << 3) >> 3;
+            return version < VK_MAKE_API_VERSION(27, 20, 100, 0);
+        }
+        if (driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY) {
+            return driver_version < MakeNvidiaDriverVersion(580, 119, 2, 0);
+        }
+        return false;
+    }
+
     [[nodiscard]] static constexpr bool CheckBrokenCompute(VkDriverId driver_id,
                                                            u32 driver_version) {
         if (driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) {

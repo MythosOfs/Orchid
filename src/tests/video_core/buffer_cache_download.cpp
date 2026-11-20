@@ -234,9 +234,17 @@ TEST_CASE("BufferCache: storage bindings follow device remaps and guest descript
 
     // The callback runs after the first page points at its new backing, before Map returns.
     // The same bare pointer now spans two adjacent GPU pages at disjoint device addresses.
+    const auto initial_generation = address_space.StableMappingGeneration();
+    REQUIRE(initial_generation.has_value());
     std::optional<VideoCommon::Binding> during_remap;
-    rasterizer.on_mapping_change = [&] { during_remap = native(); };
+    rasterizer.on_mapping_change = [&] {
+        CHECK_FALSE(address_space.StableMappingGeneration().has_value());
+        during_remap = native();
+    };
     address_space.Map(target, new_device, page, Tegra::PTEKind::PITCH, big_pages);
+    const auto next_generation = address_space.StableMappingGeneration();
+    REQUIRE(next_generation.has_value());
+    CHECK(*next_generation != *initial_generation);
     REQUIRE(during_remap.has_value());
     CHECK(during_remap->device_addr == new_device);
     CHECK(during_remap->size == 2 * page);

@@ -392,4 +392,13 @@ protected:
 std::unique_ptr<AppLoader> GetLoader(Core::System& system, FileSys::VirtualFile file,
                                      u64 program_id = 0, std::size_t program_index = 0);
 
+/**
+ * The RomFS to dump for a file that is never installed. A NUP has no installed NCA to patch; its
+ * loader already merges the base, the enabled update and the edition RomFS.
+ *
+ * @return std::nullopt for other files, whose RomFS comes from the installed content; otherwise
+ * the loader's merged RomFS, or nullptr if the NUP's RomFS cannot be read.
+ */
+std::optional<FileSys::VirtualFile> ReadUninstalledRomFS(AppLoader& loader);
+
 } // namespace Loader

@@ -146,7 +146,8 @@ FramebufferTextureInfo Layer::LoadFBToScreenInfo(const Tegra::FramebufferConfig&
     const u32 bytes_per_pixel{VideoCore::Surface::BytesPerBlock(pixel_format)};
     const u8* const host_ptr{device_memory.GetPointer<u8>(framebuffer_addr)};
     // Rows of the detiled image, and of the upload below.
-    const u32 row_length = fp16 && fp16_block_height ? framebuffer.stride : framebuffer.width;
+    const u32 row_length =
+        fp16 && fp16_block_height && host_ptr ? framebuffer.stride : framebuffer.width;
     if (fp16 && !fp16_block_height) {
         std::ranges::fill(gl_framebuffer_data, u8{});
     } else if (host_ptr) {
@@ -167,6 +168,8 @@ FramebufferTextureInfo Layer::LoadFBToScreenInfo(const Tegra::FramebufferConfig&
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(row_length));
+    // Rows are tightly packed, also an odd-width RGB565 one.
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     // Update existing texture
     // TODO: Test what happens on hardware when you change the framebuffer dimensions so that

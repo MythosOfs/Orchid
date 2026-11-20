@@ -2998,9 +2998,6 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
                                              bool diagnostic_target) const {
     namespace diag = ComputeBindingDiagnostic;
     auto* const trace = diagnostic_target ? diag::current : nullptr;
-    // Read before the page tables are: a binding resolved while a mapping changes is stored
-    // under the generation before the change and never found again.
-    const u64 generation = gpu_memory->GpuMappingGeneration();
     const auto descriptor = ReadStorageBufferDescriptor(*gpu_memory, ssbo_addr, native_compute);
     const GPUVAddr gpu_addr = descriptor[0];
     if (trace)
@@ -3011,16 +3008,16 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
             trace->binding_state = diag::BindingState::NullPointer;
         return NULL_BINDING;
     }
-    // Every draw and dispatch resolves each of its storage buffers again: a kind lookup, two
-    // translations and, for native compute, two page walks over up to 8 MiB. The answer holds
-    // until a mapping changes. A traced binding is resolved in full for its record.
-    if (trace) {
+    // The device ranges are reusable while the page table is stable. A legacy remap can
+    // be inside its rasterizer callback with some pages already changed.
+    const auto generation = gpu_memory->StableMappingGeneration();
+    if (trace || !generation) {
         return ResolveStorageBufferBinding(descriptor, cbuf_index, is_written, native_compute,
                                            trace);
     }
     const StorageBindingKey key{
         .address_space = gpu_memory->GetID(),
-        .generation = generation,
+        .generation = *generation,
         .pointer = gpu_addr,
         .next_word = descriptor[1],
         .alignment = runtime.GetStorageBufferAlignment(),

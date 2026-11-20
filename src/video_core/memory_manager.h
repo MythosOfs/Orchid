@@ -137,6 +137,16 @@ public:
         return kind_generation.load(std::memory_order_acquire);
     }
 
+    /// A binding may be reused only between completed page-table updates. A service thread
+    /// can already have written a new device address while waiting in ModifyGPUMemory.
+    [[nodiscard]] std::optional<u64> StableMappingGeneration() const noexcept {
+        const u64 completed = mapping_updates_completed.load(std::memory_order_acquire);
+        if (mapping_updates_started.load(std::memory_order_acquire) != completed) {
+            return std::nullopt;
+        }
+        return completed;
+    }
+
     /**
      * Checks if a gpu region is mapped entirely.
      */
@@ -256,6 +266,9 @@ private:
     boost::container::small_vector<std::pair<DAddr, std::size_t>, 32> page_stash2{};
 
     bool native_tiling{};
+    [[nodiscard]] auto TrackMappingUpdate();
+    std::atomic<u64> mapping_updates_started{};
+    std::atomic<u64> mapping_updates_completed{};
     mutable std::mutex guard;
     /// Moves whenever a page kind of any address space changes, and when one is made or
     /// destroyed (GetMemoryLayoutSize's per-thread answer is only reused while it stays).

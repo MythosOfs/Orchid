@@ -237,6 +237,7 @@ void Layer::RefreshResources(const Device& device, const Tegra::FramebufferConfi
                 scheduler.Wait(tick);
             }
             raw_stride = framebuffer.stride;
+            buffer.reset();
             CreateStagingBuffer(device, framebuffer);
         }
         return;

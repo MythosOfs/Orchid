@@ -218,6 +218,16 @@ void LoadOverrides(std::uint64_t program_id, const VideoCore::RendererBase& rend
             // 2-3 (~25 fps). Its game step follows the interval it requests (held to 2 vblanks
             // while it asked for 1 it ran at half speed), so the clock only changes which it picks.
             OverrideIfGlobal(Settings::values.gpu_clock, Settings::GpuClock::Boost);
+            // Boost scales CoreTiming::GetClockTicks() by 1.7x against unscaled wall/GPU time,
+            // making Bananza measure CPU frames over budget and drop to swap interval 2 (30 fps)
+            // even with >10 ms of vblank headroom.
+            OverrideIfGlobal(Settings::values.cpu_clock, Settings::CpuClock::Normal);
+            break;
+        case TitleID::StarFox:
+            // Star Fox paces frames against the guest system tick counter: Boost scales
+            // CoreTiming::GetClockTicks() by 1.7x while kernel sleeps stay unscaled, holding
+            // 60 Hz scenes to ~36-40 fps (~25-28 ms) instead of ~58 fps (~17.2 ms).
+            OverrideIfGlobal(Settings::values.cpu_clock, Settings::CpuClock::Normal);
             break;
         case TitleID::XenobladeChroniclesDENintendoSwitch2Edition:
             // The game reads a 32x1 GPU-written texture back every frame (two of them, alternating);

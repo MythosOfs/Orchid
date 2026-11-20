@@ -93,6 +93,9 @@ inline void SetDonkeyKongBananzaRecommendedSettings(Values& settings) {
     const auto session = Detail::SessionSetter();
     // The game picks its resolution and swap interval from GPU timestamps (game_settings.cpp).
     session(settings.gpu_clock, GpuClock::Boost);
+    if (settings.cpu_clock.UsingGlobal()) {
+        session(settings.cpu_clock, CpuClock::Normal);
+    }
     session(settings.fps30_patch, true);
 }
 
@@ -112,6 +115,15 @@ inline void SetMarioTennisFeverRecommendedSettings(Values& settings) {
     session(settings.async_presentation, true);
 }
 
+inline void SetStarFoxRecommendedSettings(Values& settings) {
+    Detail::SetSwitch2BaseSettings(settings);
+    const auto session = Detail::SessionSetter();
+    // Boost slows Star Fox's 60 Hz frame pacing down to ~36-40 fps (game_settings.cpp).
+    if (settings.cpu_clock.UsingGlobal()) {
+        session(settings.cpu_clock, CpuClock::Normal);
+    }
+}
+
 struct GamePreset {
     u64 program_id;
     const char* name;
@@ -125,7 +137,7 @@ inline constexpr GamePreset GamePresets[] = {
      SetHyruleWarriorsRecommendedSettings},
     {KirbyAirRidersProgramId, "Kirby Air Riders", Detail::SetSwitch2BaseSettings},
     {PokemonPokopiaProgramId, "Pokemon Pokopia", Detail::SetSwitch2BaseSettings},
-    {StarFoxProgramId, "Star Fox", Detail::SetSwitch2BaseSettings},
+    {StarFoxProgramId, "Star Fox", SetStarFoxRecommendedSettings},
     {YoshiMysteriousBookProgramId, "Yoshi and the Mysterious Book", Detail::SetSwitch2BaseSettings},
     {SuperMarioBrosWonderProgramId, "Super Mario Bros. Wonder", Detail::SetGraphicsBaseSettings},
     {KirbyForgottenLandProgramId, "Kirby and the Forgotten Land", Detail::SetGraphicsBaseSettings},

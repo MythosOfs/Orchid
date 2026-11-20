@@ -125,7 +125,8 @@ private:
     u64 output_swapchain_count{};
     u64 output_fallback_count{};
     u32 output_retry_frames{};
-    bool output_hdr_missing{}; ///< HDR output is on, but the surface listed no HDR pair
+    bool output_hdr_missing{}; ///< HDR output is on, but the frame is SDR
+    bool output_sdr_only{};    ///< an HDR swapchain could not be created: SDR until the retry
 
     VkSurfaceFormatKHR output_format{};
     f32 output_reference_white{};

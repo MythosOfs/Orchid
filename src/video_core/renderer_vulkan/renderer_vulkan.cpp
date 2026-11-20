@@ -342,37 +342,47 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
 }
 
 HdrPresent RendererVulkan::UpdateHdrPresent() {
+    // The monitor's reading, not its swapchain state: the presenter's own switch between HDR and
+    // SDR is no reason to ask the surface again.
     const auto& monitor = Common::DisplayHdrMonitor::Instance();
-    const u64 key = (monitor.Generation() << 8) |
+    const u64 key = (monitor.DisplayGeneration() << 8) |
                     (u64{static_cast<u8>(Settings::values.hdr_mode.GetValue())} << 4) |
                     static_cast<u8>(Settings::values.hdr_swapchain.GetValue());
     const u32 luminance_key = (u32{Settings::values.hdr_peak_luminance.GetValue()} << 16) |
                               Settings::values.hdr_reference_white.GetValue();
-    // A new swapchain may sit on a surface that lists other formats: pick again after each.
-    const u64 swapchain_count = swapchain.GetCreationCount();
+    const bool first = output_format_key == ~u64{};
     const bool settings_changed =
-        key != output_format_key || luminance_key != output_luminance_key;
-    // While HDR output is on but the surface listed no pair, ask again every few seconds: a
+        !first && (key != output_format_key || luminance_key != output_luminance_key);
+    // While HDR output is on but the surface offered no pair, ask again every few seconds: a
     // surface can gain one without a new swapchain (the compositor turned colour management on).
     constexpr u32 RetryFrames = 240;
     const bool retry = output_hdr_missing && ++output_retry_frames >= RetryFrames;
-    if (!settings_changed && swapchain_count == output_swapchain_count && !retry) {
+    // When the presenter had to create an SDR swapchain for an HDR frame, stay with SDR until the
+    // next retry or a changed setting, whatever the surface lists meanwhile: a surface that keeps
+    // changing its mind then costs a swapchain per retry, not one per frame.
+    const u64 fallbacks = swapchain.GetHdrFallbackCount();
+    if (fallbacks != output_fallback_count) {
+        output_fallback_count = fallbacks;
+        output_sdr_only = true;
+        output_retry_frames = 0;
+    } else if (settings_changed || retry) {
+        output_sdr_only = false;
+    }
+    // A new swapchain may sit on a surface that lists other formats: pick again after each.
+    const u64 swapchain_count = swapchain.GetCreationCount();
+    if (!first && !settings_changed && !retry && swapchain_count == output_swapchain_count) {
         return {output_format.colorSpace, output_reference_white, output_peak};
     }
     output_format_key = key;
     output_luminance_key = luminance_key;
     output_swapchain_count = swapchain_count;
-    output_retry_frames = 0;
+    if (retry) {
+        output_retry_frames = 0;
+    }
     const auto previous = output_format;
-    // When the presenter just had to create an SDR swapchain for an HDR frame, stay with SDR
-    // until the next retry whatever the surface lists by now: a surface that keeps changing its
-    // mind then costs one swapchain per retry, not one per frame.
-    const u64 fallbacks = swapchain.GetHdrFallbackCount();
-    const bool fell_back = fallbacks != output_fallback_count && !settings_changed;
-    output_fallback_count = fallbacks;
     bool wanted_hdr{};
     output_format = ChooseOutputFormat(device.GetPhysical(), surface, render_window,
-                                       settings_changed, &wanted_hdr, fell_back);
+                                       settings_changed, &wanted_hdr, output_sdr_only);
     output_hdr_missing = wanted_hdr && output_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     const auto told = CaptureHdrPresent();
     output_reference_white = told.reference_white;

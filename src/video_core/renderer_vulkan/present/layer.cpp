@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <variant>
 #include "video_core/present.h"
 #include "video_core/renderer_vulkan/present/anti_alias_pass.h"
@@ -374,20 +375,20 @@ void Layer::UpdateRawImage(const Tegra::FramebufferConfig& framebuffer, size_t i
 
     // TODO(Rodrigo): Read this from HLE
     constexpr u32 default_block_height_log2 = 4;
-    // A native FP16 image is detiled with its own block height. Its rows are taken as tightly
-    // packed, as for the other formats, and it is left out when that would read past its
-    // allocation (a block height below one GOB, which has no value here).
+    // A native FP16 image is detiled with its own block height, its rows taken as tightly packed
+    // as for the other formats. One that cannot be read that way is shown black.
     const bool fp16 = framebuffer.pixel_format == Service::android::PixelFormat::RgbaFp16;
-    const u32 block_height_log2 =
-        fp16 ? framebuffer.block_height_log2.value_or(default_block_height_log2)
-             : default_block_height_log2;
+    const auto fp16_block_height = fp16 ? Tegra::Fp16DetileBlockHeight(framebuffer) : std::nullopt;
+    const u32 block_height_log2 = fp16_block_height.value_or(default_block_height_log2);
     const u32 bytes_per_pixel = GetBytesPerPixel(framebuffer);
     const u64 linear_size{GetSizeInBytes(framebuffer)};
-    const u64 tiled_size{Tegra::Texture::CalculateSize(
-        true, bytes_per_pixel, framebuffer.stride, framebuffer.height, 1, block_height_log2, 0)};
-    const bool fits = !fp16 || framebuffer.allocation_size == 0 ||
-                      tiled_size <= framebuffer.allocation_size;
-    if (host_ptr && fits) {
+    if (fp16 && !fp16_block_height) {
+        std::ranges::fill(mapped_span.subspan(image_offset, linear_size), u8{});
+        buffer.Flush();
+    } else if (host_ptr) {
+        const u64 tiled_size{Tegra::Texture::CalculateSize(true, bytes_per_pixel,
+                                                           framebuffer.stride, framebuffer.height,
+                                                           1, block_height_log2, 0)};
         Tegra::Texture::UnswizzleTexture(
             mapped_span.subspan(image_offset, linear_size), std::span(host_ptr, tiled_size),
             bytes_per_pixel, framebuffer.width, framebuffer.height, 1, block_height_log2, 0, 1, framebuffer.native_tiling);

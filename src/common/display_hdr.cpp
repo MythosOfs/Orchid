@@ -165,6 +165,7 @@ bool DisplayHdrMonitor::Update(const std::optional<DisplayHdrInfo>& info) {
         return false;
     }
     current = info;
+    display_generation.fetch_add(1, std::memory_order_acq_rel);
     generation.fetch_add(1, std::memory_order_acq_rel);
     return true;
 }

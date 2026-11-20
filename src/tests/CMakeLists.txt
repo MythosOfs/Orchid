@@ -66,6 +66,7 @@ add_executable(tests
     core/nup_writer.cpp
     core/loose_directory.cpp
     core/priority_queue.cpp
+    core/program_metadata.cpp
     core/vfs_vector.cpp
     core/ips_switch.cpp
     core/vfs_real.cpp

@@ -227,10 +227,18 @@ void Layer::CreateRawImages(const Device& device, const Tegra::FramebufferConfig
 }
 
 void Layer::RefreshResources(const Device& device, const Tegra::FramebufferConfig& framebuffer) {
-    // The staging buffer holds image_count slots of raw_stride pixel rows; a smaller stride fits.
     if (framebuffer.width == raw_width && framebuffer.height == raw_height &&
-        framebuffer.stride <= raw_stride && framebuffer.pixel_format == pixel_format &&
-        !raw_images.empty()) {
+        framebuffer.pixel_format == pixel_format && !raw_images.empty()) {
+        // The staging buffer holds image_count slots of raw_stride pixel rows; a smaller stride
+        // fits. A larger one needs a larger buffer only: the images and the anti-aliasing pass
+        // do not depend on it. Its slots' ticks cover the copies that read it.
+        if (framebuffer.stride > raw_stride) {
+            for (const u64 tick : resource_ticks) {
+                scheduler.Wait(tick);
+            }
+            raw_stride = framebuffer.stride;
+            CreateStagingBuffer(device, framebuffer);
+        }
         return;
     }
 

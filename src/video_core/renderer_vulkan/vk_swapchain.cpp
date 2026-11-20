@@ -224,6 +224,7 @@ bool Swapchain::Create(
         const auto capabilities{
             physical_device.GetSurfaceCapabilitiesKHR(VkSurfaceKHR(surface))};
         if (capabilities.maxImageExtent.width == 0 || capabilities.maxImageExtent.height == 0) {
+            monitor.SetPresentingHdr(false);
             return false;
         }
 

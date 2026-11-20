@@ -239,7 +239,11 @@ void Layer::RefreshResources(const Device& device, const Tegra::FramebufferConfi
     raw_stride = framebuffer.stride;
     pixel_format = framebuffer.pixel_format;
 
-    // Waits for the GPU work of the last frames, which may still use the anti-aliasing pass.
+    // The last composite may still sample the raw images and the anti-aliasing pass: the ticks
+    // saved per layer predate it. Rare (size, stride or format changes), so wait for all work.
+    if (!raw_images.empty()) {
+        scheduler.Finish();
+    }
     ReleaseRawImages();
     anti_alias.emplace<std::monostate>();
     CreateStagingBuffer(device, framebuffer);

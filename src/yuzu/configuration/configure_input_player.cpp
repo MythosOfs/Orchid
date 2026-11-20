@@ -1566,6 +1566,15 @@ void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
     }
 }
 
+bool ConfigureInputPlayer::event(QEvent* event) {
+    if (input_setter && event->type() == QEvent::KeyPress &&
+        static_cast<QKeyEvent*>(event)->key() == Qt::Key_Tab) {
+        input_subsystem->GetKeyboard()->PressKey(Qt::Key_Tab);
+        return true;
+    }
+    return QWidget::event(event);
+}
+
 bool ConfigureInputPlayer::eventFilter(QObject* object, QEvent* event) {
     if (object == ui->comboDevices && event->type() == QEvent::MouseButtonPress) {
         RefreshInputDevices();

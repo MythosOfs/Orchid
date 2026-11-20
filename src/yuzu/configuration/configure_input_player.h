@@ -122,6 +122,9 @@ private:
     /// Handle key press events.
     void keyPressEvent(QKeyEvent* event) override;
 
+    /// Bind Tab while mapping, before QWidget::event moves focus with it.
+    bool event(QEvent* event) override;
+
     /// Handle combobox list refresh
     bool eventFilter(QObject* object, QEvent* event) override;
 

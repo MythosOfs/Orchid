@@ -248,7 +248,8 @@ struct FileBackend final : public Backend {
         // We don't particularly care if these succeed or not.
         void(FS::RemoveFile(old_filename));
         void(FS::RenameFile(filename, old_filename));
-        file.emplace(filename, FS::FileAccessMode::Write, FS::FileType::TextFile);
+        file.emplace(filename, FS::FileAccessMode::Write, FS::FileType::TextFile,
+                     FS::FileShareFlag::ShareReadOnly);
     }
     ~FileBackend() noexcept override = default;
 
@@ -269,11 +270,15 @@ struct FileBackend final : public Backend {
             fmt::format("orchid_{}{:016X}.txt", short_name.empty() ? "" : short_name + "_",
                         program_id);
         file->Flush();
+        file->Close();
         // Retain startup diagnostics in each game's log, including version and host details.
         const auto startup = current_path.parent_path() / LOG_FILE;
         const auto header = FS::ReadStringFromFile(startup, FS::FileType::TextFile);
-        FS::IOFile next(filename, FS::FileAccessMode::Write, FS::FileType::TextFile);
+        FS::IOFile next(filename, FS::FileAccessMode::Write, FS::FileType::TextFile,
+                        FS::FileShareFlag::ShareReadOnly);
         if (!next.IsOpen()) {
+            file.emplace(current_path, FS::FileAccessMode::Append, FS::FileType::TextFile,
+                         FS::FileShareFlag::ShareReadOnly);
             return;
         }
         file.emplace(std::move(next));

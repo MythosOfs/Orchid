@@ -212,6 +212,7 @@ TEST_CASE("A native FP16 image is detiled only when its blocks fit its allocatio
     image.allocation_size = 2000 * 8;
     REQUIRE_FALSE(Fp16DetileBlockHeight(image));
     // One row past a block takes a whole block more: 9 rows of 8-row blocks are 16 rows.
+    image.width = 8;
     image.stride = 8;
     image.height = 9;
     image.allocation_size = 64 * 16;

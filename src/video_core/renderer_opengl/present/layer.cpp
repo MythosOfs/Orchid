@@ -148,7 +148,7 @@ FramebufferTextureInfo Layer::LoadFBToScreenInfo(const Tegra::FramebufferConfig&
     // Rows of the detiled image, and of the upload below.
     const u32 row_length =
         fp16 && fp16_block_height && host_ptr ? framebuffer.stride : framebuffer.width;
-    if (fp16 && !fp16_block_height) {
+    if (fp16 && (!fp16_block_height || !host_ptr)) {
         std::ranges::fill(gl_framebuffer_data, u8{});
     } else if (host_ptr) {
         const size_t upload_size = size_t{row_length} * framebuffer.height * bytes_per_pixel;

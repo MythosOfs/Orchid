@@ -4111,6 +4111,13 @@ void MainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file_
 
     if (result != QDialog::Accepted && !UISettings::values.configuration_applied) {
         Settings::RestoreGlobalState(QtCommon::system->IsPoweredOn());
+        if (QtCommon::system->IsPoweredOn()) {
+            // Opening the dialog already reloaded the game's file and dropped the title defaults
+            // (Yoshi loads no save without reactive flushing, issue 181).
+            Core::GameSettings::LoadOverrides(QtCommon::system->GetApplicationProcessProgramID(),
+                                              QtCommon::system->Renderer());
+            QtCommon::system->ApplySettings();
+        }
         return;
     } else if (result == QDialog::Accepted) {
         dialog.ApplyConfiguration();

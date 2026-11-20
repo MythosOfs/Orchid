@@ -94,6 +94,19 @@ TEST_CASE("Graphics quality tokens are stable and legacy environment answers rem
     }
 }
 
+TEST_CASE("Every Yoshi preset turns an inherited reactive flushing off on", "[game_presets]") {
+    using Quality = Settings::GamePresetQuality;
+    for (const auto quality : {Quality::Low, Quality::Standard, Quality::High}) {
+        auto settings = std::make_unique<Settings::Values>();
+        settings->use_reactive_flushing.SetGlobal(true);
+        settings->use_reactive_flushing.SetValue(false);
+        REQUIRE(Settings::ApplyGamePreset(*settings, Settings::YoshiMysteriousBookProgramId,
+                                          quality));
+        CHECK(settings->use_reactive_flushing.GetValue());
+        CHECK_FALSE(settings->use_reactive_flushing.GetValue(true));
+    }
+}
+
 TEST_CASE("Every visual quality retains each title's compatibility settings and saved globals",
           "[game_presets]") {
     using Quality = Settings::GamePresetQuality;

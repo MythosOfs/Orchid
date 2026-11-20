@@ -124,6 +124,14 @@ inline void SetStarFoxRecommendedSettings(Values& settings) {
     }
 }
 
+inline void SetYoshiMysteriousBookRecommendedSettings(Values& settings) {
+    Detail::SetSwitch2BaseSettings(settings);
+    const auto session = Detail::SessionSetter();
+    // Without reactive flushing the game ends itself (2162-0001) seconds into loading a save,
+    // with both saves tried: 7 of 7 runs, 0 of 8 with it on (issue 181, RX 9070 XT).
+    session(settings.use_reactive_flushing, true);
+}
+
 struct GamePreset {
     u64 program_id;
     const char* name;
@@ -138,7 +146,8 @@ inline constexpr GamePreset GamePresets[] = {
     {KirbyAirRidersProgramId, "Kirby Air Riders", Detail::SetSwitch2BaseSettings},
     {PokemonPokopiaProgramId, "Pokemon Pokopia", Detail::SetSwitch2BaseSettings},
     {StarFoxProgramId, "Star Fox", SetStarFoxRecommendedSettings},
-    {YoshiMysteriousBookProgramId, "Yoshi and the Mysterious Book", Detail::SetSwitch2BaseSettings},
+    {YoshiMysteriousBookProgramId, "Yoshi and the Mysterious Book",
+     SetYoshiMysteriousBookRecommendedSettings},
     {SuperMarioBrosWonderProgramId, "Super Mario Bros. Wonder", Detail::SetGraphicsBaseSettings},
     {KirbyForgottenLandProgramId, "Kirby and the Forgotten Land", Detail::SetGraphicsBaseSettings},
 };

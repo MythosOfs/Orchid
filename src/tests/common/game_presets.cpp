@@ -126,7 +126,9 @@ TEST_CASE("Every visual quality retains each title's compatibility settings and 
                   (legacy ? Settings::GpuAccuracy::High : Settings::GpuAccuracy::Low));
             CHECK(settings->use_asynchronous_shaders.GetValue());
             CHECK(settings->vram_usage_mode.GetValue() == Settings::VramUsageMode::Conservative);
-            CHECK(settings->use_reactive_flushing.GetValue() == legacy);
+            // Yoshi loads no save without reactive flushing (issue 181).
+            CHECK(settings->use_reactive_flushing.GetValue() ==
+                  (legacy || preset.program_id == Settings::YoshiMysteriousBookProgramId));
             // The user's VSync choice survives every preset (issue 167).
             CHECK(settings->vsync_mode.GetValue() == Settings::VSyncMode::Immediate);
             CHECK(settings->scaling_filter.GetValue() == Settings::ScalingFilter::ScaleForce);

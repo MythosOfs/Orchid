@@ -71,9 +71,15 @@ struct OverlapResult {
 
 [[nodiscard]] bool IsValidEntry(const Tegra::MemoryManager& gpu_memory, const TICEntry& config);
 
+/// Unswizzles the guest bytes `input` of a block-linear image into `output`. A pitch-linear image
+/// is read from guest memory straight into `output` instead: `input` is not used and can be empty.
 [[nodiscard]] boost::container::small_vector<BufferImageCopy, 16> UnswizzleImage(
     Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const ImageInfo& info,
     std::span<const u8> input, std::span<u8> output);
+
+[[nodiscard]] boost::container::small_vector<BufferImageCopy, 16> UnswizzleImage(
+    const std::function<void(GPUVAddr, std::span<u8>)>& read, GPUVAddr gpu_addr,
+    const ImageInfo& info, std::span<const u8> input, std::span<u8> output, bool native_tiling);
 
 /// Switch 2 block-linear surfaces swap GOB offset bits 5 and 6, unless their texture header asks
 /// for the Maxwell GOB layout (ImageInfo::maxwell_gobs).

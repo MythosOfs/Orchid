@@ -116,6 +116,7 @@ add_executable(tests
     video_core/spirv_storage_images.cpp
     video_core/texture_unswizzle.cpp
     video_core/texture_row_upload.cpp
+    video_core/texture_linear_upload.cpp
     video_core/texture_depth_float.cpp
     video_core/texture_query_type.cpp
     video_core/texture_descriptor_bounds.cpp

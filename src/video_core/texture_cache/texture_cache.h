@@ -2437,8 +2437,12 @@ void TextureCache<P>::UploadImageContents(Image& image, StagingBuffer& staging) 
         return;
     }
 
+    // UnswizzleImage reads a pitch-linear image into its output itself: reading it here as well
+    // copied each such upload twice (Hyrule Warriors: Age of Imprisonment uploads them all through
+    // a fight, and two thirds of that upload time went into the unused copy).
+    const size_t swizzle_bytes = image.info.type == ImageType::Linear ? 0 : image.guest_size_bytes;
     Tegra::Memory::GpuGuestMemory<u8, Tegra::Memory::GuestMemoryFlags::UnsafeRead> swizzle_data(
-        *gpu_memory, gpu_addr, image.guest_size_bytes, &swizzle_data_buffer);
+        *gpu_memory, gpu_addr, swizzle_bytes, &swizzle_data_buffer);
     if (True(image.flags & ImageFlagBits::Converted)) {
         unswizzle_data_buffer.resize_destructive(image.unswizzled_size_bytes);
         auto copies = UnswizzleImage(*gpu_memory, gpu_addr, image.info, swizzle_data, unswizzle_data_buffer);

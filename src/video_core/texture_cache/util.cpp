@@ -858,14 +858,24 @@ boost::container::small_vector<BufferImageCopy, 16> UnswizzleImage(Tegra::Memory
                                                                    const ImageInfo& info,
                                                                    std::span<const u8> input,
                                                                    std::span<u8> output) {
-    const size_t guest_size_bytes = input.size_bytes();
+    return UnswizzleImage(
+        [&](GPUVAddr address, std::span<u8> bytes) {
+            gpu_memory.ReadBlockUnsafe(address, bytes.data(), bytes.size());
+        },
+        gpu_addr, info, input, output, UsesNativeGobs(gpu_memory.UsesNativeTiling(), info));
+}
+
+boost::container::small_vector<BufferImageCopy, 16> UnswizzleImage(
+    const std::function<void(GPUVAddr, std::span<u8>)>& read, GPUVAddr gpu_addr,
+    const ImageInfo& info, std::span<const u8> input, std::span<u8> output, bool native_tiling) {
     const u32 bpp_log2 = BytesPerBlockLog2(info.format);
     const Extent2D tile_size = DefaultBlockSize(info.format);
     const Extent3D size = info.size;
 
     if (info.type == ImageType::Linear) {
+        const size_t guest_size_bytes = CalculateGuestSizeInBytes(info);
         ASSERT(output.size_bytes() >= guest_size_bytes);
-        gpu_memory.ReadBlockUnsafe(gpu_addr, output.data(), guest_size_bytes);
+        read(gpu_addr, output.first(guest_size_bytes));
 
         ASSERT((info.pitch >> bpp_log2) << bpp_log2 == info.pitch);
         return {{
@@ -883,7 +893,7 @@ boost::container::small_vector<BufferImageCopy, 16> UnswizzleImage(Tegra::Memory
             .image_extent = size,
         }};
     }
-    return UnswizzleBlockLinearImage(info, input, output, UsesNativeGobs(gpu_memory.UsesNativeTiling(), info));
+    return UnswizzleBlockLinearImage(info, input, output, native_tiling);
 }
 
 boost::container::small_vector<BufferImageCopy, 16> UnswizzleBlockLinearImage(

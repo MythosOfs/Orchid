@@ -31,6 +31,9 @@ std::vector<T> Enumerate(Query&& query) {
     for (int attempt = 0; attempt < MAX_ATTEMPTS && result == VK_INCOMPLETE; ++attempt) {
         u32 num{};
         result = query(&num, nullptr);
+        if (result == VK_SUCCESS && num == 0) {
+            return {};
+        }
         if (result == VK_SUCCESS || result == VK_INCOMPLETE) {
             out.resize(num);
             result = query(&num, out.data());
@@ -516,10 +519,9 @@ Instance Instance::Create(u32 version, Span<const char*> layers, Span<const char
 }
 
 std::vector<VkPhysicalDevice> Instance::EnumeratePhysicalDevices() const {
-    u32 num;
-    Check(dld->vkEnumeratePhysicalDevices(handle, &num, nullptr));
-    std::vector<VkPhysicalDevice> physical_devices(num);
-    Check(dld->vkEnumeratePhysicalDevices(handle, &num, physical_devices.data()));
+    auto physical_devices = Enumerate<VkPhysicalDevice>([this](u32* num, VkPhysicalDevice* data) {
+        return dld->vkEnumeratePhysicalDevices(handle, num, data);
+    });
     SortPhysicalDevices(physical_devices, *dld);
     return physical_devices;
 }

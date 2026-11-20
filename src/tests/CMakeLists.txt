@@ -99,6 +99,7 @@ add_executable(tests
     video_core/framebuffer_clear_layers.cpp
     video_core/vertex_repack.cpp
     video_core/vulkan_device_version.cpp
+    video_core/vulkan_enumerate.cpp
     video_core/gpu_split_ring.cpp
     video_core/query_copy.cpp
     video_core/multi_range_buffer.cpp

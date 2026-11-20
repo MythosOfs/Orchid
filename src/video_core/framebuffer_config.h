@@ -53,20 +53,9 @@ struct FramebufferConfig {
 };
 
 /// The GOB block height (log2) to detile a native FP16 framebuffer with, or nullopt when it has
-/// none (below one GOB) or its tightly packed rows in such blocks would not fit its allocation.
-/// 64-bit throughout: the size of a large image overflows 32 bits.
-constexpr std::optional<u32> Fp16DetileBlockHeight(const FramebufferConfig& framebuffer) {
-    if (!framebuffer.block_height_log2 || *framebuffer.block_height_log2 > 5) {
-        return std::nullopt;
-    }
-    const u64 block_rows = u64{8} << *framebuffer.block_height_log2;
-    const u64 pitch = (u64{framebuffer.stride} * 8 + 63) / 64 * 64;
-    const u64 rows = (u64{framebuffer.height} + block_rows - 1) / block_rows * block_rows;
-    if (framebuffer.allocation_size != 0 && pitch * rows > framebuffer.allocation_size) {
-        return std::nullopt;
-    }
-    return framebuffer.block_height_log2;
-}
+/// none (below one GOB), its rows of stride pixels in such blocks would not fit its allocation, or
+/// the tiled size does not fit the 32 bits Tegra::Texture::CalculateSize computes in.
+std::optional<u32> Fp16DetileBlockHeight(const FramebufferConfig& framebuffer);
 
 Common::Rectangle<f32> NormalizeCrop(const FramebufferConfig& framebuffer, u32 texture_width,
                                      u32 texture_height);

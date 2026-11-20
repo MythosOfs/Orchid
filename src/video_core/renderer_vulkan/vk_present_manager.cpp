@@ -705,8 +705,15 @@ void PresentManager::CopyToSwapchainImpl(Frame* frame) {
         }
     }
 
-    // Present
-    swapchain.Present(render_semaphore);
+    // Present. The submit above consumed render_ready and present_done: a lost surface here must
+    // not retry this frame, which would wait on them again. The next frame recreates it.
+    try {
+        swapchain.Present(render_semaphore);
+    } catch (const vk::Exception& except) {
+        LOG_WARNING(Render_Vulkan, "Present failed ({}); recreating with the next frame",
+                    except.what());
+        surface_recreation_pending = true;
+    }
 }
 
 } // namespace Vulkan

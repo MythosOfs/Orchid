@@ -375,8 +375,8 @@ void Layer::UpdateRawImage(const Tegra::FramebufferConfig& framebuffer, size_t i
 
     // TODO(Rodrigo): Read this from HLE
     constexpr u32 default_block_height_log2 = 4;
-    // A native FP16 image is detiled with its own block height, its rows taken as tightly packed
-    // as for the other formats. One that cannot be read that way is shown black.
+    // A native FP16 image is detiled with its own block height and its padded row pitch (stride).
+    // One that cannot be read that way is shown black.
     const bool fp16 = framebuffer.pixel_format == Service::android::PixelFormat::RgbaFp16;
     const auto fp16_block_height = fp16 ? Tegra::Fp16DetileBlockHeight(framebuffer) : std::nullopt;
     const u32 block_height_log2 = fp16_block_height.value_or(default_block_height_log2);
@@ -391,13 +391,14 @@ void Layer::UpdateRawImage(const Tegra::FramebufferConfig& framebuffer, size_t i
                                                            1, block_height_log2, 0)};
         Tegra::Texture::UnswizzleTexture(
             mapped_span.subspan(image_offset, linear_size), std::span(host_ptr, tiled_size),
-            bytes_per_pixel, framebuffer.width, framebuffer.height, 1, block_height_log2, 0, 1, framebuffer.native_tiling);
+            bytes_per_pixel, fp16 ? framebuffer.stride : framebuffer.width, framebuffer.height, 1,
+            block_height_log2, 0, 1, framebuffer.native_tiling);
         buffer.Flush();  // Ensure host writes are visible before the GPU copy.
     }
 
     const VkBufferImageCopy copy{
         .bufferOffset = image_offset,
-        .bufferRowLength = 0,
+        .bufferRowLength = fp16 ? framebuffer.stride : 0,
         .bufferImageHeight = 0,
         .imageSubresource =
             {

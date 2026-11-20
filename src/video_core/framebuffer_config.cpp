@@ -5,11 +5,27 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <limits>
 
 #include "common/assert.h"
 #include "video_core/framebuffer_config.h"
 
 namespace Tegra {
+
+std::optional<u32> Fp16DetileBlockHeight(const FramebufferConfig& framebuffer) {
+    if (!framebuffer.block_height_log2 || *framebuffer.block_height_log2 > 5) {
+        return std::nullopt;
+    }
+    const u64 block_rows = u64{8} << *framebuffer.block_height_log2;
+    const u64 pitch = (u64{framebuffer.stride} * 8 + 63) / 64 * 64;
+    const u64 rows = (u64{framebuffer.height} + block_rows - 1) / block_rows * block_rows;
+    const u64 size = pitch * rows;
+    if (size > std::numeric_limits<u32>::max() ||
+        (framebuffer.allocation_size != 0 && size > framebuffer.allocation_size)) {
+        return std::nullopt;
+    }
+    return framebuffer.block_height_log2;
+}
 
 std::span<const FramebufferConfig> FilterLayerStack(
     std::span<const FramebufferConfig> layers, Service::Nvnflinger::LayerStackId stack,

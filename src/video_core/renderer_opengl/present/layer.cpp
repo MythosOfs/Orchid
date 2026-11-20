@@ -136,8 +136,8 @@ FramebufferTextureInfo Layer::LoadFBToScreenInfo(const Tegra::FramebufferConfig&
 
     // TODO(Rodrigo): Read this from HLE
     constexpr u32 default_block_height_log2 = 4;
-    // A native FP16 image is detiled with its own block height and GOB order. One that cannot be
-    // read that way is shown black.
+    // A native FP16 image is detiled with its own block height, GOB order and padded row pitch
+    // (stride). One that cannot be read that way is shown black.
     const bool fp16 = framebuffer.pixel_format == Service::android::PixelFormat::RgbaFp16;
     const auto fp16_block_height = fp16 ? Tegra::Fp16DetileBlockHeight(framebuffer) : std::nullopt;
     const u32 block_height_log2 = fp16_block_height.value_or(default_block_height_log2);
@@ -145,6 +145,11 @@ FramebufferTextureInfo Layer::LoadFBToScreenInfo(const Tegra::FramebufferConfig&
         VideoCore::Surface::PixelFormatFromGPUPixelFormat(framebuffer.pixel_format)};
     const u32 bytes_per_pixel{VideoCore::Surface::BytesPerBlock(pixel_format)};
     const u8* const host_ptr{device_memory.GetPointer<u8>(framebuffer_addr)};
+    // The upload below reads rows of stride pixels.
+    const size_t upload_size = size_t{framebuffer.stride} * framebuffer.height * bytes_per_pixel;
+    if (gl_framebuffer_data.size() < upload_size) {
+        gl_framebuffer_data.resize(upload_size);
+    }
     if (fp16 && !fp16_block_height) {
         std::ranges::fill(gl_framebuffer_data, u8{});
     } else if (host_ptr) {
@@ -154,7 +159,8 @@ FramebufferTextureInfo Layer::LoadFBToScreenInfo(const Tegra::FramebufferConfig&
                                                               block_height_log2, 0)};
         const std::span<const u8> input_data(host_ptr, size_in_bytes);
         Tegra::Texture::UnswizzleTexture(gl_framebuffer_data, input_data, bytes_per_pixel,
-                                         framebuffer.width, framebuffer.height, 1,
+                                         fp16 ? framebuffer.stride : framebuffer.width,
+                                         framebuffer.height, 1,
                                          block_height_log2, 0, 1,
                                          fp16 && framebuffer.native_tiling);
     }

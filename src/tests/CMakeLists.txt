@@ -74,6 +74,7 @@ add_executable(tests
     core/partition_filesystem.cpp
     core/eticket_title_key.cpp
     core/keyblob_cmac.cpp
+    core/nax_hmac.cpp
     core/romfs.cpp
     core/time_zone_fallback.cpp
     core/internal_network/network.cpp

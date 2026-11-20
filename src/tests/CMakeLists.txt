@@ -72,6 +72,7 @@ add_executable(tests
     core/vfs_real.cpp
     core/nvnflinger_fence.cpp
     core/partition_filesystem.cpp
+    core/eticket_title_key.cpp
     core/romfs.cpp
     core/time_zone_fallback.cpp
     core/internal_network/network.cpp

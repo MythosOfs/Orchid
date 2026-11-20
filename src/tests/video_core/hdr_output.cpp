@@ -205,6 +205,7 @@ TEST_CASE("A native FP16 image is detiled only when its blocks fit its allocatio
     REQUIRE_FALSE(Fp16DetileBlockHeight(image));
     // Rows are padded to whole 64-byte GOBs: 250 pixels need 2000 bytes, 2048 with padding.
     image.block_height_log2 = 0;
+    image.width = 249;
     image.stride = 250;
     image.height = 8;
     image.allocation_size = 2048 * 8;

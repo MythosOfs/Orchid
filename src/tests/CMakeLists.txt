@@ -40,6 +40,7 @@ add_executable(tests
     core/builtin_font_glyphs.cpp
     core/core_timing.cpp
     core/filesystem_buffer_bounds.cpp
+    core/filesystem_rename.cpp
     core/page_heap.cpp
     core/read_traps.cpp
     core/gpu_dirty_memory_manager.cpp

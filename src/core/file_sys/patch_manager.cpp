@@ -25,6 +25,7 @@
 #include "core/file_sys/ips_layer.h"
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/wonder_fps_patch.h"
+#include "core/file_sys/yoshi_4k_patch.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/vfs/vfs_cached.h"
@@ -500,10 +501,25 @@ std::vector<u8> PatchManager::PatchNSO(const std::vector<u8>& nso, const std::st
             }
         }
     };
+    const auto patch_yoshi_4k = [&](std::vector<u8>& out) {
+        // Also after external mods: a resolution mod that already changed one of these
+        // instructions keeps its version, and the built-in patch is skipped whole.
+        if (Settings::values.yoshi_4k_patch.GetValue() &&
+            title_id == Settings::YoshiMysteriousBookProgramId && name == "main") {
+            if (ApplyYoshi4kPatch(out, title_id, build_id)) {
+                LOG_INFO(Loader, "    - Applying built-in Yoshi 4K patch");
+            } else {
+                LOG_WARNING(Loader,
+                            "Yoshi 4K patch skipped: unsupported build or instructions ({})",
+                            build_id);
+            }
+        }
+    };
     const auto load_dir = GetModificationLoadRoot();
     if (load_dir == nullptr) {
         LOG_ERROR(Loader, "Cannot load mods for invalid title_id={:016X}", title_id);
         patch_wonder(base);
+        patch_yoshi_4k(base);
         return base;
     }
 
@@ -535,6 +551,7 @@ std::vector<u8> PatchManager::PatchNSO(const std::vector<u8>& nso, const std::st
     }
 
     patch_wonder(out);
+    patch_yoshi_4k(out);
     std::memcpy(out.data(), &header, sizeof(header));
     return out;
 }
@@ -547,7 +564,10 @@ bool PatchManager::HasNSOPatch(const BuildID& build_id_, std::string_view name) 
 
     if (FindFps30Patch(build_id) != nullptr ||
         (title_id == Settings::WonderSwitch2ProgramId && name == "main" &&
-         build_id == WonderFpsBuildId)) {
+         build_id == WonderFpsBuildId) ||
+        (Settings::values.yoshi_4k_patch.GetValue() &&
+         title_id == Settings::YoshiMysteriousBookProgramId && name == "main" &&
+         build_id == Yoshi4kBuildId)) {
         return true;
     }
 

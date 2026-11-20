@@ -19,6 +19,7 @@
 #include <QSpinBox>
 
 #include "common/game_fps.h"
+#include "common/game_presets.h"
 #include "common/settings.h"
 #include "core/core.h"
 #include "qt_common/qt_compat.h"
@@ -149,6 +150,10 @@ void ConfigureSystem::Setup(const ConfigurationShared::Builder& builder) {
         }
         if (setting->Id() == Settings::values.wonder_fps.Id() &&
             !Settings::ShowWonderFps(program_id, Settings::IsConfiguringGlobal())) {
+            continue;
+        }
+        if (setting->Id() == Settings::values.yoshi_4k_patch.Id() &&
+            !Settings::ShowYoshi4kPatch(program_id, Settings::IsConfiguringGlobal())) {
             continue;
         }
         if (setting->Id() == Settings::values.use_docked_mode.Id() &&

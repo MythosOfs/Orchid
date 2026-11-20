@@ -651,6 +651,9 @@ struct Values {
     /// Built-in code patch for titles whose frame-rate controller can be held at 30 fps
     /// (FileSys::PatchManager, FPS30_PATCHES). Ignored for other titles and builds.
     SwitchableSetting<bool> fps30_patch{linkage, false, "fps30_patch", Category::System};
+    /// Built-in code patch that makes Yoshi and the Mysterious Book render at 3840x2160 without
+    /// its own upscaling (FileSys::ApplyYoshi4kPatch). Ignored for other titles and builds.
+    SwitchableSetting<bool> yoshi_4k_patch{linkage, false, "yoshi_4k_patch", Category::System};
     /// Report a variable refresh rate display to Switch 2 titles (nx2:vi2 107), so games with
     /// their own dynamic frame rate use it.
     SwitchableSetting<bool> vrr_display{linkage, false, "vrr_display", Category::System};

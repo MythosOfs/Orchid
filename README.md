@@ -103,7 +103,7 @@ Compared with the Eglantine it started from:
 | Hyrule Warriors: Age of Imprisonment | 60 | drops to 20-40 in Combat |
 | Donkey Kong Bananza | 30-40, 15-25 in heavy areas | 30FPS Mod recommended (Built in) |
 | Mario Tennis Fever | 60 | runs flawlessly |
-| Yoshi and the Mysterious Book | 60 | First Level tested |
+| Yoshi and the Mysterious Book | 60 | First Level tested; optional 4K patch (Built in) |
 | Super Mario Bros. Wonder | 160 | custom FPS targets (only set what you can hit) |
 | Star Fox | 60 |  |
 | Pokémon Pokopia | 60 | |
@@ -176,6 +176,7 @@ update checker; `git pull` is the update. Windows (MSVC) and macOS builds are de
 ## Credits
 
 - [zortos293/Lichii](https://github.com/zortos293/Lichii) (Zortos, with capy-ai): release compute IR and SPIR-V backing storage before synchronous driver compilation, adapted from [fd4ce24c9b9390e660be345b467521e7fb08dfd3](https://github.com/zortos293/Lichii/commit/fd4ce24c9b9390e660be345b467521e7fb08dfd3).
+- [Walnutoast830](https://github.com/Walnutoast830): the 4K patch for Yoshi and the Mysterious Book (3840x2160 without the game's own upscaling and anti-aliasing, HUD size kept), built in as the game's "Internal resolution 4K (game patch)" option ([issue 144](https://github.com/MythosOfs/Orchid/issues/144)).
 
 Orchid takes fixes from Eglantine and its forks; after every release
 [tools/fork-scan.sh](docs/ForkScan.md) lists what they fixed since. Each ported commit names its

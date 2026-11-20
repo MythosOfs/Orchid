@@ -187,6 +187,11 @@ if (WIN32)
     target_sources(tests PRIVATE common/host_memory_commit.cpp)
 endif()
 
+if (TARGET OpenSSL::SSL)
+    target_sources(tests PRIVATE core/ssl_peek.cpp)
+    target_link_libraries(tests PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+endif()
+
 target_link_libraries(tests PRIVATE common core input_common video_core tz)
 
 if (ENABLE_QT)

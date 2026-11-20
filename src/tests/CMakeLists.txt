@@ -16,6 +16,7 @@ add_executable(tests
     common/fibers.cpp
     common/flat_allocator.cpp
     common/game_presets.cpp
+    common/hex_util.cpp
     common/hitch_diagnostic.cpp
     common/host_memory.cpp
     common/host_memory_fallback.cpp
@@ -58,6 +59,7 @@ add_executable(tests
     core/nso.cpp
     core/nrr.cpp
     core/ncz_decompressor.cpp
+    core/key_manager_keys_file.cpp
     core/ldn.cpp
     core/internal_network/socket_proxy.cpp
     core/nx_archive.cpp

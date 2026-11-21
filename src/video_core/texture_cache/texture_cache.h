@@ -180,8 +180,7 @@ void TextureCache<P>::RunGarbageCollector() {
             image.DownloadMemory(map, copies);
             runtime.Finish();
             try {
-                SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span,
-                             swizzle_data_buffer);
+                WriteBackImage(image, copies, map.mapped_span);
             } catch (const std::bad_alloc&) {
                 HandleScratchAllocationFailure(image);
                 return false;
@@ -1278,9 +1277,8 @@ void TextureCache<P>::DownloadMemory(DAddr cpu_addr, size_t size) {
             for (size_t i = first; i < last; ++i) {
                 Image& image = slot_images[images[i]];
                 const auto copies = FullDownloadCopies(image.info);
-                SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies,
-                             map.mapped_span.subspan(offset, image.unswizzled_size_bytes),
-                             swizzle_data_buffer);
+                WriteBackImage(image, copies,
+                               map.mapped_span.subspan(offset, image.unswizzled_size_bytes));
                 offset += Common::AlignUp(image.unswizzled_size_bytes, 64);
             }
             first = last;
@@ -1293,8 +1291,7 @@ void TextureCache<P>::DownloadMemory(DAddr cpu_addr, size_t size) {
         const auto copies = FullDownloadCopies(image.info);
         image.DownloadMemory(map, copies);
         runtime.Finish();
-        SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span,
-                     swizzle_data_buffer);
+        WriteBackImage(image, copies, map.mapped_span);
     }
 }
 
@@ -1860,8 +1857,7 @@ void TextureCache<P>::PopAsyncFlushes() {
                     download_buffer.mapped_span.subspan(download_buffer.offset);
                 // Written by the CPU since the download was taken: these bytes are older.
                 if (False(image.flags & ImageFlagBits::CpuModified)) {
-                    SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, download_span,
-                                 swizzle_data_buffer);
+                    WriteBackImage(image, copies, download_span);
                 }
             } else {
                 const BufferDownload& buffer_info = slot_buffer_downloads[download_info.object_id];
@@ -1910,8 +1906,7 @@ void TextureCache<P>::PopAsyncFlushes() {
             const ImageBase& image = download_info.GetImage(slot_images);
             const auto copies = FullDownloadCopies(image.info);
             if (False(image.flags & ImageFlagBits::CpuModified)) {
-                SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, download_span,
-                             swizzle_data_buffer);
+                WriteBackImage(image, copies, download_span);
             }
             download_map.offset += image.unswizzled_size_bytes;
             download_span = download_span.subspan(image.unswizzled_size_bytes);
@@ -2045,6 +2040,18 @@ void TextureCache<P>::DownloadImageIntoBuffer(typename TextureCache<P>::Image* i
     } else {
         image->DownloadMemory(buffer, buffer_offset, copies);
     }
+}
+
+template <class P>
+bool TextureCache<P>::WriteBackImage(const ImageBase& image,
+                                     std::span<const BufferImageCopy> copies,
+                                     std::span<const u8> data) {
+    const std::shared_ptr<Tegra::MemoryManager> memory = LockAddressSpace(image.address_space);
+    if (!memory) {
+        return false;
+    }
+    SwizzleImage(*memory, image.gpu_addr, image.info, copies, data, swizzle_data_buffer);
+    return true;
 }
 
 template <class P>

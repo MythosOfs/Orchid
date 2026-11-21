@@ -8,6 +8,7 @@
 
 #include <deque>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include "common/container/unordered_map.h"
@@ -75,6 +76,15 @@ public:
         return ref->second.storage_id;
     }
 
+    std::shared_ptr<Tegra::MemoryManager> LockAddressSpace(size_t id) const {
+        std::unique_lock<std::mutex> lk(config_mutex);
+        const auto ref = address_spaces.find(id);
+        if (ref == address_spaces.end()) {
+            return nullptr;
+        }
+        return ref->second.owner.lock();
+    }
+
 protected:
     static constexpr size_t UNSET_CHANNEL{(std::numeric_limits<size_t>::max)()};
 
@@ -94,6 +104,7 @@ protected:
         size_t ref_count;
         size_t storage_id;
         Tegra::MemoryManager* gpu_memory;
+        std::weak_ptr<Tegra::MemoryManager> owner;
     };
     ::Common::unordered_map<size_t, AddressSpaceRef> address_spaces;
     mutable std::mutex config_mutex;

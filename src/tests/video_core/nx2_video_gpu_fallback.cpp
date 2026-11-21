@@ -292,37 +292,65 @@ TEST_CASE("Nx2 video falls back when the host GPU decoder only answered EAGAIN",
     CHECK(decoder.Play(rest, Nx2GpuDecodeFault::Packet) == std::vector<u64>{0, 1});
 }
 
+namespace {
+
+struct HostProbe {
+    bool gpu;
+    bool rejected;
+};
+
+/// What the nx2 decoder outputs after the host GPU decoder gave these frame formats, with
+/// AV_PIX_FMT_NONE for a rejected packet: it keeps the host GPU once it gave a frame.
+HostProbe Judge(std::span<const int> events) {
+    const bool rejected = std::ranges::find(events, AV_PIX_FMT_NONE) != events.end();
+    return {!events.empty() && events.front() == AV_PIX_FMT_NV12, rejected};
+}
+
+} // namespace
+
+TEST_CASE("Nx2 video host GPU probe keeps a host GPU that rejects a later packet", "[nx2_video]") {
+    constexpr std::array<int, 2> nv12_then_rejected{AV_PIX_FMT_NV12, AV_PIX_FMT_NONE};
+    CHECK(Judge(nv12_then_rejected).gpu);
+    CHECK(Judge(nv12_then_rejected).rejected);
+    constexpr std::array<int, 2> rejected_first{AV_PIX_FMT_NONE, AV_PIX_FMT_NV12};
+    CHECK_FALSE(Judge(rejected_first).gpu);
+}
+
 TEST_CASE("Nx2 video decodes on the host GPU when FFmpeg can", "[nx2_video]") {
-    // Whether FFmpeg on this host decodes the clip on the GPU (NV12 frames) or falls back itself.
-    // The probe drains and closes its decoder before the test opens one.
-    const bool host_gpu = [] {
+    // How FFmpeg on this host decodes the clip on the GPU: NV12 frames, its own CPU fallback or
+    // rejected packets. The probe drains and closes its decoder before the test opens one.
+    const HostProbe probe = [] {
         FFmpeg::Decoder decoder{Tegra::Host1x::NvdecCommon::VideoCodec::H264};
         FFmpeg::HardwareContext hardware;
         FFmpeg::DecoderContext context{decoder};
+        std::vector<int> events;
         if (!hardware.InitializeForDecoder(context, decoder) || !context.OpenContext(decoder, {})) {
-            return false;
+            return Judge(events);
         }
-        std::optional<int> format;
         const auto receive = [&] {
             while (const auto frame = context.ReceiveFrame()) {
-                format = format.value_or(frame->GetFrame()->format);
+                events.push_back(frame->GetFrame()->format);
             }
         };
         for (auto packet : Packets()) {
             const size_t size = packet.size();
             packet.resize(size + AV_INPUT_BUFFER_PADDING_SIZE);
             if (!context.SendPacket(FFmpeg::Packet{std::span{packet.data(), size}})) {
-                return false;
+                events.push_back(AV_PIX_FMT_NONE);
             }
             receive();
         }
         avcodec_send_packet(context.GetCodecContext(), nullptr);
         receive();
-        return format == AV_PIX_FMT_NV12;
+        return Judge(events);
     }();
 
     Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::None, Avc()};
-    CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::None) == all_frames);
-    const int format = host_gpu ? AV_PIX_FMT_NV12 : AV_PIX_FMT_YUV420P;
-    CHECK(decoder.formats == std::vector<int>(all_frames.size(), format));
+    const auto pts = decoder.Play(Packets(), Nx2GpuDecodeFault::None);
+    if (!probe.rejected) {
+        CHECK(pts == all_frames);
+    }
+    CHECK(!pts.empty());
+    const int format = probe.gpu ? AV_PIX_FMT_NV12 : AV_PIX_FMT_YUV420P;
+    CHECK(decoder.formats == std::vector<int>(pts.size(), format));
 }

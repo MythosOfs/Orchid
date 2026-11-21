@@ -162,15 +162,16 @@ TEST_CASE("NSP launch reports the missing header key of its metadata NCA",
           Loader::ResultStatus::ErrorMissingHeaderKey);
 }
 
-TEST_CASE("NSP launch rejects a title ID 0 program listed under another title",
+TEST_CASE("NSP launch rejects a title ID 0 program from update metadata",
           "[core][loader][nca_header_key]") {
     if (Core::Crypto::KeyManager::KeyFileExists(false)) {
         SKIP("A key file is installed");
     }
-    // The metadata lists the program under another title, so only the title ID check rejects it.
+    // Update metadata keeps the program out of the Application lookup, so only the title ID check
+    // rejects it.
     CNMTHeader header{};
     header.title_id = 0x0100000000010000;
-    header.type = TitleType::Application;
+    header.type = TitleType::Update;
     header.table_offset = sizeof(OptionalHeader);
     header.number_content_entries = 1;
     ContentRecord record{};

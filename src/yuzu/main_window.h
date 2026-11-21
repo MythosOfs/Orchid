@@ -457,7 +457,8 @@ private slots:
 private:
     void RemovePlayTimeData(u64 program_id);
     bool SelectRomFSDumpTarget(const FileSys::ContentProvider&, u64 program_id,
-                               u64* selected_title_id, u8* selected_content_record_type);
+                               bool offer_game_file, u64* selected_title_id,
+                               u8* selected_content_record_type, bool* game_file_selected);
     ContentManager::InstallResult InstallNCA(const QString& filename);
     void UpdateWindowTitle(std::string_view title_name = {}, std::string_view title_version = {},
                            std::string_view gpu_vendor = {});

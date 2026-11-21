@@ -200,7 +200,8 @@ struct Nx2VideoDecoder::Impl {
                         : gpu && (gpu_fault == Nx2GpuDecodeFault::Packet ||
                                   gpu_fault == Nx2GpuDecodeFault::NoCpu ||
                                   gpu_fault == Nx2GpuDecodeFault::Replay ||
-                                  gpu_fault == Nx2GpuDecodeFault::ReplayReceive)
+                                  gpu_fault == Nx2GpuDecodeFault::ReplayReceive ||
+                                  gpu_fault == Nx2GpuDecodeFault::SwitchReceive)
                             ? AVERROR_INVALIDDATA
                             : avcodec_send_packet(target.GetCodecContext(), packet.GetPacket());
         if (Rejected(ret)) {
@@ -227,7 +228,11 @@ struct Nx2VideoDecoder::Impl {
             }
         }
         pending_pts.insert(pts);
-        return !Rejected(Send(*context, packet, false));
+        if (Rejected(Send(*context, packet, false))) {
+            return false;
+        }
+        Receive(pictures);
+        return !context->ReceiveFailed() && gpu_fault != Nx2GpuDecodeFault::SwitchReceive;
     }
 
     void FallBackToCpu(const FFmpeg::Packet& packet, u64 pts, std::vector<Nx2Picture>& pictures) {

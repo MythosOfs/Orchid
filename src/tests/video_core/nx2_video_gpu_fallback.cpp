@@ -300,7 +300,8 @@ TEST_CASE("Nx2 video keeps the host GPU decoder when the CPU rejects a replayed 
         CHECK(pictures[0].pts == 0);
     }
     const auto packets = Packets();
-    for (const auto fault : {Nx2GpuDecodeFault::Replay, Nx2GpuDecodeFault::ReplayReceive}) {
+    for (const auto fault : {Nx2GpuDecodeFault::Replay, Nx2GpuDecodeFault::ReplayReceive,
+                             Nx2GpuDecodeFault::SwitchReceive}) {
         for (const size_t replayed : {size_t{1}, size_t{2}}) {
             Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Hold, Avc()};
             std::vector<Nx2Picture> pictures(1);

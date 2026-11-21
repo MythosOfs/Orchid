@@ -132,6 +132,7 @@ add_executable(tests
     video_core/multi_range_buffer.cpp
     video_core/shader_reuse_environment.cpp
     video_core/shader_notify.cpp
+    video_core/pipeline_build.cpp
     video_core/pipeline_cache_file.cpp
     video_core/static_pipeline_cache.cpp
     video_core/ampere_lowering.cpp

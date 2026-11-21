@@ -8,10 +8,7 @@
 
 #include <algorithm>
 #include <array>
-#include <atomic>
-#include <condition_variable>
 #include <memory>
-#include <mutex>
 #include <type_traits>
 #include <vector>
 
@@ -19,6 +16,7 @@
 #include "shader_recompiler/shader_info.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
+#include "video_core/renderer_vulkan/pipeline_build.h"
 #include "video_core/renderer_vulkan/pipeline_helper.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_descriptor_buffer.h"
@@ -149,7 +147,7 @@ public:
     }
 
     [[nodiscard]] bool IsBuilt() const noexcept {
-        return is_built.load(std::memory_order::relaxed);
+        return build->IsComplete();
     }
 
     template <typename Spec>
@@ -213,9 +211,7 @@ private:
     u32 last_descriptor_buffer_chunk{};
     u64 last_descriptor_buffer_generation{};
 
-    std::condition_variable build_condvar;
-    std::mutex build_mutex;
-    std::atomic_bool is_built{false};
+    std::shared_ptr<PipelineBuild> build;
     bool uses_push_descriptor{false};
     bool uses_descriptor_buffer{false};
 };

@@ -19,6 +19,7 @@
 
 #include "common/settings.h"
 #include "core/core.h"
+#include "core/file_sys/common_funcs.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/nup_container.h"
 #include "core/file_sys/nup_writer.h"
@@ -201,6 +202,25 @@ std::string NativeNpdm(u64 program_id) {
     SetLe(npdm, 0xA0, 0x40, 4); // FAH offset relative to ACI0
     npdm.replace(0x400, 4, "ACID");
     SetLe(npdm, 0x420, 0x340, 4); // FAC offset relative to ACID
+    return npdm;
+}
+
+std::string BootNpdm(u64 program_id, bool switch2) {
+    const u32 shift = switch2 ? 0x100 : 0;
+    std::string npdm(0x480 + shift, '\0');
+    npdm.replace(0, 4, "META");
+    SetLe(npdm, 0x70, 0x400 + shift, 4);
+    SetLe(npdm, 0x74, 0x40, 4);
+    SetLe(npdm, 0x78, 0x100, 4);
+    SetLe(npdm, 0x7C, 0x240 + shift, 4);
+    npdm.replace(0x300 + shift, 4, "ACID");
+    SetLe(npdm, 0x320 + shift, 0x240 + shift, 4);
+    SetLe(npdm, 0x324 + shift, 0x2C, 4);
+    npdm.replace(0x400 + shift, 4, "ACI0");
+    SetLe(npdm, 0x410 + shift, program_id, 8);
+    SetLe(npdm, 0x420 + shift, 0x40, 4);
+    SetLe(npdm, 0x424 + shift, 0x1C, 4);
+    SetLe(npdm, 0x430 + shift, 0x60, 4);
     return npdm;
 }
 
@@ -1630,6 +1650,53 @@ TEST_CASE("RomFS dumps of other files keep the installed content", "[nup]") {
     const auto romfs = Loader::ReadUninstalledRomFS(broken);
     REQUIRE(romfs.has_value());
     CHECK(*romfs == nullptr);
+}
+
+TEST_CASE("NUP boots the program that matches its base", "[nup][boot-inputs]") {
+    TempDir t;
+    const auto root = t.path / "Game";
+    constexpr u64 edition_program = TitleId + 1;
+    const u64 legacy_program = FileSys::WithPlatformOf(TitleId, 0x0100000000000000ULL);
+    bool base_switch2 = true;
+    bool update_switch2 = false;
+    bool base_exefs = true;
+
+    SECTION("a legacy update does not replace the native base program") {}
+    SECTION("a native update supersedes a legacy base") {
+        base_switch2 = false;
+        update_switch2 = true;
+    }
+    SECTION("a native update boots over a base packed without an executable") {
+        base_exefs = false;
+        update_switch2 = true;
+    }
+
+    const auto write_exefs = [](const fs::path& path, u64 program_id, bool switch2) {
+        Put(path / "main", "main");
+        Put(path / "main.npdm", BootNpdm(program_id, switch2));
+    };
+    if (base_exefs) {
+        write_exefs(root / "base/exefs", base_switch2 ? edition_program : legacy_program,
+                    base_switch2);
+    } else {
+        fs::create_directories(root / "base/exefs");
+    }
+    Put(root / "base/romfs/base.bin", "base");
+    write_exefs(root / "updates/65536/exefs", update_switch2 ? edition_program : legacy_program,
+                update_switch2);
+    Put(root / "updates/65536/romfs/update.bin", "update");
+    const auto archive = t.path / "Game.nup";
+    REQUIRE(FileSys::Nup::PackDump(root, archive) == FileSys::Nup::PackResult::Success);
+
+    FileSys::RealVfsFilesystem vfs;
+    Loader::AppLoader_NUP loader{vfs.OpenFile(archive.string(), FileSys::OpenMode::Read)};
+    FileSys::ProgramMetadata metadata;
+    REQUIRE(loader.ReadProgramMetadata(metadata) == Loader::ResultStatus::Success);
+    CHECK(metadata.IsSwitch2());
+    CHECK(metadata.GetTitleID() == edition_program);
+    u64 program_id{};
+    REQUIRE(loader.ReadProgramId(program_id) == Loader::ResultStatus::Success);
+    CHECK(program_id == edition_program);
 }
 
 TEST_CASE("PackDump preserves control metadata owned by an update", "[nup][nup-update-control]") {

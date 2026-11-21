@@ -67,3 +67,13 @@ TEST_CASE("Scaled image limits", "[video_core][texture_cache]") {
     REQUIRE_FALSE(ScaledImageFits(Image(8192, 8193), Scale(2, 0), 65536));
     REQUIRE_FALSE(ScaledImageFits(msaa, Scale(5, 0), 65536));
 }
+
+TEST_CASE("Downscaling never shrinks an MSAA image below one texel", "[video_core][texture_cache]") {
+    ImageInfo msaa = Image(4, 4);
+    msaa.num_samples = 4;
+    REQUIRE(ScaledImageFits(msaa, Scale(1, 1), 16384)); // 2x2 sample grid, 1x1 texels
+    msaa.size = {2, 4, 1};
+    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(1, 1), 16384)); // 0 texels wide
+    msaa.size = {4, 2, 1};
+    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(1, 1), 16384)); // 0 texels high
+}

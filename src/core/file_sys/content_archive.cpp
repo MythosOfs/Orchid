@@ -9,6 +9,7 @@
 #include <optional>
 #include <utility>
 
+#include "common/hex_util.h"
 #include "common/logging.h"
 #include <ranges>
 #include "core/crypto/aes_util.h"
@@ -81,11 +82,15 @@ NCA::NCA(VirtualFile file_, const NCA* base_nca, bool allow_missing_base)
         auto titlekey =
             keys.GetKey(Core::Crypto::S128KeyType::Titlekey, rights_id_u128[1], rights_id_u128[0]);
         if (titlekey == Core::Crypto::Key128{}) {
+            LOG_ERROR(Loader, "Cannot decrypt {}: no title key for rights id {}", file->GetName(),
+                      Common::HexToString(rights_id));
             status = Loader::ResultStatus::ErrorMissingTitlekey;
             return;
         }
 
         if (!keys.HasKey(Core::Crypto::S128KeyType::Titlekek, master_key_id)) {
+            LOG_ERROR(Loader, "Cannot decrypt {}: titlekek_{:02x} is missing from prod.keys",
+                      file->GetName(), master_key_id);
             status = Loader::ResultStatus::ErrorMissingTitlekek;
             return;
         }

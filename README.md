@@ -192,6 +192,9 @@ source and author in its message.
   linear-attachment and zero-layer guards from
   [27226d2568c99c70cf78aa37adaf98b60457b2e5](https://github.com/zortos293/Eglantine/commit/27226d2568c99c70cf78aa37adaf98b60457b2e5).
   Paulo Tumabing: 32-bit global `ATOM.CAS`, adapted to Orchid's storage lowering and atomic routing.
+  Daniel Jesús Martín Flores: fix unsigned bitfield folding at the edges of a 32-bit word.
+- [kurebeyashi-noah/Lichii](https://github.com/kurebeyashi-noah/Lichii) (Kurebayashi): bind both words
+  of 64-bit texture-handle reads and preserve immediate phi operands in SPIR-V.
 - [Djihads80/Eglantine](https://github.com/Djihads80/Eglantine) and its contributors: merged
   regularly. Idle staging buffers freed (Takoroka), the RangeSet empty-query guard (néo Luigi),
   test fixes (kraibse).

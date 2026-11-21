@@ -449,6 +449,26 @@ std::size_t HLERequestContext::WriteBufferC(const void* buffer, std::size_t size
     return size;
 }
 
+void HLERequestContext::ReadOutputBuffer(Common::ScratchBuffer<u8>& output, bool use_buffer_b,
+                                         std::size_t buffer_index) const {
+    const auto read = [&](const auto& descriptors) {
+        if (buffer_index >= descriptors.size()) {
+            output.resize_destructive(0);
+            return;
+        }
+        const auto& descriptor = descriptors[buffer_index];
+        output.resize_destructive(descriptor.Size());
+        if (output.size() != 0) {
+            memory.ReadBlock(descriptor.Address(), output.data(), output.size());
+        }
+    };
+    if (use_buffer_b) {
+        read(BufferDescriptorB());
+    } else {
+        read(BufferDescriptorC());
+    }
+}
+
 std::size_t HLERequestContext::GetReadBufferSize(std::size_t buffer_index) const {
     const bool is_buffer_a{BufferDescriptorA().size() > buffer_index &&
                            BufferDescriptorA()[buffer_index].Size()};

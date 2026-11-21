@@ -342,13 +342,14 @@ void ReadInArgument(bool is_domain, CallArguments& args, const u8* raw_data, HLE
         } else if constexpr (ArgumentTraits<ArgType>::Type == ArgumentType::OutBuffer) {
             using ElementType = typename ArgType::Type;
 
-            // Set up scratch buffer.
             auto& buffer = temp[OutBufferIndex];
-            if (ctx.CanWriteBuffer(OutBufferIndex)) {
-                buffer.resize_destructive(ctx.GetWriteBufferSize(OutBufferIndex));
-            } else {
-                buffer.resize_destructive(0);
+            bool use_buffer_b = (ArgType::Attr & BufferAttr_HipcMapAlias) != 0;
+            if constexpr (ArgType::Attr & BufferAttr_HipcAutoSelect) {
+                const auto& descriptors = ctx.BufferDescriptorB();
+                use_buffer_b = OutBufferIndex < descriptors.size() &&
+                               descriptors[OutBufferIndex].Size() != 0;
             }
+            ctx.ReadOutputBuffer(buffer, use_buffer_b, OutBufferIndex);
 
             ElementType* ptr = (ElementType*) buffer.data();
             size_t size = buffer.size() / sizeof(ElementType);

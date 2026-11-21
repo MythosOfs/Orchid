@@ -13,6 +13,12 @@
 #include <vector>
 #include "core/file_sys/vfs/vfs.h"
 
+#undef CreateFile
+#undef CopyFile
+#undef MoveFile
+#undef DeleteFile
+#undef CreateDirectory
+
 namespace FileSys {
 
 // An implementation of VfsFile that is backed by a statically-sized array

@@ -248,6 +248,15 @@ TEST_CASE("NX: the program index selects a secondary program", "[core][nx]") {
     }
 }
 
+TEST_CASE("NX: a fresh System has an empty content provider", "[core][nx]") {
+    ScopedSystemTestContext environment;
+    Core::System system;
+    CHECK_FALSE(system.GetContentProvider().HasEntry(ApplicationId,
+                                                     FileSys::ContentRecordType::Program));
+    CHECK_FALSE(system.GetContentProviderUnion().HasEntry(ApplicationId,
+                                                          FileSys::ContentRecordType::Program));
+}
+
 TEST_CASE("NX: a standalone update shows its version and can be disabled", "[core][nx]") {
     ScopedSystemTestContext environment;
     Core::System system;

@@ -69,23 +69,35 @@ TEST_CASE("Unknown commands: auto stub replies every time and logs once", "[.][s
         Settings::values.censor_username.SetValue(previous_censor);
         Common::FS::SetEdenPath(Common::FS::EdenPath::LogDir, previous_log_dir);
     };
-    // One directory per process, as the backend keeps its file open until the process exits; the
-    // next run removes those not written for a while.
-    namespace fs = std::filesystem;
-    const auto logs = fs::temp_directory_path() / "orchid-auto-stub-logs";
-    std::error_code ignored;
-    for (const auto& old : fs::directory_iterator{logs, ignored}) {
-        auto written = fs::last_write_time(old.path() / "orchid_log.txt", ignored);
-        if (ignored) {
-            written = fs::last_write_time(old.path(), ignored);
+    // One directory per process, removed at exit: the backend keeps its file open until then.
+    static const auto log_dir = [] {
+        namespace fs = std::filesystem;
+        const auto logs = fs::temp_directory_path() / "orchid-auto-stub-logs";
+        fs::create_directories(logs);
+#ifdef _WIN32
+        // Windows cannot delete an open file, so the exit cleanup fails there, and this removes
+        // only the directories of runs that have ended.
+        std::error_code ignored;
+        if (!fs::is_symlink(logs)) {
+            for (const auto& old : fs::directory_iterator{logs, ignored}) {
+                if (!old.is_symlink(ignored) && old.is_directory(ignored)) {
+                    fs::remove_all(old.path(), ignored);
+                }
+            }
         }
-        if (!ignored && fs::file_time_type::clock::now() - written > std::chrono::minutes{10}) {
-            fs::remove_all(old.path(), ignored);
+#endif
+        auto count = std::chrono::system_clock::now().time_since_epoch().count();
+        fs::path dir = logs / std::to_string(count);
+        while (!fs::create_directory(dir)) {
+            dir = logs / std::to_string(++count);
         }
-    }
-    static const auto log_dir =
-        logs / std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
-    fs::create_directories(log_dir);
+        return dir;
+    }();
+    static const bool cleanup_registered = std::atexit([] {
+        std::error_code ignored;
+        std::filesystem::remove_all(log_dir, ignored);
+    }) == 0;
+    REQUIRE(cleanup_registered);
     Common::FS::SetEdenPath(Common::FS::EdenPath::LogDir, log_dir);
     // The log would replace a user name like "test" inside the searched lines.
     Settings::values.censor_username.SetValue(false);

@@ -70,6 +70,15 @@ The code is almost entirely C++. For symbol questions (definition, references, c
   and `ast-grep run -l cpp -p '<pattern>' [--rewrite '<new>'] <dir>` (structural search and
   multi-file rewrite). After a rewrite, build and run the tests.
 
+## Code comments: ADRs instead
+
+Code in `src/` carries no comments: name things so the code reads on its own, and write a
+non-obvious decision or reverse-engineered fact into the matching ADR in `docs/adr/`
+([0001](docs/adr/0001-no-code-comments.md)). The pre-commit hook runs
+`python3 tools/comments.py check --staged`, which fails when a file has more comment lines than
+`tools/comment-baseline.txt` allows. Code ported from upstream or forks arrives with comments:
+delete the ported ones in the same change. To clear a whole section: `/delete-comment`.
+
 ## Expect tests
 
 Tests tagged `[expect]` compare a text dump (e.g. shader IR) with a reference file in

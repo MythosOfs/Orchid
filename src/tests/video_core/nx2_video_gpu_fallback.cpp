@@ -21,8 +21,6 @@ using Tegra::Host1x::Nx2VideoDecoder;
 
 namespace {
 
-// Four 64x64 H.264 baseline frames (x264): keyframe, frame, keyframe with repeated parameter
-// sets, frame, each led by an access unit delimiter.
 constexpr std::array<u8, 825> clip{
     0x00, 0x00, 0x00, 0x01, 0x09, 0x10, 0x00, 0x00, 0x00, 0x01, 0x67, 0x42, 0xc0, 0x0a, 0xda, 0x10,
     0x9b, 0x01, 0x10, 0x00, 0x00, 0x03, 0x00, 0x10, 0x00, 0x00, 0x03, 0x01, 0x40, 0xf1, 0x22, 0x6a,
@@ -78,8 +76,6 @@ constexpr std::array<u8, 825> clip{
     0xaf, 0x08, 0xbc, 0x3d, 0x8c, 0x07, 0x38, 0x5a, 0xfc
 };
 
-// Six 64x64 H.264 main profile frames (x264) in decode order I P B I P B: the decoder holds each
-// I and P frame back until the B frame before it.
 constexpr std::array<u8, 1017> reordered_clip{
     0x00, 0x00, 0x00, 0x01, 0x09, 0x10, 0x00, 0x00, 0x00, 0x01, 0x67, 0x4d, 0x40, 0x0a, 0xf6, 0x21,
     0x36, 0x02, 0x20, 0x00, 0x00, 0x03, 0x00, 0x20, 0x00, 0x00, 0x03, 0x02, 0x81, 0xe2, 0x44, 0xa7,
@@ -161,7 +157,6 @@ std::vector<Packet> Packets(std::span<const u8> stream = clip) {
     return packets;
 }
 
-/// Moves the SPS and PPS out of the keyframes into a binary configuration.
 std::vector<Packet> PacketsWithoutParameterSets(Packet& configuration) {
     constexpr std::array<u8, 5> sps{0, 0, 0, 1, 0x67};
     constexpr std::array<u8, 4> idr{0, 0, 1, 0x65};
@@ -191,7 +186,6 @@ public:
         decoder.emplace(configuration, fault);
     }
 
-    /// Decodes a whole video, with the fault set from packet `fault_from` on.
     std::vector<u64> Play(const std::vector<Packet>& packets, Nx2GpuDecodeFault fault,
                           size_t fault_from = 0) {
         std::vector<Nx2Picture> pictures;
@@ -222,7 +216,7 @@ std::span<const u8> Avc() {
 
 const std::vector<u64> all_frames{0, 1, 2, 3};
 
-} // namespace
+}
 
 TEST_CASE("Nx2 video decodes on the CPU when the host GPU decoder fails", "[nx2_video]") {
     REQUIRE(Packets().size() == 4);
@@ -396,8 +390,6 @@ struct HostProbe {
     bool rejected;
 };
 
-/// What the nx2 decoder outputs after the host GPU decoder gave these frame formats, with
-/// AV_PIX_FMT_NONE for a rejected packet and AV_PIX_FMT_YUV420P once the CPU took over.
 HostProbe Judge(std::span<const int> events) {
     const bool rejected = std::ranges::find(events, AV_PIX_FMT_NONE) != events.end();
     const auto frame =
@@ -405,7 +397,7 @@ HostProbe Judge(std::span<const int> events) {
     return {frame != events.end() && *frame == AV_PIX_FMT_NV12, rejected};
 }
 
-} // namespace
+}
 
 TEST_CASE("Nx2 video host GPU probe keeps a host GPU that rejects a later packet", "[nx2_video]") {
     constexpr std::array<int, 2> nv12_then_rejected{AV_PIX_FMT_NV12, AV_PIX_FMT_NONE};
@@ -419,8 +411,6 @@ TEST_CASE("Nx2 video host GPU probe keeps a host GPU that rejects a later packet
 }
 
 TEST_CASE("Nx2 video decodes on the host GPU when FFmpeg can", "[nx2_video]") {
-    // How FFmpeg on this host decodes the clip on the GPU: NV12 frames, its own CPU fallback or
-    // rejected packets. The probe drains and closes its decoder before the test opens one.
     const HostProbe probe = [] {
         FFmpeg::Decoder decoder{Tegra::Host1x::NvdecCommon::VideoCodec::H264};
         FFmpeg::HardwareContext hardware;
@@ -445,8 +435,6 @@ TEST_CASE("Nx2 video decodes on the host GPU when FFmpeg can", "[nx2_video]") {
                 const bool no_frame = std::ranges::all_of(
                     events, [](int event) { return event == AV_PIX_FMT_NONE; });
                 events.push_back(AV_PIX_FMT_NONE);
-                // Like the nx2 decoder, replay the taken packets and switch only if the CPU
-                // decoder accepts them and this one.
                 FFmpeg::DecoderContext cpu{decoder};
                 bool took = no_frame && cpu.OpenContext(decoder, {});
                 for (const auto& old : taken) {

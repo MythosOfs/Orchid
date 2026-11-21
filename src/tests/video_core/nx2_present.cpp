@@ -68,7 +68,6 @@ TEST_CASE("Native upscale uses active regions inside larger texture allocations"
     CHECK(subregion->source[0] == 16);
     CHECK(subregion->destination[1] == 16);
 
-    // Handheld Xenoblade Chronicles 2: word 0 is 160 although its blocks are 128 wide.
     const std::array<u32, 12> xenoblade{160, 40, 15, 1, 0, 0, 1279, 719, 0, 0, 1919, 1079};
     const auto handheld = Tegra::Engines::DecodeNativeUpscaleRegions(
         xenoblade, {128, 1, 1}, {40, 15, 1}, {1280, 720}, {3840, 2160});
@@ -104,7 +103,6 @@ TEST_CASE("Native upscale accepts only the formats it can copy", "[nx2_video]") 
     CHECK(IsNativeUpscaleFormat(TextureFormat::A8B8G8R8));
     CHECK(IsNativeUpscaleFormat(TextureFormat::B10G11R11));
     CHECK(IsNativeUpscaleFormat(TextureFormat::R16G16B16A16));
-    // Kirby and the Forgotten Land had these two in its constants around scene changes.
     CHECK_FALSE(IsNativeUpscaleFormat(TextureFormat::BC7U));
     CHECK_FALSE(IsNativeUpscaleFormat(TextureFormat::DXN1));
     CHECK_FALSE(IsNativeUpscaleFormat(TextureFormat::R16G16));

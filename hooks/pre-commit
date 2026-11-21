@@ -28,3 +28,8 @@ If you know what you are doing, you can try 'git commit --no-verify' to bypass t
 EOF
     exit 1
 fi
+
+# Comments are banned in src/ with a per-file ratchet (docs/adr/0001-no-code-comments.md).
+if [ -f tools/comments.py ]; then
+    python3 tools/comments.py check --staged
+fi

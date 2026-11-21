@@ -9,16 +9,12 @@
 
 namespace Service {
 
-// Pixel format IDs in InterModuleUserImagePreference word 6.
 enum class Nx2NativeImageFormat : u32 {
     Rgba8 = 1,
     Rgb10A2 = 4,
     Rgba16Float = 5,
 };
 
-// The colour space of a presented native image. FP16 is linear scRGB by its format. RGB10A2 holds
-// PQ BT.2020 only while the game was told the display is HDR: Fire Emblem: Fortune's Weave
-// presents SDR in RGB10A2.
 inline Tegra::ColorSpace Nx2NativeImageColorSpace(Nx2NativeImageFormat format, bool told_hdr) {
     switch (format) {
     case Nx2NativeImageFormat::Rgba16Float:
@@ -30,10 +26,6 @@ inline Tegra::ColorSpace Nx2NativeImageColorSpace(Nx2NativeImageFormat format, b
     }
 }
 
-// Block-linear layout of an InterModuleUserImagePreference (16 words): word 2 holds
-// (width - 1) | (height - 1) << 16, word 4 the block height (log2 of GOB rows), word 5 the row
-// pitch in 64-byte GOBs. Formula from changes.patch (native_image_layout.h); preferences outside
-// it fall back to the format's bytes per pixel (word 6: 8 for FP16, else 4) and 128-row blocks.
 struct Nx2ImageLayout {
     u32 width;
     u32 height;
@@ -61,11 +53,8 @@ inline Nx2ImageLayout Nx2CalculateImageLayout(const u32* preference) {
     }
     const u64 block_rows = u64{1} << layout.block_height_log2;
     layout.size = layout.pitch * Common::AlignUp(u64{layout.height}, block_rows);
-    // 4 KiB, not one block (8 KiB at 128 rows): Star Fox places its window textures at offset
-    // 0x1000 in their memory, and NativeWindow::Initialize fails on a misaligned offset, leaving
-    // the NVN window without a native window (null call in NativeWindow::Acquire).
     layout.alignment = 0x1000;
     return layout;
 }
 
-} // namespace Service
+}

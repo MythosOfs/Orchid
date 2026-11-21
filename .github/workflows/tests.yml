@@ -13,6 +13,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  comments:
+    name: Comment ratchet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/comments_test.py && python3 tools/comments.py check
+
   tests:
     name: Unit tests (windows-x86_64)
     runs-on: windows-2022

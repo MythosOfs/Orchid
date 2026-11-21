@@ -87,14 +87,13 @@ public:
     }
 
     auto TakeSamples() {
-        // ReleaseBuffer applies the microphone boost; cancel it for this sample-queue check.
         SetSystemVolume(0.125f);
         auto samples = ReleaseBuffer(device_channels);
         SetSystemVolume(1.0f);
         return samples;
     }
 };
-} // namespace
+}
 
 TEST_CASE("Sysmix six-channel PCM reaches the sink and stereo downmix", "[sysmix]") {
     Core::System system;
@@ -118,7 +117,6 @@ TEST_CASE("Sysmix six-channel PCM reaches the sink and stereo downmix", "[sysmix
         if (output_channels == 6) {
             REQUIRE(result == std::vector<s16>(source.begin(), source.end()));
         } else {
-            // SinkStream's established coefficients: front + .596 center + .354 LFE + .707 rear.
             REQUIRE(result == std::vector<s16>{7739, 9446});
         }
         sink.ClearQueue();

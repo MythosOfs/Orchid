@@ -81,4 +81,4 @@ inline std::array<u32, 32> Nx2DecoderCpuImageDescriptor(const Nx2DecoderImageLay
     return words;
 }
 
-} // namespace Service
+}

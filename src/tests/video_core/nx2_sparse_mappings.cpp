@@ -54,7 +54,7 @@ struct CleanRegistry {
     }
 };
 
-} // Anonymous namespace
+}
 
 TEST_CASE("Nx2 destroyed memory retires its backing before the CPU address is registered again",
           "[nx2_mapping]") {

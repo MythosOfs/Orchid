@@ -110,7 +110,6 @@ TEST_CASE("Native image colour space follows the HDR answer, not the format",
           "[nx2_image_layout]") {
     using Service::Nx2NativeImageColorSpace;
     using Service::Nx2NativeImageFormat;
-    // Fortune's Weave: SDR in RGB10A2 while told SDR.
     REQUIRE(Nx2NativeImageColorSpace(Nx2NativeImageFormat::Rgb10A2, false) ==
             Tegra::ColorSpace::RGB709);
     REQUIRE(Nx2NativeImageColorSpace(Nx2NativeImageFormat::Rgb10A2, true) ==

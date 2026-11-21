@@ -147,6 +147,22 @@ void SwizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const Ima
                                                const ImageInfo& overlap_info, u32 new_level,
                                                u32 overlap_level, bool strict_size) noexcept;
 
+[[nodiscard]] bool IsPaddedWidth(const ImageInfo& info, u32 width) noexcept;
+
+[[nodiscard]] u32 PaddedTargetWidth(const ImageInfo& info, u32 clip_right) noexcept;
+
+[[nodiscard]] u32 PaddedBlitWidth(const ImageInfo& info, s32 x0, s32 x1) noexcept;
+
+struct RenderTargetClip {
+    bool Update(u32 clip_right) noexcept {
+        const bool moved = clip_right != right;
+        right = clip_right;
+        return moved;
+    }
+
+    u32 right = 0;
+};
+
 [[nodiscard]] bool IsPitchLinearSameSize(const ImageInfo& lhs, const ImageInfo& rhs,
                                          bool strict_size) noexcept;
 

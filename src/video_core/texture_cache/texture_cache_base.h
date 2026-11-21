@@ -43,6 +43,7 @@
 #include "video_core/texture_cache/image_view_base.h"
 #include "video_core/texture_cache/render_targets.h"
 #include "video_core/texture_cache/types.h"
+#include "video_core/texture_cache/util.h"
 #include "video_core/textures/texture.h"
 
 namespace Tegra {
@@ -438,6 +439,8 @@ private:
     /// Find or create an image view for the depth buffer
     [[nodiscard]] ImageViewId FindDepthBuffer();
 
+    void ClipPaddedTarget(ImageInfo& info) const;
+
     /// True when the current draw state can write the depth or stencil buffer
     [[nodiscard]] bool WritesDepthStencil() const;
 
@@ -561,6 +564,7 @@ private:
     std::deque<TextureCacheGPUMap> gpu_page_table_storage;
 
     RenderTargets render_targets;
+    RenderTargetClip render_target_clip;
     u64 render_targets_serial = 0;
     u32 rt_active_mask = 0;
     std::array<ImageId, 8> rt_image_id{};

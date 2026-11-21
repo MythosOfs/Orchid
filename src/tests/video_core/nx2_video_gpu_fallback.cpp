@@ -257,29 +257,96 @@ TEST_CASE("Nx2 video keeps the host GPU decoder once it gave a picture", "[nx2_v
     }
 }
 
-TEST_CASE("Nx2 video falls back from the next keyframe while the host GPU gave no picture",
+TEST_CASE("Nx2 video replays the packets the host GPU took before it rejected one",
           "[nx2_video]") {
-    auto packets = Packets(reordered_clip);
+    const auto packets = Packets(reordered_clip);
     REQUIRE(packets.size() == 6);
-    Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Packet, Avc()};
-    decoder.decoder->SetGpuDecodeFault(Nx2GpuDecodeFault::None);
-    std::vector<Nx2Picture> pictures;
-    decoder.decoder->Decode(packets[0], 100, pictures);
-    REQUIRE(pictures.empty());
-    packets.erase(packets.begin());
-    SECTION("with timestamps") {
-        // The frame buffered on the host GPU is lost; the CPU starts at the keyframe in packet 2.
-        CHECK(decoder.Play(packets, Nx2GpuDecodeFault::Packet) == std::vector<u64>{2, 4, 3});
-    }
-    SECTION("without timestamps") {
-        decoder.decoder->SetGpuDecodeFault(Nx2GpuDecodeFault::Packet);
-        for (const auto& packet : packets) {
-            decoder.decoder->Decode(packet, static_cast<u64>(AV_NOPTS_VALUE), pictures);
+    for (const u64 base : {u64{0}, static_cast<u64>(AV_NOPTS_VALUE)}) {
+        Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Packet, Avc()};
+        std::vector<Nx2Picture> pictures;
+        for (size_t i = 0; i < packets.size(); ++i) {
+            decoder.decoder->SetGpuDecodeFault(i == 1 ? Nx2GpuDecodeFault::Packet
+                                                      : Nx2GpuDecodeFault::None);
+            decoder.decoder->Decode(packets[i], base == 0 ? i : base, pictures);
+            if (i == 0) {
+                REQUIRE(pictures.empty());
+            }
         }
         decoder.decoder->Drain(pictures);
-        CHECK(pictures.size() == 3);
-        CHECK(std::ranges::none_of(pictures, [](const Nx2Picture& p) { return p.pts == 100; }));
+        std::vector<u64> pts;
+        for (const auto& picture : pictures) {
+            pts.push_back(picture.pts);
+        }
+        CHECK(pts == (base == 0 ? std::vector<u64>{0, 2, 1, 3, 5, 4} : std::vector<u64>(6, base)));
     }
+}
+
+TEST_CASE("Nx2 video keeps the host GPU decoder when the CPU rejects a replayed packet",
+          "[nx2_video]") {
+    SECTION("with the keyframe buffered on the host GPU") {
+        const auto packets = Packets(reordered_clip);
+        Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Packet, Avc()};
+        std::vector<Nx2Picture> pictures;
+        for (size_t i = 0; i < packets.size(); ++i) {
+            decoder.decoder->SetGpuDecodeFault(i == 1 ? Nx2GpuDecodeFault::Replay
+                                                      : Nx2GpuDecodeFault::None);
+            decoder.decoder->Decode(packets[i], i, pictures);
+            if (i < 2) {
+                REQUIRE(pictures.empty());
+            }
+        }
+        decoder.decoder->Drain(pictures);
+        REQUIRE(!pictures.empty());
+        CHECK(pictures[0].pts == 0);
+    }
+    const auto packets = Packets();
+    for (const size_t replayed : {size_t{1}, size_t{2}}) {
+        Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Hold, Avc()};
+        std::vector<Nx2Picture> pictures(1);
+        for (size_t i = 0; i < replayed; ++i) {
+            decoder.decoder->Decode(packets[i], i, pictures);
+        }
+        decoder.decoder->SetGpuDecodeFault(Nx2GpuDecodeFault::Replay);
+        decoder.decoder->Decode(packets[2], 2, pictures);
+        CHECK(pictures.size() == 1);
+        decoder.decoder->Reset();
+        CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::Packet) == all_frames);
+    }
+}
+
+TEST_CASE("Nx2 video replays at most 64 packets", "[nx2_video]") {
+    const auto packets = Packets();
+    for (const size_t taken : {size_t{64}, size_t{65}}) {
+        Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Hold, Avc()};
+        std::vector<Nx2Picture> pictures;
+        for (size_t i = 0; i < taken; ++i) {
+            decoder.decoder->Decode(packets[i % 4], i, pictures);
+        }
+        decoder.decoder->SetGpuDecodeFault(Nx2GpuDecodeFault::Packet);
+        decoder.decoder->Decode(packets[2], 1000, pictures);
+        decoder.decoder->Drain(pictures);
+        if (taken == 65) {
+            CHECK(pictures.empty());
+            continue;
+        }
+        REQUIRE(pictures.size() == 65);
+        CHECK(pictures[63].pts == 63);
+        CHECK(pictures[64].pts == 1000);
+    }
+}
+
+TEST_CASE("Nx2 video stamps a replayed frame without timestamp with its own", "[nx2_video]") {
+    const auto packets = Packets();
+    const auto none = static_cast<u64>(AV_NOPTS_VALUE);
+    Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Hold, Avc()};
+    std::vector<Nx2Picture> pictures;
+    decoder.decoder->Decode(packets[0], none, pictures);
+    decoder.decoder->SetGpuDecodeFault(Nx2GpuDecodeFault::Packet);
+    decoder.decoder->Decode(packets[1], 1000, pictures);
+    decoder.decoder->Drain(pictures);
+    REQUIRE(pictures.size() == 2);
+    CHECK(pictures[0].pts == none);
+    CHECK(pictures[1].pts == 1000);
 }
 
 TEST_CASE("Nx2 video keeps the host GPU decoder when the CPU decoder does not open",
@@ -348,17 +415,28 @@ TEST_CASE("Nx2 video decodes on the host GPU when FFmpeg can", "[nx2_video]") {
                 events.push_back(frame->GetFrame()->format);
             }
         };
+        std::vector<Packet> taken;
         for (auto packet : Packets()) {
             const size_t size = packet.size();
             packet.resize(size + AV_INPUT_BUFFER_PADDING_SIZE);
             const FFmpeg::Packet sent{std::span{packet.data(), size}};
-            if (!context.SendPacket(sent)) {
+            if (context.SendPacket(sent)) {
+                taken.push_back(packet);
+            } else {
                 const bool no_frame = std::ranges::all_of(
                     events, [](int event) { return event == AV_PIX_FMT_NONE; });
                 events.push_back(AV_PIX_FMT_NONE);
-                // Like the nx2 decoder, switch only if a CPU decoder accepts the packet.
+                // Like the nx2 decoder, replay the taken packets and switch only if the CPU
+                // decoder accepts them and this one.
                 FFmpeg::DecoderContext cpu{decoder};
-                if (no_frame && cpu.OpenContext(decoder, {}) && cpu.SendPacket(sent)) {
+                bool took = no_frame && cpu.OpenContext(decoder, {});
+                for (const auto& old : taken) {
+                    took = took && cpu.SendPacket(FFmpeg::Packet{std::span{
+                                       old.data(), old.size() - AV_INPUT_BUFFER_PADDING_SIZE}});
+                    while (took && cpu.ReceiveFrame()) {
+                    }
+                }
+                if (took && cpu.SendPacket(sent)) {
                     events.push_back(AV_PIX_FMT_YUV420P);
                     break;
                 }

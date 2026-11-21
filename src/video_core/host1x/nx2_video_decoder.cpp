@@ -8,6 +8,7 @@
 #include <optional>
 #include <set>
 #include <string_view>
+#include <utility>
 
 #include "common/logging.h"
 #include "common/settings.h"
@@ -154,6 +155,9 @@ struct Nx2VideoDecoder::Impl {
     /// Timestamps of submitted frames not yet output. Frames copied back from a host GPU decoder
     /// lose theirs and take the earliest one instead.
     std::multiset<u64> pending_pts;
+    /// Packets the host GPU accepted before its first picture, replayed if the CPU takes over.
+    std::vector<std::pair<std::vector<u8>, u64>> gpu_packets;
+    bool gpu_packets_lost{};
     std::vector<u8> packet; ///< FFmpeg reads up to AV_INPUT_BUFFER_PADDING_SIZE past the data
 
     ~Impl() {
@@ -186,17 +190,58 @@ struct Nx2VideoDecoder::Impl {
         on_gpu = false;
     }
 
-    bool Send(FFmpeg::DecoderContext& target, const FFmpeg::Packet& packet, bool gpu) const {
-        const int ret = gpu && gpu_fault == Nx2GpuDecodeFault::Busy ? AVERROR(EAGAIN)
+    static bool Rejected(int ret) {
+        return ret < 0 && ret != AVERROR_EOF && ret != AVERROR(EAGAIN);
+    }
+
+    int Send(FFmpeg::DecoderContext& target, const FFmpeg::Packet& packet, bool gpu) const {
+        const int ret = gpu && gpu_fault == Nx2GpuDecodeFault::Busy   ? AVERROR(EAGAIN)
+                        : gpu && gpu_fault == Nx2GpuDecodeFault::Hold ? 0
                         : gpu && (gpu_fault == Nx2GpuDecodeFault::Packet ||
-                                  gpu_fault == Nx2GpuDecodeFault::NoCpu)
+                                  gpu_fault == Nx2GpuDecodeFault::NoCpu ||
+                                  gpu_fault == Nx2GpuDecodeFault::Replay)
                             ? AVERROR_INVALIDDATA
                             : avcodec_send_packet(target.GetCodecContext(), packet.GetPacket());
-        if (ret == 0 || ret == AVERROR_EOF || ret == AVERROR(EAGAIN)) {
-            return true;
+        if (Rejected(ret)) {
+            LOG_ERROR(HW_GPU, "nx2 video: avcodec_send_packet error {}", ret);
         }
-        LOG_ERROR(HW_GPU, "nx2 video: avcodec_send_packet error {}", ret);
-        return false;
+        return ret;
+    }
+
+    bool Replay(const FFmpeg::Packet& packet, u64 pts, std::vector<Nx2Picture>& pictures) {
+        for (const auto& [data, data_pts] : gpu_packets) {
+            FFmpeg::Packet replay{
+                std::span<const u8>{data.data(), data.size() - AV_INPUT_BUFFER_PADDING_SIZE}};
+            replay.GetPacket()->pts = static_cast<s64>(data_pts);
+            pending_pts.insert(data_pts);
+            if ((gpu_fault == Nx2GpuDecodeFault::Replay && &data == &gpu_packets.back().first) ||
+                Rejected(Send(*context, replay, false))) {
+                return false;
+            }
+            Receive(pictures);
+        }
+        pending_pts.insert(pts);
+        return !Rejected(Send(*context, packet, false));
+    }
+
+    void FallBackToCpu(const FFmpeg::Packet& packet, u64 pts, std::vector<Nx2Picture>& pictures) {
+        auto cpu = gpu_packets_lost ? nullptr : OpenCpu();
+        if (!cpu) {
+            return;
+        }
+        auto gpu = std::exchange(context, std::move(cpu));
+        auto gpu_pts = std::exchange(pending_pts, {});
+        const size_t count = pictures.size();
+        if (Replay(packet, pts, pictures)) {
+            LOG_WARNING(HW_GPU, "nx2 video: host GPU decoder rejected the stream, decoding on the CPU");
+            gpu.reset();
+            UseCpu(std::move(context));
+            return;
+        }
+        context = std::move(gpu);
+        pending_pts = std::move(gpu_pts);
+        pictures.resize(count);
+        received = false;
     }
 
     void Receive(std::vector<Nx2Picture>& pictures) {
@@ -285,14 +330,22 @@ void Nx2VideoDecoder::Decode(std::span<const u8> data, u64 pts, std::vector<Nx2P
         impl->pending_pts.erase(impl->pending_pts.begin());
     }
     impl->pending_pts.insert(pts);
-    if (!impl->Send(*impl->context, packet, impl->on_gpu) && impl->on_gpu && !impl->received) {
-        if (auto cpu = impl->OpenCpu(); cpu && impl->Send(*cpu, packet, false)) {
-            LOG_WARNING(HW_GPU, "nx2 video: host GPU decoder rejected the stream, decoding on the CPU");
-            impl->UseCpu(std::move(cpu));
-            impl->pending_pts = {pts};
+    const bool waiting = impl->on_gpu && !impl->received;
+    const int ret = impl->Send(*impl->context, packet, impl->on_gpu);
+    if (Impl::Rejected(ret)) {
+        if (waiting) {
+            impl->FallBackToCpu(packet, pts, pictures);
         }
+    } else if (ret == 0 && waiting && impl->gpu_packets.size() == 64) {
+        impl->gpu_packets.clear();
+        impl->gpu_packets_lost = true;
+    } else if (ret == 0 && waiting && !impl->gpu_packets_lost) {
+        impl->gpu_packets.emplace_back(impl->packet, pts);
     }
     impl->Receive(pictures);
+    if (impl->received || !impl->on_gpu) {
+        impl->gpu_packets.clear();
+    }
 }
 
 void Nx2VideoDecoder::Drain(std::vector<Nx2Picture>& pictures) {
@@ -309,6 +362,8 @@ void Nx2VideoDecoder::Reset() {
         avcodec_flush_buffers(impl->context->GetCodecContext());
     }
     impl->pending_pts.clear();
+    impl->gpu_packets.clear();
+    impl->gpu_packets_lost = false;
     impl->h264_packets.Reset();
 }
 

@@ -5,6 +5,9 @@
 
 #include <atomic>
 #include <chrono>
+#include <utility>
+
+#include "common/scope_exit.h"
 
 namespace VideoCore {
 class ShaderNotify {
@@ -17,6 +20,22 @@ public:
 
     void MarkShaderBuilding() noexcept {
         ++num_building;
+    }
+
+    template <typename Work>
+    static auto TrackBuild(ShaderNotify* notify, Work work) {
+        if (notify) {
+            notify->MarkShaderBuilding();
+        }
+        auto complete = detail::MakeScopeGuard([notify] {
+            if (notify) {
+                notify->MarkShaderComplete();
+            }
+        });
+        return [complete = std::move(complete), work = std::move(work)]() mutable {
+            const auto on_exit = std::move(complete);
+            work();
+        };
     }
 
 private:

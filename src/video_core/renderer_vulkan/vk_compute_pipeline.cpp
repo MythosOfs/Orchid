@@ -58,9 +58,6 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
             "Compute shader {:016X} needs {} storage buffers, device supports {}",
             shader_hash, storage_buffers, storage_buffer_limit);
     }
-    if (shader_notify) {
-        shader_notify->MarkShaderBuilding();
-    }
     std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(),
                 uniform_buffer_sizes.begin());
     num_descriptor_entries = NumDescriptorEntries(info);
@@ -94,7 +91,7 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
         }
     }
 
-    auto func{[this, shader_notify, pipeline_statistics] {
+    auto func = VideoCore::ShaderNotify::TrackBuild(shader_notify, [this, pipeline_statistics] {
         if (hitch_trace_queued_ns != 0) {
             PipelineHitchTrace::Report(PipelineHitchTrace::Phase::BuildQueue, "compute-build-queue",
                                        shader_hash, hitch_trace_queued_ns,
@@ -151,9 +148,6 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
             std::scoped_lock lock{build_mutex};
             is_built = true;
             build_condvar.notify_one();
-            if (shader_notify) {
-                shader_notify->MarkShaderComplete();
-            }
             return;
         }
 
@@ -173,10 +167,7 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
         std::scoped_lock lock{build_mutex};
         is_built = true;
         build_condvar.notify_one();
-        if (shader_notify) {
-            shader_notify->MarkShaderComplete();
-        }
-    }};
+    });
     if (thread_worker) {
         if (Common::HitchDiagnostic::Enabled()) {
             hitch_trace_queued_ns = Common::HitchDiagnostic::NowNs();

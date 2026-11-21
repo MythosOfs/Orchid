@@ -185,7 +185,9 @@ source and author in its message.
 - [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (Zortos), the project Orchid
   started from: paged scalar guest memory access, SPSCQueue value lifetime, timed Event waits on
   Windows, GPU teardown order, buffer cache and query fixes, native Ampere nanosecond timestamps,
-  the separate pipeline cache file names.
+  the separate pipeline cache file names, an empty content provider for a fresh System, the NPDM
+  platform reset on reload, update control metadata in NUPs, and keeping a Switch 2 Edition base
+  program over a legacy update.
   Radu Ursache: no mesh pipelines without `VK_EXT_mesh_shader`.
   Kaj (co-authored with Claude Opus 5.5): skip guest uploads for new render targets fully
   overwritten by a clear, adapted with framebuffer render-area, transformed-scissor,
@@ -195,6 +197,8 @@ source and author in its message.
   Daniel Jesús Martín Flores: fix unsigned bitfield folding at the edges of a 32-bit word.
 - [kurebeyashi-noah/Lichii](https://github.com/kurebeyashi-noah/Lichii) (Kurebayashi): bind both words
   of 64-bit texture-handle reads and preserve immediate phi operands in SPIR-V.
+- [tomvita/Lichii](https://github.com/tomvita/Lichii) (tomvita): a cancelled game list rescan keeps
+  the registered updates, so Restart boots the updated version.
 - [Djihads80/Eglantine](https://github.com/Djihads80/Eglantine) and its contributors: merged
   regularly. Idle staging buffers freed (Takoroka), the RangeSet empty-query guard (néo Luigi),
   test fixes (kraibse).

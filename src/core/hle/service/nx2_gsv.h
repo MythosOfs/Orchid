@@ -89,6 +89,9 @@
 
 namespace Service {
 
+inline constexpr u32 HostSyncpoints =
+    static_cast<u32>(Tegra::Host1x::SyncpointManager::NUM_MAX_SYNCPOINTS);
+
 template <class T>
 inline Kernel::KClientSession* CreateRawSession(Core::System& system, HLERequestContext& ctx,
                                                 std::shared_ptr<T> iface) {
@@ -138,11 +141,6 @@ inline void ReturnRawSession(Core::System& system, HLERequestContext& ctx, std::
     rb.Push(ResultSuccess);
     rb.PushCopyObjects(ctx, *client);
 }
-
-class INx2NvsrvSession final : public ServiceFramework<INx2NvsrvSession> {
-public:
-    explicit INx2NvsrvSession(Core::System& system_) : ServiceFramework{system_, "nx2:nvsrv"} {}
-};
 
 class INx2GpuTimeSession final : public ServiceFramework<INx2GpuTimeSession> {
 public:
@@ -297,8 +295,6 @@ private:
         }
         return false;
     }
-
-    static constexpr u32 HostSyncpoints = 192;
 
     KernelHelpers::ServiceContext m_context;
     std::map<u32, Kernel::KEvent*> m_events;
@@ -1382,8 +1378,8 @@ private:
         if (frames_ahead == 1 || (frames_ahead == -1 && !WaitForFrame(~w[22], w[24], true))) {
             LOG_DEBUG(Service, "nx2:vi2 present #{} fence ({}, {:#x}), waiting for ({}, {:#x}); now {:#x}",
                       m_presents, ~w[22], w[24], m_previous_fence_id, m_previous_fence_value,
-                      ~w[22] < 192 ? system.Host1x().GetSyncpointManager().GetGuestSyncpointValue(~w[22]) : 0U);
-            const bool gpu_behind = frames_ahead == 1 && m_previous_fence_id < 192 &&
+                      ~w[22] < HostSyncpoints ? system.Host1x().GetSyncpointManager().GetGuestSyncpointValue(~w[22]) : 0U);
+            const bool gpu_behind = frames_ahead == 1 && m_previous_fence_id < HostSyncpoints &&
                                     !system.Host1x().GetSyncpointManager().IsReadyGuest(
                                         m_previous_fence_id, m_previous_fence_value);
             WaitForFrame(m_previous_fence_id, m_previous_fence_value);
@@ -1583,7 +1579,7 @@ private:
     }
 
     bool WaitForFrame(u32 fence_id, u32 fence_value, bool unless_gpu_waits = false) {
-        if (fence_id >= 192) {
+        if (fence_id >= HostSyncpoints) {
             return true;
         }
         auto& syncpoints = system.Host1x().GetSyncpointManager();
@@ -1731,7 +1727,7 @@ private:
                                          : u16{},
         }};
         std::vector<Nvidia::NvFence> fences;
-        if (fence_id < 192) {
+        if (fence_id < HostSyncpoints) {
             fences.push_back({static_cast<s32>(fence_id), fence_value});
         }
         system.GPU().RequestComposite(std::move(layers), std::move(fences));
@@ -2277,8 +2273,6 @@ private:
     static constexpr u32 NoSyncpoint = ~0U;
     static constexpr size_t MaxQueuedInputs = 8;
     static constexpr size_t MaxDecodedAhead = 2;
-    static constexpr u32 HostSyncpoints = 192;
-
     void Log(HLERequestContext& ctx, std::string_view what) {
         const auto* w = ctx.CommandBuffer();
         if (Nx2FirstVideoCommand(GetServiceName(), ctx.GetCommand())) {
@@ -2990,8 +2984,6 @@ private:
     static constexpr u32 SyncptRoBitsOffset = 0x1100;
     static constexpr u32 SyncptRwSummaryOffset = 0x0;
     static constexpr u32 SyncptRwBitsOffset = 0x100;
-    static constexpr u32 HostSyncpoints = 192;
-
     void AttachSyncptMemory(HLERequestContext& ctx) {
         std::scoped_lock lock{m_syncpt_mutex};
         const auto* cmd_buf = ctx.CommandBuffer();

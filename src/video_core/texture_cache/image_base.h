@@ -125,6 +125,7 @@ struct ImageBase {
     bool has_scaled = false;
 
     size_t channel = 0;
+    size_t address_space = 0;
 
     ImageFlagBits flags = ImageFlagBits::CpuModified;
 

@@ -242,6 +242,10 @@ std::vector<char> ReadStaticPipelineCache(const std::filesystem::path& filename)
 /// write keeps the previous one. Returns whether the cache was replaced.
 bool WriteStaticPipelineCache(const std::filesystem::path& filename, std::span<const char> data);
 
+/// As above; unique_suffix names the temporary file, and a throw from it fails the save.
+bool WriteStaticPipelineCache(const std::filesystem::path& filename, std::span<const char> data,
+                              const std::function<std::string()>& unique_suffix);
+
 /// Calls create with data, and once more with nothing when the driver rejects non-empty data.
 void CreateStaticPipelineCache(std::span<const char> data,
                                const std::function<void(std::span<const char>)>& create);

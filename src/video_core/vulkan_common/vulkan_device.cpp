@@ -913,10 +913,22 @@ std::vector<char> ReadStaticPipelineCache(const std::filesystem::path& filename)
 }
 
 bool WriteStaticPipelineCache(const std::filesystem::path& filename, std::span<const char> data) {
-    // Unique per writer: two instances saving at once each rename a whole file.
-    std::random_device random;
+    return WriteStaticPipelineCache(filename, data, [] {
+        // Unique per writer: two instances saving at once each rename a whole file.
+        std::random_device random;
+        return fmt::format(".{:08x}{:08x}.tmp", random(), random());
+    });
+}
+
+bool WriteStaticPipelineCache(const std::filesystem::path& filename, std::span<const char> data,
+                              const std::function<std::string()>& unique_suffix) {
     auto temporary = filename;
-    temporary += fmt::format(".{:08x}{:08x}.tmp", random(), random());
+    try {
+        temporary += unique_suffix();
+    } catch (const std::exception& e) {
+        LOG_ERROR(Render_Vulkan, "Couldn't name a temporary static pipeline cache: {}", e.what());
+        return false;
+    }
     try {
         std::ofstream file(temporary, std::ios::binary | std::ios::trunc);
         file.exceptions(std::ofstream::failbit | std::ofstream::badbit);

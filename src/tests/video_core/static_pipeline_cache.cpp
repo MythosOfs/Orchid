@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -94,6 +95,16 @@ TEST_CASE("Static pipeline cache: a save replaces the file whole", "[video_core]
         CHECK(dir.Entries() == 1);
     }
 #endif
+
+    SECTION("a save that cannot name its temporary file keeps the previous cache") {
+        bool written = true;
+        CHECK_NOTHROW(written = Vulkan::WriteStaticPipelineCache(
+                          dir.cache, Bytes("lost"),
+                          []() -> std::string { throw std::runtime_error("no entropy"); }));
+        CHECK_FALSE(written);
+        CHECK(Vulkan::ReadStaticPipelineCache(dir.cache) == Bytes("second"));
+        CHECK(dir.Entries() == 1);
+    }
 
     SECTION("a save that cannot replace the file removes its temporary file") {
         const fs::path blocked = dir.path / "blocked";

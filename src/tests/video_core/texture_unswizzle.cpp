@@ -175,3 +175,38 @@ TEST_CASE("Texture unswizzle preserves independent array layer boundaries",
         CHECK(result == expected);
     }
 }
+
+TEST_CASE("GOB swizzle matches the scalar byte layout and preserves padding",
+          "[video_core][texture][swizzle]") {
+    constexpr std::array layouts{
+        Layout{17, 17, 1, 16, 1, 0, 3},
+        Layout{69, 9, 1, 16, 2, 0, 2},
+        Layout{9, 17, 5, 16, 2, 1, 2},
+        Layout{1, 1, 1, 16, 0, 0, 0},
+        Layout{97, 4, 2, 16, 0, 2, 0},
+        Layout{40, 31, 1, 8, 2, 0, 3},
+    };
+    for (bool native : {false, true}) {
+        for (const auto& layout : layouts) {
+            CAPTURE(native, layout.width, layout.height, layout.depth, layout.bytes_per_pixel);
+            const auto row_bytes = RowBytes(layout);
+            std::vector<u8> linear(row_bytes * layout.height * layout.depth);
+            std::vector<u8> expected(TiledBytes(layout) + 18, 0xa5);
+            auto output = expected;
+            for (u32 z = 0; z < layout.depth; ++z) {
+                for (u32 y = 0; y < layout.height; ++y) {
+                    for (u32 x = 0; x < row_bytes; ++x) {
+                        const size_t offset = (size_t{z} * layout.height + y) * row_bytes + x;
+                        linear[offset] = Pattern(offset, z);
+                        expected[9 + ReferenceOffset(layout, x, y, z, native)] = linear[offset];
+                    }
+                }
+            }
+            Tegra::Texture::SwizzleTexture(std::span{output}.subspan(9, TiledBytes(layout)),
+                                          linear, layout.bytes_per_pixel, layout.width,
+                                          layout.height, layout.depth, layout.block_height,
+                                          layout.block_depth, layout.stride_alignment, native);
+            CHECK(std::ranges::equal(output, expected));
+        }
+    }
+}

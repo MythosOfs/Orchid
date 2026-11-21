@@ -114,6 +114,12 @@ The ASTC opacity scan borrows a contiguous guest span for the duration of the cl
 Fragmented ranges are copied into reusable scratch memory. Both paths run the same opacity
 classifier, so the selected BC format is the same.
 
+## Texture transfers
+
+Full-image swizzle with 16-byte units fills each GOB before moving to the next. The address
+permutation and pitch stay the same, including the unused sectors of truncated edge GOBs.
+The change targets block-linear writes, where row order would revisit each GOB eight times.
+
 ## Evidence
 
 ### #189: what the GPU session's jobs wait for (2026-11-21)

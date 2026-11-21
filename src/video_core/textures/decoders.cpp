@@ -160,6 +160,58 @@ void SwizzleImpl(std::span<u8> output, std::span<const u8> input, u32 width, u32
     const u32 block_depth_mask = (1U << block_depth) - 1;
     const u32 x_shift = GOB_SIZE_SHIFT + block_height + block_depth;
 
+    if constexpr (TO_LINEAR && BYTES_PER_PIXEL == 16) {
+        static constexpr auto sector_offsets = [] {
+            std::array<std::array<std::array<u32, 4>, GOB_SIZE_Y>, 2> offsets{};
+            for (bool native : {false, true}) {
+                for (u32 row = 0; row < GOB_SIZE_Y; ++row) {
+                    for (u32 sector = 0; sector < 4; ++sector) {
+                        offsets[native][row][sector] = NativeGobOffset(
+                            pdep<SWIZZLE_X_BITS>(sector * 16) | pdep<SWIZZLE_Y_BITS>(row), native);
+                    }
+                }
+            }
+            return offsets;
+        }();
+        const auto& sectors = sector_offsets[native_tiling];
+        const u32 columns = Common::DivCeil(width, 4U);
+        const u32 gobs_per_block = 1U << block_height;
+        const u32 gobs_high = Common::DivCeil(height, GOB_SIZE_Y);
+        for (u32 slice = 0; slice < depth; ++slice) {
+            const u32 offset_z = (slice >> block_depth) * slice_size +
+                                 ((slice & block_depth_mask) << (GOB_SIZE_SHIFT + block_height));
+            for (u32 first_gob = 0; first_gob < gobs_high; first_gob += gobs_per_block) {
+                const u32 rows = (std::min)(gobs_per_block, gobs_high - first_gob);
+                const u32 block_offset = (first_gob >> block_height) * block_size + offset_z;
+                for (u32 column = 0; column < columns; ++column) {
+                    const u32 units = (std::min)(4U, width - column * 4);
+                    for (u32 gob = 0; gob < rows; ++gob) {
+                        const u32 gob_offset = block_offset + (column << x_shift) + gob * GOB_SIZE;
+                        const u32 first_line = (first_gob + gob) * GOB_SIZE_Y;
+                        const u32 lines = (std::min)(GOB_SIZE_Y, height - first_line);
+                        for (u32 row = 0; row < lines; ++row) {
+                            const u32 src_offset =
+                                (slice * height + first_line + row) * pitch + column * GOB_SIZE_X;
+                            u8* const dst = output.data() + gob_offset;
+                            const u8* const src = input.data() + src_offset;
+                            if (units == 4) {
+                                std::memcpy(dst + sectors[row][0], src, 16);
+                                std::memcpy(dst + sectors[row][1], src + 16, 16);
+                                std::memcpy(dst + sectors[row][2], src + 32, 16);
+                                std::memcpy(dst + sectors[row][3], src + 48, 16);
+                            } else {
+                                for (u32 sector = 0; sector < units; ++sector) {
+                                    std::memcpy(dst + sectors[row][sector], src + sector * 16, 16);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return;
+    }
+
     for (u32 slice = 0; slice < depth; ++slice) {
         const u32 z = slice + origin_z;
         const u32 offset_z = (z >> block_depth) * slice_size +

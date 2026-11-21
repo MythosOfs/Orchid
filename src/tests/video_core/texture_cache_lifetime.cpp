@@ -175,12 +175,12 @@ TEST_CASE("UnregisterImage clears the page table of the address space the image 
     constexpr GPUVAddr gpu_addr = 0x200000;
     constexpr DAddr cpu_addr = 0x20000;
 
-    fixture.cache.BindToChannel(1);
+    fixture.cache.BindToChannel(2);
     const auto image_id =
         VideoCommon::TextureCacheTestAccess::Register(fixture.cache, MakeImageInfo(), gpu_addr, cpu_addr);
-    REQUIRE(VideoCommon::TextureCacheTestAccess::PagedImages(fixture.cache, 0) == 1);
+    REQUIRE(VideoCommon::TextureCacheTestAccess::PagedImages(fixture.cache, 1) == 1);
 
-    fixture.cache.BindToChannel(2);
+    fixture.cache.BindToChannel(1);
     VideoCommon::TextureCacheTestAccess::Unregister(fixture.cache, image_id);
     CHECK(VideoCommon::TextureCacheTestAccess::PagedImages(fixture.cache, 0) == 0);
     CHECK(VideoCommon::TextureCacheTestAccess::PagedImages(fixture.cache, 1) == 0);
@@ -271,6 +271,12 @@ TEST_CASE("IsFullClear needs the render area to reach the whole image",
     CHECK(VideoCommon::TextureCacheTestAccess::IsFullClear(fixture.cache, image_id));
 
     regs.surface_clip.width.Assign(32);
+    regs.surface_clip.height.Assign(16);
+    CHECK_FALSE(VideoCommon::TextureCacheTestAccess::IsFullClear(fixture.cache, image_id));
+    regs.surface_clip.width.Assign(32);
+    regs.surface_clip.height.Assign(32);
+    CHECK_FALSE(VideoCommon::TextureCacheTestAccess::IsFullClear(fixture.cache, image_id));
+    regs.surface_clip.width.Assign(64);
     regs.surface_clip.height.Assign(16);
     CHECK_FALSE(VideoCommon::TextureCacheTestAccess::IsFullClear(fixture.cache, image_id));
 }

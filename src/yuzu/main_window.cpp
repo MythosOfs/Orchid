@@ -3888,6 +3888,7 @@ void MainWindow::OnConfigure() {
         !UISettings::values.reset_to_defaults) {
         // Runs if the user hit Cancel or closed the window, and did not ever press the Apply button
         // or `Reset to Defaults` button
+        configure_dialog.RestoreInputConfiguration();
         return;
     } else if (result == QDialog::Accepted) {
         // Only apply new changes if user hit Okay
@@ -3964,6 +3965,10 @@ void MainWindow::OnConfigure() {
     UISettings::values.configuration_applied = false;
 
     config->SaveAllValues();
+
+    if (result != QDialog::Accepted) {
+        configure_dialog.RestoreInputConfiguration();
+    }
 
     if ((UISettings::values.hide_mouse || Settings::values.mouse_panning) && emulation_running) {
         render_window->installEventFilter(render_window);

@@ -57,6 +57,8 @@ public:
 
     void ApplyConfiguration();
 
+    void RestoreInputConfiguration();
+
 private slots:
     void OnLanguageChanged(const QString& locale);
 

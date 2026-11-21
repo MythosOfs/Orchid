@@ -46,6 +46,7 @@ add_executable(tests
     core/core_timing.cpp
     core/filesystem_buffer_bounds.cpp
     core/filesystem_rename.cpp
+    core/hid_emulated_controller_config.cpp
     core/hid_motion_input.cpp
     core/hid_npad_assignment.cpp
     core/kip_blz.cpp

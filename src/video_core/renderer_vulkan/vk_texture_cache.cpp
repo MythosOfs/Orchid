@@ -3730,7 +3730,8 @@ bool Image::ScaleUp(bool ignore) {
     }
     flags |= ImageFlagBits::Rescaled;
     has_scaled = true;
-    if (!scaled_image) {
+    const bool fresh_scaled = !scaled_image;
+    if (fresh_scaled) {
         const bool is_2d = info.type == ImageType::e2D;
         const u32 scaled_width = resolution.ScaleUp(info.size.width);
         const u32 scaled_height = is_2d ? resolution.ScaleUp(info.size.height) : info.size.height;
@@ -3749,7 +3750,7 @@ bool Image::ScaleUp(bool ignore) {
         aspect_mask = ImageAspectMask(info.format);
     }
     if (NeedsScaleHelper()) {
-        if (!BlitScaleHelper(true)) {
+        if (!BlitScaleHelper(true, fresh_scaled)) {
             current_image = &Image::original_image;
             return false;
         }
@@ -3777,7 +3778,7 @@ bool Image::ScaleDown(bool ignore) {
         aspect_mask = ImageAspectMask(info.format);
     }
     if (NeedsScaleHelper()) {
-        if (!BlitScaleHelper(false)) {
+        if (!BlitScaleHelper(false, !ExchangeInitialization())) {
             current_image = &Image::scaled_image;
             flags |= ImageFlagBits::Rescaled;
             return false;
@@ -3788,7 +3789,7 @@ bool Image::ScaleDown(bool ignore) {
     return true;
 }
 
-bool Image::BlitScaleHelper(bool scale_up) {
+bool Image::BlitScaleHelper(bool scale_up, bool dst_undefined) {
     using namespace VideoCommon;
     static constexpr auto BLIT_OPERATION = Tegra::Engines::Fermi2D::Operation::SrcCopy;
     const bool is_color{aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT};
@@ -3829,17 +3830,19 @@ bool Image::BlitScaleHelper(bool scale_up) {
     };
     const VkExtent2D extent{dst_width, dst_height};
 
-    // The blit overwrites the whole destination subresource, and a fresh image is still undefined.
+    // An initialised destination keeps GENERAL: a depth-only helper leaves its stencil as is.
     const VkImage dst_image = scale_up ? *scaled_image : *original_image;
     const VkImageAspectFlags dst_aspect = aspect_mask;
+    const VkImageLayout dst_layout =
+        dst_undefined ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
     scheduler->RequestOutsideRenderPassOperationContext();
-    scheduler->Record([dst_image, dst_aspect](vk::CommandBuffer cmdbuf) {
+    scheduler->Record([dst_image, dst_aspect, dst_layout](vk::CommandBuffer cmdbuf) {
         const VkImageMemoryBarrier barrier{
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
             .pNext = nullptr,
             .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
             .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .oldLayout = dst_layout,
             .newLayout = VK_IMAGE_LAYOUT_GENERAL,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,

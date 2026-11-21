@@ -503,7 +503,7 @@ public:
     friend class BlockLinearUnswizzle3DPass;
 
 private:
-    bool BlitScaleHelper(bool scale_up);
+    bool BlitScaleHelper(bool scale_up, bool dst_undefined);
 
     bool NeedsScaleHelper() const;
 

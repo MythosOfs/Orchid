@@ -203,6 +203,12 @@ source and author in its message.
 - [Djihads80/Eglantine](https://github.com/Djihads80/Eglantine) and its contributors: merged
   regularly. Idle staging buffers freed (Takoroka), the RangeSet empty-query guard (néo Luigi),
   test fixes (kraibse).
+- Fork scan of 2026-11-21, texture lifetime and guest memory fixes (unregistering and writing back
+  images through their own GPU address space, scratch allocation recovery, sparse segments that
+  no longer translate, clear coverage, targets padded to whole GOBs, guest memory span checks,
+  race-free Dynarmic code-page invalidation); each commit names its source:
+  [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (Zortos, zortos293, RomainROCH,
+  Kaj, DuskDarf1).
 - Fork scan of 2026-11-11, 68 fixes for correctness, stability and AMD hosts (audio ADPCM decode,
   guest memory and address space bookkeeping, shutdown hangs, syncpoint waits behind Yoshi's movie
   player abort, Vulkan barriers and samplers, shader NaN and atomics handling, texture cache

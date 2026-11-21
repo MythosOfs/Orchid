@@ -1,0 +1,6 @@
+Block $0
+%2     = Identity #0 (uses: 1)
+%3     = Identity #2447877436 (uses: 1)
+         WriteGlobal32 #0, %2
+         WriteGlobal32 #4, %3
+

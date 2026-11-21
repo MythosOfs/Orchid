@@ -7,16 +7,21 @@
 // machine tests (e.g. ampere_kirby_fsel.cpp); these only make changes visible.
 
 #include <array>
+#include <initializer_list>
+#include <limits>
 #include <span>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "shader_recompiler/environment.h"
+#include "shader_recompiler/exception.h"
 #include "shader_recompiler/frontend/ampere/lower_to_maxwell.h"
 #include "shader_recompiler/frontend/ir/program.h"
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate_program.h"
 #include "shader_recompiler/host_translate_info.h"
+#include "shader_recompiler/ir_opt/passes.h"
 #include "shader_recompiler/object_pool.h"
 #include "tests/expect.h"
 
@@ -102,6 +107,30 @@ std::string LoweredIr(std::span<const Instruction> native) {
         Shader::Maxwell::TranslateProgram(inst_pool, block_pool, env, cfg, host_info);
     return Tests::StripIrAddresses(Shader::IR::DumpProgram(program));
 }
+struct BitfieldProgram {
+    Shader::ObjectPool<Shader::IR::Inst> pool;
+    Shader::IR::Block block{pool};
+    Shader::IR::Program program;
+    LoweredEnvironment env{{}};
+
+    BitfieldProgram() {
+        using Node = Shader::IR::AbstractSyntaxNode;
+        program.blocks = {&block};
+        program.post_order_blocks = {&block};
+        program.syntax_list = {{{.block = &block}, Node::Type::Block}};
+    }
+
+    Shader::IR::Value Emit(Shader::IR::Opcode opcode,
+                           std::initializer_list<Shader::IR::Value> args) {
+        block.AppendNewInst(opcode, args);
+        return Shader::IR::Value{&block.back()};
+    }
+
+    void Fold() {
+        Shader::Optimization::ConstantPropagationPass(env, program);
+    }
+};
+
 } // Anonymous namespace
 
 TEST_CASE("Kirby captured uniform FSEL pair lowers to the reference IR",
@@ -113,4 +142,65 @@ TEST_CASE("Kirby captured uniform FSEL pair lowers to the reference IR",
         Exit,
     }};
     Tests::CheckExpect("kirby_fsel_pair.ir", LoweredIr(code));
+}
+
+TEST_CASE("Unsigned bitfield folding handles every valid field within a word",
+          "[video_core][shader][bitfield_fold]") {
+    using Shader::IR::Opcode;
+    using Shader::IR::Value;
+    struct Field {
+        u32 offset;
+        u32 width;
+        Value extract;
+    };
+
+    BitfieldProgram shader;
+    constexpr u32 input = 0x91e7a53c;
+    std::vector<Field> fields;
+    for (u32 offset = 0; offset <= 32; ++offset) {
+        for (u32 width = 0; width <= 32 - offset; ++width) {
+            fields.push_back({offset, width, shader.Emit(
+                Opcode::BitFieldUExtract, {Value{input}, Value{offset}, Value{width}})});
+        }
+    }
+    shader.Fold();
+
+    for (const auto& [offset, width, extract] : fields) {
+        CAPTURE(offset, width);
+        const u64 mask = (u64{1} << width) - 1;
+        REQUIRE(extract.IsImmediate());
+        CHECK(extract.U32() == ((u64{input} >> offset) & mask));
+    }
+}
+
+TEST_CASE("Unsigned bitfield folding rejects fields outside a word",
+          "[video_core][shader][bitfield_fold]") {
+    using Shader::IR::Opcode;
+    using Shader::IR::Value;
+    constexpr u32 max = std::numeric_limits<u32>::max();
+    for (const auto& [offset, width] :
+         std::array{std::pair{32U, 1U}, std::pair{33U, 0U}, std::pair{33U, max},
+                    std::pair{max, max}}) {
+        CAPTURE(offset, width);
+        BitfieldProgram shader;
+        shader.Emit(Opcode::BitFieldUExtract, {Value{0U}, Value{offset}, Value{width}});
+        CHECK_THROWS_AS(shader.Fold(), Shader::LogicError);
+    }
+}
+
+TEST_CASE("Unsigned bitfield fold reference keeps all bits for a full-width extract",
+          "[video_core][shader][bitfield_fold][expect]") {
+    using Shader::IR::Opcode;
+    using Shader::IR::Value;
+    BitfieldProgram shader;
+    constexpr u32 input = 0x91e7a53c;
+    const Value empty{shader.Emit(Opcode::BitFieldUExtract,
+                                  {Value{input}, Value{32U}, Value{0U}})};
+    const Value full{shader.Emit(Opcode::BitFieldUExtract,
+                                 {Value{input}, Value{0U}, Value{32U}})};
+    shader.Emit(Opcode::WriteGlobal32, {Value{u64{0}}, empty});
+    shader.Emit(Opcode::WriteGlobal32, {Value{u64{4}}, full});
+    shader.Fold();
+    Tests::CheckExpect("unsigned_bitfield_edges.ir",
+                       Tests::StripIrAddresses(Shader::IR::DumpProgram(shader.program)));
 }

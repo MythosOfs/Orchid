@@ -38,6 +38,9 @@ TEST_CASE("A keys file line with a short value does not replace the key read bef
         prod << "key_area_key_ocean_00 = " << std::string(32, '5') << " # comment\n";
         prod << "key_area_key_application_00 = " << std::string(32, '4')
              << "\nkey_area_key_application_00 = 44\n";
+        prod << "key_area_key_application_00 = " << std::string(30, '6') << '\n';
+        prod << "sd_card_kek_source = " << std::string(32, '7') << '\n';
+        prod << "sd_card_kek_source = " << std::string(30, '8') << '\n';
         prod << "keyblob_ff = " << std::string(0x90 * 2, 'a') << '\n';
         prod << "encrypted_keyblob_ff = " << std::string(0xB0 * 2, 'b') << '\n';
         prod << "keyblob_20 = " << std::string(0x90 * 2, 'c') << '\n';
@@ -61,6 +64,9 @@ TEST_CASE("A keys file line with a short value does not replace the key read bef
     Key128 key_area;
     key_area.fill(0x44);
     CHECK(keys.GetKey(S128KeyType::KeyArea, 0, u64(KeyAreaKeyType::Application)) == key_area);
+    Key128 sd_kek_source;
+    sd_kek_source.fill(0x77);
+    CHECK(keys.GetKey(S128KeyType::Source, u64(SourceKeyType::SDKek)) == sd_kek_source);
     Key128 ocean;
     ocean.fill(0x55);
     CHECK(keys.GetKey(S128KeyType::KeyArea, 0, u64(KeyAreaKeyType::Ocean)) == ocean);

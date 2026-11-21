@@ -3334,10 +3334,15 @@ void MainWindow::OnRestartGame() {
         return;
     }
 
-    if (ConfirmShutdownGame()) {
+    const u64 session = emu_session.Current();
+    if (ConfirmShutdownGame() && emu_session.IsCurrent(session)) {
         // Make a copy since ShutdownGame edits game_path
         const auto current_game = QString(current_game_path);
         ShutdownGame();
+        // Another program started while this one shut down; do not replace it.
+        if (emulation_running) {
+            return;
+        }
         BootGame(current_game, ApplicationAppletParameters());
     }
 }
@@ -3361,7 +3366,8 @@ void MainWindow::OnPauseContinueGame() {
 }
 
 void MainWindow::OnStopGame() {
-    if (ConfirmShutdownGame()) {
+    const u64 session = emu_session.Current();
+    if (ConfirmShutdownGame() && emu_session.IsCurrent(session)) {
         play_time_manager->Stop();
         if (OnShutdownBegin()) {
             OnShutdownBeginDialog();

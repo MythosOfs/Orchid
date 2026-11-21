@@ -106,6 +106,9 @@ KIP::KIP(const VirtualFile& file) : status(Loader::ResultStatus::Success) {
         offset += header.sections[i].compressed_size;
 
         if (header.sections[i].compressed_size == 0 && header.sections[i].decompressed_size != 0) {
+            if (i >= 3) {
+                continue;
+            }
             decompressed_sections[i] = std::vector<u8>(header.sections[i].decompressed_size);
         } else if (header.sections[i].compressed_size == header.sections[i].decompressed_size) {
             decompressed_sections[i] = std::move(compressed);

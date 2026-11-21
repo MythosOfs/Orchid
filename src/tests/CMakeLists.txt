@@ -46,6 +46,7 @@ add_executable(tests
     core/core_timing.cpp
     core/filesystem_buffer_bounds.cpp
     core/filesystem_rename.cpp
+    core/kip_sections.cpp
     core/page_heap.cpp
     core/read_traps.cpp
     core/gpu_dirty_memory_manager.cpp

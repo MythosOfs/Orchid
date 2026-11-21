@@ -50,6 +50,7 @@ add_executable(tests
     core/kip_sections.cpp
     core/kip_truncated.cpp
     core/page_heap.cpp
+    core/profile_orphans.cpp
     core/read_traps.cpp
     core/gpu_dirty_memory_manager.cpp
     core/nx2_image_layout.cpp

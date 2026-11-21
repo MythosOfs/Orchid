@@ -44,6 +44,8 @@ TEST_CASE("Scaled image limits", "[video_core][texture_cache]") {
     // Framebuffer width and height limits may differ.
     REQUIRE(ScaledImageFits(Image(3072, 1024), Scale(2, 0), {8192, 4096}));
     REQUIRE_FALSE(ScaledImageFits(Image(1024, 3072), Scale(2, 0), {8192, 4096}));
+    REQUIRE(ScaledImageFits(Image(1024, 3072), Scale(2, 0), {4096, 8192}));
+    REQUIRE_FALSE(ScaledImageFits(Image(3072, 1024), Scale(2, 0), {4096, 8192}));
     REQUIRE(ScaledImageFits(Image(4096, 4096), Scale(2, 0), {8192, 8192}));
     REQUIRE_FALSE(ScaledImageFits(Image(4097, 2048), Scale(2, 0), {8192, 8192}));
     REQUIRE_FALSE(ScaledImageFits(Image(2048, 4097), Scale(2, 0), {8192, 8192}));

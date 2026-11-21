@@ -31,7 +31,8 @@ static u8 MasterKeyIdForKeyGeneration(u8 key_generation) {
 
 static bool IsUnreadablePlaintextHeader(const VirtualFile& file) {
     NcaHeader header{};
-    if (file->ReadObject(&header) != sizeof(header)) {
+    if (file->GetSize() < sizeof(header) + NcaHeader::FsCountMax * sizeof(NcaFsHeader) ||
+        file->ReadObject(&header) != sizeof(header)) {
         return false;
     }
     for (const u32 magic : {NcaHeader::Magic0, NcaHeader::Magic1, NcaHeader::Magic2,

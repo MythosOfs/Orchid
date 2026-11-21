@@ -46,6 +46,7 @@ add_executable(tests
     core/cheat_parser.cpp
     core/core_timing.cpp
     core/filesystem_buffer_bounds.cpp
+    core/cmif_out_buffer.cpp
     core/filesystem_rename.cpp
     core/page_heap.cpp
     core/read_traps.cpp

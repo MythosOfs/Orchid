@@ -311,6 +311,9 @@ public:
     /// Helper function to get the size of the input buffer
     [[nodiscard]] std::size_t GetReadBufferSize(std::size_t buffer_index = 0) const;
 
+    void ReadOutputBuffer(Common::ScratchBuffer<u8>& output, bool use_buffer_b,
+                          std::size_t buffer_index) const;
+
     /// Helper function to get the size of the output buffer
     [[nodiscard]] std::size_t GetWriteBufferSize(std::size_t buffer_index = 0) const;
 

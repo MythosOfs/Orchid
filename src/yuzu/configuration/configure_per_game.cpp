@@ -107,12 +107,16 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id_, const std::st
 ConfigurePerGame::~ConfigurePerGame() = default;
 
 void ConfigurePerGame::showEvent(QShowEvent* event) {
+    FitToScreen();
+    QDialog::showEvent(event);
+}
+
+void ConfigurePerGame::FitToScreen() {
     QList<QWidget*> pages{ui->groupBox};
     for (int index = 0; index < ui->tabWidget->count(); ++index) {
         pages.push_back(ui->tabWidget->widget(index));
     }
     ConfigurationShared::FitToScreen(this, pages);
-    QDialog::showEvent(event);
 }
 
 void ConfigurePerGame::ApplyConfiguration() {
@@ -139,6 +143,11 @@ void ConfigurePerGame::ApplyConfiguration() {
 void ConfigurePerGame::changeEvent(QEvent* event) {
     if (event->type() == QEvent::LanguageChange) {
         RetranslateUI();
+    }
+    // The real window frame is known only once the dialog is mapped and activated.
+    if (event->type() == QEvent::ActivationChange && isActiveWindow() &&
+        !std::exchange(fitted_framed, true)) {
+        FitToScreen();
     }
 
     QDialog::changeEvent(event);

@@ -68,6 +68,7 @@ public:
 private:
     void changeEvent(QEvent* event) override;
     void showEvent(QShowEvent* event) override;
+    void FitToScreen();
     void RetranslateUI();
 
     void HandleApplyButtonClicked();
@@ -75,6 +76,7 @@ private:
     void LoadConfiguration();
 
     std::unique_ptr<Ui::ConfigurePerGame> ui;
+    bool fitted_framed = false;
     FileSys::VirtualFile file;
     u64 title_id;
 

@@ -56,18 +56,18 @@ void MakePageScrollable(QWidget* page) {
 } // Anonymous namespace
 
 void FitToScreen(QWidget* window, const QList<QWidget*>& pages) {
-    // Until the window manager has framed the dialog, it opens on its parent's screen with a
-    // title bar of unknown height, so measure that screen and estimate the title bar.
-    const bool framed = window->frameGeometry() != window->geometry();
+    // Until the dialog is mapped, it opens on its parent's screen with a title bar of unknown
+    // height, so measure that screen, estimate the title bar and leave its placement to Qt.
+    const bool mapped = window->testAttribute(Qt::WA_Mapped);
     const QWidget* parent = window->parentWidget();
-    const QScreen* screen = (framed || parent == nullptr ? window : parent->window())->screen();
+    const QScreen* screen = (mapped || parent == nullptr ? window : parent->window())->screen();
     if (screen == nullptr) {
         return;
     }
     window->ensurePolished();
     const QRect area = screen->availableGeometry();
     const QSize decoration =
-        framed ? window->frameGeometry().size() - window->geometry().size()
+        mapped ? window->frameGeometry().size() - window->geometry().size()
                : QSize(0, window->style()->pixelMetric(QStyle::PM_TitleBarHeight));
     const QSize available = area.size() - decoration;
     const QSize needed = window->size().expandedTo(window->minimumSizeHint());
@@ -79,7 +79,7 @@ void FitToScreen(QWidget* window, const QList<QWidget*>& pages) {
     }
     const QSize size = needed.boundedTo(available);
     window->resize(size);
-    if (window->isVisible()) {
+    if (mapped) {
         // A page switch grows the window downwards; keep its button bar on the screen.
         const QSize frame = size + decoration;
         window->move(

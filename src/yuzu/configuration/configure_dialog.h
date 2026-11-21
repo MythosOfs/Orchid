@@ -77,6 +77,7 @@ private:
     void PopulateSelectionList();
 
     std::unique_ptr<Ui::ConfigureDialog> ui;
+    bool fitted_framed = false;
     HotkeyRegistry& registry;
 
     Core::System& system;

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
+#include <utility>
 #include <QShowEvent>
 #include "common/logging.h"
 #include "common/settings.h"
@@ -163,6 +164,11 @@ void ConfigureDialog::ApplyConfiguration() {
 void ConfigureDialog::changeEvent(QEvent* event) {
     if (event->type() == QEvent::LanguageChange) {
         RetranslateUI();
+    }
+    // The real window frame is known only once the dialog is mapped and activated.
+    if (event->type() == QEvent::ActivationChange && isActiveWindow() &&
+        !std::exchange(fitted_framed, true)) {
+        FitToScreen();
     }
 
     QDialog::changeEvent(event);

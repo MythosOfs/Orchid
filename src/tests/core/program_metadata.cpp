@@ -67,6 +67,18 @@ TEST_CASE("NPDM in the Switch 1 and Switch 2 layouts loads", "[core][file_sys]")
     }
 }
 
+TEST_CASE("Reloading an NPDM takes the platform of the reloaded file", "[core][file_sys]") {
+    const auto native = std::make_shared<FileSys::VectorVfsFile>(MakeNpdm(true), "main.npdm");
+    const auto legacy = std::make_shared<FileSys::VectorVfsFile>(MakeNpdm(false), "main.npdm");
+    ProgramMetadata npdm;
+    REQUIRE(npdm.Load(native) == ResultStatus::Success);
+    REQUIRE(npdm.IsSwitch2());
+    REQUIRE(npdm.Reload(legacy) == ResultStatus::Success);
+    CHECK_FALSE(npdm.IsSwitch2());
+    REQUIRE(npdm.Reload(native) == ResultStatus::Success);
+    CHECK(npdm.IsSwitch2());
+}
+
 TEST_CASE("NPDM reads only whole kernel capability words", "[core][file_sys]") {
     auto bytes = MakeNpdm();
     Put32(bytes, AciOffset + 0x34, 5);

@@ -228,6 +228,7 @@ protected:
      * is full, which freezes games that wait on the renderer.
      */
     void StartSilentDevice();
+    void StopSilentDevice();
 
 protected:
     /// Core system

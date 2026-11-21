@@ -270,6 +270,13 @@ void SinkStream::SignalPause() {
     release_cv.notify_one();
 }
 
+void SinkStream::StopSilentDevice() {
+    if (silent_device.joinable()) {
+        silent_device.request_stop();
+        silent_device.join();
+    }
+}
+
 void SinkStream::StartSilentDevice() {
     silent_device = std::jthread([this](std::stop_token stop_token) {
         Common::SetCurrentThreadName("SilentAudioDevice");

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 Orchid Emulator Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include <algorithm>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -19,17 +20,17 @@ size_t g_fill_calls;
 
 VKAPI_ATTR VkResult VKAPI_CALL Enumerate(VkInstance, u32* count, VkPhysicalDevice* devices) {
     if (devices == nullptr) {
-        *count = g_counts[std::min(g_count_calls++, g_counts.size() - 1)];
+        *count = g_counts[(std::min)(g_count_calls++, g_counts.size() - 1)];
         return VK_SUCCESS;
     }
-    const size_t call = std::min(g_fill_calls++, g_fills.size() - 1);
+    const size_t call = (std::min)(g_fill_calls++, g_fills.size() - 1);
     const u32 available = g_fills[call];
-    const u32 written = std::min(*count, available);
+    const u32 written = (std::min)(*count, available);
     for (u32 i = 0; i < written; ++i) {
         devices[i] = reinterpret_cast<VkPhysicalDevice>(static_cast<uintptr_t>(0x100 + i));
     }
     *count = written;
-    return g_fill_results[std::min(call, g_fill_results.size() - 1)];
+    return g_fill_results[(std::min)(call, g_fill_results.size() - 1)];
 }
 
 VKAPI_ATTR void VKAPI_CALL GetProperties(VkPhysicalDevice device,

@@ -876,3 +876,591 @@ f941f897d puppywang/Lichii: already in main: alias tick check in SynchronizeAlia
 50c350740 rakefire-impala/Lichii: already in main: depth-compare textures get a float sampled type (texture_pass.cpp)
 679ce4a4e zortos293/Eglantine: already in main: depth-compare image type (texture_pass.cpp)
 4f3506c4c mariohbd/Lichii: already in main: dead timing events are popped (core_timing.cpp)
+# Fork scans #170 #175 #201 and the rest of #141 #149, triage 2026-11-21
+20a16f091 zortos293/Eglantine: Switch Sports Resort-specific header policy is narrower than Orchid's cross-title native handling
+1886e6df2 zortos293/Eglantine: Test harness or fork fixture maintenance without an Orchid runtime correction
+0d4e54926 zortos293/Eglantine: Fork status bar counter presentation
+b0da9f6ac zortos293/Eglantine: Documentation, maintenance, packaging or CI
+3165970aa zortos293/Eglantine: Documentation, maintenance, packaging or CI
+b198feba3 zortos293/Eglantine: Fork logging, tracing or diagnostic instrumentation
+605e974fc zortos293/Eglantine: Names a bound compute shader in a logging path
+29327d8df zortos293/Eglantine: Per-session blob reuse depends on fork shader_cache_v2 storage and writer
+cd5745dad zortos293/Eglantine: Dependent on the fork’s GPU or shader-job architecture
+ef51faa0e zortos293/Eglantine: Documentation, maintenance, packaging or CI
+95f5519ea zortos293/Eglantine: Changes a fork profiling switch default
+7e7bd04b4 zortos293/Eglantine: Frontend toggle only, depends on the fork shader warm workflow
+7e2316d42 zortos293/Eglantine: Fork frontend, tests, build infrastructure or assets outside the emulator runtime
+df080dd88 zortos293/Eglantine: Bulk precompile UI and asset-pack integration rely on fork-specific shader warming
+4dfc0585e zortos293/Eglantine: Fork frontend, tests, build infrastructure or assets outside the emulator runtime
+a1bfa53c4 zortos293/Eglantine: AIO-only upgrade overlay changes content precedence; use the targeted boot-input fixes
+0d01c0e1c zortos293/Eglantine: Renames the fork’s optical flow option
+613fb977d zortos293/Eglantine: Online or cloud integration specific to the fork
+1c2aff95b zortos293/Eglantine: Fork logging, tracing or diagnostic instrumentation
+20869bf77 zortos293/Eglantine: No behavioral port.
+41acf9f30 zortos293/Eglantine: Test harness or fork fixture maintenance without an Orchid runtime correction
+5b9507b96 zortos293/Eglantine: Online or cloud integration specific to the fork
+b95a089a4 zortos293/Eglantine: Test harness or fork fixture maintenance without an Orchid runtime correction
+77ecf754b zortos293/Eglantine: FSR 4 support path is specific to the fork
+25cbaebf6 zortos293/Eglantine: Test harness or fork fixture maintenance without an Orchid runtime correction
+d083ed3c8 zortos293/Eglantine: Fork-specific MSVC compatibility workaround; requires known failing compiler case on Orchid
+5abc27a4b zortos293/Eglantine: Fork DXGI HDR helper differs from Orchid's #194 HDR implementation
+75c3f0636 zortos293/Eglantine: Title-specific experiment outside current port priorities
+50e903ed9 zortos293/Eglantine: Documentation, maintenance, packaging or CI
+01fe4e32f zortos293/Eglantine: Test harness or fork fixture maintenance without an Orchid runtime correction
+1e89206e3 zortos293/Eglantine: Test harness or fork fixture maintenance without an Orchid runtime correction
+95c469ba0 zortos293/Eglantine: AIO-only Ocarina heap compaction experiment
+d62a36158 zortos293/Eglantine: Narrows NVIDIA compute routing through fork-specific path selection
+118a52ab5 zortos293/Eglantine: Hardcoded worker cap for legacy AMD driver without a matched failing Orchid workload
+4a3dbf642 zortos293/Eglantine: Parking scheme assumes the fork command-list copy worker and completion protocol
+58a067277 zortos293/Eglantine: Expands crash diagnostics without changing runtime behavior
+f65e1232a zortos293/Eglantine: Title-specific experiment outside current port priorities
+15f5adafe zortos293/Eglantine: Depends on the fork HOME menu integration
+41119ac1c zortos293/Eglantine: Dependent on the fork’s GPU or shader-job architecture
+6708d2476 zortos293/Eglantine: Title-specific experiment outside current port priorities
+3988c144c zortos293/Eglantine: Title-specific experiment outside current port priorities
+b3119db09 zortos293/Eglantine: Title-specific experiment outside current port priorities
+914d4b1fc zortos293/Eglantine: Title-specific experiment outside current port priorities
+19ef949be zortos293/Eglantine: Documentation, maintenance, packaging or CI
+5c6afafb7 zortos293/Eglantine: Fork logging, tracing or diagnostic instrumentation
+5bcff5fb4 zortos293/Eglantine: Title-specific experiment outside current port priorities
+09c0da38c zortos293/Eglantine: Online or cloud integration specific to the fork
+36402a7b6 zortos293/Eglantine: Fork frontend, tests, build infrastructure or assets outside the emulator runtime
+02efb7493 zortos293/Eglantine: Captures split-front diagnostics without changing emulation
+1ed27ddef zortos293/Eglantine: Changes fork-specific ARM64 execution policy or adds an alternate backend
+159e076e2 zortos293/Eglantine: Opt-in game patch changes Yoshi render settings rather than correcting general emulation
+6a60aef72 zortos293/Eglantine: Changes fork-specific ARM64 execution policy or adds an alternate backend
+523e50487 zortos293/Eglantine: Changes fork-specific ARM64 execution policy or adds an alternate backend
+32235d942 zortos293/Eglantine: Fork logging, tracing or diagnostic instrumentation
+70aea39bd zortos293/Eglantine: Ryujinx save-link workflow is fork frontend integration
+efd782154 zortos293/Eglantine: No runtime change.
+54515b336 Djihads80/Eglantine: Documentation, maintenance, packaging or CI
+041b09b1e Djihads80/Eglantine: Documentation, maintenance, packaging or CI
+008c971b3 Kilian3000/Lichii-DLSS: Fork frontend, tests, build infrastructure or assets outside the emulator runtime
+0a35eb1ed Kilian3000/Lichii-DLSS: Fork frontend, tests, build infrastructure or assets outside the emulator runtime
+1e132930d Kilian3000/Lichii-DLSS: Fork frontend, tests, build infrastructure or assets outside the emulator runtime
+5da1ac7e7 Kilian3000/Lichii-DLSS: NGX cooperative-matrix setup belongs to the fork DLSS integration
+01b195de4 livejasminw/Lichii: Fork iOS build and packaging series
+2ff60988a livejasminw/Lichii: Fork iOS build and packaging series
+33dfd07d6 livejasminw/Lichii: Fork iOS build and packaging series
+57111cce7 livejasminw/Lichii: Fork iOS build and packaging series
+b8718d887 livejasminw/Lichii: Fork iOS build and packaging series
+c97729be6 livejasminw/Lichii: Fork iOS build and packaging series
+cbcc590b2 livejasminw/Lichii: Fork iOS build and packaging series
+cbe850a95 livejasminw/Lichii: Fork iOS build and packaging series
+e036d6f3b snobalfyte/lichii: Documentation, maintenance, packaging or CI
+038c5786b shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+1054c1be7 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+121171ac3 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+21572d9ba shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+30c839d37 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+32a1d5dfd shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+350bf78b0 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+35ee03ea2 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+3a0ce500b shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+4784a3a6f shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+4c3e0a992 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+4ff017abd shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+543458dea shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+5fb716d76 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+61ea71f17 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+684c738f6 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+6cdaf10e3 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+7b1f529e2 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+85bea6f2e shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+85d8c685f shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+8b3b3db8d shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+8c8124dfd shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+9a557558c shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+b3ccc8a28 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+bbab6e45f shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+c6381a261 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+cde8005c6 shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+d26ae40dc shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+e5bfc9dcd shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+f56b1831c shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+f9bb732ec shangmaumau/Lichii: Fork UI, cover art, translation or packaging series
+954c94a24 cridus/Lichii-for-duskbloods-cridus: Documentation, maintenance, packaging or CI
+de907e6c6 cridus/Lichii-for-duskbloods-cridus: Unconditional small-image readback is a Duskbloods experiment without matching Orchid coherency evidence
+ed053bb7e cridus/Lichii-for-duskbloods-cridus: Fixes a merge mistake in the fork branch
+01d3b5a3c wallaceman3/Lichii: Experimental shader scheduling rewrite depends on fork queue and job architecture
+11baad201 wallaceman3/Lichii: Dependent on the fork’s GPU or shader-job architecture
+19ca7a6a5 wallaceman3/Lichii: Title-specific experiment outside current port priorities
+1c16b8959 wallaceman3/Lichii: Dependent on the fork’s GPU or shader-job architecture
+383ed764f wallaceman3/Lichii: Depends on fork FastDraw delta bindings
+3d85db3c9 wallaceman3/Lichii: Per-title VSync configuration feature rather than an emulation fix
+437091266 wallaceman3/Lichii: Bundles fork JIT settings, build flags and a DMA snapshot policy experiment
+50a404fe3 wallaceman3/Lichii: Fork logging, tracing or diagnostic instrumentation
+6756a78d8 wallaceman3/Lichii: Compile repair for the fork shader priority queue branch
+6f801b675 wallaceman3/Lichii: Depends on the fork’s native uniform stream reuse mechanism
+95b16f8b7 wallaceman3/Lichii: Compile follow-up to fork-only VRAM threshold experiment
+aa0fced10 wallaceman3/Lichii: Title-specific experiment outside current port priorities
+b80e15a15 wallaceman3/Lichii: Replaces Orchid memory policy with coupled experimental VRAM thresholds
+b977a28d6 wallaceman3/Lichii: Combines ASTC policy with returning stale guest occlusion query results
+b9b4878a0 wallaceman3/Lichii: Follow-up to this fork's stale occlusion result experiment
+e01863def wallaceman3/Lichii: Changes batching and spin thresholds together without preserving Orchid's submission timing guarantees
+e6d59d14c wallaceman3/Lichii: Follow-up to fork-only VRAM threshold experiment
+fb9265bc4 wallaceman3/Lichii: Deadlock repair in fork-only PrecacheShaders batch path
+0b4f2a018 MaNE-17/Lichii: Documentation, maintenance, packaging or CI
+2ab483c88 MaNE-17/Lichii: Controller hot-swap is a frontend/input feature rather than a targeted emulation fix
+45cd79ad2 MaNE-17/Lichii: Controller hot-swap is a frontend/input feature rather than a targeted emulation fix
+5eead0f28 MaNE-17/Lichii: Fork packaging, release or daily test workflow
+740559706 MaNE-17/Lichii: Documentation, maintenance, packaging or CI
+f73c7dc78 MaNE-17/Lichii: Controller hot-swap is a frontend/input feature rather than a targeted emulation fix
+2f7f2f129 wahhbuffet/Lichii: Follow-up to fork Duskbloods readback experiment
+91daf7bcc wahhbuffet/Lichii: Title-specific experiment outside current port priorities
+9fa823f32 wahhbuffet/Lichii: Moves readbacks earlier for fork Duskbloods exposure experiment
+a59bad689 wahhbuffet/Lichii: Follow-up to fork Duskbloods readback experiment
+bcb996d8a wahhbuffet/Lichii: Title-specific experiment outside current port priorities
+eda081ac7 frozen-sea/Lichii: Title-specific experiment outside current port priorities
+4b11a44c5 pete842/Lichii: Reverts the earlier shared-store workaround; evaluate the replacement 04192ef00 and its follow-up together
+9ae241c1e rafemto/ZELNAT-Emu: Fork logging, tracing or diagnostic instrumentation
+b793dff5b rafemto/ZELNAT-Emu: Build repair for fork epoch-table memory tracker
+bc1bcf691 rafemto/ZELNAT-Emu: Build repair for fork lazy commit accessor
+c18a1a492 rafemto/ZELNAT-Emu: Dependent on the fork’s GPU or shader-job architecture
+07980062f Masamune3210/Lichii: Fork frontend, tests, build infrastructure or assets outside the emulator runtime
+18007a98f Masamune3210/Lichii: Documentation, maintenance, packaging or CI
+4f902a94c Masamune3210/Lichii: Windows compiler fix for fork sampler Win32 API loader path
+59e297b40 Masamune3210/Lichii: Windows compiler fix for fork FidelityFX export loader path
+7138d99d2 Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+91123db26 Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+9b3f6d267 Masamune3210/Lichii: Fork logging, tracing or diagnostic instrumentation
+a52fec034 Masamune3210/Lichii: Documentation, maintenance, packaging or CI
+b63066b21 Masamune3210/Lichii: Diagnostics reorder dumps and change collected artifacts; compare an actual missing rejected shader before adding a parallel capture.
+ccff79e85 Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+cdfee7c39 Masamune3210/Lichii: Windows compiler fix for fork crash callback implementation
+d781f56c8 Masamune3210/Lichii: Fixes artifact validity without changing shader lowering.
+e2b60a86a Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+e5d796d27 Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+e7a7e109d Masamune3210/Lichii: Fork packaging automation assumes Eden artifact names and MSYS2 dependency choices. No requested Orchid release/toolchain replacement.
+1a6478434 dzervas/Lichii: Online or cloud integration specific to the fork
+1e0e7755d dzervas/Lichii: Online or cloud integration specific to the fork
+26c7f47c3 dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+2b010325a dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+371cd030a dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+3f5d8e3c8 dzervas/Lichii: Fork direct replay compositing path
+40319b245 dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+461289e01 dzervas/Lichii: Fork direct replay compositing path
+58265c029 dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+5ca7a94a2 dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+64cffe84a dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+6784d53c5 dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+6b2f08b2c dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+a500a0273 dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+a6697dbdb dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+a7573e6e6 dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+aa3367e82 dzervas/Lichii: Online or cloud integration specific to the fork
+ad1611b9d dzervas/Lichii: Online or cloud integration specific to the fork
+b16089e8e dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+b3d1a151a dzervas/Lichii: Online or cloud integration specific to the fork
+b73729283 dzervas/Lichii: Online or cloud integration specific to the fork
+c004ea3bd dzervas/Lichii: Online or cloud integration specific to the fork
+c3bc000d2 dzervas/Lichii: Online or cloud integration specific to the fork
+d3dc51b94 dzervas/Lichii: Online or cloud integration specific to the fork
+d7d238b33 dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+e36410ab2 dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+fea997dfd dzervas/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+0261630ab tasarren/Lichii: Fork DLSS UI, screenshots, documentation or release configuration
+21ee85b7a tasarren/Lichii: Fork DLSS UI, screenshots, documentation or release configuration
+36d39bbb2 tasarren/Lichii: Fork DLSS UI, screenshots, documentation or release configuration
+47db30e51 tasarren/Lichii: Fork DLSS UI, screenshots, documentation or release configuration
+8596f2fe0 tasarren/Lichii: Fork DLSS UI, screenshots, documentation or release configuration
+a911442a1 tasarren/Lichii: Fork DLSS UI, screenshots, documentation or release configuration
+cc05cad69 tasarren/Lichii: Fork DLSS UI, screenshots, documentation or release configuration
+d0162f123 tasarren/Lichii: Fork DLSS UI, screenshots, documentation or release configuration
+177294de3 NoobOFN/Lichii: Documentation, maintenance, packaging or CI
+33b700207 NoobOFN/Lichii: Fork logging, tracing or diagnostic instrumentation
+55b1b60eb NoobOFN/Lichii: Documentation, maintenance, packaging or CI
+6f1b0145a NoobOFN/Lichii: Fork logging, tracing or diagnostic instrumentation
+820d7178e NoobOFN/Lichii: Adjusts only thread statistics initialization
+87cc41bc3 NoobOFN/Lichii: Depends on the fork NVN direct replay or Ocarina bypass path
+8ab79765f NoobOFN/Lichii: Documentation, maintenance, packaging or CI
+97490c4d6 NoobOFN/Lichii: Documentation, maintenance, packaging or CI
+ab441bf36 NoobOFN/Lichii: Fork logging, tracing or diagnostic instrumentation
+afea4116b NoobOFN/Lichii: Documentation, maintenance, packaging or CI
+bf30ceed9 NoobOFN/Lichii: Documentation, maintenance, packaging or CI
+e2744abf4 NoobOFN/Lichii: Documentation, maintenance, packaging or CI
+f72b0e1ad NoobOFN/Lichii: Names diagnostic AA bypass programs for Ocarina
+f942c1201 NoobOFN/Lichii: Fork frontend, tests, build infrastructure or assets outside the emulator runtime
+fd7364a62 NoobOFN/Lichii: Documentation, maintenance, packaging or CI
+1f45677aa nahianabir/Lichii: Fork-specific Ocarina rendering patch/UI experiment
+656380064 nahianabir/Lichii: Fork-specific Ocarina rendering patch/UI experiment
+69e21ae3b nahianabir/Lichii: Fork-specific Ocarina rendering patch/UI experiment
+838fae307 nahianabir/Lichii: Fork-specific Ocarina rendering patch/UI experiment
+d98b7a562 nahianabir/Lichii: Fork-specific Ocarina rendering patch/UI experiment
+ed8f28bc3 nahianabir/Lichii: Fork-specific Ocarina rendering patch/UI experiment
+f5200c3d5 nahianabir/Lichii: Fork-specific Ocarina rendering patch/UI experiment
+018d4a373 nitramvi/Lichii-arc: Title-specific experiment outside current port priorities
+09fb3badc nitramvi/Lichii-arc: Fork logging, tracing or diagnostic instrumentation
+1d74ddc92 nitramvi/Lichii-arc: Follow-up to fork GC thrash experiment
+213a59ec0 nitramvi/Lichii-arc: Recreation telemetry can guide tuning; raising retention floor on repeated misses may increase pressure and cause different stalls.
+5299ef114 nitramvi/Lichii-arc: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+538cbe324 nitramvi/Lichii-arc: Fork opt-in staging pool prewarming experiment
+55ac8cc38 nitramvi/Lichii-arc: Follow-up to fork Windows zero-trim cap and backing model
+751fd8ae3 nitramvi/Lichii-arc: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+2fdc0b6c6 pabCMX/Lichii: Documentation, maintenance, packaging or CI
+4f3d6a8b0 pabCMX/Lichii: Documentation, maintenance, packaging or CI
+4f289c5e1 DuskDarf1/Lichii: Fork single-segment storage memo follow-up; Orchid has mapping-aware storage cache in 0d7fbb71d8
+5d6d49737 DuskDarf1/Lichii: Depends on fork FastDraw delta bindings
+621f3ee78 DuskDarf1/Lichii: Fork single-segment storage memo; Orchid has mapping-aware storage cache in 0d7fbb71d8
+751891b38 DuskDarf1/Lichii: Depends on fork ever-synchronized range tracker and cached-write ownership rules
+8a62cce5e DuskDarf1/Lichii: Depends on fork vertex stream tracking; Orchid's per-draw optimization is a3be6e11bd
+d2ca32974 zortos293/Eglantine: Only applies to the fork’s Windows working-set scanner.
+10b635f26 N6KV/Lichii: Required by fork Chimera front-end lifecycle.
+86aae2d5d N6KV/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+fe4b80a66 N6KV/Lichii: External host/protocol compatibility project outside scope. No request to replace Orchid frontend or packaging.
+fdcaa6fd9 Meeltix/Lichii: Broad new resolve behavior requires evidence of exact guest Fermi2D pattern and sample semantics. Isolate driver/format gates and unrelated query change.
+3f9094eb8 SokolskyNikita/Lichii: The cutoff models MoltenVK/SPIRV-Cross MSL expansion and relies on the upstream mesh-as-compute fallback.
+bcdf1d039 SokolskyNikita/Lichii: Safety follow-up to the fork’s mesh vertex-input lending cache.
+d4bc61b86 SokolskyNikita/Lichii: The cutoff models MoltenVK/SPIRV-Cross MSL expansion and relies on the upstream mesh-as-compute fallback.
+325a2a201 Masamune3210/Lichii: Fork packaging automation assumes Eden artifact names and MSYS2 dependency choices. No requested Orchid release/toolchain replacement.
+38fad1139 Masamune3210/Lichii: Fixes artifact validity without changing shader lowering.
+6581a1fe0 Masamune3210/Lichii: Diagnostics reorder dumps and change collected artifacts; compare an actual missing rejected shader before adding a parallel capture.
+693a58bc2 Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+75b361db9 Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+8325abd19 Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+8f07ddf86 Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+9369a86b6 Masamune3210/Lichii: Documentation, maintenance, packaging or CI
+a9432daa6 Masamune3210/Lichii: Windows compiler fix for fork sampler Win32 API loader path
+b8c233776 Masamune3210/Lichii: Fork logging, tracing or diagnostic instrumentation
+c4a3a5da4 Masamune3210/Lichii: Documentation, maintenance, packaging or CI
+cbc3a6344 Masamune3210/Lichii: Windows compiler fix for fork FidelityFX export loader path
+d522a0fb8 Masamune3210/Lichii: Fork frontend, tests, build infrastructure or assets outside the emulator runtime
+e45f6b2e4 Masamune3210/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+4cba10ed6 nahianabir/Lichii: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+e51d86baf nahianabir/Lichii: OoT-specific shader substitution and dimensions.
+d565422fb nitramvi/Lichii-arc: Persisted peaks reserve memory after workloads change. Entry dispatch and disk keys must be validated before adopting.
+f3dc6ac7f nitramvi/Lichii-arc: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+4d745a9f5 JalenJaceX2/duckbuds: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+05a9b32cb luizIK/Kizuna: Follow-up to the fork allocation retry/free-pool policy.
+0c69e3ad7 luizIK/Kizuna: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+0d8c84c3b luizIK/Kizuna: Depends on fork OoT occlusion replacement and prompt policy.
+1046197bd luizIK/Kizuna: No functional change.
+1216f5c79 luizIK/Kizuna: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+1425dd798 luizIK/Kizuna: Synthetic resource contention changes benchmark workload and should be opt-in external test instrumentation.
+16396c881 luizIK/Kizuna: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+236090cfd luizIK/Kizuna: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+23e395d1a luizIK/Kizuna: Specific to fork OoT picture menu and DLSS.
+2935305d4 luizIK/Kizuna: Avoids PCIe traffic specifically in the fork memory-stage list submission path.
+2d6903747 luizIK/Kizuna: Executable patch hardcodes OoT dimensions and behavior outside scoped target list.
+315d9ce28 luizIK/Kizuna: Relies on fork render scale presets and picture-mode replacement.
+326cbd227 luizIK/Kizuna: Requires fork compressed host-page memory implementation and CPU/RAM tradeoff data.
+34dadf472 luizIK/Kizuna: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+38605b83d luizIK/Kizuna: Build fix for row 33 fatal error dependency, not a main runtime issue.
+405d0b927 luizIK/Kizuna: Follow-up to fork OoT occlusion flag optimization.
+43008ff16 luizIK/Kizuna: Prerequisite is fork OoT picture settings migration.
+4343da046 luizIK/Kizuna: Default policy for fork occlusion profile only.
+43a671feb luizIK/Kizuna: Forcing kill changes helper-lane semantics. This is an opt-in diagnostic toggle and dump, not a product fix.
+489a29ed4 luizIK/Kizuna: Removing explicit user tuning under a foreign version marker can change scheduling. No Orchid setting migration requested.
+4a7a2429c luizIK/Kizuna: Fallback specific to the fork’s replacement occlusion flag prepass.
+4c6c1e835 luizIK/Kizuna: Fork-specific upgrade defaults and revision state.
+507b084c5 luizIK/Kizuna: Host upload-ring sizing depends on actual placement/bandwidth, not just BAR size; import also changes stream retirement.
+52075f787 luizIK/Kizuna: Synthetic throttling of emulator loops is a lab control and changes host scheduling. It does not replicate actual weak-host behavior or improve gameplay.
+5d1c917bb luizIK/Kizuna: The DMA arithmetic is unchanged. RTTI change depends on absent fork GPU split implementation and actual MinGW build interaction.
+5e47afa88 luizIK/Kizuna: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+5f140a924 luizIK/Kizuna: Fork shader prebuild stamp compatibility and OoT scale path are prerequisites for these changes.
+64f726063 luizIK/Kizuna: Eligibility refinements for the fork occlusion replacement prepass.
+656683dce luizIK/Kizuna: Only applies to fork minidump writer.
+65956bf13 luizIK/Kizuna: Only applies to fork precompiled shader cache namespace.
+65b4d2039 luizIK/Kizuna: Requires the Windows thread planner consuming the value.
+66c137b90 luizIK/Kizuna: Refactor touches only fork title-specific settings, keeps same accepted resolutions.
+676822c8c luizIK/Kizuna: Read-only PCIe probe and optional costly repeat-byte census do not change upload policy or frame time for users.
+6a891ecfd luizIK/Kizuna: Memory-pressure optimization is coupled to fork save policy and can defer a persist that a subsequent failure would lose.
+7156ba49b luizIK/Kizuna: Fork capability plumbing for title-specific replacement.
+73603f4ea luizIK/Kizuna: Fork-specific informational text.
+738f1c663 luizIK/Kizuna: No packaging or runtime change.
+757071ca6 luizIK/Kizuna: Eligibility follow-up for a fork-specific occlusion variant.
+7602a3daf luizIK/Kizuna: Diagnostic hardcoded for OoT’s actor draws, outside target list.
+763871b77 luizIK/Kizuna: Follow-up combines fork address diagnostics and pipeline reuse stage guard.
+77fd99f40 luizIK/Kizuna: Fork-specific guidance reference text, no settings change.
+7994ea876 luizIK/Kizuna: Two connected tuning knobs, with footprint cost and feedback into budget. Analyze independently against pinned block-aware collector.
+81edde01d luizIK/Kizuna: Diagnostic follow-up to fork OcclFlag color program classification.
+85e971e98 luizIK/Kizuna: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+89ca5dda6 luizIK/Kizuna: Informational fork release text.
+966620f68 luizIK/Kizuna: Kizuna packaging intentionally removes its CLI, while Orchid keeps that entry point.
+9766e0b9a luizIK/Kizuna: No compiled behavior change.
+9e84842cf luizIK/Kizuna: The reported device loss concerns a fork packet split during the memory seam experiment.
+9fe223916 luizIK/Kizuna: Runtime substitution relies on OoT executable layout and matched library behavior, outside scope.
+a22b7fe90 luizIK/Kizuna: Follow-up to fork OoT picture UI.
+ac9dfa6f2 luizIK/Kizuna: Diagnostic visualization for out-of-scope replacement.
+b099d5d48 luizIK/Kizuna: Calibration follow-up for fork performance simulation.
+b204589b9 luizIK/Kizuna: Follow-up to fork Streamline/target resolution coupling.
+b75c87825 luizIK/Kizuna: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+bd6e33cd4 luizIK/Kizuna: Dependent on item 10’s OoT JIT hook and still tied to an out-of-scope executable.
+bf348390d luizIK/Kizuna: Heuristic OoT shader replacement can match unrelated shaders and is outside scoped titles.
+c19cd5669 luizIK/Kizuna: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+c1c617d35 luizIK/Kizuna: User setting for fork-only OcclFlag. Not an independent product fix.
+c575fc865 luizIK/Kizuna: Specific state transition in fork OoT picture controls.
+c7cbf2e78 luizIK/Kizuna: Requires upstream DLSS replacement and its failed-evaluation callback.
+cb12662e1 luizIK/Kizuna: Synthetic bandwidth limiting and accounting are diagnostic, not a runtime speedup.
+cf8802206 luizIK/Kizuna: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+cfd692162 luizIK/Kizuna: The patch permits going beyond the memory budget to keep the title alive. Driver paging or system-level memory pressure can be worse than failing the allocation, and fork VMA/buffer-recycling policy differs.
+d7867a4b6 luizIK/Kizuna: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+d981e0497 luizIK/Kizuna: Debug-only branch comparable to row 27, no remedy or scoped fault attached.
+dcaf45109 luizIK/Kizuna: Experimental replacement of guest sample queries with a fragment flag. Forcing early Z and handling shader discards can change query or depth outcomes.
+ddba85a55 luizIK/Kizuna: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+dfba1c5c3 luizIK/Kizuna: Device loss diagnostic attribution
+e2d726109 luizIK/Kizuna: Repeated-boot performance fix for the fork’s warm compute preparation loop.
+f17383716 luizIK/Kizuna: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+f27a6903d luizIK/Kizuna: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+feaf51090 luizIK/Kizuna: The wait belongs to the fork’s particular concurrent prebuild and cache-fetch order.
+14d875b66 liomaroliveira/Lichii: Requires fork H2 dispatch and its dynamic bypass.
+2bba64038 liomaroliveira/Lichii: Requires fork H2 coordinator, stage timings and bypass transitions.
+2c314e9eb liomaroliveira/Lichii: Ordering fix for fork H2 query offload.
+94843d937 liomaroliveira/Lichii: Changes only make sense for the fork’s two-stage renderer pipeline and thread-local bypass ownership.
+f19721cef liomaroliveira/Lichii: Both the revert and B-stage bypass require absent fork mechanisms. Dropping atomic counters assumes one draw owner.
+feff0d04d liomaroliveira/Lichii: Depends on a fork scheduler task route; validate subresource barriers and ownership before changing copy scheduling.
+3040a2ad2 QuincyForbes/Lichii: Compatibility bundle for a fork renderer/toolchain; no matching pinned failure.
+679737ddc QuincyForbes/Lichii: Approximate deadline and scheduling changes affect timeout correctness. Isolate CPU clock path from GPU recorder and measure on Apple.
+69269809b QuincyForbes/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+8165393bc QuincyForbes/Lichii: Fixes fork iOS frontend TAS startup path
+942cb3e7c QuincyForbes/Lichii: Substantive parallel cross-stack update. The self-referential Phi DCE change is separable from the renderer and ARM memory callbacks. The software, Metal and Vulkan changes cannot be validated as one behavior.
+9d03860bd QuincyForbes/Lichii: Title-specific removal of guest compute work based on consumer assumptions.
+aff023239 QuincyForbes/Lichii: Independent shader precision, renderer command ordering and title overrides bundled. Import as unit would change scoped shader and queue behavior without parity evidence.
+b8d928758 QuincyForbes/Lichii: Substantive cross-stack fork snapshot. It includes earlier layout-cache and mapped-run deltas. Its separate mixed tensor support and 32x2 atomic emission require operation-level validation before any scoped port.
+c117d58c8 QuincyForbes/Lichii: Diagnostics only for fork Metal queries; no changed rendering outcome.
+cb0768205 QuincyForbes/Lichii: Mixed rollback of fork mode logic and SDK relief for fork Metal implementation.
+daf54bd57 QuincyForbes/Lichii: Title-specific removal of guest compute work based on consumer assumptions.
+0253c681f atmanli/Lichii: Same documentation family as item 33 with clarification that a completed sign-in replaces a prior renewal failure.
+07b865c6d atmanli/Lichii: Adds cache marker coverage.
+0a0682106 atmanli/Lichii: Tied to fork recapture of incomplete V2 records; guesses must not persist.
+0c34b684f atmanli/Lichii: Declaration split for fork boot-strike cache recovery.
+125a3f054 atmanli/Lichii: Adds a service fallback invariant test.
+130beede8 atmanli/Lichii: Declaration split for choosing an empty driver cache.
+15e4d2273 atmanli/Lichii: Tests enumeration behavior through fake driver callback.
+2997a9586 atmanli/Lichii: Policy split for discarding guessed fork V2 translations.
+2dbd5593b atmanli/Lichii: Protects a file held for fork boot-strike recovery diagnosis.
+2f2dc3f67 atmanli/Lichii: Main independently avoids the format-zero assertion. Upstream also coerces shader texture type to 2D; that residual follows fork null-2D inference and should be evaluated with its OoT capture.
+2fcb01e69 atmanli/Lichii: Synchronization specifically introduced for hotplug/reopen item 02/0. Keep as prerequisite to that candidate.
+378fde64c atmanli/Lichii: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+384582b2c atmanli/Lichii: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+391d9479e atmanli/Lichii: Adds a cache recapture decision fixture.
+397c6c2f7 atmanli/Lichii: Registers Vulkan enumeration tests.
+4cce2c7fd atmanli/Lichii: Utility for input-15 V2 cache boot recovery family.
+4ebb63d5b atmanli/Lichii: Removes only the test.
+5570493f3 atmanli/Lichii: Used solely by fork unread driver cache policy.
+55cc1dcf3 atmanli/Lichii: Utility for rejecting incompletely captured V2 graphics records.
+5abea6de9 atmanli/Lichii: PGO profile is trained for fork/compiler binary mapping. It cannot be reused as source-level port or evidence of runtime speed on Orchid.
+5adf81125 atmanli/Lichii: No runtime change.
+5afce2798 atmanli/Lichii: Adds boot-cache policy coverage.
+5efe7322e atmanli/Lichii: Split header for row 42; alone has no runtime path.
+5fb2f6504 atmanli/Lichii: Optional shutdown diagnostic only.
+6ed8389ba atmanli/Lichii: Part of fork quarantine policy; requires unambiguous file owner and recovery state.
+8504d4d42 atmanli/Lichii: No behavioral port.
+894b6ac85 atmanli/Lichii: State-only slice of fork unread-driver-blob recovery.
+894e1dd67 atmanli/Lichii: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+a003b7dbb atmanli/Lichii: Corrects fake VK_INCOMPLETE count to number written.
+aedaa6bb0 atmanli/Lichii: Adds recovery test for upstream quarantine helper.
+b3adc222d atmanli/Lichii: Helper for the input-15 boot marker protocol.
+bfb467266 atmanli/Lichii: Requires fork boot-lock and cache strike policy.
+c3d5a5aab atmanli/Lichii: Validates shared fixture layout and removes redundant override/restore.
+cef7476e3 atmanli/Lichii: Declaration-only companion to row 32. Do not apply without matching implementation.
+d5181691f atmanli/Lichii: Adds driver blob retention coverage.
+d740818f7 atmanli/Lichii: Upstream trigger is ACNH 3.0.3 online connection, outside scoped titles; no notification delivery in the patch.
+dbc0ab485 atmanli/Lichii: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+e3bee9f9a atmanli/Lichii: Test includes only.
+ee5faebb6 atmanli/Lichii: Whole fork CI/tool distribution change is unrelated to verified Orchid release failure; would alter protected release and PGO jobs.
+f04ba25e2 atmanli/Lichii: V2 conservative replay can otherwise pin a guessed pipeline until restart. Main uses different serialization.
+f18f9873e atmanli/Lichii: Race only exists with Nextendo OAuth sign-in and per-profile persisted credentials.
+f9c868f44 atmanli/Lichii: Registers language priority tests.
+fa4a0a390 atmanli/Lichii: Only changes pipeline cache test coverage.
+fd0df531b atmanli/Lichii: Adds cache replay test for an Ocarina foliage case.
+66bda2a2e danieljesus/Lichii: Rollback depends on propagating commit failures from #175 reserved backing series in input 02. Bounds can be evaluated independently against actual alignment policy.
+a804b83a2 danieljesus/Lichii: Requires upstream replay entry point. The ordering primitive itself exists.
+c122c4294 danieljesus/Lichii: Test harness or fork fixture maintenance without an Orchid runtime correction
+fddd039e2 danieljesus/Lichii: Fixes lifetime of the fork’s fault-handler telemetry, following items 15/16.
+4ba6cc21d sniperking1234/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+f8e6d6958 GoatTech-42/Lichii: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+fd53b49ac GoatTech-42/Lichii: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+9ec645b6d Myoko/Lichii: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+f9c7a021c Frizti/Fritchii: Branch-specific precompiled shader cache identifier.
+60ee2ef62 zortos293/Eglantine: Depends on isolated native system-session launch. Routine titles should retain their normal reporter path.
+05d3aaaea zortos293/Eglantine: New service/UI and API key storage with privacy, rate-limit and packaging scope outside renderer scan.
+5b6ab8868 zortos293/Eglantine: In-place change serves the fork’s scratch constructor; baseline’s value construction explicitly defaults unwritten fields.
+53e32c719 zortos293/Eglantine: Isolated native HOME settings require its boot/session policy and native data assets.
+9cd2c9e01 zortos293/Eglantine: Read-only native HOME boot sandbox depends on isolated system-data preload and process identity setup.
+a2af87d7d zortos293/Eglantine: Requires the native HOME isolated data view and native time-zone ROMFS.
+0455d4e11 zortos293/Eglantine: Exact native HOME firmware/font inputs and isolated system-session wiring are prerequisites.
+710e51af8 zortos293/Eglantine: Depends on verified native HOME firmware and immutable ExeFS for isolated boot.
+fe40c6893 zortos293/Eglantine: Depends on native QLaunch boot and native firmware/process setup absent from this patch.
+a4b19de62 zortos293/Eglantine: Requires front ordering model and deferred grouped state writes.
+4333ae94e zortos293/Eglantine: Guard belongs to the missing front-model path and its synthetic list placeholders.
+115b35f08 zortos293/Eglantine: Depends on upstream front word/value model and distinction between queued and landed work.
+c78e7439e zortos293/Eglantine: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+2b34f86f4 zortos293/Eglantine: Safety follow-up to fork HOME Menu to Switch 2 front-end callback.
+f1c207ead zortos293/Eglantine: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+42eb98f37 zortos293/Eglantine: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+ae907621a zortos293/Eglantine: Sharing Vulkan layouts could reduce object creation, but this broad port touches descriptor buffer, push descriptors, fallback layouts and graphics/compute lifetime. No measured layout-creation bottleneck in the supplied source for Orchid.
+eb898f212 zortos293/Eglantine: Concurrency adjustment in fork state reuse.
+eed766ec3 zortos293/Eglantine: Optimization removes contention caused by the fork zero-page scanner.
+dc386a2ea zortos293/Eglantine: Correctness refinement to fork row 46 address-space-aware download routing.
+e5722ea81 zortos293/Eglantine: Requires fork host-presentation-driven guest vsync and its clock source.
+27d8c3588 zortos293/Eglantine: Two residuals: NX2 NCA detection feeds the fork’s HOME routing; child frontend exit fixes a path introduced by its accessor implementation.
+14aada9e4 zortos293/Eglantine: Main already delivers controller HOME through the regular Short/Long ButtonPoller; a new global shortcut is not an emulator fix unless keyboard mapping is unavailable and the overlay is reachable.
+8b29b67c1 zortos293/Eglantine: Blanket success for unknown Switch 1 applet IPC masks expected errors and can advance applets with invented data.
+5d4c88ae5 zortos293/Eglantine: Removes local default argument issue and keeps unaligned case.
+b6e6d25e4 zortos293/Eglantine: OoT replacement camera diagnostics, outside project target games.
+5fee94dcc zortos293/Eglantine: Without a semantics trace, guessed rights and catalogue replies that report success can send native HOME down an incorrect path.
+1d471c6fa zortos293/Eglantine: Shutdown behavior depends on the upstream BLE implementation and real in-flight GATT timeout behavior.
+87fc94092 zortos293/Eglantine: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+83c3bb225 zortos293/Eglantine: The exact patched method is absent. Check current translated address key alignment separately if a scoped unaligned acquire is identified.
+a4711afdf zortos293/Eglantine: Safety check for absent speculative front read.
+747470339 zortos293/Eglantine: Prevents a queued-but-not-landed range from being incorrectly treated as newer for two competing downloads.
+8c396957f zortos293/Eglantine: Bounds follow-up depends on the missing packed register-handle TLD.B base path from the same input.
+501ed81eb zortos293/Eglantine: Requires upstream Switch 2 BLE backend. Otherwise a zero could create a false large delta after the next report.
+6bc29efd6 zortos293/Eglantine: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+97c901582 zortos293/Eglantine: Requires fork overlap tracking and distinction between real and lost records.
+2c14c7338 zortos293/Eglantine: Counts actual creates instead of calls, with no buffer choice or lifetime change.
+ee2f9d0d6 zortos293/Eglantine: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+86b6897e8 zortos293/Eglantine: This changes the Nextendo remote BCAT package/cache protocol. Orchid serves local delivery cache directories and has no scoped Nextendo package or external service contract.
+dec63bfb8 zortos293/Eglantine: Follow-up for normal readbacks under fork writeback precedence layer.
+9de8fb1cf zortos293/Eglantine: No writeback behavior changes.
+322bb0bbf zortos293/Eglantine: Specific title and range-aware machinery, with no portable independent behavior established.
+53964d56f zortos293/Eglantine: Split across removed fork-specific upscale and declaration changes for async texture writeback.
+ae5843014 zortos293/Eglantine: The optimization assumes reused draws still re-apply query state, an absent fork path.
+0f979a493 zortos293/Eglantine: Depends on fast-draw vertex rebind and dynamic input feature gate.
+0bce9d373 zortos293/Eglantine: Requires the upstream NVIDIA variable-pointer scheme. A later sibling excludes task/mesh from this optimization after wrong load results.
+5602fa30e zortos293/Eglantine: Requires fork split CPU/driver shader job scheduling.
+6b34d6ee1 zortos293/Eglantine: The Windows failure concerns the upstream V2 log format; confirm any equivalent single >INT_MAX read in Orchid separately.
+ea089c9ad zortos293/Eglantine: Reports fork-specific V2 job timing. No build ordering change.
+c09ee17bc zortos293/Eglantine: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+fb5f22f19 zortos293/Eglantine: PGO profile is trained for fork/compiler binary mapping. It cannot be reused as source-level port or evidence of runtime speed on Orchid.
+46bbe2c8d zortos293/Eglantine: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+ac09e5120 zortos293/Eglantine: Follow-up assumes the missing multi-bank mapping; the sibling patch also adds a signed-overflow guard this variant lacks.
+6d7524093 zortos293/Eglantine: This integrates fork-hosted replacement services and opt-in trust mods. Orchid has no scoped target route or supported service contract for those claims.
+e59131404 zortos293/Eglantine: Depends on Nextendo profile ownership and server integration; manipulating keeps/clears must preserve local saves.
+833fdf671 zortos293/Eglantine: Loop indexes backward without an explicit boundary. Require exact packet regression proving header carry and no underflow before importing.
+02b6a8a55 zortos293/Eglantine: Shader replacement is specific to fork OoT post-processing.
+36b4bedc8 zortos293/Eglantine: Avoids picking a key generation polluted by another test.
+092dc4d63 zortos293/Eglantine: Specific built-in OoT FPS patches and coordination across service, process and WSI. No generic adoption.
+0d9bf1bfa zortos293/Eglantine: Support stack for display-completion pacing. It supplies capabilities and synchronization API before any pacing caller.
+aa87c94d9 zortos293/Eglantine: Loader discovery changes declined in the #185 integration review after testing error propagation
+acfddfda1 zortos293/Eglantine: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+160d6b3f2 zortos293/Eglantine: Part of fork fast-draw reuse family, also seen in input 11.
+f0bf0cfda zortos293/Eglantine: Adds unmapped GPU memory diagnostics
+22550579c zortos293/Eglantine: Not a direct Vulkan fix on main because its baseline does not apply the fork’s rescaling policy. A 1x/2x depth-overlay fixture would establish intended slope behavior first.
+34cd60fce zortos293/Eglantine: Main deliberately bounds retired resource count and waits only at capacity. Moving the drain is a different memory-retention policy.
+eb38ce16d zortos293/Eglantine: Opt-in diagnostics, with SPIR-V byte changes and source metadata to validate before sharing captures.
+43fc4ff0d zortos293/Eglantine: This is an opt-in runtime capture improvement for the fork’s existing dump machinery.
+d48582e89 zortos293/Eglantine: Depends on the BLE backend, matching library setup and supported adapter; threaded connection handling follows the base port.
+2497e7540 zortos293/Eglantine: Opt-in page-touch optimization may increase memory faults and thrash on constrained systems. Measure independently of logging.
+a6e394a9d zortos293/Eglantine: Specific OoT replacement shader resolution matching.
+bfa046dcf zortos293/Eglantine: Recovery guard depends on fork disk-backed reader and status hooks.
+8c0558a3d zortos293/Eglantine: Keeps test path overrides isolated, including an absent original folder.
+b41ccf1bc zortos293/Eglantine: Broad networking feature series outside the local emulation fixes
+f1f0dcc13 zortos293/Eglantine: Safety follow-up to the fork’s mesh vertex-input lending cache.
+56deaeec4 zortos293/Eglantine: Fork targets an explicit fixed-rate Scheduler::Wait API. Main’s merged Boost pacing has a different integration.
+a5b6a265e zortos293/Eglantine: Anti-churn follow-up to fork age retention policy.
+36705af46 zortos293/Eglantine: Fork’s overlapping serialization and background prebuild stages are absent.
+87b5cb7a1 zortos293/Eglantine: Follow-up for fork texture retention thresholds.
+eb2786960 zortos293/Eglantine: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+40aa593b0 zortos293/Eglantine: A shader pattern alone cannot establish title- or draw-specific depth intent. Bias changes valid depth ordering wherever applied.
+5e33a765d zortos293/Eglantine: For an array of 64 descriptors, a no-bit result from FindUMsb remains a large unsigned index after shift/normalize and selects entry 63. Reducing count to 32 makes that path select entry 31. The fork test explicitly expects the changed clamp.
+e37c18308 zortos293/Eglantine: Requires the fork’s network contract, known pass table and successful replacement. On its own the changed return risks dropping work even if replacement later fails.
+3340b4186 zortos293/Eglantine: The new hash is for Fortune’s Weave and explicitly excluded from scoped Star Fox pass selection.
+282616372 zortos293/Eglantine: The fork patch is coupled to its replacement chain and title-specific motion/depth validation. No scoped mode with that chain is established.
+8db482663 zortos293/Eglantine: Requires the Ocarina output bypass and matching shader identities. Sibling 29 later replaces the tracked framebuffer with the output pass’s actual sampled descriptor.
+0a15f2ce0 zortos293/Eglantine: Requires upstream account service/API and identity association.
+2feb50540 zortos293/Eglantine: Build fix for fork crash handler only.
+531903ea3 zortos293/Eglantine: Depends on remote social profile semantics and introduces account and avatar behavior with no in-scope service target.
+0d98e37f9 zortos293/Eglantine: Correctness follow-up to fork row 34 recovery. Avoid porting the intermediate Finish-based approach.
+d781b3bfe zortos293/Eglantine: Instruments the upstream queued-release and list-copy timing family.
+1a78b8686 zortos293/Eglantine: Fork networking compatibility expansion without a target workload
+eb2b10e65 zortos293/Eglantine: Interdependent fork-specific account, service and host catalogue integration. No scoped service contract or frontend account lifecycle in Orchid.
+6cffb2390 zortos293/Eglantine: Remote executable-patch lifecycle coupled to external server/content trust and fork online support. No scoped signed patch contract.
+8f1258c41 zortos293/Eglantine: Specific full-disk and global decoder budget lifecycle follows disk-backed series.
+33701f0e7 zortos293/Eglantine: Requires Nextendo account/API integration; no standalone role in baseline.
+f4eacfe59 zortos293/Eglantine: Per-image diagnostics do not change eviction or rendering.
+cf70d2b6a zortos293/Eglantine: Avoids stack exhaustion in split tests.
+279d3fde1 zortos293/Eglantine: Keeps assertion comparisons type-consistent.
+23a1ca70d zortos293/Eglantine: Requires fork list-slot owed interval tracking.
+af59093a2 zortos293/Eglantine: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+cdcecbd02 zortos293/Eglantine: Same iteration and erase semantics.
+960f21573 zortos293/Eglantine: Submitting during draw setup can strand vertex/index bindings in the previous command buffer. Fork row 33 removes that behavior.
+8f933d5d9 zortos293/Eglantine: Returning success installs no listener and delivers no notifications; cannot serve an actual notification consumer.
+d9a483082 zortos293/Eglantine: Evidence is for Link’s Awakening, outside the target set. Changing the global clip convention based on viewport 0 affects every viewport in the draw.
+617bdbf7f zortos293/Eglantine: Bounds optional diagnostic capture memory, with explicit skipped format/size accounting.
+a6fe5bde3 zortos293/Eglantine: Requires fork native task/mesh versus compute fallback and RDNA2 hang evidence. No unsafe gameplay run proposed.
+092ec96e6 zortos293/Eglantine: The dependency is the Ocarina 0400486024DEC000 bypass; this variant is more constrained than gating on replacement alone.
+21ac7636e zortos293/Eglantine: Fork-specific process termination changes shutdown, save and log behavior. Diagnostic improvement should be decoupled from terminating at every call site.
+892bb9876 zortos293/Eglantine: Change is for the fork’s SDL CLI registration path
+dbd2e621c zortos293/Eglantine: Part of allocator recovery series. Preserve sparse alignment and handle real OOM without returning an empty required buffer.
+de5aa86a0 zortos293/Eglantine: This code branch is exclusive to proprietary Qualcomm/ARM drivers. The prescribed PC's RADV cannot exercise it; a descriptor fixture only proves policy arithmetic.
+2296a2cf0 zortos293/Eglantine: Adds defensive parser coverage without changing the shipped parser paths.
+da2bf4540 zortos293/Eglantine: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+1974cfb9d zortos293/Eglantine: Requires the Ocarina AA bypass, known output hashes and the game’s descriptor offsets. This supersedes the draw-tracking source selection in sibling 27.
+0326174a9 zortos293/Eglantine: Foreign release asset/tag scheme is not portable. Consider only repeat-query guard if reproduced in main.
+115ab2b87 zortos293/Eglantine: Intrusive diagnostic collection spans frontend, JIT and GPU. No defect repaired.
+99e89096c zortos293/Eglantine: Instrumentation requires extra GPU queries and can perturb timing.
+115367d2b zortos293/Eglantine: Instrumentation is intertwined with the fork deferred flush/compute pipeline.
+ebbc8d76e zortos293/Eglantine: These late reads only have effect with the fork’s CPU and FS instrumentation.
+730282ad5 zortos293/Eglantine: Getter has no caller in Orchid and prior review found no behavior change
+f7da6c48d zortos293/Eglantine: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+7802d6434 zortos293/Eglantine: OoT-only upscaler and output constraints.
+4045338fb zortos293/Eglantine: The special back-edge/shuffle relaxation applies to missing indirect-table discovery.
+885503fac zortos293/Eglantine: Optional instrumentation with potentially contending OS calls.
+f2c6d533e zortos293/Eglantine: Nur Doku, Assets, Tooling oder Packaging-Pfade; kein Runtime-Fix aus diesem Diff.
+5da051e25 zortos293/Eglantine: Fixes construction order inside test fixture.
+e42cff601 zortos293/Eglantine: Changes command lookup names for logs and makes the stub table easier to read.
+8c63a82ea zortos293/Eglantine: Follow-up to fork retention/supersession and writeback handling.
+085e9bdff zortos293/Eglantine: Follow-up to the absent duplicate QMD scheduler. Prediction must not turn a fence or unknown write into an early release.
+c83b30d0c zortos293/Eglantine: Workaround specifically for fallback path with bundled OpenSSL and redirect to a new host; plugs into item 26.
+dd209d1ca zortos293/Eglantine: Bulk fork network and content service trust-store changes lack a matching Orchid path
+efddc1301 zortos293/Eglantine: Alternative command-list representation and ownership scheme. Broad ordering risk in list reads, CPU visibility and fences. Separate residual ideas from core architecture.
+8101d5587 zortos293/Eglantine: Test-only build warning fixes.
+83b911d22 zortos293/Eglantine: Keeps the same mutex and lifetime.
+c72e76287 zortos293/Eglantine: No change to captured state, report writeback, fence, or unregister behavior.
+5f50f0bd0 zortos293/Eglantine: Moves Catch assertions off worker threads.
+a2a1ecd96 zortos293/Eglantine: No runtime difference.
+8b2630f05 zortos293/Eglantine: Bounds follow-up for fork stutter trace aggregation.
+420d30bc0 zortos293/Eglantine: Removes a shadowing name in the test.
+c9993e230 zortos293/Eglantine: Prevents accidental reuse of a prior test cache entry if the allocator reuses the address.
+d656f1d18 zortos293/Eglantine: Same family as row 20 with tests and reference method. Test evidence useful before evaluating a run representation swap.
+9f6ba19b5 zortos293/Eglantine: Fork prebuild job management, dependent on the recent-session age records and cancellation API.
+52b1dc870 zortos293/Eglantine: Parameter changes depend on absent learned early-copy scheme. Ocarina counts do not establish useful defaults for scoped titles.
+f440923f9 zortos293/Eglantine: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+775f3c33f zortos293/Eglantine: Requires game-specific Ocarina output bypass; the native-key loop disambiguates first-word collisions.
+2e300046f zortos293/Eglantine: Only changed runtime branch is a workaround for Mario Kart World dynamic resolution, outside scope.
+f79966c28 zortos293/Eglantine: Two buffer lifetime policies are bundled. Descriptor backing memory grows and forces an early submit, while adjacent retirement behavior also changes. Separate the two effects before attributing a gain.
+c0c232dad zortos293/Eglantine: Fork feedback bug double-counted vblank in its generated-frame present-spacing loop. Main does not have that loop.
+642eace1b zortos293/Eglantine: Diagnostic change crosses platform exception handlers. Verify fault recovery and signal-safety before adding metadata for an actual scoped crash.
+4e10addae zortos293/Eglantine: Specific OoT camera substitution, outside scope.
+6143ffc1c zortos293/Eglantine: GameChat online and camera integration outside this scan
+80ff5ed7a zortos293/Eglantine: Prerequisite is external Streamline integration.
+686317dac zortos293/Eglantine: Periodic log flush changes diagnostics rather than emulation
+28756be88 zortos293/Eglantine: Requires fork range-aware overlap writebacks.
+22219f999 zortos293/Eglantine: Requires fork async overlap writeback and its precedence rules.
+e5ed700c7 zortos293/Eglantine: Correctness follow-up to fork range ownership model.
+8d492586f zortos293/Eglantine: Requires fork per-page writeback bookkeeping; verify compaction does not lose newer claims.
+f8f2bea9b zortos293/Eglantine: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+effafb771 zortos293/Eglantine: Applies to specified OoT binary and fork patch/cave conventions, outside project title scope.
+2834e34c3 zortos293/Eglantine: Could make scan churn worse by visiting large protected populations, particularly under memory pressure. Measure eligible deletions and scan time at equal target memory.
+047003fb8 zortos293/Eglantine: Adaptive mode depends on title-specific executable and frame-mode layout for out-of-scope Mario Kart World.
+cf37246c0 vv4k4l/Eglantine: Global read-pacing bypass caused Yoshi loading to outrun VRAM reclamation in the prior review
+562f6ceb1 zortos293/Eglantine: Raises image retention based on a fork-specific minimum-age override; Orchid has an adaptive memory policy
+81b202fbc zortos293/Eglantine: Fixed 150-frame age can delay reclamation under pressure; Orchid collects against its own budget
+752328bf3 zortos293/Eglantine: Executable patch and timing policy explicitly target Mario Kart World, outside scope.
+933d35ff0 zortos293/Eglantine: AMD Windows overallocation relaxes budget enforcement without a verified workload
+ad70f2f0c JohnsGoated/Lichii: Old-cache repair is tied to fork null-as-2D inference and recapture semantics.
+d18b636a6 JohnsGoated/Lichii: Names the existing historical bitmap consistently.
+df24d8f2d JohnsGoated/Lichii: A single guessed type is baked into shader translation. The evidence is Legends Z-A tonemap outside project scope and the migration can change valid 1D bindings.
+edeeb6df3 JohnsGoated/Lichii: Cache metadata follow-up to the fork null-type inference.
+39722bbff kurebeyashi-noah/Lichii: Large Duskbloods writeback architecture. An overlap may not represent equivalent data or a complete mapping; validate coherent bytes and ordering independently.
+40d58916b kurebeyashi-noah/Lichii: Follow-up requires the upstream indirect-storage binding model and verifies offset computation against the loaded base.
+67abdbf51 kurebeyashi-noah/Lichii: Requires the fork’s prebuilt NxFormat converter integration.
+916a277cb kurebeyashi-noah/Lichii: Fixes stale snapshot re-overwrite inside fork range-aware writeback.
+d6ceaf722 kurebeyashi-noah/Lichii: EX2 ABI workaround unnecessary without EX2 telemetry. Symbol-retention flag is fork’s Windows profiler build option.
+a43a143be astraea-emu/nx2: Two distinct effects. Global SVC change affects non-root exits; CLI shutdown callback can be evaluated separately.
+83de5102b inxomnyaa/Lichii: Refines the upstream IsWaitingForGuest present short circuit. The count alone does not change current present policy.
+3c4369d8f zejiran/Lichii: Follow-up to absent adaptive wake/poll implementation.
+de1999b3b zejiran/Lichii: Only repairs the fork’s instrumentation, which Orchid does not collect.
+e680e97cd JalenJaceX2/zortoscerroverb: Upstream mixed-control emulation predicate is not Orchid’s software/NV split.
+9933a3715 HamsterCL/Lichii: Requires the base Vulkan fragment-output guard and targets an Ocarina bloom flash. It does not establish the active Bananza #170 invalidation symptom.
+b73e171b9 HamsterCL/Lichii: The Ocarina bloom workaround changes every eligible native output and could suppress intentional infinity or NaN in intermediate targets. That broad policy lacks evidence from a scoped title.
+ec5812619 AlfaDev23/Lichii: Eighteen-fold timeout prolongs blocked UI/process without addressing stuck thread. Diagnose actual shutdown boundary.
+8cd0bb555 joaopedrocampos/Lichii: Cross-GPU cache compatibility for fork record/key format.
+411edc7a3 intellq/Lichii: Bypasses texel safeguards for oversized resources; Orchid uses extent guard 6d54985d70
+9a1e2d42f StiensWout/Lichii: Mechanical refactoring of equivalent hashing and cache-key derivation. No product behavior change.
+c52fa0ed7 BrodXI/Lichii: Square depth targets are not necessarily shadow maps. Changes effective resolution in valid depth-only passes.
+2d487baef DuskDarf1/Lichii: Fork optional window sizing setting
+f5edb3578 zortos293/Eglantine: Older GOB swizzle implementation overlaps the more recent 3f7cb262; evaluate one on current main
+d590d5182 zortos293/Eglantine: Older combined ASTC proposal overlaps the focused direct-scan candidate; keep decoder compiler changes separate

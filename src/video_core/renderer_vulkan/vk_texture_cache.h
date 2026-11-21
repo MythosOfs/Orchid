@@ -46,6 +46,24 @@ class RenderPassCache;
 class StagingBufferPool;
 class Scheduler;
 
+struct SamplerBinding {
+    struct Compatibility {
+        bool mag_linear : 1;
+        bool min_linear : 1;
+        bool mipmap_linear : 1;
+        bool anisotropy : 1;
+        bool compare : 1;
+        bool minmax : 1;
+        bool clamp_to_border : 1;
+        bool custom_border : 1;
+
+        bool operator==(const Compatibility&) const noexcept = default;
+    };
+
+    VkSampler handle{};
+    Compatibility compatibility{};
+};
+
 class TextureCacheRuntime {
 public:
     explicit TextureCacheRuntime(const Device& device_, Scheduler& scheduler_,
@@ -211,6 +229,7 @@ public:
                          std::array<f32, 2> motion_scale);
     std::unique_ptr<Fsr3Upscaler> fsr3_upscaler;
     bool fsr3_unsupported{};
+    SamplerBinding fallback_sampler{};
     std::optional<std::chrono::steady_clock::time_point> fsr3_last_evaluation;
 
     /// TemporalUpscale's history: its previous result (images[current]) and the image the next
@@ -742,6 +761,7 @@ public:
     CustomBorderColorBudget& operator=(CustomBorderColorBudget&& rhs) noexcept;
 
     bool TryAcquire(const Device& device, size_t count);
+    void Release(size_t count) noexcept;
 
 private:
     void Release() noexcept;
@@ -755,7 +775,7 @@ public:
     explicit Sampler(TextureCacheRuntime&, const Tegra::Texture::TSCEntry&);
 
     [[nodiscard]] VkSampler Handle() const noexcept {
-        return *variants.front().sampler;
+        return variants.front().binding.handle;
     }
 
     [[nodiscard]] VkSampler HandleFor(const ImageView& image_view, bool is_depth);
@@ -780,13 +800,14 @@ private:
     struct Variant {
         VariantKey key;
         vk::Sampler sampler;
+        SamplerBinding binding;
     };
 
     static constexpr size_t MAX_VARIANTS = 32;
 
     [[nodiscard]] VariantKey MakeKey(const ImageView& image_view, bool is_depth) const noexcept;
     [[nodiscard]] VkSampler Find(const VariantKey& key) const noexcept;
-    VkSampler Emplace(VariantKey key);
+    VkSampler Emplace(VariantKey key, const SamplerBinding* fallback = nullptr);
 
     CustomBorderColorBudget custom_border_color_budget;
     std::vector<Variant> variants;

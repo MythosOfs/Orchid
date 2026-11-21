@@ -319,7 +319,11 @@ source and author in its message.
   [Lancito01/Lichii](https://github.com/Lancito01/Lichii) (Andy: motion feedback without integral
   term), [dzervas/Lichii](https://github.com/dzervas/Lichii) (Dimitris Zervas: Windows partial
   unmap protections) and [luizIK/Kizuna](https://github.com/luizIK/Kizuna) (Frizti: kernel
-  shutdown order, present device loss).
+  shutdown order, present device loss). Origins behind these: the sampler fallback comes from
+  [Frizti/Fritchii](https://github.com/Frizti/Fritchii) `ba590516ef`, the kernel shutdown order
+  from [zortos293/Lichii](https://github.com/zortos293/Lichii) #1932 (`a3b4397afd`, Zortos, with
+  ZeroOneTV's variant), the present device-loss handling from HeyListen `619a8d58c` (Yanis
+  Manseur).
 
 ## License
 

@@ -386,6 +386,7 @@ void Swapchain::Present(VkSemaphore render_semaphore) {
         break;
     case VK_ERROR_DEVICE_LOST:
         device.ReportLoss();
+        vk::Check(result);
         break;
     default:
         LOG_CRITICAL(Render_Vulkan, "Failed to present with error {}", string_VkResult(result));

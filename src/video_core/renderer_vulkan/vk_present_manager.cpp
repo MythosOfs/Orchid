@@ -188,8 +188,10 @@ Frame* PresentManager::GetRenderFrame() {
     // Wait for the presentation to be finished so all frame resources are free
     {
         HitchTrace::Scope trace{HitchTrace::Event::PresentFrameFence, frame->index};
-        if (frame->present_done.Wait() == VK_ERROR_DEVICE_LOST) {
+        const VkResult result = frame->present_done.Wait();
+        if (result == VK_ERROR_DEVICE_LOST) {
             device.ReportLoss();
+            vk::Check(result);
         }
     }
     frame->present_done.Reset();
@@ -468,6 +470,7 @@ void PresentManager::DiscardFrame(Frame* frame) {
     }
     if (result == VK_ERROR_DEVICE_LOST) {
         device.ReportLoss();
+        vk::Check(result);
     }
     LOG_ERROR(Render_Vulkan, "Discarding a frame failed ({})", string_VkResult(result));
     frame->present_done = device.GetLogical().CreateFence({

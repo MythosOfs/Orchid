@@ -39,8 +39,18 @@ TEST_CASE("A play time manager that changed nothing does not save over newer pla
         PlayTime::PlayTimeManager frontend;
         frontend.SetPlayTime(program_id, 1200);
     }
+    {
+        PlayTime::PlayTimeManager reader;
+        CHECK(reader.GetPlayTime(program_id) == 1200);
+    }
+    {
+        PlayTime::PlayTimeManager settings_dialog;
+        settings_dialog.SetPlayTime(program_id, 1800);
+        PlayTime::PlayTimeManager frontend;
+        frontend.SetPlayTime(program_id, 2400);
+    }
     const PlayTime::PlayTimeManager reader;
-    CHECK(reader.GetPlayTime(program_id) == 1200);
+    CHECK(reader.GetPlayTime(program_id) == 2400);
 }
 
 }

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cstdio>
 #include <filesystem>
 #include "common/fs/fs.h"
@@ -19,6 +20,7 @@
 
 #ifdef _WIN32
 #include <io.h>
+#include <process.h>
 #include "common/string_util.h"
 #else
 #include <fcntl.h>
@@ -88,14 +90,32 @@ void Config::WriteToIni() const {
     if (error) {
         target = path;
     }
+    static std::atomic<u32> save_count{};
     auto temporary = target;
-    temporary += ".tmp";
+#ifdef _WIN32
+    temporary += fmt::format(".tmp.{}.{}", _getpid(), save_count++);
+#else
+    temporary += fmt::format(".tmp.{}.{}", getpid(), save_count++);
+#endif
 
     FILE* fp = nullptr;
 #ifdef _WIN32
-    fp = _wfopen(temporary.c_str(), L"wb");
+    const bool target_writable = _waccess(target.c_str(), 0) != 0 || _waccess(target.c_str(), 2) == 0;
+    if (target_writable) {
+        fp = _wfopen(temporary.c_str(), L"wbx");
+    }
 #else
-    fp = fopen(temporary.c_str(), "wb");
+    const bool target_writable = access(target.c_str(), F_OK) != 0 || access(target.c_str(), W_OK) == 0;
+    if (target_writable) {
+        const int fd = open(temporary.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0666);
+        if (fd >= 0) {
+            fp = fdopen(fd, "wb");
+            if (fp == nullptr) {
+                close(fd);
+                std::filesystem::remove(temporary, error);
+            }
+        }
+    }
 #endif
 
     if (fp == nullptr) {

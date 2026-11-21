@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <string>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -63,8 +64,20 @@ extern "C" int __real_fsync(int fd);
 extern "C" int __wrap_fflush(FILE* stream);
 extern "C" int __wrap_fsync(int fd);
 
+namespace {
+
+bool IsConfigTestFile(int fd) {
+    std::error_code error;
+    const auto target =
+        std::filesystem::read_symlink("/proc/self/fd/" + std::to_string(fd), error);
+    return !error && target.string().find("orchid-config-") != std::string::npos;
+}
+
+}
+
 extern "C" int __wrap_fflush(FILE* stream) {
-    if (config_failure == ConfigFailure::BufferedWrite) {
+    if (config_failure == ConfigFailure::BufferedWrite && stream != nullptr &&
+        IsConfigTestFile(fileno(stream))) {
         errno = EIO;
         return EOF;
     }
@@ -72,7 +85,7 @@ extern "C" int __wrap_fflush(FILE* stream) {
 }
 
 extern "C" int __wrap_fsync(int fd) {
-    if (config_failure == ConfigFailure::FileSync) {
+    if (config_failure == ConfigFailure::FileSync && IsConfigTestFile(fd)) {
         errno = EIO;
         return -1;
     }
@@ -109,4 +122,43 @@ TEST_CASE("Config preserves the old INI if writing or syncing the replacement fa
     }
     config.SetValue("after");
     CHECK(stored().find("after") != std::string::npos);
+
+    REQUIRE(std::filesystem::remove(path));
+    config.SetValue("recreated");
+    CHECK(stored().find("recreated") != std::string::npos);
+    const auto reference = root / "reference.ini";
+    { std::ofstream reference_file{reference}; }
+    CHECK(std::filesystem::status(path).permissions() ==
+          std::filesystem::status(reference).permissions());
+}
+
+TEST_CASE("Config leaves a read-only INI as it is", "[config_persistence]") {
+    const auto root = std::filesystem::temp_directory_path() /
+                      ("orchid-config-read-only-" + std::to_string(
+                          std::chrono::steady_clock::now().time_since_epoch().count()));
+    REQUIRE(std::filesystem::create_directory(root));
+    const auto path = root / "read-only.ini";
+    SCOPE_EXIT {
+        std::error_code error;
+        std::filesystem::permissions(path, std::filesystem::perms::owner_all,
+                                     std::filesystem::perm_options::add, error);
+        std::filesystem::remove_all(root, error);
+    };
+    TestConfig config{path};
+    const auto stored = [&] {
+        std::ifstream input(path, std::ios::binary);
+        return std::string{std::istreambuf_iterator<char>{input}, {}};
+    };
+    config.SetValue("kept");
+    const auto previous = stored();
+    std::filesystem::permissions(path,
+                                 std::filesystem::perms::owner_read |
+                                     std::filesystem::perms::group_read |
+                                     std::filesystem::perms::others_read);
+
+    config.SetValue("changed");
+
+    CHECK(stored() == previous);
+    CHECK(std::distance(std::filesystem::directory_iterator(root),
+                        std::filesystem::directory_iterator{}) == 1);
 }

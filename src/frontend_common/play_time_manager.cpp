@@ -102,11 +102,7 @@ PlayTimeManager::PlayTimeManager() : running_program_id() {
     }
 }
 
-PlayTimeManager::~PlayTimeManager() {
-    if (modified) {
-        Save();
-    }
-}
+PlayTimeManager::~PlayTimeManager() = default;
 
 void PlayTimeManager::SetProgramId(u64 program_id) {
     running_program_id = program_id;
@@ -142,7 +138,6 @@ void PlayTimeManager::AutoTimestamp(std::stop_token stop_token) {
             std::scoped_lock lock{database_mutex};
             database[running_program_id] += GetDuration();
         }
-        modified = true;
         Save();
     }
 }
@@ -169,7 +164,6 @@ void PlayTimeManager::SetPlayTime(u64 program_id, u64 play_time) {
         std::scoped_lock lock{database_mutex};
         database[program_id] = play_time;
     }
-    modified = true;
     Save();
 }
 
@@ -178,7 +172,6 @@ void PlayTimeManager::ResetProgramPlayTime(u64 program_id) {
         std::scoped_lock lock{database_mutex};
         database.erase(program_id);
     }
-    modified = true;
     Save();
 }
 

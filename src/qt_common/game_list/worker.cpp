@@ -186,7 +186,7 @@ QString FormatGameName(const std::string& physical_name) {
     return physical_name_as_qstring;
 }
 
-// Loose ExeFS dumps (<game>/exefs/main, <game>/base/exefs/main, updates in
+// Loose ExeFS dumps (<game>/main, <game>/exefs/main, <game>/base/exefs/main, updates in
 // <game>/updates/<title id>/exefs/main) have no control data, so they are named after their
 // game folder.
 QString LooseExeFSName(const std::string& physical_name) {
@@ -198,7 +198,10 @@ QString LooseExeFSName(const std::string& physical_name) {
         }
     }
     QDir dir = QFileInfo(QString::fromStdString(physical_name)).dir();
-    if (dir.dirName().compare(QStringLiteral("exefs"), Qt::CaseInsensitive) != 0 || !dir.cdUp()) {
+    if (dir.dirName().compare(QStringLiteral("exefs"), Qt::CaseInsensitive) != 0) {
+        return dir.dirName();
+    }
+    if (!dir.cdUp()) {
         return {};
     }
 

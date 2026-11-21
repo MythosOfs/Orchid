@@ -249,23 +249,36 @@ TEST_CASE("Nx2 video keeps the parameter sets of its configuration on the CPU", 
     }
 }
 
-TEST_CASE("Nx2 video keeps the host GPU decoder once it accepted a packet", "[nx2_video]") {
-    SECTION("that gave no picture yet") {
-        auto packets = Packets(reordered_clip);
-        REQUIRE(packets.size() == 6);
-        Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Packet, Avc()};
-        decoder.decoder->SetGpuDecodeFault(Nx2GpuDecodeFault::None);
-        std::vector<Nx2Picture> pictures;
-        decoder.decoder->Decode(packets[0], 0, pictures);
-        REQUIRE(pictures.empty());
-        packets.erase(packets.begin());
-        CHECK(decoder.Play(packets, Nx2GpuDecodeFault::Packet) == std::vector<u64>{0});
-    }
+TEST_CASE("Nx2 video keeps the host GPU decoder once it gave a picture", "[nx2_video]") {
     Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Packet, Avc()};
     CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::Packet, 2) == std::vector<u64>{0, 1});
     SECTION("until the next video") {
         CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::Packet) == all_frames);
     }
+}
+
+TEST_CASE("Nx2 video falls back from the next keyframe while the host GPU gave no picture",
+          "[nx2_video]") {
+    auto packets = Packets(reordered_clip);
+    REQUIRE(packets.size() == 6);
+    Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::None, Avc()};
+    std::vector<Nx2Picture> pictures;
+    decoder.decoder->Decode(packets[0], 100, pictures);
+    REQUIRE(pictures.empty());
+    packets.erase(packets.begin());
+    // The frame buffered on the host GPU is lost; the CPU starts at the keyframe in packet 2.
+    CHECK(decoder.Play(packets, Nx2GpuDecodeFault::Packet) == std::vector<u64>{2, 4, 3});
+}
+
+TEST_CASE("Nx2 video keeps the host GPU decoder when the CPU decoder does not open",
+          "[nx2_video]") {
+    const auto packets = Packets();
+    Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::None, Avc()};
+    std::vector<Nx2Picture> pictures;
+    decoder.decoder->SetGpuDecodeFault(Nx2GpuDecodeFault::NoCpu);
+    decoder.decoder->Decode(packets[0], 100, pictures);
+    CHECK(decoder.decoder->IsOpen());
+    CHECK(decoder.Play(packets, Nx2GpuDecodeFault::None) == all_frames);
 }
 
 TEST_CASE("Nx2 video falls back when the host GPU decoder only answered EAGAIN", "[nx2_video]") {

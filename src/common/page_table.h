@@ -57,15 +57,10 @@ struct PageTable {
      */
     class PageEntryData {
     public:
-        // Reserved when mapping ids are exhausted; this id cannot prove span continuity.
         static constexpr u16 INVALID_BLOCK_ID = (std::numeric_limits<u16>::max)();
 
         [[nodiscard]] static constexpr u16 BlockIdForMapping(u64 mapping_id) noexcept {
             return mapping_id < INVALID_BLOCK_ID ? static_cast<u16>(mapping_id) : INVALID_BLOCK_ID;
-        }
-
-        [[nodiscard]] static constexpr bool CanFastSpan(u16 first, u16 last) noexcept {
-            return first != INVALID_BLOCK_ID && first == last;
         }
 
         struct Data {

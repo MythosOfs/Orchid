@@ -54,6 +54,7 @@ add_executable(tests
     core/kip_blz.cpp
     core/kip_sections.cpp
     core/kip_truncated.cpp
+    core/memory_span.cpp
     core/page_heap.cpp
     core/profile_orphans.cpp
     core/read_traps.cpp

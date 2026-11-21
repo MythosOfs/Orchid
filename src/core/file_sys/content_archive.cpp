@@ -9,6 +9,7 @@
 #include <optional>
 #include <utility>
 
+#include "common/hex_util.h"
 #include "common/logging.h"
 #include <ranges>
 #include "core/crypto/aes_util.h"
@@ -29,6 +30,22 @@ static u8 MasterKeyIdForKeyGeneration(u8 key_generation) {
     return std::max<u8>(key_generation, 1) - 1;
 }
 
+static bool IsUnreadablePlaintextHeader(const VirtualFile& file) {
+    std::vector<u8> bytes(sizeof(NcaHeader) + NcaHeader::FsCountMax * sizeof(NcaFsHeader));
+    if (file->ReadBytes(bytes.data(), bytes.size()) != bytes.size()) {
+        return false;
+    }
+    NcaHeader header;
+    std::memcpy(&header, bytes.data(), sizeof(header));
+    for (const u32 magic : {NcaHeader::Magic0, NcaHeader::Magic1, NcaHeader::Magic2,
+                            NcaHeader::Magic3, NcaHeader::MagicDecrypted}) {
+        if (header.magic == magic) {
+            return false;
+        }
+    }
+    return true;
+}
+
 NCA::NCA(VirtualFile file_, const NCA* base_nca, bool allow_missing_base)
     : file(std::move(file_)), keys{Core::Crypto::KeyManager::Instance()} {
     if (file == nullptr) {
@@ -38,7 +55,9 @@ NCA::NCA(VirtualFile file_, const NCA* base_nca, bool allow_missing_base)
 
     reader = std::make_shared<NcaReader>();
     if (Result rc = reader->Initialize(file, GetCryptoConfiguration(), GetNcaCompressionConfiguration()); R_FAILED(rc)) {
-        status = Loader::ResultStatus::ErrorBadNCAHeader;
+        status = !keys.HasKey(Core::Crypto::S256KeyType::Header) && IsUnreadablePlaintextHeader(file)
+                     ? Loader::ResultStatus::ErrorMissingHeaderKey
+                     : Loader::ResultStatus::ErrorBadNCAHeader;
         return;
     }
 
@@ -63,11 +82,15 @@ NCA::NCA(VirtualFile file_, const NCA* base_nca, bool allow_missing_base)
         auto titlekey =
             keys.GetKey(Core::Crypto::S128KeyType::Titlekey, rights_id_u128[1], rights_id_u128[0]);
         if (titlekey == Core::Crypto::Key128{}) {
+            LOG_ERROR(Loader, "Cannot decrypt {}: no title key for rights id {}", file->GetName(),
+                      Common::HexToString(rights_id));
             status = Loader::ResultStatus::ErrorMissingTitlekey;
             return;
         }
 
         if (!keys.HasKey(Core::Crypto::S128KeyType::Titlekek, master_key_id)) {
+            LOG_ERROR(Loader, "Cannot decrypt {}: titlekek_{:02x} is missing from prod.keys",
+                      file->GetName(), master_key_id);
             status = Loader::ResultStatus::ErrorMissingTitlekek;
             return;
         }

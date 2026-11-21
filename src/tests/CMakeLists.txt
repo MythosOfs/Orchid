@@ -62,6 +62,7 @@ add_executable(tests
     core/hid_style_set_reconnect.cpp
     core/hid_vibration_value.cpp
     core/nso.cpp
+    core/nca_header_key.cpp
     core/nrr.cpp
     core/ncz_decompressor.cpp
     core/key_manager_keys_file.cpp
@@ -199,6 +200,12 @@ if (WIN32)
     target_sources(tests PRIVATE common/host_memory_commit.cpp)
 endif()
 
+if (ENABLE_LIBUSB AND LINUX)
+    target_sources(tests PRIVATE input_common/gc_adapter_libusb.cpp)
+    target_link_libraries(tests PRIVATE libusb::usb)
+    target_link_options(tests PRIVATE -Wl,--wrap=libusb_init,--wrap=libusb_exit,--wrap=libusb_open_device_with_vid_pid)
+endif()
+
 if (LINUX)
     target_sources(tests PRIVATE input_common/silent_controller.cpp)
 endif()
@@ -275,6 +282,7 @@ endif()
 # sat unbuilt this way). Every .cpp here must belong to one of the targets above.
 file(GLOB_RECURSE test_sources RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS "*.cpp")
 set(listed_test_sources common/host_memory_commit.cpp # added above on Windows only
+    input_common/gc_adapter_libusb.cpp # added above with libusb on Linux only
     input_common/silent_controller.cpp # added above on Linux only
     qt_common/qt_config_ban_list.cpp) # added above with the Qt frontend only
 foreach(test_target IN ITEMS tests stall_diagnostics_session debug_stream_contract)

@@ -16,6 +16,7 @@
 #include <QAbstractButton>
 #include <QCheckBox>
 #include <QPushButton>
+#include <QShowEvent>
 #include <QString>
 #include <QTimer>
 
@@ -105,6 +106,35 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id_, const std::st
 
 ConfigurePerGame::~ConfigurePerGame() = default;
 
+void ConfigurePerGame::showEvent(QShowEvent* event) {
+    FitToScreen();
+    QDialog::showEvent(event);
+}
+
+void ConfigurePerGame::paintEvent(QPaintEvent* event) {
+    QDialog::paintEvent(event);
+    if (!fitted_framed) {
+        QTimer::singleShot(0, this, &ConfigurePerGame::FitFramedOnce);
+    }
+}
+
+// The real window frame is known only once the dialog is mapped and activated, in either order.
+void ConfigurePerGame::FitFramedOnce() {
+    if (fitted_framed || !isActiveWindow() || !testAttribute(Qt::WA_Mapped)) {
+        return;
+    }
+    fitted_framed = true;
+    FitToScreen();
+}
+
+void ConfigurePerGame::FitToScreen() {
+    QList<QWidget*> pages{ui->groupBox};
+    for (int index = 0; index < ui->tabWidget->count(); ++index) {
+        pages.push_back(ui->tabWidget->widget(index));
+    }
+    ConfigurationShared::FitToScreen(this, pages);
+}
+
 void ConfigurePerGame::ApplyConfiguration() {
     for (const auto tab : *tab_group) {
         tab->ApplyConfiguration();
@@ -129,6 +159,9 @@ void ConfigurePerGame::ApplyConfiguration() {
 void ConfigurePerGame::changeEvent(QEvent* event) {
     if (event->type() == QEvent::LanguageChange) {
         RetranslateUI();
+    }
+    if (event->type() == QEvent::ActivationChange) {
+        FitFramedOnce();
     }
 
     QDialog::changeEvent(event);

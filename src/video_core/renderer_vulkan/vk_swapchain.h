@@ -6,9 +6,13 @@
 
 #pragma once
 
+#include <atomic>
+#include <optional>
+#include <span>
 #include <vector>
 
 #include "common/common_types.h"
+#include "common/settings_enums.h"
 #include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Layout {
@@ -20,21 +24,42 @@ namespace Vulkan {
 class Device;
 class Scheduler;
 
+/// The HDR swapchain pair the surface lists: the preferred encoding, else the other one, else
+/// nullopt (present SDR).
+std::optional<VkSurfaceFormatKHR> ChooseHdrSurfaceFormat(
+    std::span<const VkSurfaceFormatKHR> formats, Settings::HdrSwapchain preferred);
+
+/// True for the two pairs HDR output presents: HDR10 (A2B10G10R10 with HDR10_ST2084) and scRGB
+/// (R16G16B16A16_SFLOAT with EXTENDED_SRGB_LINEAR).
+bool IsHdrSurfaceFormat(const VkSurfaceFormatKHR& format);
+
+/// Whether a frame rendered for colour space frame can be shown on a swapchain created with
+/// colour space swapchain. An SDR frame goes to any swapchain; an HDR frame only to its own
+/// colour space, as a blit would show its values as another encoding's.
+constexpr bool FrameFitsSwapchain(VkColorSpaceKHR frame, VkColorSpaceKHR swapchain) {
+    return frame == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR || frame == swapchain;
+}
+
 class Swapchain {
 public:
+    /// Creates the initial swapchain in the requested format (SDR unless HDR output is active).
     explicit Swapchain(
         VkSurfaceKHR_T* surface,
         const Device& device,
         Scheduler& scheduler,
         u32 width,
-        u32 height);
+        u32 height,
+        VkSurfaceFormatKHR requested = {VK_FORMAT_B8G8R8A8_UNORM,
+                                        VK_COLOR_SPACE_SRGB_NONLINEAR_KHR});
     ~Swapchain();
 
-    /// Creates (or recreates) the swapchain with a given size.
-    void Create(
+    /// Creates (or recreates) the swapchain; returns false when deferred for zero extent.
+    bool Create(
         VkSurfaceKHR_T* surface,
         u32 width,
-        u32 height);
+        u32 height,
+        VkFormat requested_format = VK_FORMAT_B8G8R8A8_UNORM,
+        VkColorSpaceKHR requested_color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR);
 
     /// Acquires the next image in the swapchain, waits as needed. Returns true when no image was
     /// acquired (out of date) and the swapchain has to be recreated first.
@@ -95,6 +120,38 @@ public:
         return surface_format.format;
     }
 
+    /// The colour space of the swapchain as created: SDR when a requested HDR pair was not listed.
+    VkColorSpaceKHR GetColorSpace() const {
+        return surface_format.colorSpace;
+    }
+
+    /// Counts the swapchains created, so the renderer picks its output format again after each.
+    u64 GetCreationCount() const {
+        return creation_count.load(std::memory_order_acquire);
+    }
+
+    /// Counts the swapchains that were asked for as HDR and had to be created as SDR.
+    u64 GetHdrFallbackCount() const {
+        return hdr_fallback_count.load(std::memory_order_acquire);
+    }
+
+    /// Hands the display the HDR10 mastering metadata (VK_EXT_hdr_metadata) of an HDR10 swapchain.
+    void SetHdrMetadata(u16 peak_luminance, u16 reference_white) const;
+
+    /// Returns the cached SDR surface format, including while an HDR swapchain is active.
+    VkFormat GetSdrImageFormat() const {
+        return sdr_image_format.load();
+    }
+
+    /// Returns the producer format requested by the latest creation attempt.
+    VkFormat GetRequestedFormat() const {
+        return requested_format;
+    }
+
+    VkColorSpaceKHR GetRequestedColorSpace() const {
+        return requested_color_space;
+    }
+
     VkSemaphore CurrentPresentSemaphore() const {
         return *present_semaphores[frame_index];
     }
@@ -147,6 +204,11 @@ private:
     VkExtent2D extent{};
     VkPresentModeKHR present_mode{};
     VkSurfaceFormatKHR surface_format{};
+    std::atomic<VkFormat> sdr_image_format{VK_FORMAT_B8G8R8A8_UNORM};
+    std::atomic<u64> creation_count{};
+    std::atomic<u64> hdr_fallback_count{};
+    VkFormat requested_format{VK_FORMAT_B8G8R8A8_UNORM};
+    VkColorSpaceKHR requested_color_space{VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
     bool has_imm{false};
     bool has_mailbox{false};
     bool has_fifo_relaxed{false};

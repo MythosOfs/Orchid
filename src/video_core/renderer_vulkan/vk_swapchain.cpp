@@ -13,7 +13,9 @@
 #include <android/api-level.h>
 #endif
 
+#include "common/display_hdr.h"
 #include "common/logging.h"
+#include "common/scope_exit.h"
 #include "common/game_fps.h"
 #include "common/settings.h"
 #include "common/settings_enums.h"
@@ -29,7 +31,27 @@ namespace Vulkan {
 
 namespace {
 
-VkSurfaceFormatKHR ChooseSwapSurfaceFormat(vk::Span<VkSurfaceFormatKHR> formats) {
+VkSurfaceFormatKHR ChooseSwapSurfaceFormat(vk::Span<VkSurfaceFormatKHR> formats,
+                                         VkFormat requested_format,
+                                         VkColorSpaceKHR requested_color_space) {
+    if (requested_format == VK_FORMAT_R16G16B16A16_SFLOAT ||
+        requested_format == VK_FORMAT_A2B10G10R10_UNORM_PACK32 ||
+        requested_color_space != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+        // A swapchain may only use a pair the surface lists
+        // (VUID-VkSwapchainCreateInfoKHR-imageFormat-01273).
+        const bool listed = std::ranges::any_of(formats, [&](const VkSurfaceFormatKHR& format) {
+            return format.format == requested_format &&
+                   format.colorSpace == requested_color_space;
+        });
+        if (listed) {
+            return {
+                .format = requested_format,
+                .colorSpace = requested_color_space,
+            };
+        }
+        LOG_ERROR(Render_Vulkan, "The surface has no {} {} format, presenting SDR",
+                  string_VkFormat(requested_format), string_VkColorSpaceKHR(requested_color_space));
+    }
     if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED) {
         VkSurfaceFormatKHR format;
         format.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -40,7 +62,13 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat(vk::Span<VkSurfaceFormatKHR> formats)
         return format.format == VK_FORMAT_B8G8R8A8_UNORM &&
                format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     });
-    return found != formats.end() ? *found : formats[0];
+    if (found != formats.end()) {
+        return *found;
+    }
+    const auto sdr = std::find_if(formats.begin(), formats.end(), [](const auto& format) {
+        return format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    });
+    return sdr != formats.end() ? *sdr : formats[0];
 }
 
 static VkPresentModeKHR ChooseSwapPresentMode(bool has_imm, bool has_mailbox,
@@ -124,55 +152,132 @@ VkCompositeAlphaFlagBitsKHR ChooseAlphaFlags(const VkSurfaceCapabilitiesKHR& cap
 
 } // Anonymous namespace
 
+bool IsHdrSurfaceFormat(const VkSurfaceFormatKHR& format) {
+    return (format.format == VK_FORMAT_A2B10G10R10_UNORM_PACK32 &&
+            format.colorSpace == VK_COLOR_SPACE_HDR10_ST2084_EXT) ||
+           (format.format == VK_FORMAT_R16G16B16A16_SFLOAT &&
+            format.colorSpace == VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT);
+}
+
+std::optional<VkSurfaceFormatKHR> ChooseHdrSurfaceFormat(
+    std::span<const VkSurfaceFormatKHR> formats, Settings::HdrSwapchain preferred) {
+    constexpr VkSurfaceFormatKHR hdr10{VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+                                       VK_COLOR_SPACE_HDR10_ST2084_EXT};
+    constexpr VkSurfaceFormatKHR scrgb{VK_FORMAT_R16G16B16A16_SFLOAT,
+                                       VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT};
+    const auto listed = [&](const VkSurfaceFormatKHR& wanted) {
+        return std::ranges::any_of(formats, [&](const VkSurfaceFormatKHR& format) {
+            return format.format == wanted.format && format.colorSpace == wanted.colorSpace;
+        });
+    };
+    const auto& first = preferred == Settings::HdrSwapchain::Scrgb ? scrgb : hdr10;
+    const auto& second = preferred == Settings::HdrSwapchain::Scrgb ? hdr10 : scrgb;
+    if (listed(first)) {
+        return first;
+    }
+    if (listed(second)) {
+        return second;
+    }
+    return std::nullopt;
+}
+
 Swapchain::Swapchain(
     VkSurfaceKHR_T* surface_,
     const Device& device_,
     Scheduler& scheduler_,
     u32 width_,
-    u32 height_)
+    u32 height_,
+    VkSurfaceFormatKHR requested)
     : surface(surface_)
     , device{device_}
     , scheduler{scheduler_}
 {
-    Create(surface, width_, height_);
+    // A surface without an extent yet (a minimized window) defers creation to the first frame.
+    void(Create(surface, width_, height_, requested.format, requested.colorSpace));
 }
 
-Swapchain::~Swapchain() = default;
+Swapchain::~Swapchain() {
+    Common::DisplayHdrMonitor::Instance().SetPresentingHdr(false);
+}
 
-void Swapchain::Create(
+bool Swapchain::Create(
     VkSurfaceKHR_T* surface_,
     u32 width_,
-    u32 height_)
+    u32 height_,
+    VkFormat requested_format_,
+    VkColorSpaceKHR requested_color_space_)
 {
     is_outdated = false;
-    is_suboptimal = false;
+    // Keep recreation pending until creation succeeds, including zero-extent surfaces.
+    is_suboptimal = true;
     width = width_;
     height = height_;
     surface = surface_;
+    requested_format = requested_format_;
+    requested_color_space = requested_color_space_;
 
-    const auto physical_device = device.GetPhysical();
-    const auto capabilities{physical_device.GetSurfaceCapabilitiesKHR(VkSurfaceKHR(surface))};
-    if (capabilities.maxImageExtent.width == 0 || capabilities.maxImageExtent.height == 0) {
-        return;
-    }
-
-    // Submitted work may still wait on the old acquire/present semaphores; destroying them under
-    // it loses the device on MoltenVK (window moved to a display with a different scale).
-    if (swapchain) {
-        std::scoped_lock lock{scheduler.submit_mutex};
-        const VkResult result = device.GetLogical().WaitIdle();
-        if (result == VK_ERROR_DEVICE_LOST) {
-            device.ReportLoss();
+    // The guest is told HDR only while an HDR swapchain exists: not after a lost surface or a
+    // failed creation.
+    auto& monitor = Common::DisplayHdrMonitor::Instance();
+    try {
+        const auto physical_device = device.GetPhysical();
+        const auto capabilities{
+            physical_device.GetSurfaceCapabilitiesKHR(VkSurfaceKHR(surface))};
+        if (capabilities.maxImageExtent.width == 0 || capabilities.maxImageExtent.height == 0) {
+            monitor.SetPresentingHdr(false);
+            return false;
         }
-        vk::Check(result);
-    }
-    Destroy();
 
-    CreateSwapchain(capabilities);
-    CreateSemaphores();
+        // Submitted work may still wait on the old acquire/present semaphores; destroying them
+        // under it loses the device on MoltenVK (window moved to a display with a different
+        // scale).
+        if (swapchain) {
+            std::scoped_lock lock{scheduler.submit_mutex};
+            const VkResult result = device.GetLogical().WaitIdle();
+            if (result == VK_ERROR_DEVICE_LOST) {
+                device.ReportLoss();
+            }
+            vk::Check(result);
+        }
+        Destroy();
+
+        try {
+            CreateSwapchain(capabilities);
+        } catch (const vk::Exception& exception) {
+            // An HDR swapchain needs more memory than an SDR one: present SDR rather than stop.
+            // The request stays HDR, so this counts as a fallback below.
+            const VkResult result = exception.GetResult();
+            if (requested_color_space == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ||
+                (result != VK_ERROR_OUT_OF_DEVICE_MEMORY &&
+                 result != VK_ERROR_OUT_OF_HOST_MEMORY)) {
+                throw;
+            }
+            LOG_WARNING(Render_Vulkan, "The HDR swapchain could not be created ({}), presenting SDR",
+                        exception.what());
+            Destroy();
+            SCOPE_EXIT {
+                requested_format = requested_format_;
+                requested_color_space = requested_color_space_;
+            };
+            requested_format = VK_FORMAT_B8G8R8A8_UNORM;
+            requested_color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+            CreateSwapchain(capabilities);
+        }
+        CreateSemaphores();
+    } catch (...) {
+        monitor.SetPresentingHdr(false);
+        throw;
+    }
+    monitor.SetPresentingHdr(IsHdrSurfaceFormat(surface_format));
+    if (!FrameFitsSwapchain(requested_color_space, surface_format.colorSpace)) {
+        hdr_fallback_count.fetch_add(1, std::memory_order_release);
+    }
+    creation_count.fetch_add(1, std::memory_order_release);
+    is_suboptimal = false;
 
     resource_ticks.clear();
     resource_ticks.resize(image_count);
+    return true;
 }
 
 bool Swapchain::AcquireNextImage(bool may_flush) {
@@ -294,6 +399,10 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities) {
     const auto formats{physical_device.GetSurfaceFormatsKHR(VkSurfaceKHR(surface))};
     const auto present_modes = physical_device.GetSurfacePresentModesKHR(VkSurfaceKHR(surface));
 
+    // Keep the SDR choice available even while the active swapchain is HDR.
+    sdr_image_format = ChooseSwapSurfaceFormat(formats, VK_FORMAT_B8G8R8A8_UNORM,
+                                              VK_COLOR_SPACE_SRGB_NONLINEAR_KHR).format;
+
     has_mailbox = std::find(present_modes.begin(), present_modes.end(), VK_PRESENT_MODE_MAILBOX_KHR)
                   != present_modes.end();
     has_imm = std::find(present_modes.begin(), present_modes.end(),
@@ -302,7 +411,7 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities) {
                                  VK_PRESENT_MODE_FIFO_RELAXED_KHR) != present_modes.end();
 
     const VkCompositeAlphaFlagBitsKHR alpha_flags{ChooseAlphaFlags(capabilities)};
-    surface_format = ChooseSwapSurfaceFormat(formats);
+    surface_format = ChooseSwapSurfaceFormat(formats, requested_format, requested_color_space);
     present_mode = ChooseSwapPresentMode(has_imm, has_mailbox, has_fifo_relaxed);
 
     u32 requested_image_count{capabilities.minImageCount + 1};
@@ -367,7 +476,8 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities) {
         .viewFormatCount = static_cast<u32>(view_formats.size()),
         .pViewFormats = view_formats.data(),
     };
-    if (device.IsKhrSwapchainMutableFormatEnabled()) {
+    if (device.IsKhrSwapchainMutableFormatEnabled() &&
+        surface_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
         format_list.pNext = std::exchange(swapchain_ci.pNext, &format_list);
         swapchain_ci.flags |= VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR;
     }
@@ -387,6 +497,9 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities) {
 #else
     image_view_format = VK_FORMAT_B8G8R8A8_UNORM;
 #endif
+    if (surface_format.colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+        image_view_format = surface_format.format;
+    }
 }
 
 void Swapchain::CreateSemaphores() {
@@ -403,6 +516,36 @@ void Swapchain::Destroy() {
     present_semaphores.clear();
     render_semaphores.clear();
     swapchain.reset();
+}
+
+void Swapchain::SetHdrMetadata(u16 peak_luminance, u16 reference_white) const {
+    if (!device.IsExtHdrMetadataEnabled() ||
+        surface_format.colorSpace != VK_COLOR_SPACE_HDR10_ST2084_EXT) {
+        return;
+    }
+    // The game tone maps to the peak it was told about, so that is the brightest the stream
+    // gets. Mastering primaries are BT.2020 with a D65 white (the colour space's own). The frame
+    // average is not known, so MaxFALL is its upper bound, the peak: Mesa passes a MaxFALL of 0
+    // (unknown) on to the Wayland compositor, and Weston answers that with a fatal protocol
+    // error.
+    const VkHdrMetadataEXT metadata{
+        .sType = VK_STRUCTURE_TYPE_HDR_METADATA_EXT,
+        .pNext = nullptr,
+        .displayPrimaryRed = {0.708f, 0.292f},
+        .displayPrimaryGreen = {0.170f, 0.797f},
+        .displayPrimaryBlue = {0.131f, 0.046f},
+        .whitePoint = {0.3127f, 0.3290f},
+        .maxLuminance = static_cast<float>(peak_luminance),
+        .minLuminance = 0.0f,
+        .maxContentLightLevel = static_cast<float>(peak_luminance),
+        .maxFrameAverageLightLevel = static_cast<float>(peak_luminance),
+    };
+    device.GetLogical().SetHdrMetadataEXT(*swapchain, metadata);
+    LOG_INFO(Render_Vulkan,
+             "HDR10 metadata: BT.2020 primaries, D65 white, max luminance {} nits, MaxCLL {} nits, "
+             "MaxFALL {} nits (reference white {} nits)",
+             metadata.maxLuminance, metadata.maxContentLightLevel,
+             metadata.maxFrameAverageLightLevel, reference_white);
 }
 
 bool Swapchain::NeedsPresentModeUpdate() const {

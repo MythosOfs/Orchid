@@ -16,6 +16,10 @@ constexpr Result ValidateRule(const Tz::Rule& rule) {
         rule.charcnt > static_cast<s32>(Tz::TZ_MAX_CHARS)) {
         R_RETURN(ResultTimeZoneOutOfRange);
     }
+    // localsub takes the default type before the first transition.
+    if (rule.timecnt < 0 || rule.defaulttype < 0 || rule.defaulttype >= rule.typecnt) {
+        R_RETURN(ResultTimeZoneOutOfRange);
+    }
 
     for (s32 i = 0; i < rule.timecnt; i++) {
         if (rule.types[i] >= rule.typecnt) {

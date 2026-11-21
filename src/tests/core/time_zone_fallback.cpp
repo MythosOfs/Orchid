@@ -266,11 +266,35 @@ TEST_CASE("ToPosixTime rejects a rule whose abbreviation lies outside its text",
     rule->ttis[0].tt_desigidx = static_cast<s32>(rule->chars.size());
     CHECK(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
           ResultTimeZoneOutOfRange);
-    rule->ttis[0].tt_desigidx = static_cast<s32>(rule->chars.size()) - 1;
+    // The last index localsub accepts, first without and then with a NUL after it.
+    const size_t last = rule->chars.size() - Tz::CHARS_EXTRA;
+    rule->ttis[0].tt_desigidx = static_cast<s32>(last);
     rule->chars.fill('A');
     CHECK(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
           ResultTimeZoneOutOfRange);
-    rule->chars.back() = '\0';
+    rule->chars[last + 1] = '\0';
+    REQUIRE(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
+            ResultSuccess);
+    REQUIRE(count == 1);
+    CHECK(out[0] == 0);
+}
+
+TEST_CASE("ToPosixTime rejects a rule whose default type or transition count is out of range",
+          "[core][time]") {
+    TimeZone time_zone;
+    std::array<s64, 2> out{};
+    u32 count{};
+    auto rule = MakeRule({0, 3600}, {{1000, 1}});
+    rule->defaulttype = 1;
+    REQUIRE(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
+            ResultSuccess);
+    for (const s32 type : {-1, 2}) {
+        rule->defaulttype = type;
+        CHECK(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
+              ResultTimeZoneOutOfRange);
+    }
+    rule->defaulttype = 0;
+    rule->timecnt = -1;
     CHECK(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
-          ResultSuccess);
+          ResultTimeZoneOutOfRange);
 }

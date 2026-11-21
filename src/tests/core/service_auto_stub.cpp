@@ -70,22 +70,11 @@ TEST_CASE("Unknown commands: auto stub replies every time and logs once", "[.][s
         Common::FS::SetEdenPath(Common::FS::EdenPath::LogDir, previous_log_dir);
     };
     // One directory per process, removed at exit: the backend keeps its file open until then.
+    // shortcut: Windows cannot delete the open log, so its run directories stay in %TEMP%.
     static const auto log_dir = [] {
         namespace fs = std::filesystem;
         const auto logs = fs::temp_directory_path() / "orchid-auto-stub-logs";
         fs::create_directories(logs);
-#ifdef _WIN32
-        // Windows cannot delete an open file, so the exit cleanup fails there, and this removes
-        // only the directories of runs that have ended.
-        std::error_code ignored;
-        if (!fs::is_symlink(logs)) {
-            for (const auto& old : fs::directory_iterator{logs, ignored}) {
-                if (!old.is_symlink(ignored) && old.is_directory(ignored)) {
-                    fs::remove_all(old.path(), ignored);
-                }
-            }
-        }
-#endif
         auto count = std::chrono::system_clock::now().time_since_epoch().count();
         fs::path dir = logs / std::to_string(count);
         while (!fs::create_directory(dir)) {

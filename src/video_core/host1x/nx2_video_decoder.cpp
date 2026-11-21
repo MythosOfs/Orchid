@@ -179,16 +179,19 @@ struct Nx2VideoDecoder::Impl {
     }
 
     bool Send(const FFmpeg::Packet& packet) {
-        const int ret = !on_gpu || gpu_fault == Nx2GpuDecodeFault::None
-                            ? avcodec_send_packet(context->GetCodecContext(), packet.GetPacket())
-                        : gpu_fault == Nx2GpuDecodeFault::Busy ? AVERROR(EAGAIN)
-                                                               : AVERROR_INVALIDDATA;
-        const bool failed = ret < 0 && ret != AVERROR_EOF && ret != AVERROR(EAGAIN);
-        accepted |= ret == 0;
-        if (failed) {
-            LOG_ERROR(HW_GPU, "nx2 video: avcodec_send_packet error {}", ret);
+        const int ret = on_gpu && gpu_fault == Nx2GpuDecodeFault::Busy ? AVERROR(EAGAIN)
+                        : on_gpu && gpu_fault == Nx2GpuDecodeFault::Packet
+                            ? AVERROR_INVALIDDATA
+                            : avcodec_send_packet(context->GetCodecContext(), packet.GetPacket());
+        if (ret == 0) {
+            accepted = true;
+            return true;
         }
-        return !failed;
+        if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN)) {
+            return true;
+        }
+        LOG_ERROR(HW_GPU, "nx2 video: avcodec_send_packet error {}", ret);
+        return false;
     }
 
     void Receive(std::vector<Nx2Picture>& pictures) {

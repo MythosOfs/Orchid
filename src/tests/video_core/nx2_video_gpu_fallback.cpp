@@ -298,7 +298,9 @@ TEST_CASE("Nx2 video decodes on the host GPU when FFmpeg can", "[nx2_video]") {
         for (auto packet : Packets()) {
             const size_t size = packet.size();
             packet.resize(size + AV_INPUT_BUFFER_PADDING_SIZE);
-            context.SendPacket(FFmpeg::Packet{std::span{packet.data(), size}});
+            if (!context.SendPacket(FFmpeg::Packet{std::span{packet.data(), size}})) {
+                return false;
+            }
             receive();
         }
         avcodec_send_packet(context.GetCodecContext(), nullptr);

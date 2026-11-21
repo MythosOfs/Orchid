@@ -3340,7 +3340,7 @@ void MainWindow::OnRestartGame() {
         const auto current_game = QString(current_game_path);
         ShutdownGame();
         // Another program started while this one shut down; do not replace it.
-        if (emulation_running) {
+        if (emulation_running || !emu_session.IsCurrent(session + 1)) {
             return;
         }
         BootGame(current_game, ApplicationAppletParameters());

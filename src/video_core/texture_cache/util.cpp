@@ -614,6 +614,13 @@ bool AstcDataLooksOpaque(std::span<const u8> data) noexcept {
     return Tegra::Texture::ASTC::IsOpaque(data);
 }
 
+bool AstcDataLooksOpaque(Tegra::MemoryManager& memory, GPUVAddr address, size_t size,
+                         Common::ScratchBuffer<u8>& scratch) {
+    Tegra::Memory::GpuGuestMemory<u8, Tegra::Memory::GuestMemoryFlags::UnsafeRead>
+        data(memory, address, size, &scratch);
+    return AstcDataLooksOpaque(std::span<const u8>{data.data(), data.size()});
+}
+
 u32 CalculateConvertedSizeBytes(const ImageInfo& info) noexcept {
     if (info.type == ImageType::Buffer) {
         return info.size.width * BytesPerBlock(info.format);

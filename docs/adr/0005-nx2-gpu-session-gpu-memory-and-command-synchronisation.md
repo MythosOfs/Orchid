@@ -108,6 +108,12 @@ One entry per former code comment, by file, named after the code it described.
 - `inline void Nx2SparseMarkWritten(u64 gpu_address, u64 size)`: The GPU renders into [gpu_address, +size): count its blocks as written, so images made there later get memory (their contents live in the host image, not in guest memory).
 - `class Nx2SemaphoreWaiters`: Channels suspended on a semaphore acquire. A console channel polls and sees every release; Eden writes releases in bursts when fences signal and resumes waiters only between command lists, so an acquire-equal could miss its value. Writes latch the waiters they satisfy.
 
+## ASTC texture opacity scan
+
+The ASTC opacity scan borrows a contiguous guest span for the duration of the classification.
+Fragmented ranges are copied into reusable scratch memory. Both paths run the same opacity
+classifier, so the selected BC format is the same.
+
 ## Evidence
 
 ### #189: what the GPU session's jobs wait for (2026-11-21)

@@ -307,6 +307,10 @@ QString LooseDumpName(FileSys::VfsFilesystem& vfs, const std::string& physical_n
         return {};
     }
     std::string name = LooseExeFSName(physical_name).toStdString();
+    const QString main_dir = QFileInfo(QString::fromStdString(physical_name)).dir().dirName();
+    if (main_dir.compare(QStringLiteral("exefs"), Qt::CaseInsensitive) != 0) {
+        return QString::fromStdString(name);
+    }
     // A Switch 2 program dumped as an "update" of a Switch 1 base (Red Dead
     // Redemption) is the game's Switch 2 Edition; say so instead of "(update)".
     constexpr std::string_view UpdateSuffix = " (update)";

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -13,6 +14,7 @@
 #include "core/crypto/key_manager.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/fssystem/fssystem_nca_header.h"
+#include "core/file_sys/nca_metadata.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/vfs/vfs_vector.h"
 #include "core/hle/kernel/k_process.h"
@@ -45,16 +47,66 @@ std::vector<u8> PlaintextHeader(u32 magic, u32 sdk_addon_version) {
     return bytes;
 }
 
-std::vector<u8> SingleFileNsp(const std::string& name, const std::vector<u8>& contents) {
-    std::vector<u8> bytes(0x28);
-    const u32 header[]{Common::MakeMagic('P', 'F', 'S', '0'), 1, static_cast<u32>(name.size() + 1), 0};
-    const u64 entry[]{0, contents.size()};
+using Files = std::vector<std::pair<std::string, std::vector<u8>>>;
+
+std::vector<u8> MakePartition(const Files& files) {
+    std::vector<u8> bytes(0x10 + files.size() * 0x18);
+    std::string names;
+    u64 offset = 0;
+    for (std::size_t i = 0; i < files.size(); ++i) {
+        const u64 entry[]{offset, files[i].second.size(), names.size()};
+        std::memcpy(bytes.data() + 0x10 + i * 0x18, entry, sizeof(entry));
+        names += files[i].first + '\0';
+        offset += files[i].second.size();
+    }
+    const u32 header[]{Common::MakeMagic('P', 'F', 'S', '0'), static_cast<u32>(files.size()),
+                       static_cast<u32>(names.size()), 0};
     std::memcpy(bytes.data(), header, sizeof(header));
-    std::memcpy(bytes.data() + 0x10, entry, sizeof(entry));
-    bytes.insert(bytes.end(), name.begin(), name.end());
-    bytes.push_back(0);
-    bytes.insert(bytes.end(), contents.begin(), contents.end());
+    bytes.insert(bytes.end(), names.begin(), names.end());
+    for (const auto& file : files) {
+        bytes.insert(bytes.end(), file.second.begin(), file.second.end());
+    }
     return bytes;
+}
+
+std::vector<u8> MakeNca(u64 title_id, NcaHeader::ContentType type, const Files& contents) {
+    const auto pfs = MakePartition(contents);
+    std::vector<u8> partition(0x1000);
+    partition.insert(partition.end(), pfs.begin(), pfs.end());
+    NcaHeader header{};
+    header.magic = NcaHeader::MagicDecrypted;
+    header.content_type = type;
+    header.program_id = title_id;
+    header.sdk_addon_version = 0x000C0000;
+    header.fs_info[0].start_sector = 6;
+    header.fs_info[0].end_sector = 6 + static_cast<u32>((partition.size() + 0x1FF) / 0x200);
+    NcaFsHeader fs{};
+    fs.version = 2;
+    fs.fs_type = NcaFsHeader::FsType::PartitionFs;
+    fs.hash_type = NcaFsHeader::HashType::HierarchicalSha256Hash;
+    fs.encryption_type = NcaFsHeader::EncryptionType::None;
+    auto& sha = fs.hash_data.hierarchical_sha256_data;
+    sha.hash_block_size = 0x1000;
+    sha.hash_layer_count = 2;
+    sha.hash_layer_region[0].size = 0x20;
+    sha.hash_layer_region[1].offset = 0x1000;
+    sha.hash_layer_region[1].size = pfs.size();
+    std::vector<u8> bytes(0xC00);
+    std::memcpy(bytes.data(), &header, sizeof(header));
+    std::memcpy(bytes.data() + sizeof(header), &fs, sizeof(fs));
+    bytes.insert(bytes.end(), partition.begin(), partition.end());
+    bytes.resize(std::size_t{header.fs_info[0].end_sector} * 0x200);
+    return bytes;
+}
+
+Loader::ResultStatus LoadNsp(const Files& files) {
+    const auto file = std::make_shared<VectorVfsFile>(MakePartition(files), "test.nsp");
+    ScopedSystemTestContext environment;
+    Core::System system;
+    ContentProviderUnion content_provider;
+    Kernel::KProcess process{system.Kernel()};
+    Loader::AppLoader_NSP loader{file, system.GetFileSystemController(), content_provider, 0, 0};
+    return loader.Load(process, system).first;
 }
 
 } // namespace
@@ -106,14 +158,28 @@ TEST_CASE("NSP launch reports the missing header key of its metadata NCA",
     if (keys.HasKey(Core::Crypto::S256KeyType::Header)) {
         SKIP("Console keys are installed");
     }
-    const auto file = std::make_shared<VectorVfsFile>(
-        SingleFileNsp("0123456789abcdef0123456789abcdef.cnmt.nca", std::vector<u8>(0xC00, 0)),
-        "test.nsp");
+    CHECK(LoadNsp({{"0123456789abcdef0123456789abcdef.cnmt.nca", std::vector<u8>(0xC00, 0)}}) ==
+          Loader::ResultStatus::ErrorMissingHeaderKey);
+}
 
-    ScopedSystemTestContext environment;
-    Core::System system;
-    ContentProviderUnion content_provider;
-    Kernel::KProcess process{system.Kernel()};
-    Loader::AppLoader_NSP loader{file, system.GetFileSystemController(), content_provider, 0, 0};
-    CHECK(loader.Load(process, system).first == Loader::ResultStatus::ErrorMissingHeaderKey);
+TEST_CASE("NSP launch rejects a title ID 0 program listed under another title",
+          "[core][loader][nca_header_key]") {
+    if (Core::Crypto::KeyManager::KeyFileExists(false)) {
+        SKIP("A key file is installed");
+    }
+    // The metadata lists the program under another title, so only the title ID check rejects it.
+    CNMTHeader header{};
+    header.title_id = 0x0100000000010000;
+    header.type = TitleType::Application;
+    header.table_offset = sizeof(OptionalHeader);
+    header.number_content_entries = 1;
+    ContentRecord record{};
+    record.nca_id.fill(0x11);
+    record.type = ContentRecordType::Program;
+    const CNMT cnmt{header, {}, {record}, {}};
+    CHECK(LoadNsp({{"meta.cnmt.nca", MakeNca(header.title_id, NcaHeader::ContentType::Meta,
+                                              {{"test.cnmt", cnmt.Serialize()}})},
+                   {"11111111111111111111111111111111.nca",
+                    MakeNca(0, NcaHeader::ContentType::Program, {{"main", {0}}})}}) ==
+          Loader::ResultStatus::ErrorNSPMissingProgramNCA);
 }

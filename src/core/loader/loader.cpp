@@ -286,7 +286,8 @@ constexpr std::array<const char*, 70> RESULT_MESSAGES{
     "The PFS/HFS partition has incorrect size as determined by the header.",
     "The NCA file has a bad header.",
     "The general keyfile could not be found.",
-    "The NCA Header key could not be found.",
+    "The NCA header could not be read: the header key (header_key) is missing from your keys, "
+    "or the file is damaged.",
     "The NCA Header key is incorrect or the header is invalid.",
     "Support for NCA2-type NCAs is not implemented.",
     "Support for NCA0-type NCAs is not implemented.",

@@ -29,6 +29,20 @@ static u8 MasterKeyIdForKeyGeneration(u8 key_generation) {
     return std::max<u8>(key_generation, 1) - 1;
 }
 
+static bool IsUnreadablePlaintextHeader(const VirtualFile& file) {
+    NcaHeader header{};
+    if (file->ReadObject(&header) != sizeof(header)) {
+        return false;
+    }
+    for (const u32 magic : {NcaHeader::Magic0, NcaHeader::Magic1, NcaHeader::Magic2,
+                            NcaHeader::Magic3, NcaHeader::MagicDecrypted}) {
+        if (header.magic == magic) {
+            return false;
+        }
+    }
+    return true;
+}
+
 NCA::NCA(VirtualFile file_, const NCA* base_nca, bool allow_missing_base)
     : file(std::move(file_)), keys{Core::Crypto::KeyManager::Instance()} {
     if (file == nullptr) {
@@ -38,7 +52,9 @@ NCA::NCA(VirtualFile file_, const NCA* base_nca, bool allow_missing_base)
 
     reader = std::make_shared<NcaReader>();
     if (Result rc = reader->Initialize(file, GetCryptoConfiguration(), GetNcaCompressionConfiguration()); R_FAILED(rc)) {
-        status = Loader::ResultStatus::ErrorBadNCAHeader;
+        status = !keys.HasKey(Core::Crypto::S256KeyType::Header) && IsUnreadablePlaintextHeader(file)
+                     ? Loader::ResultStatus::ErrorMissingHeaderKey
+                     : Loader::ResultStatus::ErrorBadNCAHeader;
         return;
     }
 

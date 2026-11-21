@@ -55,6 +55,7 @@ add_executable(tests
     core/hid_style_set_reconnect.cpp
     core/hid_vibration_value.cpp
     core/nso.cpp
+    core/nca_header_key.cpp
     core/nrr.cpp
     core/ncz_decompressor.cpp
     core/ldn.cpp

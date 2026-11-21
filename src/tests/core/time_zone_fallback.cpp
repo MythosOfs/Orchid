@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <array>
+#include <cstring>
+#include <memory>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -44,4 +46,39 @@ TEST_CASE("ToPosixTime returns both times in the repeated hour after a DST fall-
     CHECK(out[0] == 1782932400);
 
     CHECK(ToPosix(time_zone, out, {2026, 3, 8, 2, 30, 0}) == 0);
+}
+
+TEST_CASE("ToPosixTime pairs no time before the first transition with transition 0",
+          "[core][time]") {
+    // UTC+0 by default, then UTC+3600 from 1000, UTC+0 from 2000 and UTC+1800 from 5000.
+    auto rule = std::make_unique<Tz::Rule>();
+    rule->timecnt = 3;
+    rule->typecnt = 3;
+    rule->charcnt = 12;
+    rule->ats[0] = 1000;
+    rule->ats[1] = 2000;
+    rule->ats[2] = 5000;
+    rule->types[0] = 1;
+    rule->types[1] = 0;
+    rule->types[2] = 2;
+    rule->ttis[0] = {.tt_utoff = 0, .tt_desigidx = 0};
+    rule->ttis[1] = {.tt_utoff = 3600, .tt_desigidx = 4};
+    rule->ttis[2] = {.tt_utoff = 1800, .tt_desigidx = 8};
+    std::memcpy(rule->chars.data(), "UTC\0AAA\0BBB", 12);
+    rule->defaulttype = 0;
+
+    TimeZone time_zone;
+    std::array<s64, 2> out{};
+    u32 count{};
+    // 00:34:07 local is 2047 under UTC+0; under UTC+3600 it would be -1553, which is before 1000.
+    REQUIRE(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 34, 7}, *rule) ==
+            ResultSuccess);
+    REQUIRE(count == 1);
+    CHECK(out[0] == 2047);
+
+    // 00:08:20 local is 500 under the default UTC+0; under UTC+3600 it would be -3100.
+    REQUIRE(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 8, 20}, *rule) ==
+            ResultSuccess);
+    REQUIRE(count == 1);
+    CHECK(out[0] == 500);
 }

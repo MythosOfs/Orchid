@@ -35,6 +35,10 @@ constexpr bool GetTimeZoneTime(s64& out_time, const Tz::Rule& rule, s64 time, s3
     s32 expected_index{index + index_offset};
     s64 time_to_find{time + rule.ttis[rule.types[index]].tt_utoff -
                      rule.ttis[rule.types[expected_index]].tt_utoff};
+    // Before ats[0] the default type applies, not types[0]: such a time belongs to no transition.
+    if (time < rule.ats[0] || time_to_find < rule.ats[0]) {
+        return false;
+    }
 
     if (rule.timecnt > 1 && rule.ats[0] <= time_to_find) {
         s32 low{1};

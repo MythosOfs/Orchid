@@ -70,3 +70,12 @@ One entry per former code comment, by file, named after the code it described.
 
 - `in TakeSamples()`: ReleaseBuffer applies the microphone boost; cancel it for this sample-queue check.
 - `in test "Sysmix six-channel PCM reaches the sink and stereo downmix"`: SinkStream's established coefficients: front + .596 center + .354 LFE + .707 rear.
+
+## Cubeb host stream recovery
+
+A lost host device can report an error or stop invoking audio callbacks. Cubeb callbacks
+record the error or last callback time. The sink's worker closes and reopens the backend
+after an error or after two consecutive stalled checks. The guest stream and its queued
+samples survive a reopen. Pause and resume change the desired state even during a failed
+reopen, so the replacement starts only when playback is requested. Finalization serializes
+with the worker before destroying the stream.

@@ -221,6 +221,15 @@ if (ENABLE_LIBUSB AND LINUX)
     target_link_options(tests PRIVATE -Wl,--wrap=libusb_init,--wrap=libusb_exit,--wrap=libusb_open_device_with_vid_pid)
 endif()
 
+if (LINUX AND ENABLE_CUBEB)
+    target_sources(tests PRIVATE audio_core/cubeb_recovery.cpp)
+    target_link_libraries(tests PRIVATE cubeb::cubeb)
+    foreach(function init destroy get_max_channel_count get_min_latency
+                     stream_init stream_destroy stream_start stream_stop)
+        target_link_options(tests PRIVATE "-Wl,--wrap=cubeb_${function}")
+    endforeach()
+endif()
+
 if (LINUX)
     target_sources(tests PRIVATE input_common/silent_controller.cpp
                                  frontend_common/config_persistence.cpp)
@@ -300,7 +309,8 @@ endif()
 # A test source in no target is never built or run (maxwell_fmz.cpp and debug_stream_contract.cpp
 # sat unbuilt this way). Every .cpp here must belong to one of the targets above.
 file(GLOB_RECURSE test_sources RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS "*.cpp")
-set(listed_test_sources common/host_memory_commit.cpp # added above on Windows only
+set(listed_test_sources audio_core/cubeb_recovery.cpp
+    common/host_memory_commit.cpp # added above on Windows only
     input_common/gc_adapter_libusb.cpp # added above with libusb on Linux only
     input_common/silent_controller.cpp # added above on Linux only
     qt_common/qt_config_ban_list.cpp) # added above with the Qt frontend only

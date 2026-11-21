@@ -4,6 +4,8 @@
 // SPDX-FileCopyrightText: Copyright 2023 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
+
 #include "core/hle/service/psc/time/time_zone.h"
 
 namespace Service::PSC::Time {
@@ -22,7 +24,10 @@ constexpr Result ValidateRule(const Tz::Rule& rule) {
     }
 
     for (s32 i = 0; i < rule.typecnt; i++) {
-        if (rule.ttis[i].tt_desigidx >= static_cast<s32>(rule.chars.size())) {
+        const s32 index{rule.ttis[i].tt_desigidx};
+        // localsub reads the abbreviation up to its NUL.
+        if (index < 0 || index >= static_cast<s32>(rule.chars.size()) ||
+            std::find(rule.chars.begin() + index, rule.chars.end(), '\0') == rule.chars.end()) {
             R_RETURN(ResultTimeZoneOutOfRange);
         }
     }
@@ -241,13 +246,12 @@ Result TimeZone::ToPosixTimeImpl(u32& out_count, std::span<s64> out_times,
     // A second time has another type's offset and maps back to the same local time.
     for (s32 i = 0; i < rule.typecnt; ++i) {
         const s64 time2{time + internal.tm_utoff - rule.ttis[i].tt_utoff};
-        CalendarTime calendar2{};
-        CalendarAdditionalInfo additional{};
-        if (time2 != time &&
-            ToCalendarTimeImpl(calendar2, additional, time2, rule) == ResultSuccess &&
-            calendar2.year == calendar.year && calendar2.month == calendar.month &&
-            calendar2.day == calendar.day && calendar2.hour == calendar.hour &&
-            calendar2.minute == calendar.minute && calendar2.second == calendar.second) {
+        time_t time2_tmp{static_cast<time_t>(time2)};
+        Tz::CalendarTimeInternal internal2{};
+        if (time2 != time && !Tz::localtime_rz(&internal2, &rule, &time2_tmp) &&
+            internal2.tm_sec == internal.tm_sec && internal2.tm_min == internal.tm_min &&
+            internal2.tm_hour == internal.tm_hour && internal2.tm_mday == internal.tm_mday &&
+            internal2.tm_mon == internal.tm_mon && internal2.tm_year == internal.tm_year) {
             out_times[1] = time2;
             out_count = 2;
             R_SUCCEED();

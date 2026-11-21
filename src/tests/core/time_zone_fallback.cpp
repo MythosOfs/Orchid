@@ -252,3 +252,25 @@ TEST_CASE("ToPosixTime returns a second time only where it maps back to the loca
         CHECK(Times(*rule, {1970, 1, 1, 1, 40, 0}) == std::vector<s64>{2400, 6000});
     }
 }
+
+TEST_CASE("ToPosixTime rejects a rule whose abbreviation lies outside its text", "[core][time]") {
+    TimeZone time_zone;
+    std::array<s64, 2> out{};
+    u32 count{};
+    auto rule = MakeRule({0}, {});
+    REQUIRE(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
+            ResultSuccess);
+    rule->ttis[0].tt_desigidx = -1;
+    CHECK(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
+          ResultTimeZoneOutOfRange);
+    rule->ttis[0].tt_desigidx = static_cast<s32>(rule->chars.size());
+    CHECK(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
+          ResultTimeZoneOutOfRange);
+    rule->ttis[0].tt_desigidx = static_cast<s32>(rule->chars.size()) - 1;
+    rule->chars.fill('A');
+    CHECK(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
+          ResultTimeZoneOutOfRange);
+    rule->chars.back() = '\0';
+    CHECK(time_zone.ToPosixTime(count, out, out.size(), {1970, 1, 1, 0, 0, 0}, *rule) ==
+          ResultSuccess);
+}

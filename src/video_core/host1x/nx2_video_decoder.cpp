@@ -289,6 +289,7 @@ void Nx2VideoDecoder::Decode(std::span<const u8> data, u64 pts, std::vector<Nx2P
         if (auto cpu = impl->OpenCpu(); cpu && impl->Send(*cpu, packet, false)) {
             LOG_WARNING(HW_GPU, "nx2 video: host GPU decoder rejected the stream, decoding on the CPU");
             impl->UseCpu(std::move(cpu));
+            impl->pending_pts = {pts};
         }
     }
     impl->Receive(pictures);
@@ -309,7 +310,6 @@ void Nx2VideoDecoder::Reset() {
     }
     impl->pending_pts.clear();
     impl->h264_packets.Reset();
-    impl->received = false;
 }
 
 void Nx2VideoDecoder::Render(const Nx2Picture& picture, Nx2PictureFormat format, u32 width,

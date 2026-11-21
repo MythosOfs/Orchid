@@ -189,6 +189,10 @@ if (WIN32)
     target_sources(tests PRIVATE common/host_memory_commit.cpp)
 endif()
 
+if (LINUX)
+    target_sources(tests PRIVATE input_common/silent_controller.cpp)
+endif()
+
 if (TARGET OpenSSL::SSL)
     target_sources(tests PRIVATE core/ssl_peek.cpp)
     target_link_libraries(tests PRIVATE OpenSSL::SSL OpenSSL::Crypto)
@@ -253,6 +257,7 @@ endif()
 # sat unbuilt this way). Every .cpp here must belong to one of the targets above.
 file(GLOB_RECURSE test_sources RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS "*.cpp")
 set(listed_test_sources common/host_memory_commit.cpp # added above on Windows only
+    input_common/silent_controller.cpp # added above on Linux only
     qt_common/qt_config_ban_list.cpp) # added above with the Qt frontend only
 foreach(test_target IN ITEMS tests stall_diagnostics_session debug_stream_contract)
     get_target_property(target_sources ${test_target} SOURCES)

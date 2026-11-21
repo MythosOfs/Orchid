@@ -11,3 +11,6 @@ Decisions and facts the code cannot show. Code in `src/` carries no comments ([0
 | [0005](0005-nx2-gpu-session-gpu-memory-and-command-synchronisation.md) | GPU session, GPU-only and sparse regions, device ranges, GPU-written pages, semaphores |
 | [0006](0006-nx2-audio-services-aud-u-auddmg-u-audsmx-u.md) | aud:u, auddmg:u, audsmx:u sysmix streams |
 | [0007](0007-nx2-diagnostics-switches.md) | `EDEN_NX2_*` profiling, tracing and capture switches |
+| [0008](0008-shader-folding-and-ir-operands.md) | Bitfield constant folding, constant-buffer texture handles, immediate phi operands |
+| [0009](0009-kernel-thread-termination.md) | Scheduler and process lock ordering during thread termination |
+| [0010](0010-cmif-output-buffer-contents.md) | Preserving guest bytes in partially written CMIF output buffers |

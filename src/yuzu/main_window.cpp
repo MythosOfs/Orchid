@@ -2247,41 +2247,36 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
 
     render_window->InitializeCamera();
 
-    std::string title_name;
     std::string title_version;
-    const auto res = QtCommon::system->GetGameName(title_name);
+    std::string loader_title;
+    if (QtCommon::system->GetGameName(loader_title) != Loader::ResultStatus::Success) {
+        loader_title.clear();
+    }
 
     const auto metadata = [title_id] {
         const FileSys::PatchManager pm(title_id, QtCommon::system->GetFileSystemController(),
                                        QtCommon::system->GetContentProvider());
         return pm.GetControlMetadata();
     }();
+    std::string installed_title;
     if (metadata.first != nullptr) {
         title_version = metadata.first->GetVersionString();
-        title_name = metadata.first->GetApplicationName();
+        installed_title = metadata.first->GetApplicationName();
     }
-    if (res != Loader::ResultStatus::Success || title_name.empty() || title_name == " ") {
-        const auto& game_file = QtCommon::system->GetAppLoader().GetFile();
-        std::error_code ec;
-        const auto game_path =
-            game_file != nullptr
-                ? std::filesystem::absolute(Common::FS::ToU8String(game_file->GetFullPath()), ec)
-                      .lexically_normal()
-                : std::filesystem::path{};
-        const QString loose =
-            game_path.empty()
-                ? QString{}
-                : LooseDumpName(*QtCommon::vfs, Common::FS::PathToUTF8String(game_path), title_id);
-        if (!loose.isEmpty() && loose != QStringLiteral(" ")) {
-            title_name = loose.toStdString();
-        } else if (!game_path.empty()) {
-            title_name = Common::FS::PathToUTF8String(game_path.filename());
-        } else {
-            title_name = Common::FS::PathToUTF8String(std::filesystem::path{
-                Common::U16StringFromBuffer(filename.utf16(), filename.size())}
-                                                          .filename());
-        }
-    }
+    const auto& game_file = QtCommon::system->GetAppLoader().GetFile();
+    std::error_code ec;
+    const std::string loose_title =
+        game_file != nullptr
+            ? LooseDumpName(*QtCommon::vfs,
+                            Common::FS::PathToUTF8String(
+                                std::filesystem::absolute(
+                                    Common::FS::ToU8String(game_file->GetFullPath()), ec)
+                                    .lexically_normal()),
+                            title_id)
+                  .toStdString()
+            : std::string{};
+    std::string title_name = Loader::DisplayTitle(installed_title, loader_title, loose_title,
+                                                  QFileInfo(filename).completeBaseName().toStdString());
     const bool is_64bit = QtCommon::system->Kernel().ApplicationProcess()->Is64Bit();
     const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");
     title_name = tr("%1 %2", "%1 is the title name. %2 indicates if the title is 64-bit or 32-bit")

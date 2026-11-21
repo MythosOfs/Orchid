@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -167,6 +168,9 @@ enum class ResultStatus : u16 {
 
 std::string GetResultStatusString(ResultStatus status);
 std::ostream& operator<<(std::ostream& os, ResultStatus status);
+
+std::string DisplayTitle(std::string_view installed, std::string_view loader_title,
+                         std::string_view loose_dump, std::string_view file_name);
 
 /// Interface for loading an application
 class AppLoader {

@@ -492,22 +492,20 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::vector<std::fi
                 std::vector<u8> icon;
                 [[maybe_unused]] const auto res1 = app_loader->ReadIcon(icon);
 
-                std::string name = " ";
-                const auto res3 = app_loader->ReadTitle(name);
-                if (res3 != Loader::ResultStatus::Success || name.empty() || name == " ") {
-                    if (const QString loose = LooseDumpName(*vfs, physical_name, id);
-                        !loose.isEmpty()) {
-                        name = loose.toStdString();
-                    }
-                }
-                if (name.empty() || name == " ") {
-                    name = QFileInfo(QString::fromStdString(physical_name))
-                               .completeBaseName()
-                               .toStdString();
-                }
-
                 const FileSys::PatchManager patch{id, system.GetFileSystemController(),
                                                   system.GetContentProvider()};
+
+                std::string loader_title;
+                if (app_loader->ReadTitle(loader_title) != Loader::ResultStatus::Success) {
+                    loader_title.clear();
+                }
+                const auto installed = patch.GetControlMetadata().first;
+                const std::string name = Loader::DisplayTitle(
+                    installed != nullptr ? installed->GetApplicationName() : std::string{},
+                    loader_title, LooseDumpName(*vfs, physical_name, id).toStdString(),
+                    QFileInfo(QString::fromStdString(physical_name))
+                        .completeBaseName()
+                        .toStdString());
 
                 const bool loose_dump = IsExtractedNCAMain(physical_name);
                 const u64 size = loose_dump ? 0 : Common::FS::GetSize(physical_name);

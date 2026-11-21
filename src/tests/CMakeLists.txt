@@ -63,6 +63,7 @@ add_executable(tests
     core/nx_archive.cpp
     core/nup_writer.cpp
     core/loose_directory.cpp
+    core/display_title.cpp
     core/priority_queue.cpp
     core/vfs_vector.cpp
     core/ips_switch.cpp

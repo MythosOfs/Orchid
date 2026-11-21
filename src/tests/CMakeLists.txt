@@ -46,6 +46,7 @@ add_executable(tests
     core/core_timing.cpp
     core/filesystem_buffer_bounds.cpp
     core/filesystem_rename.cpp
+    core/hid_npad_assignment.cpp
     core/kip_blz.cpp
     core/kip_sections.cpp
     core/kip_truncated.cpp

@@ -15,7 +15,7 @@ TEST_CASE("SessionCounter: a finish queued at the shutdown deadline stays with i
     CHECK_FALSE(sessions.IsCurrent(first));
 
     const u64 second = sessions.Current();
-    CHECK(second != first);
+    CHECK(second == first + 1);
     CHECK_FALSE(sessions.IsCurrent(first));
     CHECK(sessions.IsCurrent(second));
 

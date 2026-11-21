@@ -43,7 +43,7 @@ enum class Nx2PictureFormat : u32 {
 /// with EAGAIN. NoCpu rejects every packet and makes the CPU decoder fail to open. Replay rejects
 /// every packet and makes the CPU decoder reject the last packet it replays from the host GPU.
 /// Hold takes every packet without decoding it.
-enum class Nx2GpuDecodeFault { None, Open, Packet, Busy, NoCpu, Replay, Hold };
+enum class Nx2GpuDecodeFault { None, Open, Packet, Busy, NoCpu, Replay, Hold, ReplayReceive };
 
 /// Checks if stream data begins with an H.264 Annex-B start code or avcC/MP4 length-prefixed NALUs.
 bool IsH264Stream(std::span<const u8> data);

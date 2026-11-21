@@ -300,18 +300,30 @@ TEST_CASE("Nx2 video keeps the host GPU decoder when the CPU rejects a replayed 
         CHECK(pictures[0].pts == 0);
     }
     const auto packets = Packets();
-    for (const size_t replayed : {size_t{1}, size_t{2}}) {
-        Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Hold, Avc()};
-        std::vector<Nx2Picture> pictures(1);
-        for (size_t i = 0; i < replayed; ++i) {
-            decoder.decoder->Decode(packets[i], i, pictures);
+    for (const auto fault : {Nx2GpuDecodeFault::Replay, Nx2GpuDecodeFault::ReplayReceive}) {
+        for (const size_t replayed : {size_t{1}, size_t{2}}) {
+            Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Hold, Avc()};
+            std::vector<Nx2Picture> pictures(1);
+            for (size_t i = 0; i < replayed; ++i) {
+                decoder.decoder->Decode(packets[i], i, pictures);
+            }
+            decoder.decoder->SetGpuDecodeFault(fault);
+            decoder.decoder->Decode(packets[2], 2, pictures);
+            CHECK(pictures.size() == 1);
+            decoder.decoder->Reset();
+            CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::Packet) == all_frames);
         }
-        decoder.decoder->SetGpuDecodeFault(Nx2GpuDecodeFault::Replay);
-        decoder.decoder->Decode(packets[2], 2, pictures);
-        CHECK(pictures.size() == 1);
-        decoder.decoder->Reset();
-        CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::Packet) == all_frames);
     }
+}
+
+TEST_CASE("FFmpeg decoder context tells a failed receive from a missing frame", "[nx2_video]") {
+    FFmpeg::Decoder decoder{Tegra::Host1x::NvdecCommon::VideoCodec::H264};
+    FFmpeg::DecoderContext context{decoder};
+    CHECK(!context.ReceiveFrame());
+    CHECK(context.ReceiveFailed());
+    REQUIRE(context.OpenContext(decoder));
+    CHECK(!context.ReceiveFrame());
+    CHECK(!context.ReceiveFailed());
 }
 
 TEST_CASE("Nx2 video replays at most 64 packets", "[nx2_video]") {

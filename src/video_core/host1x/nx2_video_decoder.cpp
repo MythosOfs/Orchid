@@ -199,7 +199,8 @@ struct Nx2VideoDecoder::Impl {
                         : gpu && gpu_fault == Nx2GpuDecodeFault::Hold ? 0
                         : gpu && (gpu_fault == Nx2GpuDecodeFault::Packet ||
                                   gpu_fault == Nx2GpuDecodeFault::NoCpu ||
-                                  gpu_fault == Nx2GpuDecodeFault::Replay)
+                                  gpu_fault == Nx2GpuDecodeFault::Replay ||
+                                  gpu_fault == Nx2GpuDecodeFault::ReplayReceive)
                             ? AVERROR_INVALIDDATA
                             : avcodec_send_packet(target.GetCodecContext(), packet.GetPacket());
         if (Rejected(ret)) {
@@ -214,11 +215,16 @@ struct Nx2VideoDecoder::Impl {
                 std::span<const u8>{data.data(), data.size() - AV_INPUT_BUFFER_PADDING_SIZE}};
             replay.GetPacket()->pts = static_cast<s64>(data_pts);
             pending_pts.insert(data_pts);
-            if ((gpu_fault == Nx2GpuDecodeFault::Replay && &data == &gpu_packets.back().first) ||
+            const bool last = &data == &gpu_packets.back().first;
+            if ((gpu_fault == Nx2GpuDecodeFault::Replay && last) ||
                 Rejected(Send(*context, replay, false))) {
                 return false;
             }
             Receive(pictures);
+            if (context->ReceiveFailed() ||
+                (gpu_fault == Nx2GpuDecodeFault::ReplayReceive && last)) {
+                return false;
+            }
         }
         pending_pts.insert(pts);
         return !Rejected(Send(*context, packet, false));

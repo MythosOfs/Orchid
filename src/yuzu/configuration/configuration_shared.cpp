@@ -71,16 +71,17 @@ void FitToScreen(QWidget* window, const QList<QWidget*>& pages) {
                : QSize(0, window->style()->pixelMetric(QStyle::PM_TitleBarHeight));
     const QSize available = area.size() - decoration;
     const QSize needed = window->size().expandedTo(window->minimumSizeHint());
-    if (needed.width() > available.width() || needed.height() > available.height()) {
-        for (QWidget* page : pages) {
-            MakePageScrollable(page);
-        }
-        window->setMinimumSize(0, 0);
+    if (needed.width() <= available.width() && needed.height() <= available.height()) {
+        return;
     }
+    for (QWidget* page : pages) {
+        MakePageScrollable(page);
+    }
+    window->setMinimumSize(0, 0);
     const QSize size = needed.boundedTo(available);
     window->resize(size);
     if (mapped) {
-        // A page switch grows the window downwards; keep its button bar on the screen.
+        // The shrunk window may still reach past the screen; keep its button bar on it.
         const QSize frame = size + decoration;
         window->move(
             std::max(area.left(), std::min(window->x(), area.right() + 1 - frame.width())),

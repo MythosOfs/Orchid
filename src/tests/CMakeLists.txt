@@ -41,6 +41,7 @@ add_executable(tests
     audio_core/adpcm_decode.cpp
     core/address_arbiter_read.cpp
     core/address_space.cpp
+    core/kernel_finish_termination.cpp
     core/builtin_font_glyphs.cpp
     core/cheat_parser.cpp
     core/core_timing.cpp
@@ -242,6 +243,8 @@ target_compile_definitions(tests PRIVATE
 
 add_test(NAME tests COMMAND tests)
 add_test(NAME service_auto_stub COMMAND tests "[service]")
+add_test(NAME kernel_finish_termination COMMAND tests "[finish_termination]")
+set_tests_properties(kernel_finish_termination PROPERTIES TIMEOUT 15)
 foreach(keys_test eticket keyblob nax keys_file)
     add_test(NAME crypto_${keys_test} COMMAND tests "[${keys_test}]")
 endforeach()

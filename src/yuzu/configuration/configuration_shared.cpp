@@ -56,16 +56,19 @@ void MakePageScrollable(QWidget* page) {
 } // Anonymous namespace
 
 void FitToScreen(QWidget* window, const QList<QWidget*>& pages) {
-    // QDialog places itself on its parent's screen once shown, so measure that one.
+    // Before its first show a QDialog places itself on its parent's screen, so measure that one.
+    const bool visible = window->isVisible();
     const QWidget* parent = window->parentWidget();
-    const QScreen* screen = (parent != nullptr ? parent->window() : window)->screen();
+    const QScreen* screen = (visible || parent == nullptr ? window : parent->window())->screen();
     if (screen == nullptr) {
         return;
     }
     window->ensurePolished();
     const QRect area = screen->availableGeometry();
-    QSize available = area.size();
-    available.rheight() -= window->style()->pixelMetric(QStyle::PM_TitleBarHeight);
+    const QSize decoration =
+        visible ? window->frameGeometry().size() - window->geometry().size()
+                : QSize(0, window->style()->pixelMetric(QStyle::PM_TitleBarHeight));
+    const QSize available = area.size() - decoration;
     const QSize needed = window->size().expandedTo(window->minimumSizeHint());
     if (needed.width() > available.width() || needed.height() > available.height()) {
         for (QWidget* page : pages) {
@@ -75,11 +78,12 @@ void FitToScreen(QWidget* window, const QList<QWidget*>& pages) {
     }
     const QSize size = needed.boundedTo(available);
     window->resize(size);
-    if (window->isVisible()) {
+    if (visible) {
         // A page switch grows the window downwards; keep its button bar on the screen.
-        const QSize frame = size + window->frameGeometry().size() - window->geometry().size();
-        window->move(std::max(area.left(), std::min(window->x(), area.right() + 1 - frame.width())),
-                     std::max(area.top(), std::min(window->y(), area.bottom() + 1 - frame.height())));
+        const QSize frame = size + decoration;
+        window->move(
+            std::max(area.left(), std::min(window->x(), area.right() + 1 - frame.width())),
+            std::max(area.top(), std::min(window->y(), area.bottom() + 1 - frame.height())));
     }
 }
 

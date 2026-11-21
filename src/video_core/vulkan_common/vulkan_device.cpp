@@ -807,7 +807,11 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
 }
 
 Device::~Device() {
-    SaveStaticPipelineCache();
+    try {
+        SaveStaticPipelineCache();
+    } catch (...) {
+        // Best effort: a failed save must not stop the device teardown.
+    }
     ShutdownGPULogging();
     for (auto& pools : separate_pools) {
         for (VmaPool pool : pools) {

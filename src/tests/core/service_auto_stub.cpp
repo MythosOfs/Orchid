@@ -69,9 +69,23 @@ TEST_CASE("Unknown commands: auto stub replies every time and logs once", "[.][s
         Settings::values.censor_username.SetValue(previous_censor);
         Common::FS::SetEdenPath(Common::FS::EdenPath::LogDir, previous_log_dir);
     };
-    // Reused by every run; the backend starts a new log file there.
-    const std::filesystem::path log_dir = ORCHID_AUTO_STUB_LOG_DIR;
-    std::filesystem::create_directories(log_dir);
+    // One directory per process, as the backend keeps its file open until the process exits; the
+    // next run removes those not written for a while.
+    namespace fs = std::filesystem;
+    const auto logs = fs::temp_directory_path() / "orchid-auto-stub-logs";
+    std::error_code ignored;
+    for (const auto& old : fs::directory_iterator{logs, ignored}) {
+        auto written = fs::last_write_time(old.path() / "orchid_log.txt", ignored);
+        if (ignored) {
+            written = fs::last_write_time(old.path(), ignored);
+        }
+        if (!ignored && fs::file_time_type::clock::now() - written > std::chrono::minutes{10}) {
+            fs::remove_all(old.path(), ignored);
+        }
+    }
+    static const auto log_dir =
+        logs / std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+    fs::create_directories(log_dir);
     Common::FS::SetEdenPath(Common::FS::EdenPath::LogDir, log_dir);
     // The log would replace a user name like "test" inside the searched lines.
     Settings::values.censor_username.SetValue(false);

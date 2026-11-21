@@ -212,8 +212,7 @@ target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2WithMain
 target_compile_definitions(tests PRIVATE ORCHID_EXPECT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/expect")
 
 target_compile_definitions(tests PRIVATE
-    ORCHID_NX_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/core/nx_fixtures"
-    ORCHID_AUTO_STUB_LOG_DIR="${CMAKE_CURRENT_BINARY_DIR}/service_auto_stub_log")
+    ORCHID_NX_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/core/nx_fixtures")
 
 add_test(NAME tests COMMAND tests)
 add_test(NAME service_auto_stub COMMAND tests "[service]")

@@ -1,4 +1,9 @@
+#include <bit>
 #include <utility>
+
+#ifndef _WIN32
+#include <sys/mman.h>
+#endif
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -47,4 +52,38 @@ TEST_CASE("Guest memory spans validate every covered page", "[core][memory_span]
     CHECK(memory.GetSpan(4 * page_size, 3 * page_size) == backing + 16 * page_size);
     table.entries.GetAndFault(5).Store(false, Common::PageType::Unmapped, 1, 0);
     CHECK(memory.GetSpan(4 * page_size, 3 * page_size) == nullptr);
+}
+
+TEST_CASE("An empty guest span at the exclusive end has no page entry",
+          "[core][memory_span][memory_span_boundary]") {
+    ScopedSystemTestContext context;
+    Core::System system;
+    system.Initialize();
+    Kernel::KProcess process{system.Kernel()};
+    SCOPE_EXIT { system.Kernel().UnregisterKernelObject(&process); };
+
+    auto& table = process.GetPageTable().GetImpl();
+    const size_t entries_per_host_page =
+        Common::HostPageSize / sizeof(Common::PageTable::PageEntryData);
+    const u32 address_bits = Core::Memory::YUZU_PAGEBITS + std::countr_zero(entries_per_host_page);
+    table.Resize(address_bits, Core::Memory::YUZU_PAGEBITS);
+#ifndef _WIN32
+    table.entries.ResizeAndClear(entries_per_host_page * 2);
+    const auto* guard = table.entries.data() + entries_per_host_page;
+    REQUIRE(mprotect(const_cast<Common::PageTable::PageEntryData*>(guard),
+                     Common::HostPageSize, PROT_NONE) == 0);
+#endif
+    constexpr auto page_size = Core::Memory::YUZU_PAGESIZE;
+    const u64 end = u64{1} << address_bits;
+    auto& memory = process.GetMemory();
+    memory.SetCurrentPageTable(process);
+    u8* const backing = system.DeviceMemory().buffer.BackingBasePointer();
+    table.entries.GetAndFault(entries_per_host_page - 1)
+        .Store(false, Common::PageType::Memory, 1,
+               reinterpret_cast<uintptr_t>(backing) - (end - page_size));
+
+    CHECK(memory.GetSpan(end - 1, 0) == backing + page_size - 1);
+    CHECK(memory.GetSpan(end - 1, 1) == backing + page_size - 1);
+    CHECK(memory.GetSpan(end, 1) == nullptr);
+    CHECK(memory.GetSpan(end, 0) == nullptr);
 }

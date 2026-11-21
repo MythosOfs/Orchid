@@ -34,6 +34,14 @@ public:
     }
 };
 
+class ShortReadFile final : public VectorVfsFile {
+public:
+    using VectorVfsFile::VectorVfsFile;
+    std::size_t GetSize() const override {
+        return 0xC00;
+    }
+};
+
 Loader::ResultStatus StatusOf(std::vector<u8> bytes) {
     return NCA{std::make_shared<VectorVfsFile>(std::move(bytes))}.GetStatus();
 }
@@ -131,6 +139,11 @@ TEST_CASE("NCA asks for the header key only when the header needs it", "[core][f
         CHECK(StatusOf(std::vector<u8>(0xBFF, 0xA5)) == Loader::ResultStatus::ErrorBadNCAHeader);
     }
 
+    SECTION("A file that reads short of its reported size is damaged") {
+        const NCA nca{std::make_shared<ShortReadFile>(std::vector<u8>(0x400, 0xA5))};
+        CHECK(nca.GetStatus() == Loader::ResultStatus::ErrorBadNCAHeader);
+    }
+
     SECTION("A header that cannot be read is damaged") {
         const NCA nca{std::make_shared<UnreadableFile>(std::vector<u8>(0xC00, 0xA5))};
         CHECK(nca.GetStatus() == Loader::ResultStatus::ErrorBadNCAHeader);
@@ -183,4 +196,9 @@ TEST_CASE("NSP launch rejects a title ID 0 program from update metadata",
                    {"11111111111111111111111111111111.nca",
                     MakeNca(0, NcaHeader::ContentType::Program, {{"main", {0}}})}}) ==
           Loader::ResultStatus::ErrorNSPMissingProgramNCA);
+}
+
+TEST_CASE("Extracted NSP launch reaches the ExeFS loader without a title ID",
+          "[core][loader][nca_header_key]") {
+    CHECK(LoadNsp({{"main", {0}}, {"main.npdm", {0}}}) == Loader::ResultStatus::ErrorBadNPDMHeader);
 }

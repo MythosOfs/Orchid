@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2016 Citra Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -62,17 +63,24 @@ void FitToScreen(QWidget* window, const QList<QWidget*>& pages) {
         return;
     }
     window->ensurePolished();
-    QSize available = screen->availableGeometry().size();
+    const QRect area = screen->availableGeometry();
+    QSize available = area.size();
     available.rheight() -= window->style()->pixelMetric(QStyle::PM_TitleBarHeight);
     const QSize needed = window->size().expandedTo(window->minimumSizeHint());
-    if (needed.width() <= available.width() && needed.height() <= available.height()) {
-        return;
+    if (needed.width() > available.width() || needed.height() > available.height()) {
+        for (QWidget* page : pages) {
+            MakePageScrollable(page);
+        }
+        window->setMinimumSize(0, 0);
     }
-    for (QWidget* page : pages) {
-        MakePageScrollable(page);
+    const QSize size = needed.boundedTo(available);
+    window->resize(size);
+    if (window->isVisible()) {
+        // A page switch grows the window downwards; keep its button bar on the screen.
+        const QSize frame = size + window->frameGeometry().size() - window->geometry().size();
+        window->move(std::max(area.left(), std::min(window->x(), area.right() + 1 - frame.width())),
+                     std::max(area.top(), std::min(window->y(), area.bottom() + 1 - frame.height())));
     }
-    window->setMinimumSize(0, 0);
-    window->resize(needed.boundedTo(available));
 }
 
 } // namespace ConfigurationShared

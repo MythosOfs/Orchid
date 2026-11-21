@@ -121,15 +121,20 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
 ConfigureDialog::~ConfigureDialog() = default;
 
 void ConfigureDialog::showEvent(QShowEvent* event) {
-    if (isWindow()) {
-        QList<QWidget*> pages;
-        for (int row = 0; row < ui->selectorList->count(); ++row) {
-            const QVariant tabs = ui->selectorList->item(row)->data(Qt::UserRole);
-            pages.append(qvariant_cast<QList<QWidget*>>(tabs));
-        }
-        ConfigurationShared::FitToScreen(this, pages);
-    }
+    FitToScreen();
     QDialog::showEvent(event);
+}
+
+void ConfigureDialog::FitToScreen() {
+    if (!isWindow()) {
+        return;
+    }
+    QList<QWidget*> pages;
+    for (int row = 0; row < ui->selectorList->count(); ++row) {
+        const QVariant tabs = ui->selectorList->item(row)->data(Qt::UserRole);
+        pages.append(qvariant_cast<QList<QWidget*>>(tabs));
+    }
+    ConfigurationShared::FitToScreen(this, pages);
 }
 
 void ConfigureDialog::SetConfiguration() {}
@@ -233,5 +238,8 @@ void ConfigureDialog::UpdateVisibleTabs() {
     for (auto* const tab : tabs) {
         LOG_DEBUG(Frontend, "{}", tab->accessibleName().toStdString());
         ui->tabWidget->addTab(tab, tab->accessibleName());
+    }
+    if (isVisible()) {
+        FitToScreen();
     }
 }

@@ -66,6 +66,16 @@ constexpr std::string_view EmptyMessageBlock =
     "16da0584053af7bced6a6bc6b5b271e6de098b511c9f701ba1eaaff6bafb1b784608bddda1ab758f"
     "8e96dede8cac1c0794bd8085e1806558";
 
+// The first title key in a block made for the label "orchid" instead of the empty label.
+constexpr std::string_view WrongLabelBlock =
+    "a05dd925575a9551caa270355cdd6727f44a897b9cd02ad4d6ef12d87160b9bb5dba80bf92529751"
+    "f346ead3d1569817e8e642a15caf301026e9e25f03376d9e1d36dc6b097d350721b028958d501325"
+    "fd9d11e961d42b099328a68d9a601afe27b11bc0e8ba434ff34e4385ad7dd505ba4f0185b7001ac4"
+    "bf2d2320c712ecc2a0e16b523b57642e86387da9d6f9d4dad7161e39e33e7fa4de7d51c28580ee0b"
+    "b797b0a0e7f74e43ddad8c0e682ea42dc5b5303412a2053491974ad277ced5407ec954cdcd59f8e0"
+    "0f2c1fc8fe9b588607e33e77309bd3d36a9529591b1dcb63538a26f44abf730132d3e0452ca3cba7"
+    "7bf1c2cea764751eceb44a47d475a1b9";
+
 struct TicketKeys {
     TicketKeys() {
         std::random_device random;
@@ -139,6 +149,13 @@ TEST_CASE("A personalized ticket with a corrupted block gives no title key", "[c
     std::string block{TitleKeyBlock};
     block[100] = block[100] == '0' ? '1' : '0';
     CHECK_FALSE(keys.Add(TitleKeyType::Personalized, block, "01004d5f17e4c0000000000000000044"));
+    CHECK_FALSE(keys.HasTitleKey());
+}
+
+TEST_CASE("A personalized ticket with the wrong OAEP label gives no title key", "[core][crypto]") {
+    TicketKeys keys;
+    CHECK_FALSE(
+        keys.Add(TitleKeyType::Personalized, WrongLabelBlock, "01004d5f17e4c0000000000000000046"));
     CHECK_FALSE(keys.HasTitleKey());
 }
 

@@ -17,6 +17,7 @@
 
 #include <openssl/bn.h>
 #include <openssl/core_names.h>
+#include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/params.h>
 
@@ -557,6 +558,12 @@ std::optional<Key128> KeyManager::ParseTicketTitleKey(const Ticket& ticket) {
 
     m_1 = m_1 ^ MGF1<0x20>(m_2);
     m_2 = m_2 ^ MGF1<0xDF>(m_1);
+
+    constexpr auto empty_label_hash = Common::HexStringToArray<0x20>(
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+    if (CRYPTO_memcmp(m_2.data(), empty_label_hash.data(), empty_label_hash.size()) != 0) {
+        return std::nullopt;
+    }
 
     const auto offset = FindTicketOffset(m_2);
     if (!offset) {

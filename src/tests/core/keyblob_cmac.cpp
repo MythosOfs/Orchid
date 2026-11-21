@@ -60,6 +60,7 @@ void Derive(std::string_view index, std::string_view lines) {
         line("tsec_key", '2');
         line("keyblob_key_source_" + std::string{index}, '3');
         line("keyblob_mac_key_source", '4');
+        file << "keyblob_" << index << " = " << std::string(0x90 * 2, '0') << '\n';
         file << lines;
     }
     const auto previous = Common::FS::GetEdenPath(Common::FS::EdenPath::KeysDir);

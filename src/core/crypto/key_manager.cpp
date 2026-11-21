@@ -634,14 +634,14 @@ void KeyManager::LoadFromFile(const std::filesystem::path& file_path, bool is_ti
                 continue;
             }
 
-            const auto holds = [&out](const std::string& hex, size_t bytes) {
+            const auto holds = [&file_path](const std::string& hex, size_t bytes) {
                 if (hex.size() >= bytes * 2 &&
                     std::all_of(hex.begin(), hex.begin() + bytes * 2,
                                 [](unsigned char c) { return std::isxdigit(c); })) {
                     return true;
                 }
-                LOG_WARNING(Crypto, "Skipping the keys file line \"{}\": it needs {} hex digits",
-                            out[0], bytes * 2);
+                LOG_WARNING(Crypto, "Skipping a line of {}: its value needs {} hex digits",
+                            file_path.filename().string(), bytes * 2);
                 return false;
             };
 

@@ -4277,7 +4277,14 @@ void TextureCache<P>::SynchronizeAliases(ImageId image_id) {
     if (aliased_images.empty()) {
         return;
     }
-    const bool can_rescale = ImageCanRescale(image);
+    bool can_rescale = ImageCanRescale(image);
+    if constexpr (requires { runtime.GetMaxScaledExtent(); }) {
+        for (const AliasedImage* const aliased : aliased_images) {
+            can_rescale &= ScaledImageFits(slot_images[aliased->id].info,
+                                           Settings::values.resolution_info,
+                                           runtime.GetMaxScaledExtent());
+        }
+    }
     if (any_rescaled) {
         if (can_rescale) {
             ScaleUp(image);

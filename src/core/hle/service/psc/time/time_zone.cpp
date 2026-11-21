@@ -4,6 +4,8 @@
 // SPDX-FileCopyrightText: Copyright 2023 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
+
 #include "core/hle/service/psc/time/time_zone.h"
 
 namespace Service::PSC::Time {
@@ -14,6 +16,10 @@ constexpr Result ValidateRule(const Tz::Rule& rule) {
         rule.charcnt > static_cast<s32>(Tz::TZ_MAX_CHARS)) {
         R_RETURN(ResultTimeZoneOutOfRange);
     }
+    // localsub takes the default type before the first transition.
+    if (rule.timecnt < 0 || rule.defaulttype < 0 || rule.defaulttype >= rule.typecnt) {
+        R_RETURN(ResultTimeZoneOutOfRange);
+    }
 
     for (s32 i = 0; i < rule.timecnt; i++) {
         if (rule.types[i] >= rule.typecnt) {
@@ -22,40 +28,16 @@ constexpr Result ValidateRule(const Tz::Rule& rule) {
     }
 
     for (s32 i = 0; i < rule.typecnt; i++) {
-        if (rule.ttis[i].tt_desigidx >= static_cast<s32>(rule.chars.size())) {
+        const s32 index{rule.ttis[i].tt_desigidx};
+        // localsub reads the abbreviation up to its NUL.
+        if (index < 0 || index >= static_cast<s32>(rule.chars.size()) ||
+            std::find(rule.chars.begin() + index, rule.chars.end(), '\0') == rule.chars.end()) {
             R_RETURN(ResultTimeZoneOutOfRange);
         }
     }
     R_SUCCEED();
 }
 
-constexpr bool GetTimeZoneTime(s64& out_time, const Tz::Rule& rule, s64 time, s32 index,
-                               s32 index_offset) {
-    s32 found_idx{};
-    s32 expected_index{index + index_offset};
-    s64 time_to_find{time + rule.ttis[rule.types[index]].tt_utoff -
-                     rule.ttis[rule.types[expected_index]].tt_utoff};
-
-    if (rule.timecnt > 1 && rule.ats[0] <= time_to_find) {
-        s32 low{1};
-        s32 high{rule.timecnt};
-
-        while (low < high) {
-            auto mid{(low + high) / 2};
-            if (rule.ats[mid] <= time_to_find) {
-                low = mid + 1;
-            } else if (rule.ats[mid] > time_to_find) {
-                high = mid;
-            }
-        }
-        found_idx = low - 1;
-    }
-
-    if (found_idx == expected_index) {
-        out_time = time_to_find;
-    }
-    return found_idx == expected_index;
-}
 } // namespace
 
 void TimeZone::SetTimePoint(const SteadyClockTimePoint& time_point) {
@@ -265,18 +247,19 @@ Result TimeZone::ToPosixTimeImpl(u32& out_count, std::span<s64> out_times,
         R_SUCCEED();
     }
 
-    s64 time2{};
-    if (internal.time_index > 0 && GetTimeZoneTime(time2, rule, time, internal.time_index, -1)) {
-        out_times[1] = time2;
-        out_count = 2;
-        R_SUCCEED();
-    }
-
-    if (((internal.time_index + 1) < rule.timecnt) &&
-        GetTimeZoneTime(time2, rule, time, internal.time_index, 1)) {
-        out_times[1] = time2;
-        out_count = 2;
-        R_SUCCEED();
+    // A second time has another type's offset and maps back to the same local time.
+    for (s32 i = 0; i < rule.typecnt; ++i) {
+        const s64 time2{time + internal.tm_utoff - rule.ttis[i].tt_utoff};
+        time_t time2_tmp{static_cast<time_t>(time2)};
+        Tz::CalendarTimeInternal internal2{};
+        if (time2 != time && !Tz::localtime_rz(&internal2, &rule, &time2_tmp) &&
+            internal2.tm_sec == internal.tm_sec && internal2.tm_min == internal.tm_min &&
+            internal2.tm_hour == internal.tm_hour && internal2.tm_mday == internal.tm_mday &&
+            internal2.tm_mon == internal.tm_mon && internal2.tm_year == internal.tm_year) {
+            out_times[1] = time2;
+            out_count = 2;
+            R_SUCCEED();
+        }
     }
 
     out_count = 1;

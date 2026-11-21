@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <utility>
+
 #include "core/core.h"
 #include "core/hle/kernel/k_page_heap.h"
 
@@ -42,6 +44,19 @@ size_t KPageHeap::GetNumFreePages() const {
     }
 
     return num_free;
+}
+
+void KPageHeap::ForEachFreeBlock(const std::function<void(KPhysicalAddress, size_t)>& f) {
+    std::vector<std::pair<KPhysicalAddress, size_t>> blocks;
+    for (size_t i = 0; i < m_num_blocks; i++) {
+        while (const KPhysicalAddress block = m_blocks[i].PopBlock(false)) {
+            blocks.emplace_back(block, m_blocks[i].GetNumPages());
+        }
+    }
+    for (const auto& [block, num_pages] : blocks) {
+        f(block, num_pages);
+        this->Free(block, num_pages);
+    }
 }
 
 KPhysicalAddress KPageHeap::AllocateByLinearSearch(s32 index) {

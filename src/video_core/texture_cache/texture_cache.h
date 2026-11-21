@@ -1621,6 +1621,8 @@ std::pair<typename P::ImageView*, bool> TextureCache<P>::TryFindFramebufferImage
             // A game told the display is HDR presents a 10-bit image (Ocarina of Time); an
             // 8-bit view of it showed its bits as false colors.
             return PixelFormat::A2B10G10R10_UNORM;
+        case Service::android::PixelFormat::RgbaFp16:
+            return PixelFormat::R16G16B16A16_FLOAT;
         default:
             return PixelFormat::A8B8G8R8_UNORM;
         }
@@ -2553,6 +2555,12 @@ bool TextureCache<P>::ImageCanRescale(ImageBase& image) {
     if (!image.info.rescaleable) {
         return false;
     }
+    if constexpr (requires { runtime.GetMaxScaledExtent(); }) {
+        if (!ScaledImageFits(image.info, Settings::values.resolution_info,
+                             runtime.GetMaxScaledExtent())) {
+            return false;
+        }
+    }
     if (Settings::values.resolution_info.downscale && !image.info.downscaleable) {
         return false;
     }
@@ -2986,6 +2994,10 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, DA
                                region_check_gpu);
 
     bool can_rescale = info.rescaleable;
+    if constexpr (requires { runtime.GetMaxScaledExtent(); }) {
+        can_rescale &= ScaledImageFits(new_info, Settings::values.resolution_info,
+                                       runtime.GetMaxScaledExtent());
+    }
     bool any_rescaled = false;
     for (const auto& copy : join_copies_to_do) {
         if (!can_rescale) {
@@ -4267,7 +4279,14 @@ void TextureCache<P>::SynchronizeAliases(ImageId image_id) {
     if (aliased_images.empty()) {
         return;
     }
-    const bool can_rescale = ImageCanRescale(image);
+    bool can_rescale = ImageCanRescale(image);
+    if constexpr (requires { runtime.GetMaxScaledExtent(); }) {
+        for (const AliasedImage* const aliased : aliased_images) {
+            can_rescale &= ScaledImageFits(slot_images[aliased->id].info,
+                                           Settings::values.resolution_info,
+                                           runtime.GetMaxScaledExtent());
+        }
+    }
     if (any_rescaled) {
         if (can_rescale) {
             ScaleUp(image);

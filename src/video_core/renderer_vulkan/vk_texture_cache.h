@@ -13,6 +13,7 @@
 #include <span>
 
 #include "video_core/texture_cache/texture_cache_base.h"
+#include "video_core/texture_cache/util.h"
 
 #include "shader_recompiler/shader_info.h"
 #include "video_core/renderer_vulkan/vk_compute_pass.h"
@@ -81,6 +82,10 @@ public:
     u64 GetDeviceMemorySlack() const;
 
     bool CanReportMemoryUsage() const;
+
+    /// The largest width and height a scaled image may take: the device's 2D image and
+    /// framebuffer limits.
+    VideoCommon::ScaledExtentLimit GetMaxScaledExtent() const noexcept;
 
     /// Images that did not fit the device memory budget so far (see MemoryAllocator).
     u32 MemoryPressureEvents() const noexcept {
@@ -499,7 +504,7 @@ public:
     friend class BlockLinearUnswizzle3DPass;
 
 private:
-    bool BlitScaleHelper(bool scale_up);
+    bool BlitScaleHelper(bool scale_up, bool dst_undefined);
 
     bool NeedsScaleHelper() const;
 

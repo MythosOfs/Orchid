@@ -37,12 +37,27 @@ enum class Nx2PictureFormat : u32 {
     Bgra8,
 };
 
+enum class Nx2GpuDecodeFault {
+    None,
+    Open,
+    Packet,
+    Busy,
+    NoCpu,
+    Replay,
+    Hold,
+    ReplayReceive,
+    SwitchReceive,
+};
+
 bool IsH264Stream(std::span<const u8> data);
 
 class Nx2VideoDecoder {
 public:
-    explicit Nx2VideoDecoder(std::span<const u8> configuration);
+    explicit Nx2VideoDecoder(std::span<const u8> configuration,
+                             Nx2GpuDecodeFault fault = Nx2GpuDecodeFault::None);
     ~Nx2VideoDecoder();
+
+    void SetGpuDecodeFault(Nx2GpuDecodeFault fault);
 
     bool IsOpen() const;
 

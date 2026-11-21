@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
+#include <QShowEvent>
+#include <QTimer>
 #include "common/logging.h"
 #include "common/settings.h"
 #include "common/settings_enums.h"
@@ -119,6 +121,39 @@ ConfigureDialog::ConfigureDialog(QWidget* parent, HotkeyRegistry& registry_,
 
 ConfigureDialog::~ConfigureDialog() = default;
 
+void ConfigureDialog::showEvent(QShowEvent* event) {
+    FitToScreen();
+    QDialog::showEvent(event);
+}
+
+void ConfigureDialog::paintEvent(QPaintEvent* event) {
+    QDialog::paintEvent(event);
+    if (!fitted_framed) {
+        QTimer::singleShot(0, this, &ConfigureDialog::FitFramedOnce);
+    }
+}
+
+// The real window frame is known only once the dialog is mapped and activated, in either order.
+void ConfigureDialog::FitFramedOnce() {
+    if (fitted_framed || !isActiveWindow() || !testAttribute(Qt::WA_Mapped)) {
+        return;
+    }
+    fitted_framed = true;
+    FitToScreen();
+}
+
+void ConfigureDialog::FitToScreen() {
+    if (!isWindow()) {
+        return;
+    }
+    QList<QWidget*> pages;
+    for (int row = 0; row < ui->selectorList->count(); ++row) {
+        const QVariant tabs = ui->selectorList->item(row)->data(Qt::UserRole);
+        pages.append(qvariant_cast<QList<QWidget*>>(tabs));
+    }
+    ConfigurationShared::FitToScreen(this, pages);
+}
+
 void ConfigureDialog::SetConfiguration() {}
 
 void ConfigureDialog::ApplyConfiguration() {
@@ -145,6 +180,9 @@ void ConfigureDialog::ApplyConfiguration() {
 void ConfigureDialog::changeEvent(QEvent* event) {
     if (event->type() == QEvent::LanguageChange) {
         RetranslateUI();
+    }
+    if (event->type() == QEvent::ActivationChange) {
+        FitFramedOnce();
     }
 
     QDialog::changeEvent(event);
@@ -220,5 +258,8 @@ void ConfigureDialog::UpdateVisibleTabs() {
     for (auto* const tab : tabs) {
         LOG_DEBUG(Frontend, "{}", tab->accessibleName().toStdString());
         ui->tabWidget->addTab(tab, tab->accessibleName());
+    }
+    if (isVisible()) {
+        FitToScreen();
     }
 }

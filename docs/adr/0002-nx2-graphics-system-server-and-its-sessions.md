@@ -47,8 +47,6 @@ One entry per former code comment, by file, named after the code it described.
 - `u32 count{1}`: images in the pool; handle id + i is image i
 - `u64 offset{}`: into its memory (images of a decoder pool share one)
 - `bool decoder{}`: a video decoder output image (gsv 911)
-- `struct Nx2ImageLayout`: Block-linear layout of an InterModuleUserImagePreference (16 words): word 2 holds (width - 1) | (height - 1) << 16, word 4 the block height (log2 of GOB rows), word 5 the row pitch in 64-byte GOBs. Formula from changes.patch (native_image_layout.h); preferences outside it fall back to 4 bytes per pixel and 128-row blocks.
-- `in Nx2CalculateImageLayout()`: 4 KiB, not one block (8 KiB at 128 rows): Star Fox places its window textures at offset 0x1000 in their memory, and NativeWindow::Initialize fails on a misaligned offset, leaving the NVN window without a native window (null call in NativeWindow::Acquire).
 - `class INx2ChatGsvSession final : public ServiceFramework<INx2ChatGsvSession>`: GameChat's graphics side (nn::chat::gsv), handed out by gsv 1202. Read from the SDK's nn::chat::gsv::Initialize: TIPC 1() returns a u32 id at word 3 (it aborts with 2162-0001 if the id is over 0x3ff), then TIPC 11(u32 id) returns an event (copy handle at word 3, result at word 4) that it attaches as a system event. 103 (OpenVirtualDisplay: u64 name packed from up to 8 chars, u32 slot id) and 121 (CreateMetadataPool: u64 pool cookie, u64 count, u32 slot id) only read the result; the SDK picks the slot id itself. Everything else falls through to the nx2 auto stub.
 - `class INx2CameraSession final : public ServiceFramework<INx2CameraSession>` (open work: #188): nn::camera::sdk camera context (gsv 602). The titles' statically linked camera client talks CMIF on it (not TIPC). Layouts read from that client in Welcome Tour and Mario Kart World: 3(char name[16]) -> u64 camera id. Opens "Default"; the client tolerates result 2452-0006 here. 21(u64 camera id) -> copy handle, attached as the camera's system event. 29(40-byte image preference, u64 camera id) -> result only. Mario Kart World asks it for four preferences (first word 0x180 = 384, the 384x216 images) every frame and tolerates 2452-0003, 2452-0006 and 2452-0007. The answers are success and camera id 0; the event 21 hands out is never signalled.
 - `void CheckImagePreference(HLERequestContext& ctx)`: Polled every frame by Mario Kart World, so it is logged once.
@@ -88,6 +86,13 @@ One entry per former code comment, by file, named after the code it described.
 - `in OpenViSession()`: Used by nn::vi2::sdk::Initialize; takes one u64, returns a session (handle at word 3, result at word 4).
 - `in OpenGpuSession()`: Used by nn::gpu::sdk::BootWithRemoteMemory; takes one u64, returns a session (handle at word 3, result at word 4) that the GPU SDK keeps.
 - `in OpenNvsrvSession()`: The SDK reads the handle at word 3 and the result at word 4. nvsrv speaks the nvdrv INvDrvServices protocol (Open/Ioctl/Close/..., 13 = SetGraphicsFirmwareMemoryMarginEnabled), so serve it with Eden's nvdrv on the shared module. The nx2: name keeps unknown commands auto-stubbed and logged.
+
+### `src/core/hle/service/nx2_image_layout.h`
+
+- `enum class Nx2NativeImageFormat : u32`: Pixel format IDs in InterModuleUserImagePreference word 6.
+- `inline Tegra::ColorSpace Nx2NativeImageColorSpace(Nx2NativeImageFormat format, bool told_hdr)`: The colour space of a presented native image. FP16 is linear scRGB by its format. RGB10A2 holds PQ BT.2020 only while the game was told the display is HDR: Fire Emblem: Fortune's Weave presents SDR in RGB10A2.
+- `struct Nx2ImageLayout`: Block-linear layout of an InterModuleUserImagePreference (16 words): word 2 holds (width - 1) | (height - 1) << 16, word 4 the block height (log2 of GOB rows), word 5 the row pitch in 64-byte GOBs. Formula from changes.patch (native_image_layout.h); preferences outside it fall back to the format's bytes per pixel (word 6: 8 for FP16, else 4) and 128-row blocks.
+- `in Nx2CalculateImageLayout()`: 4 KiB, not one block (8 KiB at 128 rows): Star Fox places its window textures at offset 0x1000 in their memory, and NativeWindow::Initialize fails on a misaligned offset, leaving the NVN window without a native window (null call in NativeWindow::Acquire).
 
 ### `src/core/hle/service/nx2_gsv_server.h`
 

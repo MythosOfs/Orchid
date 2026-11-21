@@ -14,6 +14,7 @@
 #include "common/thread.h"
 #include "common/vector_math.h"
 #include "input_common/drivers/sdl_driver.h"
+#include "input_common/drivers/silent_controller.h"
 
 namespace InputCommon {
 
@@ -310,7 +311,12 @@ public:
         return sdl_controller.get();
     }
 
+    SilentConnection& Silence() {
+        return silence;
+    }
+
     void SetSDLJoystick(SDL_Joystick* joystick, SDL_Gamepad* controller) {
+        silence.Stop();
         if (joystick != nullptr) {
             // A reopened device starts a new sensor timestamp session.
             std::scoped_lock lock{mutex};
@@ -432,6 +438,7 @@ private:
     bool has_vibration{false};
     bool is_vibration_tested{false};
     BasicMotion motion;
+    SilentConnection silence;
 };
 
 std::shared_ptr<SDLJoystick> SDLDriver::GetSDLJoystickByGUID(const Common::UUID& guid, int port) {
@@ -557,37 +564,28 @@ void SDLDriver::InitJoystick(SDL_JoystickID joystick_id) {
     SCOPE_EXIT {
         SDL_UnlockJoysticks();
     };
+    const char* const path = SDL_GetJoystickPath(sdl_joystick);
     std::scoped_lock lock{joystick_map_mutex};
-    if (joystick_map.find(guid) == joystick_map.end()) {
-        auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick, sdl_gamecontroller);
-        PreSetController(joystick->GetPadIdentifier());
-        joystick->EnableMotion();
-        SetBattery(joystick->GetPadIdentifier(),
-                   joystick->GetBatteryLevel(battery_state, battery_percent));
-        joystick_map[guid].emplace_back(std::move(joystick));
-        return;
-    }
-
     auto& joystick_guid_list = joystick_map[guid];
     const auto joystick_it =
         std::find_if(joystick_guid_list.begin(), joystick_guid_list.end(),
                      [](const auto& joystick) { return !joystick->GetSDLJoystick(); });
 
+    std::shared_ptr<SDLJoystick> joystick;
     if (joystick_it != joystick_guid_list.end()) {
-        (*joystick_it)->SetSDLJoystick(sdl_joystick, sdl_gamecontroller);
-        (*joystick_it)->EnableMotion();
-        SetBattery((*joystick_it)->GetPadIdentifier(),
-                   (*joystick_it)->GetBatteryLevel(battery_state, battery_percent));
-        return;
+        joystick = *joystick_it;
+        joystick->SetSDLJoystick(sdl_joystick, sdl_gamecontroller);
+    } else {
+        const int port = static_cast<int>(joystick_guid_list.size());
+        joystick = std::make_shared<SDLJoystick>(guid, port, sdl_joystick, sdl_gamecontroller);
+        PreSetController(joystick->GetPadIdentifier());
+        joystick_guid_list.emplace_back(joystick);
     }
-
-    const int port = static_cast<int>(joystick_guid_list.size());
-    auto joystick = std::make_shared<SDLJoystick>(guid, port, sdl_joystick, sdl_gamecontroller);
-    PreSetController(joystick->GetPadIdentifier());
     joystick->EnableMotion();
     SetBattery(joystick->GetPadIdentifier(),
                joystick->GetBatteryLevel(battery_state, battery_percent));
-    joystick_guid_list.emplace_back(std::move(joystick));
+    joystick->Silence().Start(joystick->GetControllerName(), path != nullptr ? path : "",
+                            std::chrono::steady_clock::now());
 }
 
 void SDLDriver::CloseJoystick(SDL_Joystick* sdl_joystick) {
@@ -606,9 +604,19 @@ void SDLDriver::CloseJoystick(SDL_Joystick* sdl_joystick) {
     }
 }
 
-void SDLDriver::PumpEvents() const {
-    if (initialized) {
-        SDL_PumpEvents();
+void SDLDriver::PumpEvents() {
+    if (!initialized) {
+        return;
+    }
+    SDL_PumpEvents();
+    const auto now = std::chrono::steady_clock::now();
+    std::scoped_lock lock{joystick_map_mutex};
+    for (const auto& [guid, joysticks] : joystick_map) {
+        for (const auto& joystick : joysticks) {
+            if (const auto warning = joystick->Silence().Check(now); !warning.empty()) {
+                LOG_WARNING(Input, "{}", warning);
+            }
+        }
     }
 }
 
@@ -616,6 +624,7 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
     switch (event.type) {
     case SDL_EVENT_JOYSTICK_BUTTON_UP: {
         if (const auto joystick = GetSDLJoystickBySDLID(event.jbutton.which)) {
+            joystick->Silence().MarkInput();
             const PadIdentifier identifier = joystick->GetPadIdentifier();
             SetButton(identifier, event.jbutton.button, false);
         }
@@ -623,6 +632,7 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
     }
     case SDL_EVENT_JOYSTICK_BUTTON_DOWN: {
         if (const auto joystick = GetSDLJoystickBySDLID(event.jbutton.which)) {
+            joystick->Silence().MarkInput();
             const PadIdentifier identifier = joystick->GetPadIdentifier();
             SetButton(identifier, event.jbutton.button, true);
         }
@@ -630,6 +640,7 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
     }
     case SDL_EVENT_JOYSTICK_HAT_MOTION: {
         if (const auto joystick = GetSDLJoystickBySDLID(event.jhat.which)) {
+            joystick->Silence().MarkInput();
             const PadIdentifier identifier = joystick->GetPadIdentifier();
             SetHatButton(identifier, event.jhat.hat, event.jhat.value);
         }
@@ -637,6 +648,7 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
     }
     case SDL_EVENT_JOYSTICK_AXIS_MOTION: {
         if (const auto joystick = GetSDLJoystickBySDLID(event.jaxis.which)) {
+            joystick->Silence().MarkInput();
             const PadIdentifier identifier = joystick->GetPadIdentifier();
             SetAxis(identifier, event.jaxis.axis, event.jaxis.value / 32767.0f);
         }
@@ -648,6 +660,7 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
             joystick = GetSDLJoystickBySDLID(event.gsensor.which);
         }
         if (joystick) {
+            joystick->Silence().MarkInput();
             if (joystick->UpdateMotion(event.gsensor)) {
                 const PadIdentifier identifier = joystick->GetPadIdentifier();
                 SetMotion(identifier, 0, joystick->GetMotion());
@@ -672,6 +685,16 @@ void SDLDriver::HandleGameControllerEvent(const SDL_Event& event) {
         InitJoystick(event.jdevice.which);
         break;
     }
+}
+
+std::string SDLDriver::GetSilenceWarning(const Common::ParamPackage& params) {
+    std::scoped_lock lock{joystick_map_mutex};
+    const auto it = joystick_map.find(Common::UUID{params.Get("guid", "")});
+    const auto port = static_cast<std::size_t>(params.Get("port", 0));
+    if (it == joystick_map.end() || port >= it->second.size()) {
+        return {};
+    }
+    return it->second[port]->Silence().Warning();
 }
 
 void SDLDriver::CloseJoysticks() {

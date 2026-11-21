@@ -41,6 +41,9 @@ class VfsFilesystem;
  * Asynchronous worker object for populating the game list.
  * Communicates with other threads through Qt's signal/slot system.
  */
+QString LooseDumpName(FileSys::VfsFilesystem& vfs, const std::string& physical_name,
+                      u64 program_id);
+
 class GameListWorker : public QObject, public QRunnable {
     Q_OBJECT
 

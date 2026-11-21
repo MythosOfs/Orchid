@@ -227,6 +227,14 @@ computer use.
   new against the baseline of that game and route), `clip` (a few seconds as one sheet of frames,
   for flicker and animation). `stop` returns the summary, the audio report and, after a crash,
   a backtrace from the core dump. `baseline_save` stores a run you checked as "last good".
+- Rendering against real hardware: `reference_import` stores frames of Switch 2 footage (video
+  URL + timestamp) per game; `reference_compare(game, image)` puts an emulator screenshot next to
+  them, and the gate adds a `reference_sheet` per game that has references. A judge subagent
+  follows `briefs/judge-rendering.md` (match / differs / broken / unsure); new references:
+  `briefs/collect-references.md`, one game per brief.
+- What slows agents down (GPU lock queueing, emulator hours per day, gate and build times, OOM
+  kills, disk budget): `orchid-bottlenecks [days]`. Run it when the loop feels slow, before
+  guessing.
 - Long runs are jobs, polled with `job_status(wait_s=240)`: `soak_start` (minutes under watch,
   ends at a hang with thread backtraces), `gate_start`, `desktop_run_start`, `benchmark_start`.
 - `boot` returns `out`, the run directory. Screenshots: `<out>/NNNN-<name>.png`. Frame times:
@@ -266,7 +274,9 @@ hand (`release-binaries`); pushes start none.
   frames. A scope game without a gate entry is played by hand as before. Skip a game only if it
   is not on the PC or is known not to reach gameplay yet (README table); name every skipped game.
 - The harness cannot judge rendering: open the contact sheet (and single screenshots where it is
-  too small). After a gate you accept, `gate_accept` stores its runs as the new baselines.
+  too small), and have the `reference_sheet`s judged against hardware (`judge-rendering.md`;
+  look at every `differs`/`broken` yourself). After a gate you accept, `gate_accept` stores its
+  runs as the new baselines.
 - Pass: each game renders correctly (characters, world, HUD, text without missing glyphs), runs
   without hang, crash or device loss, and its log shows no new errors compared with the last good
   build. A game that worked in the last good build and fails now blocks the release.

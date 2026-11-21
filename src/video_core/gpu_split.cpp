@@ -171,22 +171,14 @@ void GpuSplit::WaitForSpace(size_t words) {
     }
     Publish();
     Nx2Profile::Scope scope{Nx2Profile::Zone::SplitDrain};
-    for (u32 spins = 0;; ++spins) {
+    for (u32 spins = 0; spins < 4096; ++spins) {
         consumed_cache = consumed.load(std::memory_order_acquire);
         if (write_position + words - consumed_cache <= RingWords) {
             return;
         }
-        if (spins < 4096) {
-            Pause();
-        } else {
-            std::this_thread::yield();
-            // As in Drain: re-wake a back thread whose wake-up was lost.
-            if ((spins & 1023) == 0 && back_waiting.load(std::memory_order_seq_cst)) {
-                wake.fetch_add(1, std::memory_order_seq_cst);
-                wake.notify_all();
-            }
-        }
+        Pause();
     }
+    SleepUntilConsumed(write_position + words - RingWords);
 }
 
 void GpuSplit::Publish() {

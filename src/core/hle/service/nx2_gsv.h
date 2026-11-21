@@ -30,6 +30,7 @@
 
 #include "core/hle/service/nx2_gsv_server.h"
 #include "common/alignment.h"
+#include "common/display_hdr.h"
 #include "common/div_ceil.h"
 #include "common/hitch_diagnostic.h"
 #include "common/fs/path_util.h"
@@ -39,11 +40,13 @@
 #include "common/swap.h"
 #include "common/thread.h"
 #include "core/core.h"
+#include "core/hle/service/nx2_image_layout.h"
 #include "core/hle/service/nx2_present.h"
 #include "core/hle/service/nx2_sparse_region.h"
 #include "core/device_memory.h"
 #include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_base.h"
+#include "core/frontend/emu_window.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "core/perf_stats.h"
 #include "video_core/gpu.h"
@@ -1184,35 +1187,6 @@ struct Nx2NativeObjects {
     u32 next_image{1};
 };
 
-struct Nx2ImageLayout {
-    u32 width;
-    u32 height;
-    u64 pitch;
-    u32 block_height_log2;
-    u64 size;
-    u64 alignment;
-};
-
-inline Nx2ImageLayout Nx2CalculateImageLayout(const u32* preference) {
-    Nx2ImageLayout layout{};
-    layout.width = (preference[2] & 0xFFFF) + 1;
-    layout.height = (preference[2] >> 16) + 1;
-    const u64 pitch_gobs = preference[5];
-    const u32 block_height_log2 = preference[4];
-    if (block_height_log2 <= 8 && pitch_gobs >= (u64{layout.width} * 4 + 63) / 64 &&
-        pitch_gobs <= 4096) {
-        layout.pitch = pitch_gobs * 64;
-        layout.block_height_log2 = block_height_log2;
-    } else {
-        layout.pitch = Common::AlignUp(u64{layout.width} * 4, 64);
-        layout.block_height_log2 = 7;
-    }
-    const u64 block_rows = u64{1} << layout.block_height_log2;
-    layout.size = layout.pitch * Common::AlignUp(u64{layout.height}, block_rows);
-    layout.alignment = 0x1000;
-    return layout;
-}
-
 class INx2ChatGsvSession final : public ServiceFramework<INx2ChatGsvSession> {
 public:
     explicit INx2ChatGsvSession(Core::System& system_)
@@ -1662,9 +1636,11 @@ private:
 
     void Composite(u32 image_id, u32 fence_id, u32 fence_value, u32 crop_origin, u32 crop_end,
                    u32 flags) {
+        NotifyHdrChange();
         u64 address{};
         Nx2ImageLayout layout{};
-        u32 image_format{};
+        Nx2NativeImageFormat image_format{};
+        u32 image_word7{};
         {
             std::scoped_lock lk{m_objects->mutex};
             const auto image = m_objects->images.find(image_id);
@@ -1677,7 +1653,8 @@ private:
             }
             address = memory->second.address;
             layout = Nx2CalculateImageLayout(image->second.preference.data());
-            image_format = image->second.preference[6];
+            image_format = static_cast<Nx2NativeImageFormat>(image->second.preference[6]);
+            image_word7 = image->second.preference[7];
         }
         const auto device = Nvidia::Devices::Nx2GpuMemoryRegistry::Get().DeviceAddressOf(address);
         if (!device) {
@@ -1733,17 +1710,25 @@ private:
             .offset = 0,
             .width = layout.width,
             .height = layout.height,
-            .stride = static_cast<u32>(layout.pitch / 4),
+            .stride = static_cast<u32>(
+                layout.pitch / (image_format == Nx2NativeImageFormat::Rgba16Float ? 8 : 4)),
             .allocation_size = layout.size,
             .block_height_log2 = layout.block_height_log2 >= 3
                                      ? std::make_optional(layout.block_height_log2 - 3)
                                      : std::nullopt,
-            .pixel_format = image_format == 4 ? android::PixelFormat::Rgba1010102
-                                              : android::PixelFormat::Rgba8888,
+            .pixel_format = image_format == Nx2NativeImageFormat::Rgba16Float
+                                ? android::PixelFormat::RgbaFp16
+                            : image_format == Nx2NativeImageFormat::Rgb10A2
+                                ? android::PixelFormat::Rgba1010102
+                                : android::PixelFormat::Rgba8888,
             .transform_flags = Nx2PresentTransform(flags),
             .crop_rect = crop,
             .blending = Tegra::BlendMode::Opaque,
             .native_tiling = true,
+            .color_space = Nx2NativeImageColorSpace(image_format, m_told_hdr.load()),
+            .linear_unit_luminance = image_format == Nx2NativeImageFormat::Rgba16Float
+                                         ? static_cast<u16>((image_word7 >> 8) & 0xFFFF)
+                                         : u16{},
         }};
         std::vector<Nvidia::NvFence> fences;
         if (fence_id < 192) {
@@ -1843,12 +1828,91 @@ private:
         TipcReplyWords(ctx, {60, 0});
     }
 
+    Common::HdrOutput ResolveHostHdrOutput(std::optional<Common::DisplayHdrInfo>& display) {
+        auto& monitor = Common::DisplayHdrMonitor::Instance();
+        const bool vulkan =
+            Settings::values.renderer_backend.GetValue() == Settings::RendererBackend::Vulkan;
+        const auto mode = vulkan ? Settings::values.hdr_mode.GetValue() : Settings::HdrMode::Off;
+#ifdef _WIN32
+        if (mode != Settings::HdrMode::Off) {
+            monitor.Watch(
+                system.GPU().Renderer().GetRenderWindow().GetWindowInfo().render_surface);
+        }
+#endif
+        display = monitor.Current();
+        return Common::ResolveGuestHdrOutput(
+            display, mode, Settings::values.hdr_peak_luminance.GetValue(),
+            Settings::values.hdr_reference_white.GetValue(), monitor.PresentingHdr());
+    }
+
+    static u64 HdrOutputKey(const Common::HdrOutput& output) {
+        return (u64{output.enabled} << 32) | (u64{output.peak_luminance} << 16) |
+               output.reference_white;
+    }
+
+    static u32 HdrStatusKey(const Common::HdrOutput& output) {
+        return (u32{output.enabled} << 16) | output.peak_luminance;
+    }
+
+    Common::HdrOutput HostHdrOutput() {
+        std::optional<Common::DisplayHdrInfo> display;
+        const auto output = ResolveHostHdrOutput(display);
+        const u64 logged = HdrOutputKey(output);
+        if (logged != m_logged_hdr_output) {
+            m_logged_hdr_output = logged;
+            LOG_INFO(Service,
+                     "nx2:vi2 HDR status: {} peak {} nits, reference white {} nits (display: {}, "
+                     "swapchain: {})",
+                     output.enabled ? "HDR" : "SDR", output.peak_luminance, output.reference_white,
+                     display ? fmt::format("hdr={} max {} nits, SDR white {} nits",
+                                           display->hdr_enabled, display->max_luminance,
+                                           display->sdr_white_level)
+                             : std::string{"no host query"},
+                     Common::DisplayHdrMonitor::Instance().PresentingHdr() ? "HDR" : "SDR");
+        }
+        return output;
+    }
+
+    void NotifyHdrChange() {
+        const u64 generation = Common::DisplayHdrMonitor::Instance().Generation();
+        if (generation == m_hdr_generation) {
+            return;
+        }
+        m_hdr_generation = generation;
+        if ((m_hdr_status_slots | m_hdr_white_slots) == 0) {
+            return;
+        }
+        std::optional<Common::DisplayHdrInfo> display;
+        const auto output = ResolveHostHdrOutput(display);
+        u32 slots{};
+        if (m_told_status && *m_told_status != HdrStatusKey(output)) {
+            slots |= m_hdr_status_slots;
+        }
+        if (m_told_white && *m_told_white != output.reference_white) {
+            slots |= m_hdr_white_slots;
+        }
+        if (slots == 0) {
+            return;
+        }
+        LOG_INFO(Service, "nx2:vi2 display HDR state changed, signalling the game");
+        for (u32 index = 0; index < m_native_events.size(); ++index) {
+            if ((slots >> index) & 1 && m_native_events[index]) {
+                m_native_events[index]->Signal(system.Kernel());
+            }
+        }
+    }
+
     void QueryDisplayHdrPaperWhite(HLERequestContext& ctx) {
-        TipcReplyWords(ctx, {203});
+        const auto output = HostHdrOutput();
+        m_told_white = output.reference_white;
+        TipcReplyWords(ctx, {output.reference_white});
     }
 
     void QueryDisplayHdrStatus(HLERequestContext& ctx) {
-        TipcReplyWords(ctx, {1, 0, 400});
+        const auto output = HostHdrOutput();
+        m_told_hdr = output.enabled;
+        m_told_status = HdrStatusKey(output);
+        TipcReplyWords(ctx, {output.enabled ? 2U : 1U, 0, output.peak_luminance});
     }
 
     void GetLayerBufferBits(HLERequestContext& ctx) {
@@ -2024,6 +2088,8 @@ private:
         LOG_INFO(Service, "nx2:vi2 261 native event {} -> vsync", index);
         if (index < m_native_events.size() && m_native_events[index]) {
             SetVsyncSlot(index, true);
+            m_hdr_status_slots &= ~(1U << index);
+            m_hdr_white_slots &= ~(1U << index);
         }
         TipcReplyWords(ctx, {});
     }
@@ -2033,6 +2099,14 @@ private:
         LOG_INFO(Service, "nx2:vi2 {} native event {} -> change notification", ctx.GetCommand(), index);
         if (index < m_native_events.size() && m_native_events[index]) {
             SetVsyncSlot(index, false);
+            const u32 command = ctx.GetCommand();
+            m_hdr_status_slots &= ~(1U << index);
+            m_hdr_white_slots &= ~(1U << index);
+            if (command == 265) {
+                m_hdr_status_slots |= 1U << index;
+            } else if (command == 267) {
+                m_hdr_white_slots |= 1U << index;
+            }
             m_native_events[index]->Signal(system.Kernel());
         }
         TipcReplyWords(ctx, {});
@@ -2043,6 +2117,8 @@ private:
         LOG_INFO(Service, "nx2:vi2 {} native event {} unbound", ctx.GetCommand(), index);
         if (index < m_native_events.size() && m_native_events[index]) {
             SetVsyncSlot(index, false);
+            m_hdr_status_slots &= ~(1U << index);
+            m_hdr_white_slots &= ~(1U << index);
         }
         TipcReplyWords(ctx, {});
     }
@@ -2105,6 +2181,13 @@ private:
     std::shared_ptr<Core::Timing::EventType> m_vsync_timer;
     u64 m_presents{};
     u64 m_shown_layout{};
+    u64 m_logged_hdr_output{~u64{}};
+    u64 m_hdr_generation{};
+    u32 m_hdr_status_slots{};
+    u32 m_hdr_white_slots{};
+    std::optional<u32> m_told_status;
+    std::optional<u16> m_told_white;
+    std::atomic<bool> m_told_hdr{};
     std::shared_ptr<std::atomic<bool>> m_capture_pending = std::make_shared<std::atomic<bool>>(false);
 };
 
@@ -3088,8 +3171,11 @@ private:
         image.memory = w[19];
         std::copy_n(w + 2, image.preference.size(), image.preference.begin());
         image.size = Nx2CalculateImageLayout(w + 2).size;
-        LOG_INFO(Service, "nx2:gsv 429 CreateNativeImage memory={} count={} size={:#x} -> id {}",
-                 w[19], w[18], image.size, id);
+        LOG_INFO(Service,
+                 "nx2:gsv {} CreateNativeImage memory={} count={} size={:#x} format={} "
+                 "word7={:#x} -> id {}",
+                 ctx.GetCommand(), w[19], w[18], image.size, image.preference[6],
+                 image.preference[7], id);
         TipcReplyWords(ctx, {id});
     }
 

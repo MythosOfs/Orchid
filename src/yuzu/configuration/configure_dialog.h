@@ -66,6 +66,10 @@ signals:
 
 private:
     void changeEvent(QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
+    void FitFramedOnce();
+    void FitToScreen();
     void RetranslateUI();
 
     void HandleApplyButtonClicked();
@@ -75,6 +79,7 @@ private:
     void PopulateSelectionList();
 
     std::unique_ptr<Ui::ConfigureDialog> ui;
+    bool fitted_framed = false;
     HotkeyRegistry& registry;
 
     Core::System& system;

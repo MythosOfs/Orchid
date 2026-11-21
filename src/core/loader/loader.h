@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -167,6 +168,11 @@ enum class ResultStatus : u16 {
 
 std::string GetResultStatusString(ResultStatus status);
 std::ostream& operator<<(std::ostream& os, ResultStatus status);
+
+std::string DisplayTitle(std::string_view loader_title,
+                         const std::function<std::string()>& installed,
+                         const std::function<std::string()>& loose_dump,
+                         std::string_view file_name);
 
 /// Interface for loading an application
 class AppLoader {
@@ -375,6 +381,10 @@ public:
         return ResultStatus::ErrorNotImplemented;
     }
 
+    const FileSys::VirtualFile& GetFile() const {
+        return file;
+    }
+
 protected:
     FileSys::VirtualFile file;
     bool is_loaded = false;
@@ -391,5 +401,14 @@ protected:
  */
 std::unique_ptr<AppLoader> GetLoader(Core::System& system, FileSys::VirtualFile file,
                                      u64 program_id = 0, std::size_t program_index = 0);
+
+/**
+ * The RomFS to dump for a file that is never installed. A NUP has no installed NCA to patch; its
+ * loader already merges the base, the enabled update and the edition RomFS.
+ *
+ * @return std::nullopt for other files, whose RomFS comes from the installed content; otherwise
+ * the loader's merged RomFS, or nullptr if the NUP's RomFS cannot be read.
+ */
+std::optional<FileSys::VirtualFile> ReadUninstalledRomFS(AppLoader& loader);
 
 } // namespace Loader

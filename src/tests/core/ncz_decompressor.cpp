@@ -312,3 +312,115 @@ TEST_CASE("Solid NCZ skips an empty section entry that lies ahead", "[core][ncz]
     expected.insert(expected.end(), synthetic.plain_body.begin(), synthetic.plain_body.end());
     REQUIRE(nca->ReadAllBytes() == expected);
 }
+
+namespace {
+
+constexpr std::size_t SectionTable = NcaHeaderSize + 16;
+constexpr std::size_t BlockHeaderOffset = SectionTable + 2 * 0x40;
+
+void OverwriteLe(std::vector<u8>& out, std::size_t offset, u64 value, std::size_t bytes) {
+    for (std::size_t i = 0; i < bytes; ++i) {
+        out[offset + i] = static_cast<u8>(value >> (8 * i));
+    }
+}
+
+void RequireRejected(std::vector<u8> bytes) {
+    const auto source = std::make_shared<FileSys::VectorVfsFile>(std::move(bytes), "bad.ncz");
+    CHECK_FALSE(Core::Crypto::IsBlockCompressedNCZ(source));
+    CHECK(Core::Crypto::DecompressNCZ(source, "bad.nca") == nullptr);
+    CHECK(Core::Crypto::DecompressNCZForInstall(source, "bad.nca") == nullptr);
+}
+
+} // Anonymous namespace
+
+TEST_CASE("NCZBLOCK with a short final block reads byte-exactly", "[core][ncz]") {
+    constexpr std::size_t Tail = 0x100;
+    std::vector<u8> header(NcaHeaderSize, 0x5A);
+    std::vector<u8> body(SectionSize + Tail);
+    for (std::size_t i = 0; i < body.size(); ++i) {
+        body[i] = static_cast<u8>(i * 13 + 1);
+    }
+    std::vector<u8> ncz = header;
+    PutMagic(ncz, "NCZSECTN");
+    PutLe(ncz, 1, 8);
+    PutSection(ncz, NcaHeaderSize, body.size(), 1);
+    PutMagic(ncz, "NCZBLOCK");
+    ncz.insert(ncz.end(), {2, 1, 0, 14});
+    PutLe(ncz, 2, 4);
+    PutLe(ncz, body.size(), 8);
+    PutLe(ncz, SectionSize, 4);
+    PutLe(ncz, Tail, 4);
+    ncz.insert(ncz.end(), body.begin(), body.end());
+
+    const auto source = std::make_shared<FileSys::VectorVfsFile>(std::move(ncz), "short.ncz");
+    REQUIRE(Core::Crypto::IsBlockCompressedNCZ(source));
+    const auto nca = Core::Crypto::DecompressNCZ(source, "short.nca");
+    REQUIRE(nca != nullptr);
+    std::vector<u8> expected = header;
+    expected.insert(expected.end(), body.begin(), body.end());
+    REQUIRE(nca->GetSize() == expected.size());
+    REQUIRE(nca->ReadAllBytes() == expected);
+}
+
+TEST_CASE("NCZBLOCK sections must lie in the decompressed NCA", "[core][ncz]") {
+    const auto valid = MakeNcz().ncz;
+    REQUIRE(Core::Crypto::IsBlockCompressedNCZ(
+        std::make_shared<FileSys::VectorVfsFile>(std::vector<u8>{valid})));
+
+    const std::array<std::pair<u64, u64>, 5> bad{{
+        {0x7FFFFFFFFFFFFFF0, 0x100},
+        {static_cast<u64>(-0x1000), 0x5000},
+        {NcaHeaderSize, 0x7FFFFFFFFFFF0000},
+        {NcaHeaderSize, static_cast<u64>(-0x10)},
+        {NcaHeaderSize, NcaSize - NcaHeaderSize + 1},
+    }};
+    for (const auto& [offset, size] : bad) {
+        auto bytes = valid;
+        OverwriteLe(bytes, SectionTable, offset, 8);
+        OverwriteLe(bytes, SectionTable + 8, size, 8);
+        RequireRejected(std::move(bytes));
+    }
+
+    auto overlapping = valid;
+    OverwriteLe(overlapping, SectionTable + 8, 2 * SectionSize, 8);
+    CHECK(Core::Crypto::IsBlockCompressedNCZ(
+        std::make_shared<FileSys::VectorVfsFile>(std::vector<u8>{overlapping})));
+    OverwriteLe(overlapping, SectionTable + 0x40 + 8, SectionSize / 2, 8);
+    RequireRejected(std::move(overlapping));
+
+    auto from_zero = valid;
+    OverwriteLe(from_zero, SectionTable, 0, 8);
+    OverwriteLe(from_zero, SectionTable + 8, NcaHeaderSize + SectionSize, 8);
+    CHECK(Core::Crypto::IsBlockCompressedNCZ(
+        std::make_shared<FileSys::VectorVfsFile>(std::move(from_zero))));
+}
+
+TEST_CASE("NCZBLOCK block count and exponent must match the decompressed size", "[core][ncz]") {
+    const auto valid = MakeNcz().ncz;
+    for (const auto& [exponent, count] : std::array<std::pair<u8, u32>, 4>{{
+             {13, 4}, {33, 1}, {32, 2}, {15, 2}}}) {
+        auto bytes = valid;
+        bytes[BlockHeaderOffset + 11] = exponent;
+        OverwriteLe(bytes, BlockHeaderOffset + 12, count, 4);
+        RequireRejected(std::move(bytes));
+    }
+    for (const u64 size : {u64{2 * SectionSize + 1}, u64{SectionSize}}) {
+        auto bytes = valid;
+        OverwriteLe(bytes, BlockHeaderOffset + 16, size, 8);
+        RequireRejected(std::move(bytes));
+    }
+
+    auto truncated = valid;
+    truncated.pop_back();
+    RequireRejected(std::move(truncated));
+
+    auto short_header = valid;
+    short_header.resize(BlockHeaderOffset + 12);
+    RequireRejected(std::move(short_header));
+
+    auto largest_block = valid;
+    largest_block[BlockHeaderOffset + 11] = 32;
+    OverwriteLe(largest_block, BlockHeaderOffset + 12, 1, 4);
+    CHECK(Core::Crypto::IsBlockCompressedNCZ(
+        std::make_shared<FileSys::VectorVfsFile>(std::move(largest_block))));
+}

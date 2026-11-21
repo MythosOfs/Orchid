@@ -65,6 +65,7 @@ One entry per former code comment, by file, named after the code it described.
 
 - `in CodecFromMime()`: "video/av01" or "video/av1". FFmpeg decodes AV1 with libdav1d.
 - `std::multiset<u64> pending_pts;`: Timestamps of submitted frames not yet output. Frames copied back from a host GPU decoder lose theirs and take the earliest one instead.
+- `std::vector<std::pair<std::vector<u8>, u64>> gpu_packets;`: Packets the host GPU accepted before its first picture, replayed if the CPU takes over.
 - `std::vector<u8> packet`: FFmpeg reads up to AV_INPUT_BUFFER_PADDING_SIZE past the data
 - `in Nx2VideoDecoder::Decode()`: Hidden VP9 frames never come out: keep the set from growing over a long movie.
 - `in Nx2VideoDecoder::Render()`: NV12 chroma rows hold interleaved U/V pairs, so odd widths write one extra byte.
@@ -76,6 +77,15 @@ One entry per former code comment, by file, named after the code it described.
 ### `src/video_core/host1x/nx2_video_decoder.h`
 
 - `Nv12,`: Luma rows, then interleaved Cb/Cr rows at chroma_offset
+- `enum class Nx2GpuDecodeFault`: Test seam: makes the host GPU decoder fail to open, reject every packet or answer every packet with EAGAIN. NoCpu rejects every packet and makes the CPU decoder fail to open. Replay rejects every packet and makes the CPU decoder reject the last packet it replays from the host GPU. Hold takes every packet without decoding it. SwitchReceive rejects every packet and fails the CPU decoder's receive after the packet that made it take over.
 - `class Nx2VideoDecoder`: The decoder behind the Switch 2 video decoder service (nn::codec::video): FFmpeg decodes the elementary stream the game demuxed, in software or on the host GPU (NVDEC emulation setting). Used from one thread at a time.
 - `void Drain(std::vector<Nx2Picture>& pictures);`: End of stream: appends the pictures the decoder still holds, then starts over.
 - `void Reset();`: Drops everything queued in the decoder (the game flushed it to seek).
+
+### `src/tests/video_core/nx2_video_gpu_fallback.cpp`
+
+- `constexpr std::array<u8, 825> clip`: Four 64x64 H.264 baseline frames (x264): keyframe, frame, keyframe with repeated parameter sets, frame, each led by an access unit delimiter.
+- `constexpr std::array<u8, 1017> reordered_clip`: Six 64x64 H.264 main profile frames (x264) in decode order I P B I P B: the decoder holds each I and P frame back until the B frame before it.
+- `HostProbe Judge(std::span<const int> events)`: What the nx2 decoder outputs after the host GPU decoder gave these frame formats, with AV_PIX_FMT_NONE for a rejected packet and AV_PIX_FMT_YUV420P once the CPU took over.
+- `const HostProbe probe`: How FFmpeg on this host decodes the clip on the GPU: NV12 frames, its own CPU fallback or rejected packets. The probe drains and closes its decoder before the test opens one.
+- `FFmpeg::DecoderContext cpu{decoder};`: Like the nx2 decoder, replay the taken packets and switch only if the CPU decoder accepts them and this one.

@@ -298,7 +298,8 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
       player_index{player_index_}, debug{debug_}, is_powered_on{is_powered_on_},
       input_subsystem{input_subsystem_}, profiles(profiles_),
       timeout_timer(std::make_unique<QTimer>()), poll_timer(std::make_unique<QTimer>()),
-      bottom_row{bottom_row_}, hid_core{hid_core_} {
+      device_warning_timer(std::make_unique<QTimer>()), bottom_row{bottom_row_},
+      hid_core{hid_core_} {
     if (player_index == 0) {
         auto* emulated_controller_p1 =
             hid_core.GetEmulatedController(Core::HID::NpadIdType::Player1);
@@ -809,6 +810,10 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         }
     });
 
+    connect(device_warning_timer.get(), &QTimer::timeout, this,
+            &ConfigureInputPlayer::UpdateDeviceWarning);
+    device_warning_timer->start(1000);
+
     UpdateInputProfiles();
 
     connect(ui->buttonProfilesNew, &QPushButton::clicked, this,
@@ -1174,6 +1179,27 @@ void ConfigureInputPlayer::UpdateInputDevices() {
     for (const auto& device : input_devices) {
         ui->comboDevices->addItem(QString::fromStdString(device.Get("display", "Unknown")), {});
     }
+}
+
+void ConfigureInputPlayer::UpdateDeviceWarning() {
+    if (!isVisible()) {
+        return;
+    }
+    std::string warning;
+    const int index = ui->comboDevices->currentIndex();
+    if (index >= 0 && static_cast<std::size_t>(index) < input_devices.size()) {
+        warning = input_subsystem->GetDeviceWarning(input_devices[index]);
+    }
+    if (warning.empty()) {
+        for (const auto& device : emulated_controller->GetMappedDevices()) {
+            warning = input_subsystem->GetDeviceWarning(device);
+            if (!warning.empty()) {
+                break;
+            }
+        }
+    }
+    ui->labelDeviceWarning->setText(QString::fromStdString(warning));
+    ui->labelDeviceWarning->setVisible(!warning.empty());
 }
 
 void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
@@ -1550,6 +1576,10 @@ void ConfigureInputPlayer::mousePressEvent(QMouseEvent* event) {
 }
 
 void ConfigureInputPlayer::wheelEvent(QWheelEvent* event) {
+    if (!input_setter) {
+        event->ignore();
+        return;
+    }
     const int x = event->angleDelta().x();
     const int y = event->angleDelta().y();
     input_subsystem->GetMouse()->MouseWheelChange(x, y);
@@ -1564,6 +1594,15 @@ void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
     if (event->key() != Qt::Key_Escape) {
         input_subsystem->GetKeyboard()->PressKey(event->key());
     }
+}
+
+bool ConfigureInputPlayer::event(QEvent* event) {
+    if (input_setter && event->type() == QEvent::KeyPress &&
+        static_cast<QKeyEvent*>(event)->key() == Qt::Key_Tab) {
+        input_subsystem->GetKeyboard()->PressKey(Qt::Key_Tab);
+        return true;
+    }
+    return QWidget::event(event);
 }
 
 bool ConfigureInputPlayer::eventFilter(QObject* object, QEvent* event) {

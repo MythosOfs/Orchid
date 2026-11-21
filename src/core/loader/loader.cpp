@@ -286,14 +286,16 @@ constexpr std::array<const char*, 70> RESULT_MESSAGES{
     "The PFS/HFS partition has incorrect size as determined by the header.",
     "The NCA file has a bad header.",
     "The general keyfile could not be found.",
-    "The NCA Header key could not be found.",
+    "The NCA header could not be read: the header key (header_key) is missing from your keys, "
+    "or the file is damaged.",
     "The NCA Header key is incorrect or the header is invalid.",
     "Support for NCA2-type NCAs is not implemented.",
     "Support for NCA0-type NCAs is not implemented.",
-    "The titlekey for this Rights ID could not be found.",
-    "The titlekek for this crypto revision could not be found.",
+    "The title key for this game is missing. Add it to title.keys, or use a dump that includes "
+    "its ticket.",
+    "The titlekek for this game's key generation is missing from prod.keys.",
     "The Rights ID in the header is invalid.",
-    "The key area key for this application type and crypto revision could not be found.",
+    "The key area key for this game's key generation is missing from prod.keys.",
     "The key area key is incorrect or the section header is invalid.",
     "The titlekey and/or titlekek is incorrect or the section header is invalid.",
     "The XCI file is missing a Program-type NCA.",
@@ -343,6 +345,22 @@ constexpr std::array<const char*, 70> RESULT_MESSAGES{
     "The NUP container is malformed or its TOC hash does not match.",
     "The NUP container does not contain a loadable base package.",
 };
+
+std::string DisplayTitle(std::string_view loader_title,
+                         const std::function<std::string()>& installed,
+                         const std::function<std::string()>& loose_dump,
+                         std::string_view file_name) {
+    const auto usable = [](std::string_view name) { return !name.empty() && name != " "; };
+    if (usable(loader_title)) {
+        return std::string{loader_title};
+    }
+    for (const auto* fallback : {&installed, &loose_dump}) {
+        if (std::string name = (*fallback)(); usable(name)) {
+            return name;
+        }
+    }
+    return std::string{file_name};
+}
 
 std::string GetResultStatusString(ResultStatus status) {
     return RESULT_MESSAGES.at(static_cast<std::size_t>(status));
@@ -477,6 +495,17 @@ std::unique_ptr<AppLoader> GetLoader(Core::System& system, FileSys::VirtualFile 
     LOG_DEBUG(Loader, "Loading file {} as {}...", file->GetName(), GetFileTypeString(type));
 
     return GetFileLoader(system, std::move(file), type, program_id, program_index);
+}
+
+std::optional<FileSys::VirtualFile> ReadUninstalledRomFS(AppLoader& loader) {
+    if (loader.GetFileType() != FileType::NUP) {
+        return std::nullopt;
+    }
+    FileSys::VirtualFile romfs;
+    if (loader.ReadRomFS(romfs) != ResultStatus::Success) {
+        return FileSys::VirtualFile{};
+    }
+    return romfs;
 }
 
 } // namespace Loader

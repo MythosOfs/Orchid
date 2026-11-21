@@ -157,6 +157,10 @@ void LoadEarlyOverrides(std::uint64_t program_id) {
             // row 118) were fixed before row 138; it has been on in the Switch 2 dev config since.
             OverrideIfGlobal(Settings::values.async_presentation, true);
             break;
+        case TitleID::YoshiMysteriousBook:
+            // Loading a save stalls with 2162-0001 without reactive flushing (issue 181).
+            OverrideIfGlobal(Settings::values.use_reactive_flushing, true);
+            break;
         default:
             break;
     }

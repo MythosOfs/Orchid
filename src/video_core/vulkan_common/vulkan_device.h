@@ -11,6 +11,7 @@
 #include <atomic>
 #include <cstdlib>
 #include <filesystem>
+#include <functional>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -96,6 +97,7 @@ VK_DEFINE_HANDLE(VmaPool)
     EXTENSION(EXT, CONDITIONAL_RENDERING, conditional_rendering)                                   \
     EXTENSION(EXT, CONSERVATIVE_RASTERIZATION, conservative_rasterization)                         \
     EXTENSION(EXT, DEPTH_RANGE_UNRESTRICTED, depth_range_unrestricted)                             \
+    EXTENSION(EXT, HDR_METADATA, hdr_metadata)                                                     \
     EXTENSION(EXT, MEMORY_BUDGET, memory_budget)                                                   \
     EXTENSION(EXT, ROBUSTNESS_2, robustness_2)                                                     \
     EXTENSION(EXT, SAMPLER_FILTER_MINMAX, sampler_filter_minmax)                                   \
@@ -233,6 +235,21 @@ enum class NvidiaArchitecture {
     Arch_Turing,
     Arch_AmpereOrNewer,
 };
+
+/// Payload of a static pipeline cache file; empty when it is missing or not an Orchid cache.
+std::vector<char> ReadStaticPipelineCache(const std::filesystem::path& filename);
+
+/// Writes a unique file beside the cache and renames it over the cache, so a failed or interrupted
+/// write keeps the previous one. Returns whether the cache was replaced.
+bool WriteStaticPipelineCache(const std::filesystem::path& filename, std::span<const char> data);
+
+/// As above; unique_suffix names the temporary file, and a throw from it fails the save.
+bool WriteStaticPipelineCache(const std::filesystem::path& filename, std::span<const char> data,
+                              const std::function<std::string()>& unique_suffix);
+
+/// Calls create with data, and once more with nothing when the driver rejects non-empty data.
+void CreateStaticPipelineCache(std::span<const char> data,
+                               const std::function<void(std::span<const char>)>& create);
 
 /// Handles data specific to a physical device.
 class Device {
@@ -424,7 +441,10 @@ public:
     FN_MAX_LIMIT_ELEM(DescriptorSetStorageBuffersDynamic) \
     FN_MAX_LIMIT_ELEM(DescriptorSetSampledImages) \
     FN_MAX_LIMIT_ELEM(DescriptorSetStorageImages) \
-    FN_MAX_LIMIT_ELEM(DescriptorSetInputAttachments)
+    FN_MAX_LIMIT_ELEM(DescriptorSetInputAttachments) \
+    FN_MAX_LIMIT_ELEM(ImageDimension2D) \
+    FN_MAX_LIMIT_ELEM(FramebufferWidth) \
+    FN_MAX_LIMIT_ELEM(FramebufferHeight)
 #define FN_MAX_LIMIT_ELEM(name) \
     u32 GetMax##name() const { return properties.properties.limits.max##name; }
 FN_MAX_LIMIT_LIST
@@ -646,6 +666,11 @@ FN_MAX_LIMIT_LIST
     /// Returns true if VK_KHR_swapchain_mutable_format is enabled.
     bool IsKhrSwapchainMutableFormatEnabled() const {
         return extensions.swapchain_mutable_format;
+    }
+
+    /// Returns true if VK_EXT_hdr_metadata is enabled.
+    bool IsExtHdrMetadataEnabled() const {
+        return extensions.hdr_metadata;
     }
 
     /// Returns true if VK_KHR_shader_float_controls is enabled.

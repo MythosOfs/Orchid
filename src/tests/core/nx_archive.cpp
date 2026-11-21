@@ -257,6 +257,24 @@ TEST_CASE("NX: a fresh System has an empty content provider", "[core][nx]") {
                                                           FileSys::ContentRecordType::Program));
 }
 
+TEST_CASE("NX: a manual content provider swaps its entries with another", "[core][nx]") {
+    FileSys::ManualContentProvider kept;
+    FileSys::ManualContentProvider scanned;
+    kept.AddEntryWithVersion(FileSys::TitleType::Update, FileSys::ContentRecordType::Program,
+                             ApplicationId, 131072, "2.0.0",
+                             std::make_shared<FileSys::VectorVfsFile>(std::vector<u8>{1}, "u.nca"));
+    kept.SwapEntries(scanned);
+    CHECK_FALSE(kept.HasEntry(ApplicationId, FileSys::ContentRecordType::Program));
+    CHECK(kept.ListUpdateVersions(ApplicationId).empty());
+    CHECK(scanned.HasEntry(ApplicationId, FileSys::ContentRecordType::Program));
+    CHECK(scanned.ListUpdateVersions(ApplicationId).size() == 1);
+    kept.SwapEntries(scanned);
+    CHECK(kept.HasEntry(ApplicationId, FileSys::ContentRecordType::Program));
+    CHECK(kept.ListUpdateVersions(ApplicationId).size() == 1);
+    CHECK_FALSE(scanned.HasEntry(ApplicationId, FileSys::ContentRecordType::Program));
+    CHECK(scanned.ListUpdateVersions(ApplicationId).empty());
+}
+
 TEST_CASE("NX: a standalone update shows its version and can be disabled", "[core][nx]") {
     ScopedSystemTestContext environment;
     Core::System system;

@@ -311,10 +311,12 @@ struct HostProbe {
 };
 
 /// What the nx2 decoder outputs after the host GPU decoder gave these frame formats, with
-/// AV_PIX_FMT_NONE for a rejected packet: it keeps the host GPU once it gave a frame.
+/// AV_PIX_FMT_NONE for a rejected packet and AV_PIX_FMT_YUV420P once the CPU took over.
 HostProbe Judge(std::span<const int> events) {
     const bool rejected = std::ranges::find(events, AV_PIX_FMT_NONE) != events.end();
-    return {!events.empty() && events.front() == AV_PIX_FMT_NV12, rejected};
+    const auto frame =
+        std::ranges::find_if(events, [](int event) { return event != AV_PIX_FMT_NONE; });
+    return {frame != events.end() && *frame == AV_PIX_FMT_NV12, rejected};
 }
 
 } // namespace
@@ -323,8 +325,11 @@ TEST_CASE("Nx2 video host GPU probe keeps a host GPU that rejects a later packet
     constexpr std::array<int, 2> nv12_then_rejected{AV_PIX_FMT_NV12, AV_PIX_FMT_NONE};
     CHECK(Judge(nv12_then_rejected).gpu);
     CHECK(Judge(nv12_then_rejected).rejected);
-    constexpr std::array<int, 2> rejected_first{AV_PIX_FMT_NONE, AV_PIX_FMT_NV12};
-    CHECK_FALSE(Judge(rejected_first).gpu);
+    constexpr std::array<int, 2> rejected_by_both{AV_PIX_FMT_NONE, AV_PIX_FMT_NV12};
+    CHECK(Judge(rejected_by_both).gpu);
+    constexpr std::array<int, 3> cpu_took_over{AV_PIX_FMT_NONE, AV_PIX_FMT_YUV420P,
+                                               AV_PIX_FMT_NV12};
+    CHECK_FALSE(Judge(cpu_took_over).gpu);
 }
 
 TEST_CASE("Nx2 video decodes on the host GPU when FFmpeg can", "[nx2_video]") {
@@ -346,8 +351,17 @@ TEST_CASE("Nx2 video decodes on the host GPU when FFmpeg can", "[nx2_video]") {
         for (auto packet : Packets()) {
             const size_t size = packet.size();
             packet.resize(size + AV_INPUT_BUFFER_PADDING_SIZE);
-            if (!context.SendPacket(FFmpeg::Packet{std::span{packet.data(), size}})) {
+            const FFmpeg::Packet sent{std::span{packet.data(), size}};
+            if (!context.SendPacket(sent)) {
+                const bool no_frame = std::ranges::all_of(
+                    events, [](int event) { return event == AV_PIX_FMT_NONE; });
                 events.push_back(AV_PIX_FMT_NONE);
+                // Like the nx2 decoder, switch only if a CPU decoder accepts the packet.
+                FFmpeg::DecoderContext cpu{decoder};
+                if (no_frame && cpu.OpenContext(decoder, {}) && cpu.SendPacket(sent)) {
+                    events.push_back(AV_PIX_FMT_YUV420P);
+                    break;
+                }
             }
             receive();
         }

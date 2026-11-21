@@ -10,6 +10,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "common/scope_exit.h"
 #include "common/settings.h"
 #include "video_core/host1x/ffmpeg.h"
 #include "video_core/host1x/nx2_video_decoder.h"
@@ -184,12 +185,10 @@ public:
     Decoder(Settings::NvdecEmulation mode, Nx2GpuDecodeFault fault, std::span<const u8> configuration) {
         const auto previous_mode = Settings::values.nvdec_emulation.GetValue();
         Settings::values.nvdec_emulation.SetValue(mode);
-        Tegra::Host1x::SetNx2GpuDecodeFault(fault);
-        decoder.emplace(configuration);
-        Settings::values.nvdec_emulation.SetValue(previous_mode);
-    }
-    ~Decoder() {
-        Tegra::Host1x::SetNx2GpuDecodeFault(Nx2GpuDecodeFault::None);
+        SCOPE_EXIT {
+            Settings::values.nvdec_emulation.SetValue(previous_mode);
+        };
+        decoder.emplace(configuration, fault);
     }
 
     /// Decodes a whole video, with the fault set from packet `fault_from` on.
@@ -197,7 +196,7 @@ public:
                           size_t fault_from = 0) {
         std::vector<Nx2Picture> pictures;
         for (size_t i = 0; i < packets.size(); ++i) {
-            Tegra::Host1x::SetNx2GpuDecodeFault(i >= fault_from ? fault : Nx2GpuDecodeFault::None);
+            decoder->SetGpuDecodeFault(i >= fault_from ? fault : Nx2GpuDecodeFault::None);
             decoder->Decode(packets[i], i, pictures);
         }
         decoder->Drain(pictures);
@@ -255,7 +254,7 @@ TEST_CASE("Nx2 video keeps the host GPU decoder once it accepted a packet", "[nx
         auto packets = Packets(reordered_clip);
         REQUIRE(packets.size() == 6);
         Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Packet, Avc()};
-        Tegra::Host1x::SetNx2GpuDecodeFault(Nx2GpuDecodeFault::None);
+        decoder.decoder->SetGpuDecodeFault(Nx2GpuDecodeFault::None);
         std::vector<Nx2Picture> pictures;
         decoder.decoder->Decode(packets[0], 0, pictures);
         REQUIRE(pictures.empty());

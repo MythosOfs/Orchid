@@ -31,8 +31,6 @@ namespace Tegra::Host1x {
 
 namespace {
 
-Nx2GpuDecodeFault gpu_fault{};
-
 std::optional<NvdecCommon::VideoCodec> CodecFromMime(std::string_view mime) {
     if (mime.find("vp9") != std::string_view::npos) {
         return NvdecCommon::VideoCodec::VP9;
@@ -51,10 +49,6 @@ std::optional<NvdecCommon::VideoCodec> CodecFromMime(std::string_view mime) {
 }
 
 } // namespace
-
-void SetNx2GpuDecodeFault(Nx2GpuDecodeFault fault) {
-    gpu_fault = fault;
-}
 
 std::optional<Nx2VideoConfiguration> ParseNx2VideoConfiguration(std::span<const u8> configuration) {
     if (configuration.empty()) {
@@ -154,6 +148,7 @@ struct Nx2VideoDecoder::Impl {
     bool open{};
     bool on_gpu{};
     bool accepted{};
+    Nx2GpuDecodeFault gpu_fault{};
     H264PacketConverter h264_packets;
     /// Timestamps of submitted frames not yet output. Frames copied back from a host GPU decoder
     /// lose theirs and take the earliest one instead.
@@ -212,8 +207,9 @@ struct Nx2VideoDecoder::Impl {
     }
 };
 
-Nx2VideoDecoder::Nx2VideoDecoder(std::span<const u8> configuration)
+Nx2VideoDecoder::Nx2VideoDecoder(std::span<const u8> configuration, Nx2GpuDecodeFault fault)
     : impl{std::make_unique<Impl>()} {
+    impl->gpu_fault = fault;
     impl->configuration.assign(configuration.begin(), configuration.end());
     const auto parsed = ParseNx2VideoConfiguration(impl->configuration);
     if (!parsed) {
@@ -239,6 +235,10 @@ Nx2VideoDecoder::Nx2VideoDecoder(std::span<const u8> configuration)
 }
 
 Nx2VideoDecoder::~Nx2VideoDecoder() = default;
+
+void Nx2VideoDecoder::SetGpuDecodeFault(Nx2GpuDecodeFault fault) {
+    impl->gpu_fault = fault;
+}
 
 bool Nx2VideoDecoder::IsOpen() const {
     return impl->open;

@@ -1,10 +1,18 @@
+#include <algorithm>
+#include <memory>
+#include <span>
 #include <utility>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "common/scope_exit.h"
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/device_memory.h"
+#include "core/hle/kernel/k_page_table.h"
+#include "core/hle/kernel/k_process.h"
+#include "core/memory.h"
 #include "video_core/control/channel_state.h"
 #include "video_core/gpu.h"
 #include "video_core/renderer_null/null_rasterizer.h"
@@ -107,6 +115,15 @@ struct TextureCacheTestAccess {
         cache.UnregisterImage(image_id);
     }
 
+    static ImageBase& Image(Cache& cache, ImageId image_id) {
+        return cache.slot_images[image_id];
+    }
+
+    static bool WriteBack(Cache& cache, ImageId image_id, std::span<const u8> data) {
+        const ImageBase& image = cache.slot_images[image_id];
+        return cache.WriteBackImage(image, FullDownloadCopies(image.info), data);
+    }
+
     static size_t PagedImages(Cache& cache, size_t address_space_index) {
         size_t count{};
         for (const auto& [page, images] : cache.gpu_page_table_storage[address_space_index * 2]) {
@@ -159,4 +176,70 @@ TEST_CASE("UnregisterImage clears the page table of the address space the image 
     VideoCommon::TextureCacheTestAccess::Unregister(fixture.cache, image_id);
     CHECK(VideoCommon::TextureCacheTestAccess::PagedImages(fixture.cache, 0) == 0);
     CHECK(VideoCommon::TextureCacheTestAccess::PagedImages(fixture.cache, 1) == 0);
+}
+
+TEST_CASE("WriteBackImage writes through the memory manager of the image's own address space",
+          "[video_core][texture_cache][address_space]") {
+    const bool old_multi_core = Settings::values.use_multi_core.GetValue();
+    SCOPE_EXIT { Settings::values.use_multi_core.SetValue(old_multi_core); };
+    Settings::values.use_multi_core.SetValue(false);
+    Core::System system;
+    system.Initialize();
+    Kernel::KProcess process(system.Kernel());
+    SCOPE_EXIT { system.Kernel().UnregisterKernelObject(&process); };
+    auto& cpu = process.GetMemory();
+    auto& table = process.GetPageTable().GetImpl();
+    table.Resize(32, 12);
+    cpu.SetCurrentPageTable(process);
+    constexpr u64 phys = 0x80000, guest = 0x200000, extent = 0x20000;
+    constexpr DAddr first_device = 0x100000, second_device = 0x110000;
+    system.DeviceMemory().buffer.ClearBackingRegion(phys, extent, 0);
+    cpu.MapMemoryRegion(table, Common::ProcessAddress{guest}, extent,
+                        Common::PhysicalAddress{Core::DramMemoryMap::Base + phys},
+                        Common::MemoryPermission::ReadWrite, false);
+    Tegra::MaxwellDeviceMemoryManager device(system.DeviceMemory());
+    const auto asid = device.RegisterProcess(&cpu);
+    device.Map(first_device, guest, 0x10000, asid);
+    device.Map(second_device, guest + 0x10000, 0x10000, asid);
+    Tegra::GPU gpu{system, false, false};
+    Null::RasterizerNull rasterizer{gpu};
+    TestRuntime runtime;
+    Cache cache{runtime, device};
+
+    const auto first = std::make_shared<Tegra::MemoryManager>(system, device);
+    auto second = std::make_shared<Tegra::MemoryManager>(system, device);
+    first->BindRasterizer(&rasterizer);
+    second->BindRasterizer(&rasterizer);
+    constexpr GPUVAddr gpu_addr = 0x400000;
+    first->Map(gpu_addr, first_device, 0x10000, Tegra::PTEKind::PITCH, false);
+    second->Map(gpu_addr, second_device, 0x10000, Tegra::PTEKind::PITCH, false);
+    Tegra::Control::ChannelState first_channel{1};
+    Tegra::Control::ChannelState second_channel{2};
+    first_channel.memory_manager = first.get();
+    second_channel.memory_manager = second.get();
+    first_channel.Init(system, 0);
+    second_channel.Init(system, 0);
+    cache.CreateChannel(first_channel);
+    cache.CreateChannel(second_channel);
+
+    cache.BindToChannel(2);
+    const auto image_id = VideoCommon::TextureCacheTestAccess::Register(
+        cache, MakeImageInfo(), gpu_addr, second_device);
+    cache.BindToChannel(1);
+
+    const std::vector<u8> data(64 * 32 * 4, 0xAB);
+    const auto written = [&](DAddr address) {
+        std::vector<u8> bytes(data.size());
+        device.ReadBlockUnsafe(address, bytes.data(), bytes.size());
+        return std::ranges::any_of(bytes, [](u8 byte) { return byte != 0; });
+    };
+    CHECK(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data));
+    CHECK(written(second_device));
+    CHECK_FALSE(written(first_device));
+
+    system.DeviceMemory().buffer.ClearBackingRegion(phys, extent, 0);
+    second.reset();
+    CHECK_FALSE(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data));
+    CHECK_FALSE(written(second_device));
+    CHECK_FALSE(written(first_device));
 }

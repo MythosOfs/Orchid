@@ -7,6 +7,8 @@
 #ifdef _WIN32
 
 #include <iterator>
+#include <span>
+#include <vector>
 #include "common/container/unordered_map.h"
 #include <boost/icl/separate_interval_set.hpp>
 #include <windows.h>
@@ -335,6 +337,17 @@ private:
         const bool split_left = unmap_begin > placeholder_begin;
         const bool split_right = unmap_end < placeholder_end;
 
+        kept_protections.clear();
+        size_t left_runs = 0;
+        if (split_left) {
+            FindProtectionRuns(placeholder_begin, unmap_begin - placeholder_begin);
+            left_runs = kept_protections.size();
+        }
+        if (split_right) {
+            FindProtectionRuns(unmap_end, placeholder_end - unmap_end);
+        }
+        const std::span<const ProtectionRun> runs{kept_protections};
+
         if (!pfn_UnmapViewOfFile2(process, virtual_base + placeholder_begin,
                                   MEM_PRESERVE_PLACEHOLDER)) {
             LOG_CRITICAL(HW_Memory, "Failed to unmap placeholder");
@@ -348,11 +361,12 @@ private:
             Split(unmap_begin, unmap_end - unmap_begin);
         }
         if (split_left) {
-            MapView(placeholder_begin, host_offset, unmap_begin - placeholder_begin);
+            MapKeptPiece(placeholder_begin, host_offset, unmap_begin - placeholder_begin,
+                         runs.first(left_runs));
         }
         if (split_right) {
-            MapView(unmap_end, host_offset + unmap_end - placeholder_begin,
-                    placeholder_end - unmap_end);
+            MapKeptPiece(unmap_end, host_offset + unmap_end - placeholder_begin,
+                         placeholder_end - unmap_end, runs.subspan(left_runs));
         }
         // End panic region
 
@@ -385,11 +399,56 @@ private:
         return true;
     }
 
-    void MapView(size_t virtual_offset, size_t host_offset, size_t length) {
+    struct ProtectionRun {
+        size_t virtual_offset;
+        size_t length;
+        DWORD protect;
+    };
+
+    void FindProtectionRuns(size_t virtual_offset, size_t length) {
+        const size_t end = virtual_offset + length;
+        while (virtual_offset < end) {
+            MEMORY_BASIC_INFORMATION info{};
+            if (VirtualQuery(virtual_base + virtual_offset, &info, sizeof(info)) == 0) {
+                UNREACHABLE_MSG("Failed to query the protection of mapped view offset {:#x}, "
+                                "error {}",
+                                virtual_offset, GetLastError());
+            }
+            const size_t region_end =
+                static_cast<size_t>(static_cast<u8*>(info.BaseAddress) - virtual_base) +
+                info.RegionSize;
+            const size_t run_end = (std::min)(region_end, end);
+            kept_protections.push_back({virtual_offset, run_end - virtual_offset, info.Protect});
+            virtual_offset = run_end;
+        }
+    }
+
+    void MapKeptPiece(size_t virtual_offset, size_t host_offset, size_t length,
+                      std::span<const ProtectionRun> runs) {
+        if (!MapView(virtual_offset, host_offset, length)) {
+            return;
+        }
+        for (const ProtectionRun& run : runs) {
+            if (run.protect == PAGE_READWRITE) {
+                continue;
+            }
+            DWORD old_flags{};
+            if (!VirtualProtect(virtual_base + run.virtual_offset, run.length, run.protect,
+                                &old_flags)) {
+                UNREACHABLE_MSG("Failed to restore protection {:#x} of {:#x} bytes at {:#x} of a "
+                                "remapped view, error {}",
+                                run.protect, run.length, run.virtual_offset, GetLastError());
+            }
+        }
+    }
+
+    bool MapView(size_t virtual_offset, size_t host_offset, size_t length) {
         if (!pfn_MapViewOfFile3(backing_handle, process, virtual_base + virtual_offset, host_offset,
                                 length, MEM_REPLACE_PLACEHOLDER, PAGE_READWRITE, nullptr, 0)) {
-            LOG_CRITICAL(HW_Memory, "Failed to map placeholder");
+            LOG_CRITICAL(HW_Memory, "Failed to map placeholder, error {}", GetLastError());
+            return false;
         }
+        return true;
     }
 
     void Split(size_t virtual_offset, size_t length) {
@@ -438,6 +497,7 @@ private:
     PFN_UnmapViewOfFile2 pfn_UnmapViewOfFile2{};
 
     std::mutex placeholder_mutex;                                 ///< Mutex for placeholders
+    std::vector<ProtectionRun> kept_protections;
     boost::icl::separate_interval_set<size_t> placeholders;       ///< Mapped placeholders
     ::Common::unordered_map<size_t, size_t> placeholder_host_pointers; ///< Placeholder backing offset
 };

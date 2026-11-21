@@ -145,9 +145,6 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
         } catch (const vk::Exception& exception) {
             LOG_CRITICAL(Render_Vulkan, "Adreno rejected compute shader {:016X}: {}", shader_hash,
                          exception.what());
-            std::scoped_lock lock{build_mutex};
-            is_built = true;
-            build_condvar.notify_one();
             return;
         }
 
@@ -164,17 +161,16 @@ ComputePipeline::ComputePipeline(const Device& device_, Scheduler& scheduler, vk
         // Nothing reads the module once the pipeline exists; the driver keeps its SPIR-V while it
         // lives.
         spv_module.reset();
-        std::scoped_lock lock{build_mutex};
-        is_built = true;
-        build_condvar.notify_one();
     });
+    build = std::make_shared<PipelineBuild>(
+        std::move(func), !device.HasBrokenParallelShaderCompiling());
     if (thread_worker) {
         if (Common::HitchDiagnostic::Enabled()) {
             hitch_trace_queued_ns = Common::HitchDiagnostic::NowNs();
         }
-        thread_worker->QueueWork(std::move(func));
+        thread_worker->QueueWork([build = build] { build->Run(); });
     } else {
-        func();
+        build->Run();
     }
 }
 
@@ -324,8 +320,7 @@ bool ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
     PushImageDescriptors(texture_cache, guest_descriptor_queue, info, rescaling, samplers_it,
                          views_it);
 
-    if (!is_built.load(std::memory_order::relaxed)) {
-        // Wait for the pipeline to be built
+    if (!build->IsComplete()) {
         scheduler.Record([this](vk::CommandBuffer) {
             PipelineHitchTrace::Scope hitch{PipelineHitchTrace::Phase::FirstUseWait,
                                             "compute-first-use-wait", shader_hash,
@@ -333,8 +328,7 @@ bool ComputePipeline::Configure(Tegra::Engines::KeplerCompute& kepler_compute,
             VideoCommon::StallDiagnostics::Scope diagnostic{
                 {VideoCommon::StallDiagnostics::Phase::PipelineBuildWait, "scheduler-worker",
                  shader_hash}};
-            std::unique_lock lock{build_mutex};
-            build_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
+            build->Wait();
         });
     }
 

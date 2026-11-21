@@ -343,9 +343,6 @@ GraphicsPipeline::GraphicsPipeline(
                          exception.what(), (*spv_modules)[1] ? 1 : 0, (*spv_modules)[2] ? 1 : 0,
                          (*spv_modules)[3] ? 1 : 0, key.state.patch_control_points_minus_one.Value() + 1,
                          device.GetMaxTessellationPatchSize());
-            std::scoped_lock lock{build_mutex};
-            is_built = true;
-            build_condvar.notify_one();
             if (shader_notify) {
                 shader_notify->MarkShaderComplete();
             }
@@ -359,22 +356,21 @@ GraphicsPipeline::GraphicsPipeline(
         // go with the last pipeline using them, unless the shader reuse cache keeps them.
         spv_modules.reset();
 
-        std::scoped_lock lock{build_mutex};
-        is_built = true;
-        build_condvar.notify_one();
         if (shader_notify) {
             shader_notify->MarkShaderComplete();
         }
     }};
     // Before the build: it frees the modules this looks at.
     configure_func = ConfigureFunc(*spv_modules, stage_infos);
+    build = std::make_shared<PipelineBuild>(
+        std::move(func), !device.HasBrokenParallelShaderCompiling());
     if (worker_thread) {
         if (Common::HitchDiagnostic::Enabled()) {
             hitch_trace_queued_ns = Common::HitchDiagnostic::NowNs();
         }
-        worker_thread->QueueWork(std::move(func));
+        worker_thread->QueueWork([build = build] { build->Run(); });
     } else {
-        func();
+        build->Run();
     }
 }
 
@@ -675,8 +671,7 @@ bool GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling,
     }
 
     scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
-    if (!is_built.load(std::memory_order::relaxed)) {
-        // Wait for the pipeline to be built
+    if (!build->IsComplete()) {
         scheduler.Record([this](vk::CommandBuffer) {
             const bool trace = Common::HitchDiagnostic::Enabled();
             PipelineHitchTrace::Scope hitch{PipelineHitchTrace::Phase::FirstUseWait,
@@ -685,8 +680,7 @@ bool GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling,
             VideoCommon::StallDiagnostics::Scope diagnostic{
                 {VideoCommon::StallDiagnostics::Phase::PipelineBuildWait, "scheduler-worker",
                  key.Hash()}};
-            std::unique_lock lock{build_mutex};
-            build_condvar.wait(lock, [this] { return is_built.load(std::memory_order::relaxed); });
+            build->Wait();
         });
     }
     const bool is_rescaling{texture_cache.IsRescaling()};

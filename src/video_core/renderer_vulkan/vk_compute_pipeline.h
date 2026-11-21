@@ -6,14 +6,13 @@
 
 #pragma once
 
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
+#include <memory>
 #include <optional>
 
 #include "common/common_types.h"
 #include "common/thread_worker.h"
 #include "shader_recompiler/shader_info.h"
+#include "video_core/renderer_vulkan/pipeline_build.h"
 #include "video_core/renderer_vulkan/pipeline_helper.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
 #include "video_core/renderer_vulkan/vk_descriptor_buffer.h"
@@ -80,9 +79,7 @@ private:
     vk::DescriptorUpdateTemplate descriptor_update_template;
     vk::Pipeline pipeline;
 
-    std::condition_variable build_condvar;
-    std::mutex build_mutex;
-    std::atomic_bool is_built{false};
+    std::shared_ptr<PipelineBuild> build;
 };
 
 } // namespace Vulkan

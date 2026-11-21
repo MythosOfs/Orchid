@@ -11,6 +11,7 @@
 #include <atomic>
 #include <cstdlib>
 #include <filesystem>
+#include <functional>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -233,6 +234,17 @@ enum class NvidiaArchitecture {
     Arch_Turing,
     Arch_AmpereOrNewer,
 };
+
+/// Payload of a static pipeline cache file; empty when it is missing or not an Orchid cache.
+std::vector<char> ReadStaticPipelineCache(const std::filesystem::path& filename);
+
+/// Writes a unique file beside the cache and renames it over the cache, so a failed or interrupted
+/// write keeps the previous one. Returns whether the cache was replaced.
+bool WriteStaticPipelineCache(const std::filesystem::path& filename, std::span<const char> data);
+
+/// Calls create with data, and once more with nothing when the driver rejects non-empty data.
+void CreateStaticPipelineCache(std::span<const char> data,
+                               const std::function<void(std::span<const char>)>& create);
 
 /// Handles data specific to a physical device.
 class Device {

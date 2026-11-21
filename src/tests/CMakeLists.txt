@@ -155,6 +155,7 @@ add_executable(tests
     video_core/scaled_image_fits.cpp
     video_core/texture_row_upload.cpp
     video_core/texture_linear_upload.cpp
+    video_core/texture_cache_lifetime.cpp
     video_core/texture_depth_float.cpp
     video_core/texture_query_type.cpp
     video_core/texture_descriptor_bounds.cpp

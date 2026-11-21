@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -10,6 +11,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "common/fs/path_util.h"
+#include "common/settings.h"
 #include "qt_common/config/qt_config.h"
 #include "qt_common/config/uisettings.h"
 
@@ -68,4 +70,22 @@ TEST_CASE("QtConfig reloads empty multiplayer ban lists as empty", "[.][qt_confi
     const auto loaded = RoundTrip({});
     REQUIRE(loaded.first.empty());
     REQUIRE(loaded.second.empty());
+}
+
+TEST_CASE("QtConfig reads an old Yoshi 4K option as the 4K No AA patch", "[.][qt_config]") {
+    const TemporaryConfigDir dir;
+    std::filesystem::create_directories(dir.root / "custom");
+    std::ofstream{dir.root / "custom" / "0400245021D2C000.ini"}
+        << "[System]\nyoshi_4k_patch\\use_global=false\nyoshi_4k_patch\\default=false\n"
+           "yoshi_4k_patch=true\n";
+    {
+        QtConfig config{"0400245021D2C000", Config::ConfigType::PerGameConfig};
+        CHECK(Settings::values.yoshi_patch.GetValue());
+        CHECK(Settings::values.yoshi_patch_resolution.GetValue() ==
+              Settings::YoshiPatchResolution::Res2160p);
+        CHECK(Settings::values.yoshi_patch_anti_aliasing.GetValue() ==
+              Settings::YoshiPatchAntiAliasing::None);
+    }
+    Settings::RestoreGlobalState(false);
+    CHECK_FALSE(Settings::values.yoshi_patch.GetValue());
 }

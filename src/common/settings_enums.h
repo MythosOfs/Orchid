@@ -165,6 +165,8 @@ ENUM(GpuLogLevel, Off, Errors, Standard, Verbose, All)
 ENUM(GameListMode, TreeView, GridView, CarouselView);
 ENUM(SpeedMode, Standard, Turbo, Slow);
 ENUM(FrameGenType, Lsfg, Fsr3);
+ENUM(YoshiPatchResolution, Res1080p, Res1440p, Res2160p);
+ENUM(YoshiPatchAntiAliasing, None, Fxaa, Dlaa);
 
 template <typename Type>
 inline std::string_view CanonicalizeEnum(Type id) {

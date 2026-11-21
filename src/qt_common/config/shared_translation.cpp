@@ -284,13 +284,9 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
            tr("Patches the game's frame-rate controller to always pick 30 fps, so it runs at full "
               "speed at a steady 30 fps. Only for supported games and versions (Donkey Kong "
               "Bananza); others ignore it. Takes effect on the next game start."));
-    INSERT(Settings, yoshi_4k_patch, tr("Internal resolution 4K (game patch)"),
-           tr("Patches the game to render at 3840x2160 with its own upscaling and anti-aliasing "
-              "off, which removes the blur of the original picture; the HUD keeps its size. Needs "
-              "a fast graphics card. Leave the emulator's resolution scaling at 1x with it, and "
-              "do not combine it with another resolution mod for this game. Only for game "
-              "version 1.0.2 (Yoshi and the Mysterious Book); other versions ignore it. Takes "
-              "effect on the next game start. Patch by Walnutoast830."));
+    INSERT(Settings, yoshi_patch, QString(), QString());
+    INSERT(Settings, yoshi_patch_resolution, QString(), QString());
+    INSERT(Settings, yoshi_patch_anti_aliasing, QString(), QString());
     INSERT(Settings, frame_step_fps, tr("Keep game speed below 60 FPS (dynamic frame rate)"),
            tr("This game advances a fixed step per frame and runs in slow motion when the PC "
               "renders fewer than 60 FPS. With this on, the emulator tells the game how many "

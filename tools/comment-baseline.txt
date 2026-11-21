@@ -434,7 +434,7 @@
 12 src/common/scratch_buffer.h
 1 src/common/session_counter.h
 13 src/common/settings.cpp
-65 src/common/settings.h
+63 src/common/settings.h
 1 src/common/settings_common.cpp
 137 src/common/settings_common.h
 7 src/common/settings_enums.h
@@ -620,7 +620,7 @@
 2 src/core/file_sys/nx_content.h
 8 src/core/file_sys/partition_filesystem.cpp
 5 src/core/file_sys/partition_filesystem.h
-48 src/core/file_sys/patch_manager.cpp
+46 src/core/file_sys/patch_manager.cpp
 24 src/core/file_sys/patch_manager.h
 15 src/core/file_sys/program_metadata.cpp
 13 src/core/file_sys/program_metadata.h
@@ -679,7 +679,6 @@
 8 src/core/file_sys/wonder_fps_patch.h
 1 src/core/file_sys/xts_archive.cpp
 1 src/core/file_sys/xts_archive.h
-25 src/core/file_sys/yoshi_4k_patch.h
 23 src/core/frame_step_fps.h
 5 src/core/frame_telemetry.h
 1 src/core/frontend/applets/applet.h
@@ -2698,7 +2697,6 @@
 7 src/tests/core/vfs_real.cpp
 1 src/tests/core/vfs_vector.cpp
 11 src/tests/core/wonder_fps_patch.cpp
-7 src/tests/core/yoshi_4k_patch.cpp
 6 src/tests/debug_stream_contract.cpp
 2 src/tests/expect.cpp
 6 src/tests/expect.h

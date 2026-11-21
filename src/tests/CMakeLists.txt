@@ -62,7 +62,7 @@ add_executable(tests
     core/game_settings.cpp
     core/frame_step_fps.cpp
     core/wonder_fps_patch.cpp
-    core/yoshi_4k_patch.cpp
+    core/yoshi_patch.cpp
     core/nx2_sysmix_pcm.cpp
     core/hid_joycon2_style.cpp
     core/hid_auto_buttons.cpp

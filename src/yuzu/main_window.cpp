@@ -1886,7 +1886,6 @@ bool MainWindow::LoadROM(const QString& filename, Service::AM::FrontendAppletPar
                 const bool missing_keys =
                     status == Loader::ResultStatus::ErrorMissingProductionKeyFile ||
                     status == Loader::ResultStatus::ErrorMissingHeaderKey ||
-                    status == Loader::ResultStatus::ErrorMissingTitlekey ||
                     status == Loader::ResultStatus::ErrorMissingTitlekek ||
                     status == Loader::ResultStatus::ErrorMissingKeyAreaKey;
                 const auto description =

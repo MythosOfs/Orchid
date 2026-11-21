@@ -146,6 +146,7 @@ add_executable(tests
     video_core/compute_storage_buffers.cpp
     video_core/storage_binding_cache.cpp
     video_core/approximate_gpu_writes.cpp
+    video_core/padded_width.cpp
     video_core/pending_download.cpp
     video_core/storage_buffer_descriptor.cpp
     video_core/compute_binding_diagnostic.cpp

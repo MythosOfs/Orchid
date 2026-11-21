@@ -6,6 +6,7 @@
 
 add_executable(tests
     expect.cpp
+    frontend_common/play_time.cpp
     common/bit_field.cpp
     common/bit_util.cpp
     common/cityhash.cpp
@@ -34,7 +35,6 @@ add_executable(tests
     common/session_counter.cpp
     common/slot_vector.cpp
     common/sparse_large_vector.cpp
-    common/undefined_fix.cpp
     common/unique_function.cpp
     common/user_directories.cpp
     common/zstd_compression.cpp
@@ -221,7 +221,7 @@ if (TARGET OpenSSL::SSL)
     target_link_libraries(tests PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
-target_link_libraries(tests PRIVATE common core input_common video_core tz)
+target_link_libraries(tests PRIVATE common core frontend_common input_common video_core tz)
 
 if (ENABLE_QT)
     target_sources(tests PRIVATE qt_common/qt_config_ban_list.cpp)

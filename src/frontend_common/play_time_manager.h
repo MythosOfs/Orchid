@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <map>
 #include <mutex>
 
@@ -51,6 +52,7 @@ private:
     // The play time thread writes it while the game list worker reads it.
     mutable std::mutex database_mutex;
     PlayTimeDatabase database;
+    std::atomic<bool> modified{};
     u64 running_program_id{};
     std::jthread play_time_thread;
 };

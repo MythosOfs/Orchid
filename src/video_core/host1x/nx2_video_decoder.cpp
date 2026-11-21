@@ -182,8 +182,15 @@ struct Nx2VideoDecoder::Impl {
         if (on_gpu && gpu_fault == Nx2GpuDecodeFault::Packet) {
             return false;
         }
-        accepted |= context->SendPacket(packet);
-        return accepted;
+        const int ret = on_gpu && gpu_fault == Nx2GpuDecodeFault::Busy
+                            ? AVERROR(EAGAIN)
+                            : avcodec_send_packet(context->GetCodecContext(), packet.GetPacket());
+        const bool failed = ret < 0 && ret != AVERROR_EOF && ret != AVERROR(EAGAIN);
+        accepted |= ret == 0;
+        if (failed) {
+            LOG_ERROR(HW_GPU, "nx2 video: avcodec_send_packet error {}", ret);
+        }
+        return !failed;
     }
 
     void Receive(std::vector<Nx2Picture>& pictures) {

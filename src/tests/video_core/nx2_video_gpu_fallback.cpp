@@ -268,6 +268,17 @@ TEST_CASE("Nx2 video keeps the host GPU decoder once it accepted a packet", "[nx
     }
 }
 
+TEST_CASE("Nx2 video falls back when the host GPU decoder only answered EAGAIN", "[nx2_video]") {
+    const auto packets = Packets();
+    Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Busy, Avc()};
+    std::vector<Nx2Picture> pictures;
+    decoder.decoder->Decode(packets[0], 0, pictures);
+    decoder.decoder->Decode(packets[1], 1, pictures);
+    REQUIRE(pictures.empty());
+    const std::vector<Packet> rest(packets.begin() + 2, packets.end());
+    CHECK(decoder.Play(rest, Nx2GpuDecodeFault::Packet) == std::vector<u64>{0, 1});
+}
+
 TEST_CASE("Nx2 video decodes on the host GPU when FFmpeg can", "[nx2_video]") {
     // Whether FFmpeg on this host decodes the clip on the GPU (NV12 frames) or falls back itself.
     FFmpeg::Decoder probe_decoder{Tegra::Host1x::NvdecCommon::VideoCodec::H264};

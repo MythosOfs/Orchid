@@ -7160,3 +7160,5 @@ ffe71b781 nitramvi/Lichii-arc: Adds or changes only files main lacks (src/core/h
 fff3abd8c joebenberry-afk/Eglantine: Tests only, no runtime change in Orchid code
 fff4a36f1 zortos293/Eglantine: New feature: DualSense USB HD haptics (helpers/dualsense_haptics absent, new setting), not a fix
 fffe5b6c5 zortos293/Eglantine: Collector overlap write-back machinery (WriteBackImage/QueueWriteBack/NewerGpuOverlaps/keep ranges/writeback_switches.h) does not exist in main, whose Cleanup downloads only the victim image itself
+249d889b1 zortos293/Eglantine: Already in main: 3a44f3ea0c makes UniqueFunction own decayed callables (lvalues copied, rvalues moved)
+0ed545cef zortos293/Eglantine: Already in main: Advance pops due events whose owner expired since 11a110898f

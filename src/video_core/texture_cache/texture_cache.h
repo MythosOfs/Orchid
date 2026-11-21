@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <limits>
 #include <map>
+#include <new>
 #include <vector>
 #include <optional>
 #include <bit>
@@ -178,7 +179,13 @@ void TextureCache<P>::RunGarbageCollector() {
             const auto copies = FullDownloadCopies(image.info);
             image.DownloadMemory(map, copies);
             runtime.Finish();
-            SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span, swizzle_data_buffer);
+            try {
+                SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span,
+                             swizzle_data_buffer);
+            } catch (const std::bad_alloc&) {
+                HandleScratchAllocationFailure(image);
+                return false;
+            }
             ++gc_download_deletes;
         }
         if (True(image.flags & ImageFlagBits::Tracked)) {
@@ -2041,9 +2048,24 @@ void TextureCache<P>::DownloadImageIntoBuffer(typename TextureCache<P>::Image* i
 }
 
 template <class P>
+void TextureCache<P>::HandleScratchAllocationFailure(const ImageBase& image) {
+    swizzle_data_buffer.release();
+    unswizzle_data_buffer.release();
+    if (frame_tick >= scratch_retry_frame) {
+        LOG_WARNING(HW_GPU, "Host scratch allocation failed for texture {:#x} ({} bytes)",
+                    image.gpu_addr, image.guest_size_bytes);
+    }
+    scratch_retry_frame = frame_tick + 60;
+}
+
+template <class P>
 void TextureCache<P>::RefreshContents(Image& image, ImageId image_id) {
     if (False(image.flags & ImageFlagBits::CpuModified)) {
         // Only upload modified images
+        return;
+    }
+    if (frame_tick < scratch_retry_frame && image.guest_size_bytes >= 64_MiB) {
+        runtime.TransitionImageLayout(image);
         return;
     }
     VideoCommon::Nx2Profile::Scope profile_scope{VideoCommon::Nx2Profile::Zone::TextureUpload};
@@ -2111,14 +2133,26 @@ void TextureCache<P>::RefreshContents(Image& image, ImageId image_id) {
         QueueAsyncUnswizzle(image, image_id);
         return;
     }
+    try {
+        if (!UploadInChunks(image)) {
+            auto staging = runtime.UploadStagingBuffer(MapSizeBytes(image));
+            UploadImageContents(image, staging);
+            runtime.InsertUploadMemoryBarrier();
+        }
+    } catch (const std::bad_alloc&) {
+        image.flags |= ImageFlagBits::CpuModified;
+        if (False(image.flags & ImageFlagBits::Sparse) ||
+            True(image.flags & ImageFlagBits::Registered)) {
+            UntrackImage(image, image_id);
+        }
+        HandleScratchAllocationFailure(image);
+        runtime.InsertUploadMemoryBarrier();
+        runtime.TransitionImageLayout(image);
+        return;
+    }
     ++images_uploaded;
     uploaded_bytes += image.guest_size_bytes;
     largest_upload = (std::max<u64>)(largest_upload, image.guest_size_bytes);
-    if (!UploadInChunks(image)) {
-        auto staging = runtime.UploadStagingBuffer(MapSizeBytes(image));
-        UploadImageContents(image, staging);
-        runtime.InsertUploadMemoryBarrier();
-    }
     // The host GPU has its own copy now and the guest rarely reads this memory again: TickFrame
     // marks it cold, so the OS pages it out before anything else when it needs RAM (title 1
     // streams several GB of textures through it).
@@ -2443,8 +2477,16 @@ void TextureCache<P>::UploadImageContents(Image& image, StagingBuffer& staging) 
     // copied each such upload twice (Hyrule Warriors: Age of Imprisonment uploads them all through
     // a fight, and two thirds of that upload time went into the unused copy).
     const size_t swizzle_bytes = image.info.type == ImageType::Linear ? 0 : image.guest_size_bytes;
-    Tegra::Memory::GpuGuestMemory<u8, Tegra::Memory::GuestMemoryFlags::UnsafeRead> swizzle_data(
-        *gpu_memory, gpu_addr, swizzle_bytes, &swizzle_data_buffer);
+    std::span<const u8> swizzle_data;
+    if (swizzle_bytes != 0) {
+        if (const u8* direct = gpu_memory->GetSpan(gpu_addr, swizzle_bytes)) {
+            swizzle_data = {direct, swizzle_bytes};
+        } else {
+            swizzle_data_buffer.resize_destructive(swizzle_bytes);
+            gpu_memory->ReadBlockUnsafe(gpu_addr, swizzle_data_buffer.data(), swizzle_bytes);
+            swizzle_data = swizzle_data_buffer;
+        }
+    }
     if (True(image.flags & ImageFlagBits::Converted)) {
         unswizzle_data_buffer.resize_destructive(image.unswizzled_size_bytes);
         auto copies = UnswizzleImage(*gpu_memory, gpu_addr, image.info, swizzle_data, unswizzle_data_buffer);

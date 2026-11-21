@@ -18,3 +18,4 @@ Decisions and facts the code cannot show. Code in `src/` carries no comments ([0
 | [0012](0012-cmif-output-buffer-contents.md) | Preserving guest bytes in partially written CMIF output buffers |
 | [0013](0013-native-program-capture-geometry-exit-envelope.md) | Native program capture end at the geometry exit handler (issue 111) |
 | [0014](0014-vulkan-pipeline-build-ownership.md) | Vulkan pipeline build claims, completion and progress lifetime |
+| [0015](0015-texture-cache.md) | Texture cache upload and write-back |

@@ -311,6 +311,15 @@ source and author in its message.
   Graphics use the 32-lane broadcast fallback only when subgroup size 32 can be enforced for
   that stage. Compute and unsupported graphics stages retain Shuffle; Qualcomm keeps its
   existing full-subgroup fallback. Pipeline hash diagnostics are omitted.
+- Host and container fixes of the 2026-11-21 fork scan:
+  [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (Daniel Jesús Martín Flores: KIP
+  section, BLZ and NUP parsing, orphaned profile scan, play time and config saves; goof787lord:
+  range map lookups; Luke Evanson: unmapped-write log throttle; Zortos: Joy-Con assignment,
+  sampler fallback, borderless fullscreen, controller Cancel),
+  [Lancito01/Lichii](https://github.com/Lancito01/Lichii) (Andy: motion feedback without integral
+  term), [dzervas/Lichii](https://github.com/dzervas/Lichii) (Dimitris Zervas: Windows partial
+  unmap protections) and [luizIK/Kizuna](https://github.com/luizIK/Kizuna) (Frizti: kernel
+  shutdown order, present device loss).
 
 ## License
 

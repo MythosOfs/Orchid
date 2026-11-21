@@ -499,10 +499,14 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::vector<std::fi
                 if (app_loader->ReadTitle(loader_title) != Loader::ResultStatus::Success) {
                     loader_title.clear();
                 }
-                const auto installed = patch.GetControlMetadata().first;
                 const std::string name = Loader::DisplayTitle(
-                    installed != nullptr ? installed->GetApplicationName() : std::string{},
-                    loader_title, LooseDumpName(*vfs, physical_name, id).toStdString(),
+                    loader_title,
+                    [&patch] {
+                        const auto installed = patch.GetControlMetadata().first;
+                        return installed != nullptr ? installed->GetApplicationName()
+                                                    : std::string{};
+                    },
+                    [&] { return LooseDumpName(*vfs, physical_name, id).toStdString(); },
                     QFileInfo(QString::fromStdString(physical_name))
                         .completeBaseName()
                         .toStdString());
@@ -569,6 +573,7 @@ void GameListWorker::run() {
         RecordEvent([=](GameListModel* model) { model->AddDirEntry(pending->release()); });
     };
 
+    std::vector<std::pair<GameListDir*, std::vector<std::filesystem::path>>> scanned_dirs;
     for (UISettings::GameDir& game_dir : game_dirs) {
         if (stop_requested) {
             break;
@@ -596,7 +601,7 @@ void GameListWorker::run() {
         const auto parent_type = static_cast<GameListItemType>(game_list_dir->type());
         DirEntryReady(game_list_dir);
         if (scan) {
-            const auto discovery = GameListDiscovery::Discover(
+            auto discovery = GameListDiscovery::Discover(
                 std::filesystem::path(Common::FS::ToU8String(game_dir.path)), game_dir.deep_scan,
                 [](const auto& path) {
                     const auto name = Common::FS::PathToUTF8String(path);
@@ -611,10 +616,19 @@ void GameListWorker::run() {
                      discovery.files.size(), discovery.directories.size(), discovery.skipped_romfs,
                      discovery.errors, stop_requested.load());
             ScanFileSystem(ScanTarget::FillManualContentProvider, discovery.files, game_list_dir);
-            ScanFileSystem(ScanTarget::PopulateGameList, discovery.files, game_list_dir);
+            scanned_dirs.emplace_back(game_list_dir, std::move(discovery.files));
         } else {
             AddTitlesToGameList(game_list_dir, parent_type);
         }
+    }
+
+    // Name entries only after every folder has added its content, so names do not depend on
+    // the folder order.
+    for (const auto& [game_list_dir, files] : scanned_dirs) {
+        if (stop_requested) {
+            break;
+        }
+        ScanFileSystem(ScanTarget::PopulateGameList, files, game_list_dir);
     }
 
     watch_list.removeDuplicates();

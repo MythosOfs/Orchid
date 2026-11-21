@@ -344,11 +344,17 @@ constexpr std::array<const char*, 70> RESULT_MESSAGES{
     "The NUP container does not contain a loadable base package.",
 };
 
-std::string DisplayTitle(std::string_view installed, std::string_view loader_title,
-                         std::string_view loose_dump, std::string_view file_name) {
-    for (const std::string_view name : {installed, loader_title, loose_dump}) {
-        if (!name.empty() && name != " ") {
-            return std::string{name};
+std::string DisplayTitle(std::string_view loader_title,
+                         const std::function<std::string()>& installed,
+                         const std::function<std::string()>& loose_dump,
+                         std::string_view file_name) {
+    const auto usable = [](std::string_view name) { return !name.empty() && name != " "; };
+    if (usable(loader_title)) {
+        return std::string{loader_title};
+    }
+    for (const auto* fallback : {&installed, &loose_dump}) {
+        if (std::string name = (*fallback)(); usable(name)) {
+            return name;
         }
     }
     return std::string{file_name};

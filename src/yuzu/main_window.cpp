@@ -2258,25 +2258,29 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
                                        QtCommon::system->GetContentProvider());
         return pm.GetControlMetadata();
     }();
-    std::string installed_title;
     if (metadata.first != nullptr) {
         title_version = metadata.first->GetVersionString();
-        installed_title = metadata.first->GetApplicationName();
     }
-    const auto& game_file = QtCommon::system->GetAppLoader().GetFile();
-    std::error_code ec;
-    const std::string loose_title =
-        game_file != nullptr
-            ? LooseDumpName(*QtCommon::vfs,
-                            Common::FS::PathToUTF8String(
-                                std::filesystem::absolute(
-                                    Common::FS::ToU8String(game_file->GetFullPath()), ec)
-                                    .lexically_normal()),
-                            title_id)
-                  .toStdString()
-            : std::string{};
-    std::string title_name = Loader::DisplayTitle(installed_title, loader_title, loose_title,
-                                                  QFileInfo(filename).completeBaseName().toStdString());
+    std::string title_name = Loader::DisplayTitle(
+        loader_title,
+        [&metadata] {
+            return metadata.first != nullptr ? metadata.first->GetApplicationName()
+                                             : std::string{};
+        },
+        [title_id] {
+            const auto& game_file = QtCommon::system->GetAppLoader().GetFile();
+            if (game_file == nullptr) {
+                return std::string{};
+            }
+            std::error_code ec;
+            const auto game_path = std::filesystem::absolute(
+                Common::FS::ToU8String(game_file->GetFullPath()), ec);
+            return LooseDumpName(*QtCommon::vfs,
+                                 Common::FS::PathToUTF8String(game_path.lexically_normal()),
+                                 title_id)
+                .toStdString();
+        },
+        QFileInfo(filename).completeBaseName().toStdString());
     const bool is_64bit = QtCommon::system->Kernel().ApplicationProcess()->Is64Bit();
     const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");
     title_name = tr("%1 %2", "%1 is the title name. %2 indicates if the title is 64-bit or 32-bit")

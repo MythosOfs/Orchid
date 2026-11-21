@@ -169,8 +169,10 @@ enum class ResultStatus : u16 {
 std::string GetResultStatusString(ResultStatus status);
 std::ostream& operator<<(std::ostream& os, ResultStatus status);
 
-std::string DisplayTitle(std::string_view installed, std::string_view loader_title,
-                         std::string_view loose_dump, std::string_view file_name);
+std::string DisplayTitle(std::string_view loader_title,
+                         const std::function<std::string()>& installed,
+                         const std::function<std::string()>& loose_dump,
+                         std::string_view file_name);
 
 /// Interface for loading an application
 class AppLoader {

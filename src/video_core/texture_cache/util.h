@@ -21,6 +21,10 @@
 #include "video_core/texture_cache/types.h"
 #include "video_core/textures/texture.h"
 
+namespace Settings {
+struct ResolutionScalingInfo;
+}
+
 namespace VideoCommon {
 
 using Tegra::Texture::TICEntry;
@@ -174,5 +178,11 @@ void DeduceBlitImages(ImageInfo& dst_info, ImageInfo& src_info, const ImageBase*
                       const ImageBase* src);
 
 [[nodiscard]] u32 MapSizeBytes(const ImageBase& image);
+
+/// Whether an image scaled by the resolution setting stays within 16384 per side of info.size
+/// (the sample grid for MSAA) and within the device's max_extent texels per side.
+[[nodiscard]] bool ScaledImageFits(const ImageInfo& info,
+                                   const Settings::ResolutionScalingInfo& resolution,
+                                   u32 max_extent) noexcept;
 
 } // namespace VideoCommon

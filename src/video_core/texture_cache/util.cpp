@@ -1730,6 +1730,16 @@ void DeduceBlitImages(ImageInfo& dst_info, ImageInfo& src_info, const ImageBase*
     }
 }
 
+bool ScaledImageFits(const ImageInfo& info, const Settings::ResolutionScalingInfo& resolution,
+                     u32 max_extent) noexcept {
+    const u32 width = resolution.ScaleUp(info.size.width);
+    const u32 height =
+        info.type == ImageType::e2D ? resolution.ScaleUp(info.size.height) : info.size.height;
+    const auto [samples_x, samples_y] = SamplesLog2(info.num_samples);
+    return width <= 16384 && height <= 16384 && (width >> samples_x) <= max_extent &&
+           (height >> samples_y) <= max_extent;
+}
+
 u32 MapSizeBytes(const ImageBase& image) {
     if (True(image.flags & ImageFlagBits::AcceleratedUpload) && image.host_level_offset != 0) {
         // Each layer's mip chain from host_level_offset on (see UploadImageContents).

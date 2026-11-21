@@ -2553,6 +2553,12 @@ bool TextureCache<P>::ImageCanRescale(ImageBase& image) {
     if (!image.info.rescaleable) {
         return false;
     }
+    if constexpr (requires { runtime.GetMaxScaledExtent(); }) {
+        if (!ScaledImageFits(image.info, Settings::values.resolution_info,
+                             runtime.GetMaxScaledExtent())) {
+            return false;
+        }
+    }
     if (Settings::values.resolution_info.downscale && !image.info.downscaleable) {
         return false;
     }
@@ -2986,6 +2992,10 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, DA
                                region_check_gpu);
 
     bool can_rescale = info.rescaleable;
+    if constexpr (requires { runtime.GetMaxScaledExtent(); }) {
+        can_rescale &= ScaledImageFits(new_info, Settings::values.resolution_info,
+                                       runtime.GetMaxScaledExtent());
+    }
     bool any_rescaled = false;
     for (const auto& copy : join_copies_to_do) {
         if (!can_rescale) {

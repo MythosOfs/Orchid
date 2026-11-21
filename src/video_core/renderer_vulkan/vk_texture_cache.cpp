@@ -2458,6 +2458,11 @@ bool TextureCacheRuntime::CanDownloadMsaa(const VideoCommon::ImageInfo& info) co
     return true;
 }
 
+u32 TextureCacheRuntime::GetMaxScaledExtent() const noexcept {
+    return (std::min)({device.GetMaxImageDimension2D(), device.GetMaxFramebufferWidth(),
+                       device.GetMaxFramebufferHeight()});
+}
+
 bool TextureCacheRuntime::CanReportMemoryUsage() const {
     return device.CanReportMemoryUsage();
 }
@@ -3718,19 +3723,10 @@ bool Image::ScaleUp(bool ignore) {
         return false;
     }
     ASSERT(info.type != ImageType::Linear);
-    {
-        const bool is_2d = info.type == ImageType::e2D;
-        const u32 scaled_width = resolution.ScaleUp(info.size.width);
-        const u32 scaled_height = is_2d ? resolution.ScaleUp(info.size.height) : info.size.height;
-        // A scaled image past the device's 16384 guarantee or the 2^28-texel budget of the
-        // image math must not exist: the allocator falls back to an unbacked sparse image and
-        // binding it then loses the device (the 1.5x crash: a 12288^2 D16 scaled to 18432^2).
-        // Keep such images at native size - the framework already handles images that do not
-        // rescale (ImageCanRescale / the Rescaled flag).
-        if (scaled_width > 16384 || scaled_height > 16384 ||
-            u64{scaled_width} * scaled_height > (u64{1} << 28)) {
-            return false;
-        }
+    // Past the device's limits the scaled image would be unbacked and binding it loses the
+    // device; such images stay native (ImageCanRescale refuses them too).
+    if (!VideoCommon::ScaledImageFits(info, resolution, runtime->GetMaxScaledExtent())) {
+        return false;
     }
     flags |= ImageFlagBits::Rescaled;
     has_scaled = true;
@@ -3824,10 +3820,7 @@ bool Image::BlitScaleHelper(bool scale_up) {
         .start = {0, 0},
         .end = {s32(dst_width), s32(dst_height)},
     };
-    const VkExtent2D extent{
-        .width = (std::max)(scaled_width, info.size.width) >> samples_x,
-        .height = (std::max)(scaled_height, info.size.height) >> samples_y,
-    };
+    const VkExtent2D extent{dst_width, dst_height};
 
     auto* view_ptr = blit_view.get();
     if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {

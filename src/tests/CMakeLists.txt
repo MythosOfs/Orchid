@@ -218,6 +218,9 @@ set_tests_properties(debug_stream_contract_disabled debug_stream_contract_enable
 # The disabled run checks that nothing is created, so it runs before the enabled one.
 set_tests_properties(debug_stream_contract_enabled PROPERTIES DEPENDS debug_stream_contract_disabled)
 
+# Measures the CPU time of a waiting thread, so it runs alone in its own process.
+add_test(NAME gpu_split_ring COMMAND tests "[gpu_split]")
+
 # needed for vma
 if (NOT MSVC)
     target_compile_options(tests PRIVATE

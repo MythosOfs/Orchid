@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <cstdlib>
 #include <thread>
 
@@ -26,21 +27,28 @@
 using namespace std::chrono_literals;
 
 namespace {
-std::chrono::nanoseconds ThreadCpuTime(std::jthread& thread) {
+// False when the clock of `thread` cannot be read.
+bool ThreadCpuTime(std::jthread& thread, std::chrono::nanoseconds& cpu) {
 #ifdef _WIN32
     FILETIME creation, exit, kernel, user;
-    GetThreadTimes(static_cast<HANDLE>(thread.native_handle()), &creation, &exit, &kernel, &user);
+    if (!GetThreadTimes(static_cast<HANDLE>(thread.native_handle()), &creation, &exit, &kernel,
+                        &user)) {
+        return false;
+    }
     const auto ticks = [](FILETIME time) {
         return (u64{time.dwHighDateTime} << 32) | time.dwLowDateTime;
     };
-    return std::chrono::nanoseconds{(ticks(kernel) + ticks(user)) * 100};
+    cpu = std::chrono::nanoseconds{(ticks(kernel) + ticks(user)) * 100};
 #else
     clockid_t clock{};
-    pthread_getcpuclockid(thread.native_handle(), &clock);
     timespec time{};
-    clock_gettime(clock, &time);
-    return std::chrono::seconds{time.tv_sec} + std::chrono::nanoseconds{time.tv_nsec};
+    if (pthread_getcpuclockid(thread.native_handle(), &clock) != 0 ||
+        clock_gettime(clock, &time) != 0) {
+        return false;
+    }
+    cpu = std::chrono::seconds{time.tv_sec} + std::chrono::nanoseconds{time.tv_nsec};
 #endif
+    return true;
 }
 
 template <typename Predicate>
@@ -56,10 +64,12 @@ bool WaitFor(Predicate&& predicate, std::chrono::milliseconds timeout) {
 }
 } // Anonymous namespace
 
-TEST_CASE("The GPU front sleeps while it waits for ring space", "[video_core][gpu_split]") {
-    // Three words per call: more than the 1 Mi-word ring holds.
+// Hidden: it measures CPU time, so it runs alone in its own process (CTest, tests.yml).
+TEST_CASE("The GPU front sleeps while it waits for ring space", "[.][gpu_split]") {
+    // Three words per call: more than the 1 Mi-word ring holds. The back blocks in the first
+    // call, so nothing is consumed and the ring is full after this many more calls.
     constexpr u32 Calls = 400'000;
-    constexpr u32 RingCalls = (1u << 20) / 3;
+    constexpr u32 FullCalls = ((1u << 20) - 3) / 3;
     Core::System system;
     auto& split = VideoCommon::GpuSplit::Get();
     const auto accuracy = Settings::values.current_gpu_accuracy;
@@ -108,37 +118,35 @@ TEST_CASE("The GPU front sleeps while it waits for ring space", "[video_core][gp
     }
 
     // The front is waiting for space once it filled the ring and sends nothing more.
-    const bool waiting = WaitFor(
-        [&] {
-            const u32 now = sent.load();
-            if (now < RingCalls - 16) {
-                return false;
-            }
-            std::this_thread::sleep_for(20ms);
-            return sent.load() == now;
-        },
-        5000ms);
-    const auto cpu_before = ThreadCpuTime(front);
+    const bool full = WaitFor([&] { return sent.load() >= FullCalls; }, 60000ms);
+    std::this_thread::sleep_for(20ms);
+    const u32 sent_when_full = sent.load();
+    std::chrono::nanoseconds cpu_before{}, cpu_after{};
+    const bool clock_before = ThreadCpuTime(front, cpu_before);
     const auto wall_before = std::chrono::steady_clock::now();
     std::this_thread::sleep_for(300ms);
-    const auto wait_cpu = ThreadCpuTime(front) - cpu_before;
+    const bool clock_after = ThreadCpuTime(front, cpu_after);
     const auto wait_wall = std::chrono::steady_clock::now() - wall_before;
     const u32 sent_while_blocked = sent.load();
     release = true;
     release.notify_all();
-    if (!WaitFor([&] { return finished.load(); }, 5000ms)) {
+    if (!WaitFor([&] { return finished.load(); }, 60000ms)) {
         // The front never woke: joining it would hang the test run.
-        FAIL_CHECK("the front still waits 5 s after the back consumed the ring");
-        std::abort();
+        std::fputs("FAILED: the front still waits 60 s after the back consumed the ring\n", stderr);
+        std::fflush(stderr);
+        std::_Exit(EXIT_FAILURE);
     }
     front.join();
     restore();
 
-    CHECK(waiting);
-    CHECK(sent_while_blocked < Calls);
+    REQUIRE(full);
+    CHECK(sent_when_full == FullCalls);
+    CHECK(sent_while_blocked == FullCalls);
+    REQUIRE(clock_before);
+    REQUIRE(clock_after);
     CHECK(sent.load() == Calls);
     // A spinning front used about as much CPU as the wait lasted.
-    CHECK(wait_cpu < wait_wall / 4);
+    CHECK(cpu_after - cpu_before < wait_wall / 20);
 }
 
 #endif

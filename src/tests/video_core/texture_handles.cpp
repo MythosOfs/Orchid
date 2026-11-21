@@ -4,11 +4,15 @@
 #include <initializer_list>
 #include <map>
 #include <stdexcept>
+#include <spirv/unified1/spirv.hpp11>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 
+#include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/frontend/ir/ir_emitter.h"
 #include "shader_recompiler/host_translate_info.h"
 #include "shader_recompiler/ir_opt/passes.h"
+#include "tests/expect.h"
 
 namespace {
 namespace IR = Shader::IR;
@@ -303,4 +307,122 @@ TEST_CASE("Failed Phi handle subtrees discard their cached values",
                   0x5678U + 7U + (nested ? 0x90 : 0) + (retained_slot ? 2 * 0x90 : 0));
         }
     }
+}
+
+TEST_CASE("Each word of a 64-bit constant buffer read binds its own texture",
+          "[video_core][texture_handles][cbuf_word]") {
+    const u32 word = GENERATE(0U, 1U);
+    HandleProgram shader;
+    const u32 offset = 0x298 + word * 4;
+    shader.env.cbuf_values = {{{0, 0x298}, 0x20020b}, {{0, 0x29c}, 0x20034a}};
+    shader.env.expected_handle = shader.env.cbuf_values.at({0, offset});
+    const Value pair{shader.Emit(Opcode::GetCbufU32x2, {Value{0U}, Value{0x298U}})};
+    const Value handle{shader.Emit(Opcode::CompositeExtractU32x2, {pair, Value{word}})};
+    auto& sample{shader.Sample(handle)};
+    shader.Run();
+
+    REQUIRE(shader.program.info.texture_descriptors.size() == 1);
+    CHECK(shader.Descriptor(sample).cbuf_index == 0);
+    CHECK(shader.Descriptor(sample).cbuf_offset == offset);
+    CHECK(shader.Descriptor(sample).handle_program == ~0U);
+}
+
+TEST_CASE("The high word of a dynamically indexed cbuf read keeps its descriptor range",
+          "[video_core][texture_handles][cbuf_word]") {
+    const u32 word = GENERATE(0U, 1U);
+    constexpr u32 base = 16 * Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT - 16;
+    HandleProgram shader;
+    const u32 offset = base + word * 4;
+    shader.env.cbuf_values = {{{0, base}, 0x20020b}, {{0, base + 4}, 0x20034a}};
+    shader.env.expected_handle = shader.env.cbuf_values.at({0, offset});
+    const Value stride{shader.Emit(Opcode::ShiftLeftLogical32, {shader.Storage(0), Value{3U}})};
+    const Value pair{shader.Emit(Opcode::GetCbufU32x2, {Value{0U}, shader.Add(Value{base}, stride)})};
+    const Value handle{shader.Emit(Opcode::CompositeExtractU32x2, {pair, Value{word}})};
+    auto& sample{shader.Sample(handle)};
+    shader.Run();
+
+    const auto& descriptor = shader.Descriptor(sample);
+    CHECK(descriptor.cbuf_offset == offset);
+    CHECK(descriptor.count == 2U - word);
+    CHECK(descriptor.handle_program == ~0U);
+}
+
+TEST_CASE("Phi operands resolve immediate identities before dead code elimination",
+          "[video_core][shader][phi_identity][expect]") {
+    const bool replace_operand = GENERATE(false, true);
+    HandleProgram shader;
+    using Node = IR::AbstractSyntaxNode;
+    IR::IREmitter entry{shader.block};
+    const IR::U32 lane{entry.LocalInvocationIdX()};
+    const IR::U1 cond{entry.ConditionRef(entry.IEqual(lane, entry.Imm32(0)))};
+    const Value identity{shader.Emit(Opcode::Identity, {Value{7U}})};
+    shader.insertion_block = &shader.left;
+    const Value other{shader.Emit(Opcode::IAdd32, {lane, Value{1U}})};
+
+    shader.block.AddBranch(&shader.left);
+    shader.block.AddBranch(&shader.merge);
+    shader.left.AddBranch(&shader.merge);
+    shader.insertion_block = &shader.merge;
+    const Value phi{shader.Emit(Opcode::Phi)};
+    phi.Inst()->SetFlags(IR::Type::U32);
+    phi.Inst()->AddPhiOperand(&shader.block, replace_operand ? Value{3U} : identity);
+    phi.Inst()->AddPhiOperand(&shader.left, other);
+    if (replace_operand) {
+        phi.Inst()->SetArg(0, identity);
+    }
+    IR::IREmitter merge{shader.merge};
+    merge.WriteShared(32, merge.Imm32(0), IR::U32{phi});
+
+    auto& program = shader.program;
+    program.stage = Shader::Stage::Compute;
+    program.workgroup_size = {32, 1, 1};
+    program.shared_memory_size = 4;
+    program.blocks = {&shader.block, &shader.left, &shader.merge};
+    program.post_order_blocks = {&shader.merge, &shader.left, &shader.block};
+    program.syntax_list = {
+        {{.block = &shader.block}, Node::Type::Block},
+        {{.if_node{cond, &shader.left, &shader.merge}}, Node::Type::If},
+        {{.block = &shader.left}, Node::Type::Block},
+        {{.end_if{&shader.merge}}, Node::Type::EndIf},
+        {{.block = &shader.merge}, Node::Type::Block},
+        {{}, Node::Type::Return},
+    };
+    Shader::Optimization::DeadCodeEliminationPass(program);
+
+    const auto first = phi.Inst()->Arg(0);
+    REQUIRE(first.IsImmediate());
+    REQUIRE_FALSE(first.IsIdentity());
+    CHECK(first.U32() == 7);
+    CHECK(phi.Inst()->Arg(1).Inst() == other.Inst());
+    CHECK(other.Inst()->UseCount() == 1);
+
+    Shader::Optimization::CollectShaderInfoPass(shader.env, program);
+    Shader::Profile profile{};
+    profile.supported_spirv = 0x00010500;
+    const auto spirv = Shader::Backend::SPIRV::EmitSPIRV(profile, program);
+    u32 seven_id{};
+    std::array<u32, 2> phi_values{};
+    for (size_t i = 5; i < spirv.size();) {
+        const size_t size = spirv[i] >> 16;
+        REQUIRE(size != 0);
+        switch (static_cast<spv::Op>(spirv[i] & 0xffffU)) {
+        case spv::Op::OpConstant:
+            if (size == 4 && spirv[i + 3] == 7) {
+                seven_id = spirv[i + 2];
+            }
+            break;
+        case spv::Op::OpPhi:
+            REQUIRE(size == 7);
+            phi_values = {spirv[i + 3], spirv[i + 5]};
+            break;
+        default:
+            break;
+        }
+        i += size;
+    }
+    REQUIRE(seven_id != 0);
+    Tests::CheckExpect("phi_immediate_identity.ir", Tests::StripIrAddresses(IR::DumpProgram(program)));
+    CHECK(phi_values[0] != 0);
+    CHECK(phi_values[1] != 0);
+    CHECK((phi_values[0] == seven_id || phi_values[1] == seven_id));
 }

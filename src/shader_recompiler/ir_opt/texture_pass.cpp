@@ -794,6 +794,7 @@ std::optional<u32> TryGetConstant(IR::Value& value, Environment& env) {
 }
 
 std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst, Environment& env, const HostTranslateInfo& host_info, const IR::Block* block) {
+    u32 word_offset{};
     switch (inst->GetOpcode()) {
     default:
         return std::nullopt;
@@ -866,6 +867,17 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst, Environme
         return lhs;
         break;
     }
+    case IR::Opcode::CompositeExtractU32x2: {
+        const IR::Value vector{inst->Arg(0)};
+        const IR::Value element{inst->Arg(1)};
+        if (vector.IsImmediate() || !element.IsImmediate() || element.U32() >= 2 ||
+            vector.InstRecursive()->GetOpcode() != IR::Opcode::GetCbufU32x2) {
+            return std::nullopt;
+        }
+        word_offset = element.U32() * sizeof(u32);
+        inst = vector.InstRecursive();
+        break;
+    }
     case IR::Opcode::GetCbufU32x2:
     case IR::Opcode::GetCbufU32:
         break;
@@ -880,7 +892,7 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst, Environme
     if (offset.IsImmediate()) {
         return ConstBufferAddr{
             .index = index.U32(),
-            .offset = offset.U32(),
+            .offset = offset.U32() + word_offset,
             .shift_left = 0,
             .secondary_index = 0,
             .secondary_offset = 0,
@@ -906,6 +918,7 @@ std::optional<ConstBufferAddr> TryGetConstBuffer(const IR::Inst* inst, Environme
     } else if (offset_inst->GetOpcode() != IR::Opcode::ShiftLeftLogical32) {
         return std::nullopt;
     }
+    base_offset += word_offset;
     auto const size_shift = DynamicDescriptorSizeShift(dynamic_offset);
     auto const sampled_limit = (std::max)(1U, (std::min)(host_info.max_per_stage_descriptor_sampled_images,
                                                          host_info.max_descriptor_set_sampled_images));

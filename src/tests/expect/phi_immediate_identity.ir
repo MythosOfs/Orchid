@@ -1,0 +1,13 @@
+Block $0
+%4     = LocalInvocationId (uses: 1)
+%5     = CompositeExtractU32x3 %4, #0 (uses: 2)
+%6     = IEqual %5, #0 (uses: 1)
+%7     = ConditionRef %6 (uses: 0)
+
+Block $1
+%8     = IAdd32 %5, #1 (uses: 1)
+
+Block $2
+%9     = Phi [ #7, {Block $0} ], [ %8, {Block $1} ] (uses: 1)
+         WriteSharedU32 #0, %9
+

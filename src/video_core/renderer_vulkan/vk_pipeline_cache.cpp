@@ -72,7 +72,7 @@ using VideoCommon::GenericEnvironment;
 using VideoCommon::GraphicsEnvironment;
 using VideoCommon::ShaderSnapshotFailure;
 
-constexpr u32 CACHE_VERSION = 0x4e4f0008; // IMAD.HI adds the complete 64-bit addend before selecting high.
+constexpr u32 CACHE_VERSION = 0x4e4f0009;
 constexpr size_t VULKAN_CACHE_FLUSH_PIPELINES = 128;
 constexpr size_t VULKAN_CACHE_FLUSH_MIN_SECONDS = 30;
 constexpr std::array<char, 8> VULKAN_CACHE_MAGIC_NUMBER{'y', 'u', 'z', 'u', 'v', 'k', 'c', 'h'};

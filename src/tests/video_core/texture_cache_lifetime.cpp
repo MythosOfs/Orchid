@@ -23,6 +23,7 @@ namespace {
 struct TestRuntime {};
 
 struct TestImage : VideoCommon::ImageBase {
+    explicit TestImage(const VideoCommon::NullImageParams& params) : ImageBase(params) {}
     TestImage(TestRuntime&, const VideoCommon::ImageInfo& info, GPUVAddr gpu_addr, VAddr cpu_addr)
         : ImageBase(info, gpu_addr, cpu_addr) {}
 };
@@ -126,7 +127,7 @@ struct TextureCacheTestAccess {
                                                                cache.slot_images));
     }
 
-    static bool WriteBack(Cache& cache, ImageId image_id, std::span<const u8> data) {
+    static bool WriteBack(Cache& cache, ImageId image_id, const std::vector<u8>& data) {
         const ImageBase& image = cache.slot_images[image_id];
         return cache.WriteBackImage(image, FullDownloadCopies(image.info), data);
     }
@@ -234,27 +235,26 @@ TEST_CASE("WriteBackImage writes through the memory manager of the image's own a
         cache, MakeImageInfo(), gpu_addr, second_device);
     cache.BindToChannel(1);
 
-    const std::vector<u8> data(64 * 32 * 4, 0xAB);
-    const auto written = [&](DAddr address) {
-        std::vector<u8> bytes(data.size());
+    const auto data_of = [](u8 value) { return std::vector<u8>(64 * 32 * 4, value); };
+    const auto contains = [&](DAddr address, u8 value) {
+        std::vector<u8> bytes(64 * 32 * 4);
         device.ReadBlockUnsafe(address, bytes.data(), bytes.size());
-        return std::ranges::any_of(bytes, [](u8 byte) { return byte != 0; });
+        return std::ranges::find(bytes, value) != bytes.end();
     };
-    CHECK(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data));
-    CHECK(written(second_device));
-    CHECK_FALSE(written(first_device));
+    CHECK(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data_of(0xAB)));
+    CHECK(contains(second_device, 0xAB));
+    CHECK_FALSE(contains(first_device, 0xAB));
 
-    system.DeviceMemory().buffer.ClearBackingRegion(phys, extent, 0);
     second.reset();
-    CHECK_FALSE(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data));
-    CHECK_FALSE(written(second_device));
-    CHECK_FALSE(written(first_device));
+    CHECK_FALSE(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data_of(0xEF)));
+    CHECK_FALSE(contains(second_device, 0xEF));
+    CHECK_FALSE(contains(first_device, 0xEF));
 
     first->Unmap(gpu_addr, 0x10000);
     first->Map(gpu_addr, second_device, 0x10000, Tegra::PTEKind::PITCH, false);
-    CHECK(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data));
-    CHECK(written(second_device));
-    CHECK_FALSE(written(first_device));
+    CHECK(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data_of(0xCD)));
+    CHECK(contains(second_device, 0xCD));
+    CHECK_FALSE(contains(first_device, 0xCD));
 }
 
 TEST_CASE("IsFullClear needs the render area to reach the whole image",

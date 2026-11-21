@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <tuple>
 
 #include "common/common_funcs.h"
@@ -67,6 +68,10 @@ public:
         return this->GetManager(address).GetPool();
     }
 
+    /// The kernel is shutting down: gives the host back the RAM of every free page now and of
+    /// every page freed later, until the next kernel replaces this manager.
+    void ReleaseFreeMemory();
+
     void Open(KPhysicalAddress address, size_t num_pages) {
         // Repeatedly open references until we've done so for all pages.
         while (num_pages) {
@@ -110,7 +115,7 @@ public:
 
             {
                 KScopedLightLock lk(m_pool_locks[static_cast<size_t>(manager.GetPool())]);
-                manager.Close(address, cur_pages);
+                manager.Close(address, cur_pages, *this);
             }
 
             num_pages -= cur_pages;
@@ -217,6 +222,9 @@ private:
         void Free(KPhysicalAddress addr, size_t num_pages) {
             m_heap.Free(addr, num_pages);
         }
+        void ForEachFreeBlock(const std::function<void(KPhysicalAddress, size_t)>& f) {
+            m_heap.ForEachFreeBlock(f);
+        }
 
         void SetInitialUsedHeapSize(size_t reserved_size) {
             m_heap.SetInitialUsedSize(reserved_size);
@@ -291,7 +299,7 @@ private:
             }
         }
 
-        void Close(KPhysicalAddress address, size_t num_pages) {
+        void Close(KPhysicalAddress address, size_t num_pages, KMemoryManager& owner) {
             size_t index = this->GetPageOffset(address);
             const size_t end = index + num_pages;
 
@@ -311,7 +319,7 @@ private:
                     }
                 } else {
                     if (free_count > 0) {
-                        this->Free(m_heap.GetAddress() + free_start * PageSize, free_count);
+                        this->Release(free_start, free_count, owner);
                         free_count = 0;
                     }
                 }
@@ -320,8 +328,15 @@ private:
             }
 
             if (free_count > 0) {
-                this->Free(m_heap.GetAddress() + free_start * PageSize, free_count);
+                this->Release(free_start, free_count, owner);
             }
+        }
+
+    private:
+        void Release(size_t page_offset, size_t num_pages, KMemoryManager& owner) {
+            const KPhysicalAddress block = m_heap.GetAddress() + page_offset * PageSize;
+            this->Free(block, num_pages);
+            owner.ReleaseFreed(block, num_pages);
         }
 
     private:
@@ -338,6 +353,9 @@ private:
 private:
     void MarkUsed(KPhysicalAddress address, size_t num_pages);
     void MarkDirty(KPhysicalAddress address, size_t num_pages);
+    /// Pages that just became free; gives their RAM back to the host after ReleaseFreeMemory.
+    void ReleaseFreed(KPhysicalAddress address, size_t num_pages);
+    void Discard(KPhysicalAddress address, size_t num_pages);
 
     Impl& GetManager(KPhysicalAddress address) {
         return m_managers[m_memory_layout.GetPhysicalLinearRegion(address).GetAttributes()];
@@ -370,6 +388,7 @@ private:
     Core::System& m_system;
     const KMemoryLayout& m_memory_layout;
     PoolArray<KLightLock> m_pool_locks;
+    std::atomic_bool m_released{};
     std::array<Impl*, MaxManagerCount> m_pool_managers_head{};
     std::array<Impl*, MaxManagerCount> m_pool_managers_tail{};
     std::array<Impl, MaxManagerCount> m_managers;

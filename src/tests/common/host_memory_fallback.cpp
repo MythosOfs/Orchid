@@ -44,5 +44,7 @@ TEST_CASE("HostMemory: No memfd leads to the plain buffer", "[common][host_memor
     REQUIRE(memory->BackingBasePointer() != nullptr);
     std::memset(memory->BackingBasePointer(), 0xAB, 0x10000);
     CHECK(memory->BackingBasePointer()[0xFFFF] == 0xAB);
+    memory->Discard(0, 0x10000); // no memfd to punch: the plain buffer keeps its contents
+    CHECK(memory->BackingBasePointer()[0xFFFF] == 0xAB);
 }
 #endif

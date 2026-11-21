@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <functional>
 #include <vector>
 
 #include "common/alignment.h"
@@ -71,6 +72,9 @@ public:
     }
 
     void Free(KPhysicalAddress addr, size_t num_pages);
+
+    /// Calls f(address, num_pages) for every free block; the same pages are free afterwards.
+    void ForEachFreeBlock(const std::function<void(KPhysicalAddress, size_t)>& f);
 
     static size_t CalculateManagementOverheadSize(size_t region_size) {
         return CalculateManagementOverheadSize(region_size, MemoryBlockPageShifts.data(),

@@ -98,6 +98,51 @@ std::unique_ptr<FileSys::NACP> BuildNacp(const NupContainer::PackageInfo& base,
     return nacp;
 }
 
+struct ExeFSPrograms {
+    FileSys::ProgramMetadata base;
+    FileSys::ProgramMetadata update;
+};
+
+bool LoadPrograms(const FileSys::VirtualDir& base_exefs, const FileSys::VirtualDir& update_exefs,
+                  ExeFSPrograms& out) {
+    const auto base_npdm = base_exefs->GetFile("main.npdm");
+    const auto update_npdm = update_exefs->GetFile("main.npdm");
+    return base_npdm != nullptr && update_npdm != nullptr &&
+           out.base.Load(base_npdm) == ResultStatus::Success &&
+           out.update.Load(update_npdm) == ResultStatus::Success;
+}
+
+bool IsLegacyUpdateOfNativeBase(const FileSys::VirtualDir& base_exefs,
+                                const FileSys::VirtualDir& update_exefs) {
+    ExeFSPrograms programs;
+    if (!LoadPrograms(base_exefs, update_exefs, programs)) {
+        return false;
+    }
+    const u64 base_id = programs.base.GetTitleID();
+    const u64 update_id = programs.update.GetTitleID();
+    if (!programs.base.IsSwitch2() || programs.update.IsSwitch2()) {
+        return false;
+    }
+    return FileSys::WithPlatformOf(FileSys::GetBaseTitleID(base_id), update_id) ==
+           FileSys::GetBaseTitleID(update_id);
+}
+
+std::optional<u64> NativeEditionOfLegacyBase(const FileSys::VirtualDir& base_exefs,
+                                             const FileSys::VirtualDir& update_exefs) {
+    ExeFSPrograms programs;
+    if (!LoadPrograms(base_exefs, update_exefs, programs)) {
+        return std::nullopt;
+    }
+    const u64 base_id = programs.base.GetTitleID();
+    const u64 update_id = programs.update.GetTitleID();
+    if (programs.base.IsSwitch2() || !programs.update.IsSwitch2() ||
+        FileSys::WithPlatformOf(update_id, base_id) !=
+            FileSys::GetBaseTitleIDWithProgramIndex(base_id, 1)) {
+        return std::nullopt;
+    }
+    return update_id;
+}
+
 std::string DecodeVersion(u32 version) {
     if (version == 0) {
         return {};
@@ -121,11 +166,18 @@ AppLoader_NUP::AppLoader_NUP(FileSys::VirtualFile file_)
     const bool has_base_exefs = base_index && nup->GetExeFSDir(*base_index) != nullptr;
     std::optional<std::size_t> program_index;
     std::optional<std::size_t> exefs_index;
+    std::optional<u64> native_program_id;
     if (has_base_exefs) {
         program_index = base_index;
-        exefs_index = update_index && nup->GetExeFSDir(*update_index) != nullptr
+        const auto base_exefs = nup->GetExeFSDir(*base_index);
+        const auto update_exefs = update_index ? nup->GetExeFSDir(*update_index) : nullptr;
+        exefs_index = update_exefs != nullptr &&
+                              !IsLegacyUpdateOfNativeBase(base_exefs, update_exefs)
                           ? update_index
                           : base_index;
+        if (update_exefs != nullptr) {
+            native_program_id = NativeEditionOfLegacyBase(base_exefs, update_exefs);
+        }
     } else if (update_index && nup->GetExeFSDir(*update_index) != nullptr) {
         LOG_INFO(Loader,
                  "NUP container is a standalone update; booting the update program directly");
@@ -138,7 +190,7 @@ AppLoader_NUP::AppLoader_NUP(FileSys::VirtualFile file_)
     }
 
     const auto& program = nup->GetPackages()[*program_index];
-    base_title_id = program.title_id;
+    base_title_id = native_program_id.value_or(program.title_id);
     has_program = true;
 
     auto exefs = nup->GetExeFSDir(*exefs_index);

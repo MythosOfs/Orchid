@@ -3829,6 +3829,27 @@ bool Image::BlitScaleHelper(bool scale_up) {
     };
     const VkExtent2D extent{dst_width, dst_height};
 
+    // The blit overwrites the whole destination subresource, and a fresh image is still undefined.
+    const VkImage dst_image = scale_up ? *scaled_image : *original_image;
+    const VkImageAspectFlags dst_aspect = aspect_mask;
+    scheduler->RequestOutsideRenderPassOperationContext();
+    scheduler->Record([dst_image, dst_aspect](vk::CommandBuffer cmdbuf) {
+        const VkImageMemoryBarrier barrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = dst_image,
+            .subresourceRange{dst_aspect, 0, 1, 0, 1},
+        };
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, barrier);
+    });
+
     auto* view_ptr = blit_view.get();
     if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
         if (!blit_framebuffer)

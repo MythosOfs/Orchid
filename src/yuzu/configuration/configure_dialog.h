@@ -67,6 +67,8 @@ signals:
 private:
     void changeEvent(QEvent* event) override;
     void showEvent(QShowEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
+    void FitFramedOnce();
     void FitToScreen();
     void RetranslateUI();
 

@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <memory>
-#include <utility>
 #include <QShowEvent>
+#include <QTimer>
 #include "common/logging.h"
 #include "common/settings.h"
 #include "common/settings_enums.h"
@@ -126,6 +126,22 @@ void ConfigureDialog::showEvent(QShowEvent* event) {
     QDialog::showEvent(event);
 }
 
+void ConfigureDialog::paintEvent(QPaintEvent* event) {
+    QDialog::paintEvent(event);
+    if (!fitted_framed) {
+        QTimer::singleShot(0, this, &ConfigureDialog::FitFramedOnce);
+    }
+}
+
+// The real window frame is known only once the dialog is mapped and activated, in either order.
+void ConfigureDialog::FitFramedOnce() {
+    if (fitted_framed || !isActiveWindow() || !testAttribute(Qt::WA_Mapped)) {
+        return;
+    }
+    fitted_framed = true;
+    FitToScreen();
+}
+
 void ConfigureDialog::FitToScreen() {
     if (!isWindow()) {
         return;
@@ -165,10 +181,8 @@ void ConfigureDialog::changeEvent(QEvent* event) {
     if (event->type() == QEvent::LanguageChange) {
         RetranslateUI();
     }
-    // The real window frame is known only once the dialog is mapped and activated.
-    if (event->type() == QEvent::ActivationChange && isActiveWindow() &&
-        !std::exchange(fitted_framed, true)) {
-        FitToScreen();
+    if (event->type() == QEvent::ActivationChange) {
+        FitFramedOnce();
     }
 
     QDialog::changeEvent(event);

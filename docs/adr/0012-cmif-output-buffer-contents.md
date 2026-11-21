@@ -1,4 +1,4 @@
-# 0010. CMIF output buffer contents
+# 0012. CMIF output buffer contents
 
 CMIF copies back the full temporary output span. A handler such as `IFile::Read` can write
 only a prefix of that span and return the number of bytes it wrote. Prefill the temporary span

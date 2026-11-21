@@ -103,7 +103,7 @@ Compared with the Eglantine it started from:
 | Hyrule Warriors: Age of Imprisonment | 60 | drops to 20-40 in Combat |
 | Donkey Kong Bananza | 30-40, 15-25 in heavy areas | 30FPS Mod recommended (Built in) |
 | Mario Tennis Fever | 60 | runs flawlessly |
-| Yoshi and the Mysterious Book | 60 | First Level tested; optional 4K patch (Built in) |
+| Yoshi and the Mysterious Book | 60 | First Level tested; optional fixed-resolution patch, 1080p/1440p/4K (Built in) |
 | Super Mario Bros. Wonder | 160 | custom FPS targets (only set what you can hit) |
 | Star Fox | 60 |  |
 | Pokémon Pokopia | 60 | |
@@ -176,7 +176,7 @@ update checker; `git pull` is the update. Windows (MSVC) and macOS builds are de
 ## Credits
 
 - [zortos293/Lichii](https://github.com/zortos293/Lichii) (Zortos, with capy-ai): release compute IR and SPIR-V backing storage before synchronous driver compilation, adapted from [fd4ce24c9b9390e660be345b467521e7fb08dfd3](https://github.com/zortos293/Lichii/commit/fd4ce24c9b9390e660be345b467521e7fb08dfd3).
-- [Walnutoast830](https://github.com/Walnutoast830): the 4K patch for Yoshi and the Mysterious Book (3840x2160 without the game's own upscaling and anti-aliasing, HUD size kept), built in as the game's "Internal resolution 4K (game patch)" option ([issue 144](https://github.com/MythosOfs/Orchid/issues/144)).
+- [Walnutoast830](https://github.com/Walnutoast830): the fixed-resolution patches for Yoshi and the Mysterious Book (1080p, 1440p or 4K without the game's own upscaling, with no anti-aliasing, FXAA or DLAA, HUD size kept), built in as the game's add-on "Fixed resolution (built-in, by Walnutoast830)" ([issue 144](https://github.com/MythosOfs/Orchid/issues/144)).
 
 Orchid takes fixes from Eglantine and its forks; after every release
 [tools/fork-scan.sh](docs/ForkScan.md) lists what they fixed since. Each ported commit names its
@@ -314,6 +314,19 @@ source and author in its message.
   Graphics use the 32-lane broadcast fallback only when subgroup size 32 can be enforced for
   that stage. Compute and unsupported graphics stages retain Shuffle; Qualcomm keeps its
   existing full-subgroup fallback. Pipeline hash diagnostics are omitted.
+- Host and container fixes of the 2026-11-21 fork scan:
+  [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (Daniel Jesús Martín Flores: KIP
+  section, BLZ and NUP parsing, orphaned profile scan, play time and config saves; goof787lord:
+  range map lookups; Luke Evanson: unmapped-write log throttle; Zortos: Joy-Con assignment,
+  sampler fallback, borderless fullscreen, controller Cancel),
+  [Lancito01/Lichii](https://github.com/Lancito01/Lichii) (Andy: motion feedback without integral
+  term), [dzervas/Lichii](https://github.com/dzervas/Lichii) (Dimitris Zervas: Windows partial
+  unmap protections) and [luizIK/Kizuna](https://github.com/luizIK/Kizuna) (Frizti: kernel
+  shutdown order, present device loss). Origins behind these: the sampler fallback comes from
+  [Frizti/Fritchii](https://github.com/Frizti/Fritchii) `ba590516ef`, the kernel shutdown order
+  from [zortos293/Lichii](https://github.com/zortos293/Lichii) #1932 (`a3b4397afd`, Zortos, with
+  ZeroOneTV's variant), the present device-loss handling from HeyListen `619a8d58c` (Yanis
+  Manseur).
 
 ## License
 

@@ -1,4 +1,4 @@
-# 0009. Kernel thread termination
+# 0011. Kernel thread termination
 
 `KThread::FinishTermination` publishes the thread's signaled state and notifies waiters
 under the scheduler lock. It closes the terminated thread after releasing that lock. Orchid

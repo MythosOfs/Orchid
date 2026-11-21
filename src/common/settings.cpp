@@ -61,6 +61,8 @@ SWITCHABLE(MemoryLayout, true);
 SWITCHABLE(NvdecEmulation, false);
 SWITCHABLE(Region, true);
 SWITCHABLE(WonderFps, true);
+SWITCHABLE(YoshiPatchResolution, false);
+SWITCHABLE(YoshiPatchAntiAliasing, false);
 SWITCHABLE(RendererBackend, true);
 SWITCHABLE(ScalingFilter, false);
 SWITCHABLE(FrameGenType, false);

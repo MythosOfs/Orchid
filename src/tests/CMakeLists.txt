@@ -6,6 +6,7 @@
 
 add_executable(tests
     expect.cpp
+    frontend_common/play_time.cpp
     common/bit_field.cpp
     common/bit_util.cpp
     common/cityhash.cpp
@@ -34,7 +35,6 @@ add_executable(tests
     common/session_counter.cpp
     common/slot_vector.cpp
     common/sparse_large_vector.cpp
-    common/undefined_fix.cpp
     common/unique_function.cpp
     common/user_directories.cpp
     common/zstd_compression.cpp
@@ -48,7 +48,14 @@ add_executable(tests
     core/filesystem_buffer_bounds.cpp
     core/cmif_out_buffer.cpp
     core/filesystem_rename.cpp
+    core/hid_emulated_controller_config.cpp
+    core/hid_motion_input.cpp
+    core/hid_npad_assignment.cpp
+    core/kip_blz.cpp
+    core/kip_sections.cpp
+    core/kip_truncated.cpp
     core/page_heap.cpp
+    core/profile_orphans.cpp
     core/read_traps.cpp
     core/gpu_dirty_memory_manager.cpp
     core/nx2_image_layout.cpp
@@ -57,7 +64,7 @@ add_executable(tests
     core/game_settings.cpp
     core/frame_step_fps.cpp
     core/wonder_fps_patch.cpp
-    core/yoshi_4k_patch.cpp
+    core/yoshi_patch.cpp
     core/nx2_sysmix_pcm.cpp
     core/hid_joycon2_style.cpp
     core/hid_auto_buttons.cpp
@@ -209,7 +216,9 @@ if (ENABLE_LIBUSB AND LINUX)
 endif()
 
 if (LINUX)
-    target_sources(tests PRIVATE input_common/silent_controller.cpp)
+    target_sources(tests PRIVATE input_common/silent_controller.cpp
+                                 frontend_common/config_persistence.cpp)
+    target_link_options(tests PRIVATE -Wl,--wrap=fflush,--wrap=fsync)
 endif()
 
 if (TARGET OpenSSL::SSL)
@@ -217,7 +226,7 @@ if (TARGET OpenSSL::SSL)
     target_link_libraries(tests PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
-target_link_libraries(tests PRIVATE common core input_common video_core tz)
+target_link_libraries(tests PRIVATE common core frontend_common input_common video_core tz)
 
 if (ENABLE_QT)
     target_sources(tests PRIVATE qt_common/qt_config_ban_list.cpp)

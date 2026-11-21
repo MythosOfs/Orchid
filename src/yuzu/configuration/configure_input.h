@@ -49,6 +49,8 @@ public:
     /// Save all button configurations to settings file.
     void ApplyConfiguration();
 
+    void RestoreConfiguration();
+
     QList<QWidget*> GetSubTabs() const;
 
 private:

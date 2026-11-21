@@ -102,9 +102,7 @@ PlayTimeManager::PlayTimeManager() : running_program_id() {
     }
 }
 
-PlayTimeManager::~PlayTimeManager() {
-    Save();
-}
+PlayTimeManager::~PlayTimeManager() = default;
 
 void PlayTimeManager::SetProgramId(u64 program_id) {
     running_program_id = program_id;

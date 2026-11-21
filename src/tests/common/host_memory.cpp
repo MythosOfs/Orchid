@@ -4,9 +4,15 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstdio>
+#include <fstream>
+#include <string>
+
 #include <catch2/catch_test_macros.hpp>
 
-#ifdef __linux__
+#ifdef _WIN32
+#include <windows.h>
+#elif defined(__linux__)
 #include <sys/mman.h>
 #endif
 
@@ -222,3 +228,87 @@ TEST_CASE("HostMemory: Discard gives the backing back and keeps it dirty", "[com
     REQUIRE(view[0x1000] == 0);
 }
 #endif
+
+static std::string PageProtection([[maybe_unused]] const volatile u8* address) {
+#ifdef _WIN32
+    MEMORY_BASIC_INFORMATION info{};
+    REQUIRE(VirtualQuery(const_cast<const u8*>(address), &info, sizeof(info)) == sizeof(info));
+    switch (info.Protect) {
+    case PAGE_READWRITE:
+        return "rw";
+    case PAGE_READONLY:
+        return "r-";
+    case PAGE_NOACCESS:
+        return "--";
+    default:
+        return std::to_string(info.Protect);
+    }
+#elif defined(__linux__)
+    const auto page = reinterpret_cast<uintptr_t>(address);
+    std::ifstream maps{"/proc/self/maps"};
+    std::string line;
+    while (std::getline(maps, line)) {
+        unsigned long long begin{};
+        unsigned long long end{};
+        char perms[5]{};
+        if (std::sscanf(line.c_str(), "%llx-%llx %4s", &begin, &end, perms) == 3 &&
+            page >= begin && page < end) {
+            return std::string(perms, 2);
+        }
+    }
+    return "unmapped";
+#else
+    return {};
+#endif
+}
+
+TEST_CASE("HostMemory: Partial unmaps keep the protection of the rest of the view", "[common]") {
+#if !defined(_WIN32) && !defined(__linux__)
+    SKIP("Page protection is read with VirtualQuery or from /proc/self/maps");
+#endif
+    constexpr size_t Page = 0x1000;
+    HostMemory mem(BACKING_SIZE, VIRTUAL_SIZE);
+    REQUIRE(mem.BackingBasePointer() != nullptr);
+    volatile u8* const base = mem.VirtualBasePointer();
+
+    mem.Map(0x40000, 0x10000, 4 * Page, PERMS, HEAP);
+    base[0x40000] = 1;
+    base[0x43000] = 4;
+    mem.Protect(0x40000, Page, Common::MemoryPermission::Read);
+    mem.Protect(0x43000, Page, Common::MemoryPermission::Read);
+    mem.Unmap(0x41000, 2 * Page, HEAP);
+    REQUIRE(PageProtection(base + 0x40000) == "r-");
+    REQUIRE(PageProtection(base + 0x43000) == "r-");
+    REQUIRE(base[0x40000] == 1);
+    REQUIRE(base[0x43000] == 4);
+    mem.Protect(0x40000, Page, PERMS);
+    mem.Protect(0x43000, Page, PERMS);
+    REQUIRE(PageProtection(base + 0x40000) == "rw");
+    REQUIRE(PageProtection(base + 0x43000) == "rw");
+    base[0x43000] = 0x44;
+    REQUIRE(mem.BackingBasePointer()[0x13000] == 0x44);
+
+    mem.Map(0x80000, 0x20000, 6 * Page, PERMS, HEAP);
+    for (size_t page = 0; page < 6; ++page) {
+        base[0x80000 + page * Page] = static_cast<u8>(0x10 + page);
+    }
+    mem.Protect(0x80000, Page, Common::MemoryPermission::Read);
+    mem.Protect(0x84000, Page, Common::MemoryPermission{});
+    mem.Protect(0x85000, Page, Common::MemoryPermission::Read);
+    mem.Unmap(0x82000, 2 * Page, HEAP);
+    REQUIRE(PageProtection(base + 0x80000) == "r-");
+    REQUIRE(PageProtection(base + 0x81000) == "rw");
+    REQUIRE(PageProtection(base + 0x84000) == "--");
+    REQUIRE(PageProtection(base + 0x85000) == "r-");
+    REQUIRE(base[0x80000] == 0x10);
+    REQUIRE(base[0x81000] == 0x11);
+    REQUIRE(mem.BackingBasePointer()[0x24000] == 0x14);
+    REQUIRE(base[0x85000] == 0x15);
+    base[0x81000] = 0x21;
+    REQUIRE(mem.BackingBasePointer()[0x21000] == 0x21);
+    mem.Protect(0x84000, 2 * Page, PERMS);
+    REQUIRE(PageProtection(base + 0x84000) == "rw");
+    REQUIRE(PageProtection(base + 0x85000) == "rw");
+    base[0x84000] = 0x24;
+    REQUIRE(mem.BackingBasePointer()[0x24000] == 0x24);
+}

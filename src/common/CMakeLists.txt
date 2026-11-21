@@ -101,6 +101,7 @@ add_library(
     scope_exit.h
     spin_recursive_mutex.h
     scratch_buffer.h
+    session_counter.h
     settings.cpp
     settings.h
     settings_common.cpp

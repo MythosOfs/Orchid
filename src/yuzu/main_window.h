@@ -22,6 +22,7 @@
 #include <qaction.h>
 
 #include "common/common_types.h"
+#include "common/session_counter.h"
 #include "common/settings_enums.h"
 #include "core/file_sys/nup_writer.h"
 #include "frontend_common/content_manager.h"
@@ -284,6 +285,7 @@ private:
                   StartGameType with_config = StartGameType::Normal);
     void BootGameFromList(const QString& filename, StartGameType with_config);
     void ShutdownGame();
+    void ConnectEmulationFinished();
     void TerminateEmulationThread();
 
     void SetDiscordEnabled(bool state);
@@ -514,6 +516,7 @@ private:
     LoadingScreen* loading_screen = nullptr;
     QTimer shutdown_timer;
     QTimer emu_terminate_timer;
+    Common::SessionCounter emu_session;
     OverlayDialog* shutdown_dialog{};
     PerformanceOverlay* perf_overlay = nullptr;
 #ifdef HAS_RESHADE

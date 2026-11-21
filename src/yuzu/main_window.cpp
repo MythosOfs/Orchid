@@ -111,6 +111,7 @@
 
 #include "qt_common/abstract/frontend.h"
 
+#include "qt_common/game_list/worker.h"
 #include "qt_common/qt_common.h"
 #include "qt_common/qt_string_lookup.h"
 
@@ -2246,9 +2247,11 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
 
     render_window->InitializeCamera();
 
-    std::string title_name;
     std::string title_version;
-    const auto res = QtCommon::system->GetGameName(title_name);
+    std::string loader_title;
+    if (QtCommon::system->GetGameName(loader_title) != Loader::ResultStatus::Success) {
+        loader_title.clear();
+    }
 
     const auto metadata = [title_id] {
         const FileSys::PatchManager pm(title_id, QtCommon::system->GetFileSystemController(),
@@ -2257,13 +2260,30 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
     }();
     if (metadata.first != nullptr) {
         title_version = metadata.first->GetVersionString();
-        title_name = metadata.first->GetApplicationName();
     }
-    if (res != Loader::ResultStatus::Success || title_name.empty()) {
-        title_name = Common::FS::PathToUTF8String(
-            std::filesystem::path{Common::U16StringFromBuffer(filename.utf16(), filename.size())}
-                .filename());
-    }
+    std::string title_name = Loader::DisplayTitle(
+        loader_title,
+        [&metadata] {
+            return metadata.first != nullptr &&
+                           QtCommon::system->GetAppLoader().GetFileType() ==
+                               Loader::FileType::DeconstructedRomDirectory
+                       ? metadata.first->GetApplicationName()
+                       : std::string{};
+        },
+        [title_id] {
+            const auto& game_file = QtCommon::system->GetAppLoader().GetFile();
+            if (game_file == nullptr) {
+                return std::string{};
+            }
+            std::error_code ec;
+            const auto game_path = std::filesystem::absolute(
+                Common::FS::ToU8String(game_file->GetFullPath()), ec);
+            return LooseDumpName(*QtCommon::vfs,
+                                 Common::FS::PathToUTF8String(game_path.lexically_normal()),
+                                 title_id)
+                .toStdString();
+        },
+        QFileInfo(filename).completeBaseName().toStdString());
     const bool is_64bit = QtCommon::system->Kernel().ApplicationProcess()->Is64Bit();
     const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");
     title_name = tr("%1 %2", "%1 is the title name. %2 indicates if the title is 64-bit or 32-bit")
@@ -2311,8 +2331,7 @@ bool MainWindow::OnShutdownBegin() {
 
     if (QtCommon::system->IsShuttingDown()) {
         status_bar_update_timer.stop();
-        connect(QtCommon::emu_thread.get(), &QThread::finished, this,
-                &MainWindow::OnEmulationStopped, Qt::UniqueConnection);
+        ConnectEmulationFinished();
         return false;
     }
 
@@ -2331,7 +2350,7 @@ bool MainWindow::OnShutdownBegin() {
     QtCommon::emu_thread->disconnect();
     QtCommon::emu_thread->SetRunning(true);
 
-    connect(QtCommon::emu_thread.get(), &QThread::finished, this, &MainWindow::OnEmulationStopped);
+    ConnectEmulationFinished();
     emit EmulationStopping();
 
     int shutdown_time = 1000;
@@ -2377,9 +2396,20 @@ void MainWindow::OnEmulationStopTimeout() {
     OnEmulationStopped();
 }
 
+void MainWindow::ConnectEmulationFinished() {
+    connect(QtCommon::emu_thread.get(), &QThread::finished, this,
+            [this, session = emu_session.Current()] {
+                if (emu_session.IsCurrent(session)) {
+                    OnEmulationStopped();
+                }
+            });
+}
+
 void MainWindow::TerminateEmulationThread() {
     if (QtCommon::emu_thread && QtCommon::emu_thread->isRunning()) {
         LOG_ERROR(Frontend, "Emulation thread failed to stop, terminating it");
+        // Both callers finalize after terminate(); a queued finished() would finalize again.
+        disconnect(QtCommon::emu_thread.get(), &QThread::finished, this, nullptr);
         QtCommon::emu_thread->terminate();
         QtCommon::emu_thread->wait();
     }
@@ -2392,6 +2422,7 @@ void MainWindow::OnEmulationStopped() {
     if (QtCommon::emu_thread && QtCommon::emu_thread->isRunning()) {
         return;
     }
+    emu_session.End();
     shutdown_timer.stop();
     emu_terminate_timer.stop();
     if (QtCommon::emu_thread) {
@@ -2482,6 +2513,7 @@ void MainWindow::ShutdownGame() {
 
     // TODO(crueter): make this common as well (frontend_common?)
     play_time_manager->Stop();
+    const u64 session = emu_session.Current();
     OnShutdownBegin();
     OnEmulationStopTimeExpired();
     emu_terminate_timer.stop();
@@ -2493,6 +2525,10 @@ void MainWindow::ShutdownGame() {
         connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
         timeout.start(EmuThreadStopTimeoutMs);
         loop.exec(QEventLoop::ExcludeUserInputEvents);
+    }
+    // The loop may have finalized this session and booted the next one (ExecuteProgram).
+    if (!emu_session.IsCurrent(session)) {
+        return;
     }
     TerminateEmulationThread();
     OnEmulationStopped();
@@ -3298,10 +3334,15 @@ void MainWindow::OnRestartGame() {
         return;
     }
 
-    if (ConfirmShutdownGame()) {
+    const u64 session = emu_session.Current();
+    if (ConfirmShutdownGame() && emu_session.IsCurrent(session)) {
         // Make a copy since ShutdownGame edits game_path
         const auto current_game = QString(current_game_path);
         ShutdownGame();
+        // Another program started while this one shut down; do not replace it.
+        if (emulation_running || !emu_session.IsCurrent(session + 1)) {
+            return;
+        }
         BootGame(current_game, ApplicationAppletParameters());
     }
 }
@@ -3325,7 +3366,8 @@ void MainWindow::OnPauseContinueGame() {
 }
 
 void MainWindow::OnStopGame() {
-    if (ConfirmShutdownGame()) {
+    const u64 session = emu_session.Current();
+    if (ConfirmShutdownGame() && emu_session.IsCurrent(session)) {
         play_time_manager->Stop();
         if (OnShutdownBegin()) {
             OnShutdownBeginDialog();

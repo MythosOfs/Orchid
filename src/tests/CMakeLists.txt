@@ -29,6 +29,7 @@ add_executable(tests
     common/range_set_move.cpp
     common/ring_buffer.cpp
     common/scratch_buffer.cpp
+    common/session_counter.cpp
     common/slot_vector.cpp
     common/undefined_fix.cpp
     common/unique_function.cpp
@@ -40,6 +41,7 @@ add_executable(tests
     core/builtin_font_glyphs.cpp
     core/core_timing.cpp
     core/filesystem_buffer_bounds.cpp
+    core/filesystem_rename.cpp
     core/page_heap.cpp
     core/read_traps.cpp
     core/gpu_dirty_memory_manager.cpp
@@ -62,6 +64,7 @@ add_executable(tests
     core/nx_archive.cpp
     core/nup_writer.cpp
     core/loose_directory.cpp
+    core/display_title.cpp
     core/priority_queue.cpp
     core/vfs_vector.cpp
     core/ips_switch.cpp

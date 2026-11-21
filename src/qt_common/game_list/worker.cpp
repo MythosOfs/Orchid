@@ -186,7 +186,7 @@ QString FormatGameName(const std::string& physical_name) {
     return physical_name_as_qstring;
 }
 
-// Loose ExeFS dumps (<game>/exefs/main, <game>/base/exefs/main, updates in
+// Loose ExeFS dumps (<game>/main, <game>/exefs/main, <game>/base/exefs/main, updates in
 // <game>/updates/<title id>/exefs/main) have no control data, so they are named after their
 // game folder.
 QString LooseExeFSName(const std::string& physical_name) {
@@ -198,7 +198,10 @@ QString LooseExeFSName(const std::string& physical_name) {
         }
     }
     QDir dir = QFileInfo(QString::fromStdString(physical_name)).dir();
-    if (dir.dirName().compare(QStringLiteral("exefs"), Qt::CaseInsensitive) != 0 || !dir.cdUp()) {
+    if (dir.dirName().compare(QStringLiteral("exefs"), Qt::CaseInsensitive) != 0) {
+        return dir.dirName();
+    }
+    if (!dir.cdUp()) {
         return {};
     }
 
@@ -297,6 +300,37 @@ QList<QStandardItem*> MakeGameListEntry(const std::string& path, const std::stri
     };
 }
 } // Anonymous namespace
+
+QString LooseDumpName(FileSys::VfsFilesystem& vfs, const std::string& physical_name,
+                      u64 program_id) {
+    if (!IsExtractedNCAMain(physical_name)) {
+        return {};
+    }
+    std::string name = LooseExeFSName(physical_name).toStdString();
+    const QString main_dir = QFileInfo(QString::fromStdString(physical_name)).dir().dirName();
+    if (main_dir.compare(QStringLiteral("exefs"), Qt::CaseInsensitive) != 0) {
+        return QString::fromStdString(name);
+    }
+    // A Switch 2 program dumped as an "update" of a Switch 1 base (Red Dead
+    // Redemption) is the game's Switch 2 Edition; say so instead of "(update)".
+    constexpr std::string_view UpdateSuffix = " (update)";
+    const auto game_dir = std::filesystem::path{Common::FS::ToU8String(physical_name)}
+                              .parent_path()
+                              .parent_path()
+                              .parent_path()
+                              .parent_path();
+    FileSys::ProgramMetadata base_meta;
+    const auto base_npdm = vfs.OpenFile(
+        Common::FS::PathToUTF8String(game_dir / "base" / "exefs" / "main.npdm"),
+        FileSys::OpenMode::Read);
+    if ((program_id >> 56) == 0x04 && name.ends_with(UpdateSuffix) && base_npdm != nullptr &&
+        base_meta.Load(base_npdm) == Loader::ResultStatus::Success &&
+        (base_meta.GetTitleID() >> 56) == 0x01) {
+        name.replace(name.size() - UpdateSuffix.size(), UpdateSuffix.size(),
+                     " (Switch 2 Edition)");
+    }
+    return QString::fromStdString(name);
+}
 
 GameListWorker::GameListWorker(FileSys::VirtualFilesystem vfs_,
                                FileSys::ManualContentProvider* provider_,
@@ -465,37 +499,28 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::vector<std::fi
                 std::vector<u8> icon;
                 [[maybe_unused]] const auto res1 = app_loader->ReadIcon(icon);
 
-                std::string name = " ";
-                const auto res3 = app_loader->ReadTitle(name);
-                if ((res3 != Loader::ResultStatus::Success || name.empty() || name == " ") &&
-                    IsExtractedNCAMain(physical_name)) {
-                    if (const QString loose = LooseExeFSName(physical_name); !loose.isEmpty()) {
-                        name = loose.toStdString();
-                    }
-                    // A Switch 2 program dumped as an "update" of a Switch 1 base (Red Dead
-                    // Redemption) is the game's Switch 2 Edition; say so instead of "(update)".
-                    constexpr std::string_view UpdateSuffix = " (update)";
-                    const auto game_dir =
-                        std::filesystem::path{physical_name}.parent_path().parent_path().parent_path().parent_path();
-                    FileSys::ProgramMetadata base_meta;
-                    const auto base_npdm = vfs->OpenFile(
-                        Common::FS::PathToUTF8String(game_dir / "base" / "exefs" / "main.npdm"),
-                        FileSys::OpenMode::Read);
-                    if ((id >> 56) == 0x04 && name.ends_with(UpdateSuffix) && base_npdm != nullptr &&
-                        base_meta.Load(base_npdm) == Loader::ResultStatus::Success &&
-                        (base_meta.GetTitleID() >> 56) == 0x01) {
-                        name.replace(name.size() - UpdateSuffix.size(), UpdateSuffix.size(),
-                                     " (Switch 2 Edition)");
-                    }
-                }
-                if (name.empty() || name == " ") {
-                    name = QFileInfo(QString::fromStdString(physical_name))
-                               .completeBaseName()
-                               .toStdString();
-                }
-
                 const FileSys::PatchManager patch{id, system.GetFileSystemController(),
                                                   system.GetContentProvider()};
+
+                std::string loader_title;
+                if (app_loader->ReadTitle(loader_title) != Loader::ResultStatus::Success) {
+                    loader_title.clear();
+                }
+                const std::string name = Loader::DisplayTitle(
+                    loader_title,
+                    [&patch, &app_loader] {
+                        if (app_loader->GetFileType() !=
+                            Loader::FileType::DeconstructedRomDirectory) {
+                            return std::string{};
+                        }
+                        const auto installed = patch.GetControlMetadata().first;
+                        return installed != nullptr ? installed->GetApplicationName()
+                                                    : std::string{};
+                    },
+                    [&] { return LooseDumpName(*vfs, physical_name, id).toStdString(); },
+                    QFileInfo(QString::fromStdString(physical_name))
+                        .completeBaseName()
+                        .toStdString());
 
                 const bool loose_dump = IsExtractedNCAMain(physical_name);
                 const u64 size = loose_dump ? 0 : Common::FS::GetSize(physical_name);
@@ -559,6 +584,7 @@ void GameListWorker::run() {
         RecordEvent([=](GameListModel* model) { model->AddDirEntry(pending->release()); });
     };
 
+    std::vector<std::pair<GameListDir*, std::vector<std::filesystem::path>>> scanned_dirs;
     for (UISettings::GameDir& game_dir : game_dirs) {
         if (stop_requested) {
             break;
@@ -586,7 +612,7 @@ void GameListWorker::run() {
         const auto parent_type = static_cast<GameListItemType>(game_list_dir->type());
         DirEntryReady(game_list_dir);
         if (scan) {
-            const auto discovery = GameListDiscovery::Discover(
+            auto discovery = GameListDiscovery::Discover(
                 std::filesystem::path(Common::FS::ToU8String(game_dir.path)), game_dir.deep_scan,
                 [](const auto& path) {
                     const auto name = Common::FS::PathToUTF8String(path);
@@ -601,10 +627,19 @@ void GameListWorker::run() {
                      discovery.files.size(), discovery.directories.size(), discovery.skipped_romfs,
                      discovery.errors, stop_requested.load());
             ScanFileSystem(ScanTarget::FillManualContentProvider, discovery.files, game_list_dir);
-            ScanFileSystem(ScanTarget::PopulateGameList, discovery.files, game_list_dir);
+            scanned_dirs.emplace_back(game_list_dir, std::move(discovery.files));
         } else {
             AddTitlesToGameList(game_list_dir, parent_type);
         }
+    }
+
+    // Name entries only after every folder has added its content, so names do not depend on
+    // the folder order.
+    for (const auto& [game_list_dir, files] : scanned_dirs) {
+        if (stop_requested) {
+            break;
+        }
+        ScanFileSystem(ScanTarget::PopulateGameList, files, game_list_dir);
     }
 
     watch_list.removeDuplicates();

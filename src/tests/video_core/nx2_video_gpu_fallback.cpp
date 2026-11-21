@@ -252,8 +252,8 @@ TEST_CASE("Nx2 video keeps the parameter sets of its configuration on the CPU", 
 TEST_CASE("Nx2 video keeps the host GPU decoder once it gave a picture", "[nx2_video]") {
     Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::Packet, Avc()};
     CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::Packet, 2) == std::vector<u64>{0, 1});
-    SECTION("also in the next video") {
-        CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::Packet).empty());
+    SECTION("until the next video") {
+        CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::Packet) == all_frames);
     }
 }
 

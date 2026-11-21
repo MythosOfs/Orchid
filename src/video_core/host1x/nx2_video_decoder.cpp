@@ -364,6 +364,7 @@ void Nx2VideoDecoder::Reset() {
     impl->pending_pts.clear();
     impl->gpu_packets.clear();
     impl->gpu_packets_lost = false;
+    impl->received = false;
     impl->h264_packets.Reset();
 }
 

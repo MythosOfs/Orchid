@@ -390,6 +390,7 @@ private:
     /// Refresh the contents (pixel data) of an image
     [[nodiscard]] bool IsDownloadable(const ImageBase& image) const noexcept;
 
+    void HandleScratchAllocationFailure(const ImageBase& image);
     void RefreshContents(Image& image, ImageId image_id);
 
     /// Upload data from guest to an image
@@ -651,6 +652,7 @@ private:
 
     Common::ScratchBuffer<u8> swizzle_data_buffer;
     Common::ScratchBuffer<u8> unswizzle_data_buffer;
+    u64 scratch_retry_frame{};
 
     u64 modification_tick = 0;
     /// Live images created with ImageFlagBits::UnwrittenSparse (MarkModification).

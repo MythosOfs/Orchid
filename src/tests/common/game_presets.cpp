@@ -94,6 +94,19 @@ TEST_CASE("Graphics quality tokens are stable and legacy environment answers rem
     }
 }
 
+TEST_CASE("Every Yoshi preset turns an inherited reactive flushing off on", "[game_presets]") {
+    using Quality = Settings::GamePresetQuality;
+    for (const auto quality : {Quality::Low, Quality::Standard, Quality::High}) {
+        auto settings = std::make_unique<Settings::Values>();
+        settings->use_reactive_flushing.SetGlobal(true);
+        settings->use_reactive_flushing.SetValue(false);
+        REQUIRE(Settings::ApplyGamePreset(*settings, Settings::YoshiMysteriousBookProgramId,
+                                          quality));
+        CHECK(settings->use_reactive_flushing.GetValue());
+        CHECK_FALSE(settings->use_reactive_flushing.GetValue(true));
+    }
+}
+
 TEST_CASE("Every visual quality retains each title's compatibility settings and saved globals",
           "[game_presets]") {
     using Quality = Settings::GamePresetQuality;
@@ -126,7 +139,9 @@ TEST_CASE("Every visual quality retains each title's compatibility settings and 
                   (legacy ? Settings::GpuAccuracy::High : Settings::GpuAccuracy::Low));
             CHECK(settings->use_asynchronous_shaders.GetValue());
             CHECK(settings->vram_usage_mode.GetValue() == Settings::VramUsageMode::Conservative);
-            CHECK(settings->use_reactive_flushing.GetValue() == legacy);
+            // Yoshi loads no save without reactive flushing (issue 181).
+            CHECK(settings->use_reactive_flushing.GetValue() ==
+                  (legacy || preset.program_id == Settings::YoshiMysteriousBookProgramId));
             // The user's VSync choice survives every preset (issue 167).
             CHECK(settings->vsync_mode.GetValue() == Settings::VSyncMode::Immediate);
             CHECK(settings->scaling_filter.GetValue() == Settings::ScalingFilter::ScaleForce);

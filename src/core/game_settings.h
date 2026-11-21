@@ -50,6 +50,7 @@ enum class TitleID : std::uint64_t {
     HyruleWarriorsAgeOfImprisonment = 0x04003F40232DE000ULL,
     DonkeyKongBananza = 0x040074A01BF12000ULL,
     StarFox = 0x0400E88025B1A000ULL,
+    YoshiMysteriousBook = 0x0400245021D2C000ULL,
     XenobladeChroniclesDENintendoSwitch2Edition = 0x0400FF500E34A001ULL,
     SuperMarioBrosWonderNintendoSwitch2Edition = 0x040015100B514001ULL,
     KirbyForgottenLandNintendoSwitch2Edition = 0x04004D300C5AE001ULL,

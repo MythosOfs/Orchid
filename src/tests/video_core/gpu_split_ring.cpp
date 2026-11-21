@@ -130,8 +130,19 @@ TEST_CASE("The GPU front sleeps while it waits for ring space", "[.][gpu_split]"
     // The front is waiting for space once it filled the ring and sends nothing more. It sleeps
     // until the back consumed the 3 words its next call needs.
     const bool full = WaitFor([&] { return sent.load() >= FullCalls; }, 60000ms);
-    const bool sleeping = WaitFor([&] { return split.FrontSleepTarget() == 3; }, 60000ms);
+    WaitFor([&] { return split.FrontSleepTarget() != ~u64{0} || sent.load() > FullCalls; },
+            60000ms);
+    const u64 target = split.FrontSleepTarget();
     const u32 sent_when_full = sent.load();
+    if (target != 3) {
+        // A front that sleeps for the wrong position would never wake: do not wait for it.
+        std::fprintf(stderr,
+                     "FAILED: the front does not sleep for the 3 words it needs (target %llu, "
+                     "%u of %u calls sent)\n",
+                     static_cast<unsigned long long>(target), sent_when_full, FullCalls);
+        std::fflush(stderr);
+        std::_Exit(EXIT_FAILURE);
+    }
     std::chrono::nanoseconds cpu_before{}, cpu_after{};
     const bool clock_before = ThreadCpuTime(front, cpu_before);
     const auto wall_before = std::chrono::steady_clock::now();
@@ -143,7 +154,6 @@ TEST_CASE("The GPU front sleeps while it waits for ring space", "[.][gpu_split]"
     restore();
 
     REQUIRE(full);
-    CHECK(sleeping);
     CHECK(sent_when_full == FullCalls);
     CHECK(sent_while_blocked == FullCalls);
     REQUIRE(clock_before);

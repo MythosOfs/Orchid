@@ -501,7 +501,11 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::vector<std::fi
                 }
                 const std::string name = Loader::DisplayTitle(
                     loader_title,
-                    [&patch] {
+                    [&patch, &app_loader] {
+                        if (app_loader->GetFileType() !=
+                            Loader::FileType::DeconstructedRomDirectory) {
+                            return std::string{};
+                        }
                         const auto installed = patch.GetControlMetadata().first;
                         return installed != nullptr ? installed->GetApplicationName()
                                                     : std::string{};

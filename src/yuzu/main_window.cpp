@@ -2264,8 +2264,11 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
     std::string title_name = Loader::DisplayTitle(
         loader_title,
         [&metadata] {
-            return metadata.first != nullptr ? metadata.first->GetApplicationName()
-                                             : std::string{};
+            return metadata.first != nullptr &&
+                           QtCommon::system->GetAppLoader().GetFileType() ==
+                               Loader::FileType::DeconstructedRomDirectory
+                       ? metadata.first->GetApplicationName()
+                       : std::string{};
         },
         [title_id] {
             const auto& game_file = QtCommon::system->GetAppLoader().GetFile();

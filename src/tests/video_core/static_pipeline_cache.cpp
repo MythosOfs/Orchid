@@ -62,6 +62,14 @@ TEST_CASE("Static pipeline cache: a save replaces the file whole", "[video_core]
         CHECK(Vulkan::ReadStaticPipelineCache(dir.cache).empty());
     }
 
+    SECTION("a cache of another version reads as no cache") {
+        std::fstream file{dir.cache, std::ios::binary | std::ios::in | std::ios::out};
+        file.seekp(8);
+        file.put(2);
+        file.close();
+        CHECK(Vulkan::ReadStaticPipelineCache(dir.cache).empty());
+    }
+
     SECTION("a save that cannot write keeps the previous cache") {
         fs::permissions(dir.path, fs::perms::owner_read | fs::perms::owner_exec);
         const bool writable = std::ofstream{dir.path / "probe"}.is_open();

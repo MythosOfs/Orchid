@@ -334,7 +334,8 @@ struct Memory::Impl {
     }
 
     [[nodiscard]] u8* GetSpan(const VAddr addr, const std::size_t size) const noexcept {
-        if (!AddressSpaceContains(*current_page_table, addr, size)) {
+        if (!AddressSpaceContains(*current_page_table, addr, size) ||
+            addr >= (u64{1} << current_page_table->GetAddressSpaceBits())) {
             return nullptr;
         }
         const u64 first_page = addr >> YUZU_PAGEBITS;

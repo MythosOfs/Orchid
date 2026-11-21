@@ -75,7 +75,7 @@ bool DeriveKeyblob(std::string encrypted_keyblob) {
 
 TEST_CASE("A console keyblob is decrypted only with a valid MAC", "[core][crypto]") {
     auto& keys = KeyManager::Instance();
-    if (keys.HasKey(S256KeyType::Header) || keys.HasKey(S128KeyType::Package1, 0)) {
+    if (keys.HasKey(S128KeyType::Package1, 0)) {
         SKIP("Keys are installed");
     }
     std::string wrong_tag{EncryptedKeyblob};

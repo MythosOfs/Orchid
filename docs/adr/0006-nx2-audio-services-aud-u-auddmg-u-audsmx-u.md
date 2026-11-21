@@ -79,3 +79,11 @@ after an error or after two consecutive stalled checks. The guest stream and its
 samples survive a reopen. Pause and resume change the desired state even during a failed
 reopen, so the replacement starts only when playback is requested. Finalization serializes
 with the worker before destroying the stream.
+
+## SDL named host devices
+
+SDL follows changes of the default endpoint itself. A stream opened on a named endpoint
+needs to reopen when that endpoint disappears. The event watch wakes a worker, which
+switches to the default and returns to the configured endpoint when it becomes available.
+If both endpoints are unavailable, the existing silent consumer keeps guest audio timing
+moving. The worker stops the silent consumer before resuming a new real stream.

@@ -231,6 +231,13 @@ if (LINUX AND ENABLE_CUBEB)
 endif()
 
 if (LINUX)
+    target_sources(tests PRIVATE audio_core/sdl_recovery.cpp)
+    target_link_libraries(tests PRIVATE SDL3::SDL3)
+    foreach(function WasInit GetAudioPlaybackDevices GetAudioDeviceName OpenAudioDeviceStream
+                     AddEventWatch RemoveEventWatch DestroyAudioStream
+                     ResumeAudioStreamDevice PauseAudioStreamDevice GetAudioStreamFormat)
+        target_link_options(tests PRIVATE "-Wl,--wrap=SDL_${function}")
+    endforeach()
     target_sources(tests PRIVATE input_common/silent_controller.cpp
                                  frontend_common/config_persistence.cpp)
     target_link_options(tests PRIVATE -Wl,--wrap=fflush,--wrap=fsync)
@@ -309,7 +316,7 @@ endif()
 # A test source in no target is never built or run (maxwell_fmz.cpp and debug_stream_contract.cpp
 # sat unbuilt this way). Every .cpp here must belong to one of the targets above.
 file(GLOB_RECURSE test_sources RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS "*.cpp")
-set(listed_test_sources audio_core/cubeb_recovery.cpp
+set(listed_test_sources audio_core/cubeb_recovery.cpp audio_core/sdl_recovery.cpp
     common/host_memory_commit.cpp # added above on Windows only
     input_common/gc_adapter_libusb.cpp # added above with libusb on Linux only
     input_common/silent_controller.cpp # added above on Linux only

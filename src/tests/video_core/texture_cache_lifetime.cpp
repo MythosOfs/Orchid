@@ -242,4 +242,10 @@ TEST_CASE("WriteBackImage writes through the memory manager of the image's own a
     CHECK_FALSE(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data));
     CHECK_FALSE(written(second_device));
     CHECK_FALSE(written(first_device));
+
+    first->Unmap(gpu_addr, 0x10000);
+    first->Map(gpu_addr, second_device, 0x10000, Tegra::PTEKind::PITCH, false);
+    CHECK(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data));
+    CHECK(written(second_device));
+    CHECK_FALSE(written(first_device));
 }

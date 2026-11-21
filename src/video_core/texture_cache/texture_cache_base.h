@@ -394,6 +394,7 @@ private:
 
     void HandleScratchAllocationFailure(const ImageBase& image);
 
+    std::shared_ptr<Tegra::MemoryManager> WriteBackMemory(const ImageBase& image);
     bool WriteBackImage(const ImageBase& image, std::span<const BufferImageCopy> copies,
                         std::span<const u8> data);
     void RefreshContents(Image& image, ImageId image_id);

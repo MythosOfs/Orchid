@@ -2043,10 +2043,37 @@ void TextureCache<P>::DownloadImageIntoBuffer(typename TextureCache<P>::Image* i
 }
 
 template <class P>
+std::shared_ptr<Tegra::MemoryManager> TextureCache<P>::WriteBackMemory(const ImageBase& image) {
+    boost::container::small_vector<std::shared_ptr<Tegra::MemoryManager>, 4> others;
+    {
+        std::scoped_lock lock{config_mutex};
+        for (const auto& [id, ref] : address_spaces) {
+            std::shared_ptr<Tegra::MemoryManager> memory = ref.owner.lock();
+            if (!memory) {
+                continue;
+            }
+            if (id == image.address_space) {
+                return memory;
+            }
+            others.push_back(std::move(memory));
+        }
+    }
+    if (True(image.flags & ImageFlagBits::Sparse)) {
+        return nullptr;
+    }
+    for (std::shared_ptr<Tegra::MemoryManager>& memory : others) {
+        if (memory->GpuToCpuAddress(image.gpu_addr) == image.cpu_addr) {
+            return std::move(memory);
+        }
+    }
+    return nullptr;
+}
+
+template <class P>
 bool TextureCache<P>::WriteBackImage(const ImageBase& image,
                                      std::span<const BufferImageCopy> copies,
                                      std::span<const u8> data) {
-    const std::shared_ptr<Tegra::MemoryManager> memory = LockAddressSpace(image.address_space);
+    const std::shared_ptr<Tegra::MemoryManager> memory = WriteBackMemory(image);
     if (!memory) {
         return false;
     }

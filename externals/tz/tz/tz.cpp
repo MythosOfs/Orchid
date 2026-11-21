@@ -515,7 +515,6 @@ CalendarTimeInternal* localsub(Rule const* sp, time_t const* timep, s64 setname,
     CalendarTimeInternal* const tmp) {
     const ttinfo* ttisp;
     int i;
-    int time_index = 0;
     CalendarTimeInternal* result;
     const time_t t = *timep;
 
@@ -567,7 +566,6 @@ CalendarTimeInternal* localsub(Rule const* sp, time_t const* timep, s64 setname,
                 return nullptr;
             }
             result->tm_year = static_cast<s32>(newy);
-            result->time_index = t < sp->ats[0] ? 0 : sp->timecnt - 1;
         }
         return result;
     }
@@ -586,8 +584,7 @@ CalendarTimeInternal* localsub(Rule const* sp, time_t const* timep, s64 setname,
             else
                 lo = mid + 1;
         }
-        time_index = lo - 1;
-        i = sp->types[time_index];
+        i = sp->types[lo - 1];
     }
     ttisp = &sp->ttis[i];
     /*
@@ -615,7 +612,7 @@ CalendarTimeInternal* localsub(Rule const* sp, time_t const* timep, s64 setname,
         }
 
         result->tm_utoff = ttisp->tt_utoff;
-        result->time_index = time_index;
+        result->time_index = i;
     }
     return result;
 }

@@ -29,37 +29,6 @@ constexpr Result ValidateRule(const Tz::Rule& rule) {
     R_SUCCEED();
 }
 
-constexpr bool GetTimeZoneTime(s64& out_time, const Tz::Rule& rule, s64 time, s32 index,
-                               s32 index_offset) {
-    s32 found_idx{};
-    s32 expected_index{index + index_offset};
-    s64 time_to_find{time + rule.ttis[rule.types[index]].tt_utoff -
-                     rule.ttis[rule.types[expected_index]].tt_utoff};
-    // Before ats[0] the default type applies, not types[0]: such a time belongs to no transition.
-    if (time < rule.ats[0] || time_to_find < rule.ats[0]) {
-        return false;
-    }
-
-    if (rule.timecnt > 1 && rule.ats[0] <= time_to_find) {
-        s32 low{1};
-        s32 high{rule.timecnt};
-
-        while (low < high) {
-            auto mid{(low + high) / 2};
-            if (rule.ats[mid] <= time_to_find) {
-                low = mid + 1;
-            } else if (rule.ats[mid] > time_to_find) {
-                high = mid;
-            }
-        }
-        found_idx = low - 1;
-    }
-
-    if (found_idx == expected_index) {
-        out_time = time_to_find;
-    }
-    return found_idx == expected_index;
-}
 } // namespace
 
 void TimeZone::SetTimePoint(const SteadyClockTimePoint& time_point) {
@@ -269,18 +238,20 @@ Result TimeZone::ToPosixTimeImpl(u32& out_count, std::span<s64> out_times,
         R_SUCCEED();
     }
 
-    s64 time2{};
-    if (internal.time_index > 0 && GetTimeZoneTime(time2, rule, time, internal.time_index, -1)) {
-        out_times[1] = time2;
-        out_count = 2;
-        R_SUCCEED();
-    }
-
-    if (((internal.time_index + 1) < rule.timecnt) &&
-        GetTimeZoneTime(time2, rule, time, internal.time_index, 1)) {
-        out_times[1] = time2;
-        out_count = 2;
-        R_SUCCEED();
+    // A second time has another type's offset and maps back to the same local time.
+    for (s32 i = 0; i < rule.typecnt; ++i) {
+        const s64 time2{time + internal.tm_utoff - rule.ttis[i].tt_utoff};
+        CalendarTime calendar2{};
+        CalendarAdditionalInfo additional{};
+        if (time2 != time &&
+            ToCalendarTimeImpl(calendar2, additional, time2, rule) == ResultSuccess &&
+            calendar2.year == calendar.year && calendar2.month == calendar.month &&
+            calendar2.day == calendar.day && calendar2.hour == calendar.hour &&
+            calendar2.minute == calendar.minute && calendar2.second == calendar.second) {
+            out_times[1] = time2;
+            out_count = 2;
+            R_SUCCEED();
+        }
     }
 
     out_count = 1;

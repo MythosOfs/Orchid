@@ -20,3 +20,4 @@ Decisions and facts the code cannot show. Code in `src/` carries no comments ([0
 | [0014](0014-vulkan-pipeline-build-ownership.md) | Vulkan pipeline build claims, completion and progress lifetime |
 | [0015](0015-texture-cache.md) | Texture cache upload and write-back |
 | [0016](0016-guest-memory-spans.md) | Guest address-space span lookup |
+| [0017](0017-switch-2-guest-counter-rate.md) | Switch 2 guest counter rate across CPU clock settings |

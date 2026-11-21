@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 
+#include "common/settings.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 
@@ -143,4 +144,37 @@ TEST_CASE("CoreTiming[BasicOrderNoPausing]", "[core]") {
     printf("HostTimer No Pausing Scheduling Time: %.3f %.6f\n", micro, mili);
     printf("HostTimer No Pausing Timer Time: %.3f %.6f\n", timer_time / 1000.f,
            timer_time / 1000000.f);
+}
+
+TEST_CASE("CoreTiming keeps the Switch 2 guest counter independent of CPU clock", "[core][guest_counter]") {
+    struct RestoreSettings {
+        Settings::CpuClock cpu_clock = Settings::values.cpu_clock.GetValue();
+        bool sync_core_speed = Settings::values.sync_core_speed.GetValue();
+        bool switch2 = Settings::CurrentProgramIsSwitch2();
+
+        ~RestoreSettings() {
+            Settings::values.cpu_clock.SetValue(cpu_clock);
+            Settings::values.sync_core_speed.SetValue(sync_core_speed);
+            Settings::SetCurrentProgramIsSwitch2(switch2);
+        }
+    } restore_settings;
+
+    Settings::values.sync_core_speed.SetValue(false);
+    Core::Timing::CoreTiming timing;
+    timing.SetMulticore(false);
+
+    for (const bool switch2 : {true, false}) {
+        Settings::SetCurrentProgramIsSwitch2(switch2);
+        for (const u64 step : {1'000'000, 123'456}) {
+            timing.AddTicks(step);
+            Settings::values.cpu_clock.SetValue(Settings::CpuClock::Normal);
+            const u64 normal = timing.GetClockTicks();
+            REQUIRE(normal > 0);
+
+            Settings::values.cpu_clock.SetValue(Settings::CpuClock::Boost);
+            CHECK(timing.GetClockTicks() == (switch2 ? normal : normal * 1734 / 1020));
+            Settings::values.cpu_clock.SetValue(Settings::CpuClock::Overclock);
+            CHECK(timing.GetClockTicks() == (switch2 ? normal : normal * 2040 / 1020));
+        }
+    }
 }

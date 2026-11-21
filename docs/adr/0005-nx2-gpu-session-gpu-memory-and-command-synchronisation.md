@@ -12,7 +12,7 @@ Map GPU-accessible memory at GPU == CPU address, back GPU-only and sparse region
 
 ## Consequences
 
-GPU-session jobs complete at once (#189) and the semaphore page mirror stands in for an unknown console mechanism (#191). Memory accounting and lock order (`m_region_mutex`, the sparse state lock taken last) are load-bearing.
+GPU-session map jobs and the worker-session request complete at once, which is equivalent to the console (#189, evidence below). No console component copies the second page of a two-page GPU-accessible memory into the first; the mirror table that assumed one is gone (#191, evidence below). Memory accounting and lock order (`m_region_mutex`, the sparse state lock taken last) are load-bearing.
 
 ## Decision log
 
@@ -39,11 +39,11 @@ One entry per former code comment, by file, named after the code it described.
 
 ### `src/core/hle/service/nx2_gsv.h`
 
-- `class INx2GpuSession final : public ServiceFramework<INx2GpuSession>` (open work: #189): Placeholder for the Switch 2 GPU session (nn::gpu::sdk), handed out by gsv 497.
+- `class INx2GpuSession final : public ServiceFramework<INx2GpuSession>`: The Switch 2 GPU session (nn::gpu::sdk), handed out by gsv 497.
   - TIPC 11: [first, last] id range (first <= min(last, 64)); ids outside it are masked out.
   - TIPC 12(id): event handle for that id (handle at word 3, result at word 4); the SDK attaches it as a SystemEvent.
-  - TIPC 21(id): starts an operation; the SDK then waits on the id's event. The event is signalled at once.
-  - TIPC 22: another handle the SDK keeps like a session; a placeholder session is returned.
+  - TIPC 21(id): asks for a second session (likely the one the SDK's debug templates name `nn::gpuk::impl::kuser::KUserWorkerSession`). Its only callers are nn::gpu::sdk::BootWithTransferMemory and BootWithRemoteMemory: they take an id from the id pool, send 21(id), wait on the id's event in 1 s steps, then fetch the session with TIPC 22. The event means "the session is ready", no GPU work stands behind it, and here the session is this object, so the event is signalled at once (#189).
+  - TIPC 22: returns that session's handle (move handle in the reply); the sub commands 101-216 go to it.
 - `in RegisterHandlersTipc()`: Sub-session commands (gpu 22 hands out a second session to this same object).
 - `void CreateGraphicsDevice(HLERequestContext& ctx)`: 41(u64 name "NvRmGpu", u64 flags, u64 debug label): u32 device id, the first free slot, that later NvRm calls name (Fire Emblem: Fortune's Weave). Id 0 is invalid to the SDK.
 - `void GetVaRange(HLERequestContext& ctx)`: Used by nn::gpu::sdk::CreateGpuAddressSpace: three u64s after the result, a kind (< 5, 0 = none) and the GPU VA range of the in-process VirtualMachine that serves AllocSpace (nn::gpu::sdk::util::ExecuteVirtualMachineAllocSpace). NVN reserves fixed VA from 0x8000000 up to 512 GiB, so report the same range NvRm gives AllocAsEx: [0x8000000, 0xC000000000).
@@ -51,10 +51,9 @@ One entry per former code comment, by file, named after the code it described.
 - `void GetGsvPartition(HLERequestContext& ctx)`: An empty partition is min = ~0, max = 0 (min > max). Fire Emblem: Fortune's Weave's SDK reads (0, 0) as a one-byte partition at address 0 and aborts in nn::gpu::sdk.
 - `in OpenSubSession()`: Served by this object so sub-session jobs can signal the per-id events.
 - `void SubRegisterMemory(HLERequestContext& ctx)`: Sub 101: (start u64, last u64, flags...) after CreateGpuAccessibleMemory's svc 0x80.
-- `in SubRegisterMemory()`: Two-page regions hold queue semaphores: GPU releases go to the second page, waits read the first (see video_core/nx2.h).
 - `in SubRegisterMemory()`: nn::gpu::sdk::CreateGpuAccessibleMemory stores word 3 of the reply as the GpuMemoryHandle that later map jobs (211) name.
 - `void SubSlotJob(HLERequestContext& ctx)`: Jobs that complete through a job-slot event (word Slot of the request), like 211.
-- `void SubSubmitJob(HLERequestContext& ctx)` (open work: #189): Sub 211: job submission (nn::gpu::sdk job tracking). Word 2 is a constant id; word 17 is the job slot whose event (gpu TIPC 12) the SDK then waits on. It completes at once.
+- `void SubSubmitJob(HLERequestContext& ctx)`: Sub 211: nn::gpu::sdk::NormalMapGpuMemory4K. Word 2 is the address space, words 10-16 the permission, cacheability, two kind bytes, RawTextureMode, an address space byte and the AddressSpaceSyncFlag, word 17 the job slot (an id from the same pool as TIPC 21) whose event (gpu TIPC 12) the SDK waits on. The SDK waits on that event whatever the reply says, then returns the slot to the pool; it waits for no GPU progress. So the event means "the GPU page table holds the mapping", and the only readers of a 211 mapping are GPU commands the game submits after the call returns. Here the map is queued for the GPU thread in order (Nx2GpuMemoryRegistry::MapAt, MapInOrder) ahead of every later submission, and the split's front finds it while still queued (Nx2QueuedMaps), so signalling at once is equivalent (#189). Unmaps (213) and destroys (102) still complete behind the GPU work already queued (SignalAfterGpu): GPU work submitted before them may still read the range.
 - `in SubSubmitJob()`: Words 3-4: first GPU address, 5-6: last, 7: memory handle, 8-9: offset into it.
 - `in SubSubmitJob()`: Also at the memory's own address: an earlier 213 may have unmapped the mapping 101 made there.
 - `void SubModifyKind(HLERequestContext& ctx)`: Sub 212 (nn::gpu::sdk::NormalModifyMemoryKind4K, behind NvRmGpuMappingModify): word 2 the address space, 3-4 first GPU address, 5-6 last, 7 the wanted (compressible) kind, 8 the fallback kind, 9 a sync flag, 10 the job slot. The reply's word 3 is the kind applied. Kinds do not matter to the emulated GPU, so keep the mapping and report the wanted kind.
@@ -93,7 +92,6 @@ One entry per former code comment, by file, named after the code it described.
 - `inline bool Nx2CheckCommandPagesFirst()`: Whether the GPU thread split's front may check a command list's GPU-written page bits before waiting for the back, once no page has been marked for the first time in a while (DmaPusher::FlushGpuWrittenCommands). Draining first for every GPFIFO entry stalled Mario Tennis Fever's front ~40% of the time and serialized Donkey Kong Bananza's front and back (~270,000 drains a second); checking first misses only a page's very first GPU write while it is still queued on the back. EDEN_NX2_CMD_DRAIN=1 always drains first.
 - `[[nodiscard]] inline bool Nx2AcquireQueuedEnabled()`: Whether acquires that a release still queued for the split's back meets skip the drain (GpuSplit::NoteQueuedRelease). EDEN_NX2_ACQUIRE_QUEUED=1 turns it on.
 - `class Nx2QueuedMaps`: GPU address ranges whose map is queued for the GPU thread (GPU::MapInOrder) and not applied yet. Until then a read through the address space finds them unmapped, or finds what was mapped there before. Pokemon Pokopia maps its compute queue's command memory and submits from it at once: with the GPU thread still busy (first frame, pipelines being built) the words copied at submit time were zeros, the queue's first lists ran as nothing and the game waited forever on their releases (black screen after one frame, issue 113).
-- `inline constexpr size_t Nx2MaxSemaphoreRegions = 32;` (open work: #191): NVN2 queues release their progress values into the second page of a two-page GPU-accessible region and GPU acquires read the same offsets in the first page (the CPU polls the second). The puller mirrors releases that land in a second page into the first. Every queue has such a region, so keep a small table.
 - `using Nx2SparseBackingHandler = std::function<void(u64 gpu_address, u64 size, const u8* data)>;`: Switch 2 sparse regions (nx2:gpu 214, word 7 bit 0x200: title 1's terrain texture arrays and layer pools, 170 MB-5.8 GB each, of which the game fills a little) get memory per block when the GPU first writes there, not in full. nx2:gpu installs the handler and the span its regions cover; the GPU memory manager calls Nx2BackSparseWrite before each write, with the bytes it writes (blocks nobody wrote that only get zeros need no memory: they read zero already).
 - `struct Nx2SparseRegionState`: Which blocks of each sparse region have been written (got memory), for the texture cache: an image over blocks nobody wrote is all zeros and needs no device memory. Its own lock, taken last: the texture cache asks with its lock held, and nx2:gpu updates it holding only its region mutex.
 - `std::vector<bool> mapped_pages;`: Once the game maps its own memory into the region (nx2:gpu 216): which tiles it maps. Only those hold data then (writes elsewhere are dropped, as on the console).
@@ -103,3 +101,31 @@ One entry per former code comment, by file, named after the code it described.
 - `inline std::vector<std::pair<u64, u64>> Nx2SparseDataRanges(u64 gpu_address, u64 size)`: The parts of [gpu_address, +size), which lies in one sparse region, that can hold data: the tiles the game maps there if it maps any, otherwise the blocks written. As (offset from gpu_address, size) runs.
 - `inline void Nx2SparseMarkWritten(u64 gpu_address, u64 size)`: The GPU renders into [gpu_address, +size): count its blocks as written, so images made there later get memory (their contents live in the host image, not in guest memory).
 - `class Nx2SemaphoreWaiters`: Channels suspended on a semaphore acquire. A console channel polls and sees every release; Eden writes releases in bursts when fences signal and resumes waiters only between command lists, so an acquire-equal could miss its value. Writes latch the waiters they satisfy.
+
+## Evidence
+
+### #189: what the GPU session's jobs wait for (2026-11-21)
+
+Disassembly of the `sdk` NSO (dynamic symbols name the nn::gpu::sdk functions). Mario Tennis Fever v5.0 (module id `32a9ac14…`), Pokémon Pokopia v10.0 (`cc7da00d…`) and Donkey Kong Bananza v7.0 (`18265dae…`) share the code below; the addresses are Mario Tennis Fever's, the other two sit 0x60 higher. TIPC command = header type - 16.
+
+- TIPC 21 (type 0x25) is sent from one function (0x3ebd20). Its only callers are BootWithTransferMemory (0x3e8570) and, through 0x3ec164, BootWithRemoteMemory (0x3e8610). It takes an id from the id pool (0x3ebf80), sends 21(id), waits on that id's event in 1 s steps (0x3ebdc0) and then calls 0x3ebe88, which sends TIPC 22 (type 0x26) and keeps the move handle of the reply as the session.
+- NormalMapGpuMemory4K (0x3e9bc0) sends sub 211 (type 0xe3, 16 words), then waits on the job slot's event (word 17) in 1 s steps whatever the result was, then returns the slot to the pool (0x3e9e64). On success it adds the mapped size to the address space's counter and stores the low byte of reply word 3 through its `unsigned char*` argument; Orchid's reply has no word 3, so that byte is what the request left there (the low byte of the first GPU address, 0 for 4 KiB-aligned maps). Nothing in the call waits for GPU progress.
+- SynchronizeGpuAddressSpace (0x3e99e0) is sub 200 (type 0xd8: address space, job slot). Orchid does not serve it; no scope game's log reports it as unimplemented.
+
+### #191: the two-page GPU-accessible memories (2026-11-21)
+
+The mirror came from early bring-up (Takoroka dce3adbc4c, 2026-10-27, first region only). Upstream dropped it (Franseven 9582ebe2d1, "it clobbered 3D report counters"), and on Orchid main nothing has read the table since 60ef6d2750 (2026-10-31); releases v0.4.0 to v0.12.0 all shipped without it.
+
+A diagnostic build of origin/main 2cba629f6a counted every GPU write and acquire inside the 0x2000-byte memories nx2:gpu 101 registered (private harness runs along the scope routes `mtf-stadium-match-v3`, `bananza-leon-tunnel-entry-v4` and `wonder-level-entry-v2`, about 60 s of gameplay each; counts at the last 10 s summary):
+
+| Game | Two-page memories | Host semaphore releases page 1 / page 2 | Reports page 1 / page 2 | QMD releases page 1 / page 2 | Acquires page 1 / page 2 |
+|---|---|---|---|---|---|
+| Mario Tennis Fever | 139 | 0 / 49,654 | 33,157 / 49,654 | 0 / 0 | 0 / 0 |
+| Donkey Kong Bananza | 114 | 0 / 43,122 | 96,587 / 47,092 | 9,470 / 0 | 79,935 / 0 |
+| Super Mario Bros. Wonder | 315 | 0 / 89,842 | 53,925 / 89,842 | 37,282 / 0 | 62,951 / 0 |
+
+- They are not one per queue: a game makes 114 to 315 of them.
+- Host semaphore releases land only in the second page (they also pass the query cache, so they appear again among the reports), compute QMD releases only in the first, other reports in both. GPU acquires (all greater-or-equal) read only the first page, and every acquired word but the very first per word also got releases of its own (Bananza 79,933 of 79,935, Wonder 62,949 of 62,951).
+- The two pages hold different counters at the same offsets: Bananza's page-1 word 0x0 stood at 0x11 while page 2 at 0x0 stood at 0x114 and advanced by 0x40 per step against 3 on page 1. When a page-1 acquire was issued, the page-2 word at the same offset already met it while its own word did not in 70,460 of Bananza's 79,935 and 25,669 of Wonder's 62,951 acquires; a mirror would have ended those waits before the work they wait for ran, which matches the clobbering upstream saw.
+
+So there is no copy between the pages to emulate: the first page's acquires are met by the first page's own releases, as Orchid already runs them. Not measured: which page the guest CPU polls (CPU reads are not visible to the emulator), and the NVN2 code that allocates these memories (it sits in the stripped part of `sdk` and reaches CreateGpuAccessibleMemory only through NvRmMemHandleAllocAttr, 0x57d2e0, with sizes computed at run time).

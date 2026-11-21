@@ -3175,26 +3175,8 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, DA
         }
         const u32 width = new_info.size.width;
         const u32 height = new_info.size.height;
-        // Vulkan also clips clears to the framebuffer render area, which starts at
-        // surface_clip before it is intersected with the bound attachment sizes.
-        if (regs.surface_clip.width < width || regs.surface_clip.height < height) {
+        if (!ClearCovers(width, height)) {
             return false;
-        }
-        if (regs.clear_control.use_scissor != 0) {
-            const auto& scissor = regs.scissor_test[0];
-            if (scissor.min_x != 0 || scissor.min_y != 0 || scissor.max_x < width ||
-                scissor.max_y < height) {
-                return false;
-            }
-            using WindowOrigin = Tegra::Engines::Maxwell3D::Regs::WindowOrigin;
-            if (scissor.enable && regs.window_origin.mode != WindowOrigin::Mode::UpperLeft) {
-                // Vulkan flips Y around surface_clip.height, then clamps both bounds to zero.
-                // Require the transformed interval to start at zero and cover the new image.
-                const u32 clip_height = regs.surface_clip.height;
-                if (scissor.max_y < clip_height || clip_height - scissor.min_y < height) {
-                    return false;
-                }
-            }
         }
         // Bound attachments can further reduce the framebuffer's render area.
         for (u32 index = 0; index < regs.rt_control.count && index < NUM_RT; ++index) {
@@ -3216,7 +3198,8 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, DA
         case VideoCore::Surface::SurfaceType::ColorTexture: {
             const u32 index = surface.RT;
             return surface.R && surface.G && surface.B && surface.A && index < NUM_RT &&
-                   index < regs.rt_control.count && regs.rt[index].Address() == gpu_addr;
+                   index < regs.rt_control.count && regs.rt_control.Map(index) == index &&
+                   regs.rt[index].Address() == gpu_addr;
         }
         case VideoCore::Surface::SurfaceType::Depth:
             return is_depth_target && surface.Z;
@@ -4612,6 +4595,33 @@ std::pair<FramebufferId, ImageViewId> TextureCache<P>::RenderTargetFromImage(
 }
 
 template <class P>
+bool TextureCache<P>::ClearCovers(u32 width, u32 height) const {
+    const auto& regs = maxwell3d->regs;
+    // Vulkan also clips clears to the framebuffer render area, which starts at
+    // surface_clip before it is intersected with the bound attachment sizes.
+    if (regs.surface_clip.width < width || regs.surface_clip.height < height) {
+        return false;
+    }
+    if (regs.clear_control.use_scissor != 0) {
+        const auto& scissor = regs.scissor_test[0];
+        if (scissor.min_x != 0 || scissor.min_y != 0 || scissor.max_x < width ||
+            scissor.max_y < height) {
+            return false;
+        }
+        using WindowOrigin = Tegra::Engines::Maxwell3D::Regs::WindowOrigin;
+        if (scissor.enable && regs.window_origin.mode != WindowOrigin::Mode::UpperLeft) {
+            // Vulkan flips Y around surface_clip.height, then clamps both bounds to zero.
+            // Require the transformed interval to start at zero and cover the new image.
+            const u32 clip_height = regs.surface_clip.height;
+            if (scissor.max_y < clip_height || clip_height - scissor.min_y < height) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+template <class P>
 bool TextureCache<P>::IsFullClear(ImageViewId id) {
     if (!id) {
         return true;
@@ -4619,19 +4629,11 @@ bool TextureCache<P>::IsFullClear(ImageViewId id) {
     const ImageViewBase& image_view = slot_image_views[id];
     const ImageBase& image = slot_images[image_view.image_id];
     const Extent3D size = image_view.size;
-    const auto& regs = maxwell3d->regs;
-    const auto& scissor = regs.scissor_test[0];
     if (image.info.resources.levels > 1 || image.info.resources.layers > 1) {
         // Images with multiple resources can't be cleared in a single call
         return false;
     }
-    if (regs.clear_control.use_scissor == 0) {
-        // If scissor testing is disabled, the clear is always full
-        return true;
-    }
-    // Make sure the clear covers all texels in the subresource
-    return scissor.min_x == 0 && scissor.min_y == 0 && scissor.max_x >= size.width &&
-           scissor.max_y >= size.height;
+    return ClearCovers(size.width, size.height);
 }
 
 template <class P>

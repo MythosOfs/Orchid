@@ -30,6 +30,10 @@ struct TestImage : VideoCommon::ImageBase {
 struct TestImageView : VideoCommon::ImageViewBase {
     TestImageView(TestRuntime&, const VideoCommon::NullImageViewParams& params)
         : ImageViewBase(params) {}
+    template <class Images>
+    TestImageView(TestRuntime&, const VideoCommon::ImageViewInfo& info, VideoCommon::ImageId id,
+                  VideoCommon::ImageBase& image, Images&)
+        : ImageViewBase(info, image.info, id, image.gpu_addr) {}
 };
 
 struct TestSampler {
@@ -115,8 +119,11 @@ struct TextureCacheTestAccess {
         cache.UnregisterImage(image_id);
     }
 
-    static ImageBase& Image(Cache& cache, ImageId image_id) {
-        return cache.slot_images[image_id];
+    static bool IsFullClear(Cache& cache, ImageId image_id) {
+        ImageBase& image = cache.slot_images[image_id];
+        const ImageViewInfo info{ImageViewType::e2D, image.info.format};
+        return cache.IsFullClear(cache.slot_image_views.insert(cache.runtime, info, image_id, image,
+                                                               cache.slot_images));
     }
 
     static bool WriteBack(Cache& cache, ImageId image_id, std::span<const u8> data) {
@@ -248,4 +255,22 @@ TEST_CASE("WriteBackImage writes through the memory manager of the image's own a
     CHECK(VideoCommon::TextureCacheTestAccess::WriteBack(cache, image_id, data));
     CHECK(written(second_device));
     CHECK_FALSE(written(first_device));
+}
+
+TEST_CASE("IsFullClear needs the render area to reach the whole image",
+          "[video_core][texture_cache][clear]") {
+    Fixture fixture;
+    fixture.CreateChannels();
+    fixture.cache.BindToChannel(1);
+    const auto image_id = VideoCommon::TextureCacheTestAccess::Register(
+        fixture.cache, MakeImageInfo(), 0x200000, 0x20000);
+    auto& regs = fixture.channel.payload->maxwell_3d.regs;
+    regs.clear_control.use_scissor.Assign(0);
+    regs.surface_clip.width.Assign(64);
+    regs.surface_clip.height.Assign(32);
+    CHECK(VideoCommon::TextureCacheTestAccess::IsFullClear(fixture.cache, image_id));
+
+    regs.surface_clip.width.Assign(32);
+    regs.surface_clip.height.Assign(16);
+    CHECK_FALSE(VideoCommon::TextureCacheTestAccess::IsFullClear(fixture.cache, image_id));
 }

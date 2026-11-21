@@ -181,8 +181,13 @@ AppLoader_NUP::AppLoader_NUP(FileSys::VirtualFile file_)
         display_version = program.display_version.empty() ? DecodeVersion(program.version)
                                                           : program.display_version;
     }
+    const auto& control_package =
+        update_index && nup->GetPackages()[*update_index].title_id == program.title_id &&
+                !nup->GetPackages()[*update_index].nacp.empty()
+            ? nup->GetPackages()[*update_index]
+            : program;
     nacp_file = edition_control ? std::make_unique<FileSys::NACP>(edition_control)
-                                : BuildNacp(program, display_version);
+                                : BuildNacp(control_package, display_version);
     if (edition_control || !program.nacp.empty()) {
         title_override = program.title_name;
     }

@@ -738,6 +738,19 @@ private:
             tlvs.emplace_back(TlvNpdm, std::move(npdm));
         }
 
+        if (kind == KindUpdate) {
+            for (const auto& sidecar_dir : {exefs, dir}) {
+                if (sidecar_dir.empty() || !IsFile(sidecar_dir / "control.nacp")) {
+                    continue;
+                }
+                if (auto nacp = ReadWholeFile(sidecar_dir / "control.nacp");
+                    nacp.size() == sizeof(RawNACP)) {
+                    tlvs.emplace_back(TlvNacp, std::move(nacp));
+                    break;
+                }
+            }
+        }
+
         if (kind != KindAddon) {
             if (auto loader = OpenLoader(vfs, dir)) {
                 std::string display_version;
@@ -796,7 +809,9 @@ private:
             if (!have_control &&
                 loader->ReadControlData(control) == Loader::ResultStatus::Success) {
                 have_control = true;
-                tlvs.emplace_back(TlvNacp, control.GetRawBytes());
+                if (std::ranges::none_of(tlvs, [](const auto& tlv) { return tlv.first == TlvNacp; })) {
+                    tlvs.emplace_back(TlvNacp, control.GetRawBytes());
+                }
                 if (const auto name = control.GetApplicationName(); !name.empty()) {
                     tlvs.emplace_back(TlvTitleName, StringBytes(name));
                 }

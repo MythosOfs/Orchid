@@ -307,7 +307,7 @@ void Inst::SetArg(size_t index, Value value) {
         Use(value);
     }
     if (op == Opcode::Phi) {
-        phi_args[index].second = value;
+        phi_args[index].second = value.IsImmediate() ? value.Resolve() : value;
     } else {
         args[index] = value;
     }
@@ -327,7 +327,7 @@ void Inst::AddPhiOperand(Block* predecessor, const Value& value) {
     if (!value.IsImmediate()) {
         Use(value);
     }
-    phi_args.emplace_back(predecessor, value);
+    phi_args.emplace_back(predecessor, value.IsImmediate() ? value.Resolve() : value);
 }
 
 void Inst::OrderPhiArgs() {

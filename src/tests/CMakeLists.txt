@@ -99,6 +99,8 @@ add_executable(tests
     video_core/framebuffer_clear_layers.cpp
     video_core/vertex_repack.cpp
     video_core/vulkan_device_version.cpp
+    video_core/vulkan_enumerate.cpp
+    video_core/gpu_split_ring.cpp
     video_core/query_copy.cpp
     video_core/multi_range_buffer.cpp
     video_core/shader_reuse_environment.cpp
@@ -215,6 +217,11 @@ set_tests_properties(debug_stream_contract_disabled debug_stream_contract_enable
     PROPERTIES FIXTURES_REQUIRED debug_stream_contract_dir)
 # The disabled run checks that nothing is created, so it runs before the enabled one.
 set_tests_properties(debug_stream_contract_enabled PROPERTIES DEPENDS debug_stream_contract_disabled)
+
+# Measures the CPU time of a waiting thread, so it runs alone in its own process.
+if (WIN32 OR LINUX) # gpu_split_ring.cpp needs a per-thread CPU clock
+    add_test(NAME gpu_split_ring COMMAND tests "[gpu_split]")
+endif()
 
 # needed for vma
 if (NOT MSVC)

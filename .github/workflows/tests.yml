@@ -90,3 +90,8 @@ jobs:
       - name: Run dynarmic tests
         shell: bash
         run: build/tests/bin/dynarmic_tests.exe --durations yes
+
+      - name: Run the GPU split ring test in its own process
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: build/tests/bin/tests.exe "[gpu_split]" --reporter console --durations yes

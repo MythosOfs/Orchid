@@ -168,36 +168,6 @@ private:
     std::vector<std::pair<GPUVAddr, u64>> ranges;
 };
 
-inline constexpr size_t Nx2MaxSemaphoreRegions = 32;
-inline std::array<std::atomic<u64>, Nx2MaxSemaphoreRegions> g_nx2_semaphore_regions{};
-
-inline void Nx2AddSemaphoreRegion(u64 start) {
-    for (auto& region : g_nx2_semaphore_regions) {
-        if (region.load() == start) {
-            return;
-        }
-    }
-    for (auto& region : g_nx2_semaphore_regions) {
-        u64 expected = 0;
-        if (region.compare_exchange_strong(expected, start)) {
-            return;
-        }
-    }
-}
-
-inline void Nx2RemoveSemaphoreRegion(u64 start) {
-    for (auto& region : g_nx2_semaphore_regions) {
-        u64 expected = start;
-        region.compare_exchange_strong(expected, 0);
-    }
-}
-
-inline void Nx2ClearSemaphoreRegions() {
-    for (auto& region : g_nx2_semaphore_regions) {
-        region.store(0);
-    }
-}
-
 using Nx2SparseBackingHandler = std::function<void(u64 gpu_address, u64 size, const u8* data)>;
 inline std::recursive_mutex g_nx2_sparse_backing_mutex;
 inline Nx2SparseBackingHandler g_nx2_sparse_backing;

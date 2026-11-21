@@ -128,10 +128,8 @@ void LoopProcess(Core::System& system) {
 Module::Module(Core::System& system)
     : container{system.Host1x()}, service_context{system, "nvdrv"}, events_interface{*this} {
     // Switch 2 state kept in globals belongs to one emulation session. A game started after another
-    // in the same window inherited the previous game's GPU mappings and queue semaphore regions
-    // (their table filled up, so the new game's GPU waits never completed) and the Switch 2 flags.
+    // in the same window inherited the previous game's GPU mappings and the Switch 2 flags.
     Devices::Nx2GpuMemoryRegistry::Get().Reset();
-    Tegra::Nx2ClearSemaphoreRegions();
     Tegra::Nx2ClearGpuWrittenPages();
     Tegra::Nx2ClearSparseRegions();
     Tegra::Nx2ClearGpuWrittenPages();

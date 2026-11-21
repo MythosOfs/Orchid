@@ -466,11 +466,6 @@ private:
                     last, b[6], b[7]);
         if (last > start) {
             Nvidia::Devices::Nx2GpuMemoryRegistry::Get().Register(start, last - start + 1);
-            if (last - start + 1 == 0x2000) {
-                Tegra::Nx2AddSemaphoreRegion(start);
-                LOG_DEBUG(Service, "nx2:gpu semaphore page {:#x} mirrored to {:#x}", start + 0x1000,
-                         start);
-            }
         }
         const u32 handle = m_next_memory_handle++;
         m_memory[handle] = {start, last - start + 1};
@@ -557,9 +552,6 @@ private:
                       address, size, w[3]);
             if (size != 0) {
                 Nvidia::Devices::Nx2GpuMemoryRegistry::Get().Unregister(address, size);
-            }
-            if (size == 0x2000) {
-                Tegra::Nx2RemoveSemaphoreRegion(address);
             }
             m_memory.erase(it);
         } else {

@@ -179,12 +179,10 @@ struct Nx2VideoDecoder::Impl {
     }
 
     bool Send(const FFmpeg::Packet& packet) {
-        if (on_gpu && gpu_fault == Nx2GpuDecodeFault::Packet) {
-            return false;
-        }
-        const int ret = on_gpu && gpu_fault == Nx2GpuDecodeFault::Busy
-                            ? AVERROR(EAGAIN)
-                            : avcodec_send_packet(context->GetCodecContext(), packet.GetPacket());
+        const int ret = !on_gpu || gpu_fault == Nx2GpuDecodeFault::None
+                            ? avcodec_send_packet(context->GetCodecContext(), packet.GetPacket())
+                        : gpu_fault == Nx2GpuDecodeFault::Busy ? AVERROR(EAGAIN)
+                                                               : AVERROR_INVALIDDATA;
         const bool failed = ret < 0 && ret != AVERROR_EOF && ret != AVERROR(EAGAIN);
         accepted |= ret == 0;
         if (failed) {

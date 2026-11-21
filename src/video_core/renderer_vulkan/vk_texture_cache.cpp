@@ -2458,9 +2458,10 @@ bool TextureCacheRuntime::CanDownloadMsaa(const VideoCommon::ImageInfo& info) co
     return true;
 }
 
-u32 TextureCacheRuntime::GetMaxScaledExtent() const noexcept {
-    return (std::min)({device.GetMaxImageDimension2D(), device.GetMaxFramebufferWidth(),
-                       device.GetMaxFramebufferHeight()});
+VideoCommon::ScaledExtentLimit TextureCacheRuntime::GetMaxScaledExtent() const noexcept {
+    const u32 dimension = device.GetMaxImageDimension2D();
+    return {(std::min)(dimension, device.GetMaxFramebufferWidth()),
+            (std::min)(dimension, device.GetMaxFramebufferHeight())};
 }
 
 bool TextureCacheRuntime::CanReportMemoryUsage() const {

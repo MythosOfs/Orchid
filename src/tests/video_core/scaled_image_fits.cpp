@@ -35,45 +35,48 @@ Settings::ResolutionScalingInfo Scale(u32 up_scale, u32 down_shift) {
 TEST_CASE("A 1080p target at 8x stays native on an 8192 device and scales on a 16384 one",
           "[video_core][texture_cache]") {
     const ImageInfo target = Image(1920, 1080);
-    REQUIRE_FALSE(ScaledImageFits(target, Scale(8, 0), 8192)); // 15360x8640
-    REQUIRE(ScaledImageFits(target, Scale(4, 0), 8192));       // 7680x4320
-    REQUIRE(ScaledImageFits(target, Scale(8, 0), 16384));
+    REQUIRE_FALSE(ScaledImageFits(target, Scale(8, 0), {8192, 8192})); // 15360x8640
+    REQUIRE(ScaledImageFits(target, Scale(4, 0), {8192, 8192}));       // 7680x4320
+    REQUIRE(ScaledImageFits(target, Scale(8, 0), {16384, 16384}));
 }
 
 TEST_CASE("Scaled image limits", "[video_core][texture_cache]") {
-    REQUIRE(ScaledImageFits(Image(4096, 4096), Scale(2, 0), 8192));
-    REQUIRE_FALSE(ScaledImageFits(Image(4097, 2048), Scale(2, 0), 8192));
-    REQUIRE_FALSE(ScaledImageFits(Image(2048, 4097), Scale(2, 0), 8192));
-    REQUIRE(ScaledImageFits(Image(5461, 5461), Scale(3, 1), 8192));
-    REQUIRE_FALSE(ScaledImageFits(Image(5462, 5462), Scale(3, 1), 8192));
+    // Framebuffer width and height limits may differ.
+    REQUIRE(ScaledImageFits(Image(3072, 1024), Scale(2, 0), {8192, 4096}));
+    REQUIRE_FALSE(ScaledImageFits(Image(1024, 3072), Scale(2, 0), {8192, 4096}));
+    REQUIRE(ScaledImageFits(Image(4096, 4096), Scale(2, 0), {8192, 8192}));
+    REQUIRE_FALSE(ScaledImageFits(Image(4097, 2048), Scale(2, 0), {8192, 8192}));
+    REQUIRE_FALSE(ScaledImageFits(Image(2048, 4097), Scale(2, 0), {8192, 8192}));
+    REQUIRE(ScaledImageFits(Image(5461, 5461), Scale(3, 1), {8192, 8192}));
+    REQUIRE_FALSE(ScaledImageFits(Image(5462, 5462), Scale(3, 1), {8192, 8192}));
     // Only 2D images scale their height.
-    REQUIRE(ScaledImageFits(Image(4096, 16384, ImageType::e1D), Scale(2, 0), 16384));
-    REQUIRE_FALSE(ScaledImageFits(Image(4096, 16384, ImageType::e2D), Scale(2, 0), 16384));
+    REQUIRE(ScaledImageFits(Image(4096, 16384, ImageType::e1D), Scale(2, 0), {16384, 16384}));
+    REQUIRE_FALSE(ScaledImageFits(Image(4096, 16384, ImageType::e2D), Scale(2, 0), {16384, 16384}));
     // A 4x MSAA 1920x1080 target is a 3840x2160 sample grid in a 1920x1080 Vulkan image.
     ImageInfo msaa = Image(3840, 2160);
     msaa.num_samples = 4;
-    REQUIRE(ScaledImageFits(msaa, Scale(2, 0), 4096));
-    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(3, 0), 4096));
+    REQUIRE(ScaledImageFits(msaa, Scale(2, 0), {4096, 4096}));
+    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(3, 0), {4096, 4096}));
     ImageInfo msaa_2x = Image(4096, 1024);
     msaa_2x.num_samples = 2;
-    REQUIRE(ScaledImageFits(msaa_2x, Scale(2, 0), 4096));
-    REQUIRE_FALSE(ScaledImageFits(msaa_2x, Scale(2, 0), 4095));
+    REQUIRE(ScaledImageFits(msaa_2x, Scale(2, 0), {4096, 4096}));
+    REQUIRE_FALSE(ScaledImageFits(msaa_2x, Scale(2, 0), {4095, 4095}));
     ImageInfo tall_2x = Image(1024, 4096);
     tall_2x.num_samples = 2;
-    REQUIRE_FALSE(ScaledImageFits(tall_2x, Scale(2, 0), 4096));
+    REQUIRE_FALSE(ScaledImageFits(tall_2x, Scale(2, 0), {4096, 4096}));
     // Whatever the device reports, the sample grid stays within 16384 per side.
-    REQUIRE(ScaledImageFits(Image(8192, 8192), Scale(2, 0), 65536));
-    REQUIRE_FALSE(ScaledImageFits(Image(8193, 8192), Scale(2, 0), 65536));
-    REQUIRE_FALSE(ScaledImageFits(Image(8192, 8193), Scale(2, 0), 65536));
-    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(5, 0), 65536));
+    REQUIRE(ScaledImageFits(Image(8192, 8192), Scale(2, 0), {65536, 65536}));
+    REQUIRE_FALSE(ScaledImageFits(Image(8193, 8192), Scale(2, 0), {65536, 65536}));
+    REQUIRE_FALSE(ScaledImageFits(Image(8192, 8193), Scale(2, 0), {65536, 65536}));
+    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(5, 0), {65536, 65536}));
 }
 
 TEST_CASE("Downscaling never shrinks an MSAA image below one texel", "[video_core][texture_cache]") {
     ImageInfo msaa = Image(4, 4);
     msaa.num_samples = 4;
-    REQUIRE(ScaledImageFits(msaa, Scale(1, 1), 16384)); // 2x2 sample grid, 1x1 texels
+    REQUIRE(ScaledImageFits(msaa, Scale(1, 1), {16384, 16384})); // 2x2 sample grid, 1x1 texels
     msaa.size = {2, 4, 1};
-    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(1, 1), 16384)); // 0 texels wide
+    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(1, 1), {16384, 16384})); // 0 texels wide
     msaa.size = {4, 2, 1};
-    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(1, 1), 16384)); // 0 texels high
+    REQUIRE_FALSE(ScaledImageFits(msaa, Scale(1, 1), {16384, 16384})); // 0 texels high
 }

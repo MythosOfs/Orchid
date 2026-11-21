@@ -414,12 +414,12 @@ fs::path GetAppDataRoamingDirectory() {
 fs::path GetHomeDirectory() {
     const char* home_env_var = getenv("HOME");
 
-    if (home_env_var) {
+    if (home_env_var && home_env_var[0] != '\0') {
         return fs::path{home_env_var};
     }
 
     LOG_INFO(Common_Filesystem,
-             "$HOME is not defined in the environment variables, "
+             "$HOME is not defined or empty in the environment variables, "
              "attempting to query passwd to get the home path of the current user");
 
     const auto* pw = getpwuid(getuid());
@@ -435,7 +435,7 @@ fs::path GetHomeDirectory() {
 fs::path GetDataDirectory(const std::string& env_name) {
     const char* data_env_var = getenv(env_name.c_str());
 
-    if (data_env_var) {
+    if (data_env_var && fs::path{data_env_var}.is_absolute()) {
         return fs::path{data_env_var};
     }
 

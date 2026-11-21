@@ -2837,33 +2837,47 @@ void MainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pat
         return;
     }
 
-    FileSys::VirtualFile packed_update_raw{};
-    loader->ReadUpdateRaw(packed_update_raw);
-
+    u64 title_id = program_id;
+    FileSys::VirtualFile romfs;
+    const auto uninstalled = Loader::ReadUninstalledRomFS(*loader);
     const auto& installed = QtCommon::system->GetContentProvider();
-
-    u64 title_id{};
     u8 raw_type{};
-    if (!SelectRomFSDumpTarget(installed, program_id, &title_id, &raw_type)) {
+    bool game_file_selected = false;
+    if (!SelectRomFSDumpTarget(installed, program_id, uninstalled && *uninstalled, &title_id,
+                               &raw_type, &game_file_selected)) {
+        failed();
+        return;
+    }
+    if (game_file_selected) {
+        title_id = program_id;
+        romfs = *uninstalled;
+    } else {
+        FileSys::VirtualFile packed_update_raw{};
+        loader->ReadUpdateRaw(packed_update_raw);
+
+        const auto type = static_cast<FileSys::ContentRecordType>(raw_type);
+        const auto base_nca = installed.GetEntry(title_id, type);
+        if (!base_nca) {
+            failed();
+            return;
+        }
+
+        const FileSys::NCA update_nca{packed_update_raw, nullptr};
+        if (type != FileSys::ContentRecordType::Program ||
+            update_nca.GetStatus() != Loader::ResultStatus::ErrorMissingBKTRBaseRomFS ||
+            update_nca.GetTitleId() != FileSys::GetUpdateTitleID(title_id)) {
+            packed_update_raw = {};
+        }
+
+        const FileSys::PatchManager pm{title_id, QtCommon::system->GetFileSystemController(),
+                                       installed};
+        romfs = pm.PatchRomFS(base_nca.get(), base_nca->GetRomFS(), type, packed_update_raw, false);
+    }
+    if (romfs == nullptr) {
         failed();
         return;
     }
 
-    const auto type = static_cast<FileSys::ContentRecordType>(raw_type);
-    const auto base_nca = installed.GetEntry(title_id, type);
-    if (!base_nca) {
-        failed();
-        return;
-    }
-
-    const FileSys::NCA update_nca{packed_update_raw, nullptr};
-    if (type != FileSys::ContentRecordType::Program ||
-        update_nca.GetStatus() != Loader::ResultStatus::ErrorMissingBKTRBaseRomFS ||
-        update_nca.GetTitleId() != FileSys::GetUpdateTitleID(title_id)) {
-        packed_update_raw = {};
-    }
-
-    const auto base_romfs = base_nca->GetRomFS();
     const auto dump_dir =
         target == DumpRomFSTarget::Normal
             ? Common::FS::GetEdenPath(Common::FS::EdenPath::DumpDir)
@@ -2872,15 +2886,19 @@ void MainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pat
 
     const auto path = Common::FS::PathToUTF8String(dump_dir / romfs_dir);
 
-    const FileSys::PatchManager pm{title_id, QtCommon::system->GetFileSystemController(),
-                                   installed};
-    auto romfs = pm.PatchRomFS(base_nca.get(), base_romfs, type, packed_update_raw, false);
+    // The SDMC target can already hold the user's LayeredFS files; keep a folder that existed.
+    const bool existed = Common::FS::Exists(dump_dir / romfs_dir);
+    const auto discard = [&] {
+        if (!existed) {
+            QtCommon::vfs->DeleteDirectory(path);
+        }
+    };
 
     const auto out = VfsFilesystemCreateDirectoryWrapper(path, FileSys::OpenMode::ReadWrite);
 
     if (out == nullptr) {
         failed();
-        QtCommon::vfs->DeleteDirectory(path);
+        discard();
         return;
     }
 
@@ -2894,7 +2912,7 @@ void MainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pat
         selections, 0, false, &ok);
     if (!ok) {
         failed();
-        QtCommon::vfs->DeleteDirectory(path);
+        discard();
         return;
     }
 
@@ -2934,7 +2952,7 @@ void MainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pat
     } else {
         progress.close();
         failed();
-        QtCommon::vfs->DeleteDirectory(path);
+        discard();
     }
 }
 
@@ -5177,7 +5195,9 @@ void MainWindow::SetFPSSuffix() {
 }
 
 bool MainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed, u64 program_id,
-                                       u64* selected_title_id, u8* selected_content_record_type) {
+                                       bool offer_game_file, u64* selected_title_id,
+                                       u8* selected_content_record_type,
+                                       bool* game_file_selected) {
     using ContentInfo = std::tuple<u64, FileSys::TitleType, FileSys::ContentRecordType>;
     boost::container::flat_set<ContentInfo> available_title_ids;
 
@@ -5197,14 +5217,20 @@ bool MainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed
     RetrieveEntries(FileSys::TitleType::Application, FileSys::ContentRecordType::LegalInformation);
     RetrieveEntries(FileSys::TitleType::AOC, FileSys::ContentRecordType::Data);
 
-    if (available_title_ids.empty()) {
+    // A loose game file (NUP) registers no installed program, so it is offered as its own entry.
+    const size_t game_file_entries = offer_game_file ? 1 : 0;
+    if (available_title_ids.size() + game_file_entries == 0) {
         return false;
     }
 
     size_t title_index = 0;
 
-    if (available_title_ids.size() > 1) {
+    if (available_title_ids.size() + game_file_entries > 1) {
         QStringList list;
+        if (offer_game_file) {
+            list.push_back(QStringLiteral("Program [%1] (game file)")
+                               .arg(QString::fromStdString(fmt::format("{:X}", program_id))));
+        }
         for (auto& [title_id, title_type, record_type] : available_title_ids) {
             const auto hex_title_id = QString::fromStdString(fmt::format("{:X}", title_id));
             if (record_type == FileSys::ContentRecordType::Program) {
@@ -5230,7 +5256,12 @@ bool MainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed
         title_index = list.indexOf(res);
     }
 
-    const auto& [title_id, title_type, record_type] = *available_title_ids.nth(title_index);
+    if (offer_game_file && title_index == 0) {
+        *game_file_selected = true;
+        return true;
+    }
+    const auto& [title_id, title_type, record_type] =
+        *available_title_ids.nth(title_index - game_file_entries);
     *selected_title_id = title_id;
     *selected_content_record_type = static_cast<u8>(record_type);
     return true;

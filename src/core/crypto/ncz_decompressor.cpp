@@ -94,18 +94,38 @@ std::optional<std::pair<std::vector<Section>, std::optional<BlockHeader>>> Parse
     const u64 block_start = HeaderSize + 16 + count * SectionWire;
     const auto fixed = f->ReadBytes(BlockFixed, block_start);
     std::optional<BlockHeader> bh;
-    if (fixed.size() == BlockFixed &&
-        std::equal(fixed.begin(), fixed.begin() + 8, BlockMagic.begin())) {
+    if (fixed.size() >= BlockMagic.size() &&
+        std::equal(BlockMagic.begin(), BlockMagic.end(), fixed.begin())) {
+        if (fixed.size() != BlockFixed) return std::nullopt;
         BlockHeader b{};
         b.exponent = fixed[11];
         const s32 n = static_cast<s32>(Le(fixed.data() + 12, 4));
-        if (n <= 0) return std::nullopt;
+        if (n <= 0 || b.exponent < 14 || b.exponent > 32 ||
+            static_cast<u64>(n) * 4 > fsize - block_start - BlockFixed)
+            return std::nullopt;
         b.decompressed_size = Le(fixed.data() + 16, 8);
+        const u64 block_size = u64{1} << b.exponent;
+        if (static_cast<u64>(n) != b.decompressed_size / block_size +
+                                       (b.decompressed_size % block_size != 0 ? 1 : 0))
+            return std::nullopt;
+        u64 previous_end = HeaderSize;
+        for (const auto& s : sections) {
+            if (s.offset < 0 || s.size < 0) return std::nullopt;
+            const u64 end = std::max<u64>(static_cast<u64>(s.offset) + static_cast<u64>(s.size),
+                                          HeaderSize);
+            if (end > HeaderSize + b.decompressed_size || end < previous_end) return std::nullopt;
+            previous_end = end;
+        }
         const auto sizes = f->ReadBytes(static_cast<u64>(n) * 4, block_start + BlockFixed);
         if (sizes.size() != static_cast<u64>(n) * 4) return std::nullopt;
         b.sizes.resize(n);
-        for (s32 i = 0; i < n; ++i) b.sizes[i] = static_cast<u32>(Le(sizes.data() + i * 4, 4));
+        u64 payload_size = 0;
+        for (std::size_t i = 0; i < b.sizes.size(); ++i) {
+            b.sizes[i] = static_cast<u32>(Le(sizes.data() + i * 4, 4));
+            payload_size += b.sizes[i];
+        }
         payload_start = block_start + BlockFixed + static_cast<u64>(n) * 4;
+        if (payload_size > fsize - payload_start) return std::nullopt;
         bh = std::move(b);
     } else {
         payload_start = block_start;

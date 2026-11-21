@@ -376,7 +376,7 @@ void SetEdenPath(EdenPath eden_path, const Path& new_path) {
 
 /**
  * Gets the path of the directory specified by the #HOME environment variable.
- * If $HOME is not defined, it will attempt to query the user database in passwd instead.
+ * If $HOME is not defined or empty, it will attempt to query the user database in passwd instead.
  *
  * @returns The path of the current user's home directory.
  */
@@ -387,6 +387,7 @@ void SetEdenPath(EdenPath eden_path, const Path& new_path) {
  * See https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
  * Defaults to $HOME/.local/share for main application data,
  * $HOME/.cache for cached data, and $HOME/.config for configuration files.
+ * Empty and relative values are ignored, as the specification requires.
  *
  * @param env_name XDG environment variable name
  *

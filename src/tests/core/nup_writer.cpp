@@ -1552,3 +1552,64 @@ TEST_CASE("NUP reports Switch 2 Editions", "[nup]") {
             FileSys::Nup::PackResult::Success);
     REQUIRE(editions(t.path / "plain.nup").empty());
 }
+
+namespace {
+// Reports a fixed file type and RomFS result, for the RomFS dump source selection.
+class FixedRomFSLoader final : public Loader::AppLoader {
+public:
+    FixedRomFSLoader(Loader::FileType type_, Loader::ResultStatus status_)
+        : AppLoader{nullptr}, type{type_}, status{status_} {}
+
+    Loader::FileType GetFileType() const override {
+        return type;
+    }
+    LoadResult Load(Kernel::KProcess&, Core::System&) override {
+        return {Loader::ResultStatus::ErrorNotImplemented, {}};
+    }
+    Loader::ResultStatus ReadRomFS(FileSys::VirtualFile& out_file) override {
+        out_file = std::make_shared<FileSys::VectorVfsFile>(std::vector<u8>{1}, "romfs");
+        return status;
+    }
+
+private:
+    Loader::FileType type;
+    Loader::ResultStatus status;
+};
+} // namespace
+
+TEST_CASE("NUP RomFS dumps come from the loader with the enabled update merged", "[nup]") {
+    TempDir t;
+    const auto root = t.path / "Game";
+    Put(root / "Base/ExeFS/main", "base main");
+    Put(root / "Base/ExeFS/main.npdm", Npdm(TitleId));
+    Put(root / "Base/RomFS/base-only", "base");
+    Put(root / "Base/RomFS/data/shared", "old");
+    Put(root / "updates/65536/exefs/main", "update main");
+    Put(root / "updates/65536/exefs/main.npdm", Npdm(TitleId));
+    Put(root / "updates/65536/romfs/data/shared", "new");
+    Put(root / "updates/65536/romfs/update-only", "update");
+    const auto archive = t.path / "Game.nup";
+    REQUIRE(FileSys::Nup::PackDump(root, archive) == FileSys::Nup::PackResult::Success);
+    FileSys::RealVfsFilesystem real;
+    Loader::AppLoader_NUP loader{real.OpenFile(archive.string(), FileSys::OpenMode::Read)};
+
+    const auto romfs = Loader::ReadUninstalledRomFS(loader);
+    REQUIRE(romfs);
+    const auto image = FileSys::ExtractRomFS(*romfs);
+    REQUIRE(image);
+    CHECK(PackedTree(image) == std::map<std::string, std::string>{{"base-only", "base"},
+                                                                  {"data/shared", "new"},
+                                                                  {"update-only", "update"}});
+}
+
+TEST_CASE("RomFS dumps of other files keep the installed content", "[nup]") {
+    for (const auto type : {Loader::FileType::NSP, Loader::FileType::XCI, Loader::FileType::NCA,
+                            Loader::FileType::NX}) {
+        FixedRomFSLoader loader{type, Loader::ResultStatus::Success};
+        CHECK_FALSE(Loader::ReadUninstalledRomFS(loader).has_value());
+    }
+    FixedRomFSLoader broken{Loader::FileType::NUP, Loader::ResultStatus::ErrorNoRomFS};
+    const auto romfs = Loader::ReadUninstalledRomFS(broken);
+    REQUIRE(romfs.has_value());
+    CHECK(*romfs == nullptr);
+}

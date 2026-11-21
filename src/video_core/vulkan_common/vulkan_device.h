@@ -11,6 +11,7 @@
 #include <atomic>
 #include <cstdlib>
 #include <filesystem>
+#include <functional>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -234,6 +235,21 @@ enum class NvidiaArchitecture {
     Arch_AmpereOrNewer,
 };
 
+/// Payload of a static pipeline cache file; empty when it is missing or not an Orchid cache.
+std::vector<char> ReadStaticPipelineCache(const std::filesystem::path& filename);
+
+/// Writes a unique file beside the cache and renames it over the cache, so a failed or interrupted
+/// write keeps the previous one. Returns whether the cache was replaced.
+bool WriteStaticPipelineCache(const std::filesystem::path& filename, std::span<const char> data);
+
+/// As above; unique_suffix names the temporary file, and a throw from it fails the save.
+bool WriteStaticPipelineCache(const std::filesystem::path& filename, std::span<const char> data,
+                              const std::function<std::string()>& unique_suffix);
+
+/// Calls create with data, and once more with nothing when the driver rejects non-empty data.
+void CreateStaticPipelineCache(std::span<const char> data,
+                               const std::function<void(std::span<const char>)>& create);
+
 /// Handles data specific to a physical device.
 class Device {
 public:
@@ -424,7 +440,10 @@ public:
     FN_MAX_LIMIT_ELEM(DescriptorSetStorageBuffersDynamic) \
     FN_MAX_LIMIT_ELEM(DescriptorSetSampledImages) \
     FN_MAX_LIMIT_ELEM(DescriptorSetStorageImages) \
-    FN_MAX_LIMIT_ELEM(DescriptorSetInputAttachments)
+    FN_MAX_LIMIT_ELEM(DescriptorSetInputAttachments) \
+    FN_MAX_LIMIT_ELEM(ImageDimension2D) \
+    FN_MAX_LIMIT_ELEM(FramebufferWidth) \
+    FN_MAX_LIMIT_ELEM(FramebufferHeight)
 #define FN_MAX_LIMIT_ELEM(name) \
     u32 GetMax##name() const { return properties.properties.limits.max##name; }
 FN_MAX_LIMIT_LIST

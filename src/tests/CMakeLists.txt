@@ -16,6 +16,7 @@ add_executable(tests
     common/fibers.cpp
     common/flat_allocator.cpp
     common/game_presets.cpp
+    common/hex_util.cpp
     common/hitch_diagnostic.cpp
     common/host_memory.cpp
     common/host_memory_fallback.cpp
@@ -31,6 +32,7 @@ add_executable(tests
     common/scratch_buffer.cpp
     common/session_counter.cpp
     common/slot_vector.cpp
+    common/sparse_large_vector.cpp
     common/undefined_fix.cpp
     common/unique_function.cpp
     common/user_directories.cpp
@@ -39,6 +41,7 @@ add_executable(tests
     core/address_arbiter_read.cpp
     core/address_space.cpp
     core/builtin_font_glyphs.cpp
+    core/cheat_parser.cpp
     core/core_timing.cpp
     core/filesystem_buffer_bounds.cpp
     core/filesystem_rename.cpp
@@ -59,6 +62,7 @@ add_executable(tests
     core/nso.cpp
     core/nrr.cpp
     core/ncz_decompressor.cpp
+    core/key_manager_keys_file.cpp
     core/ldn.cpp
     core/internal_network/socket_proxy.cpp
     core/nx_archive.cpp
@@ -66,12 +70,18 @@ add_executable(tests
     core/loose_directory.cpp
     core/display_title.cpp
     core/priority_queue.cpp
+    core/program_metadata.cpp
     core/vfs_vector.cpp
     core/ips_switch.cpp
     core/vfs_real.cpp
     core/nvnflinger_fence.cpp
     core/partition_filesystem.cpp
+    core/eticket_title_key.cpp
+    core/keyblob_cmac.cpp
+    core/nax_hmac.cpp
     core/romfs.cpp
+    core/time_zone_fallback.cpp
+    core/service_auto_stub.cpp
     core/internal_network/network.cpp
     video_core/shader_object_pool.cpp
     video_core/aftermath_dump.cpp
@@ -108,6 +118,7 @@ add_executable(tests
     video_core/multi_range_buffer.cpp
     video_core/shader_reuse_environment.cpp
     video_core/pipeline_cache_file.cpp
+    video_core/static_pipeline_cache.cpp
     video_core/ampere_lowering.cpp
     video_core/ampere_matrix.cpp
     video_core/ampere_returns.cpp
@@ -123,6 +134,7 @@ add_executable(tests
     video_core/cooperative_matrix.cpp
     video_core/spirv_storage_images.cpp
     video_core/texture_unswizzle.cpp
+    video_core/scaled_image_fits.cpp
     video_core/texture_row_upload.cpp
     video_core/texture_linear_upload.cpp
     video_core/texture_depth_float.cpp
@@ -183,7 +195,23 @@ if (WIN32)
     target_sources(tests PRIVATE common/host_memory_commit.cpp)
 endif()
 
-target_link_libraries(tests PRIVATE common core input_common video_core)
+if (LINUX)
+    target_sources(tests PRIVATE input_common/silent_controller.cpp)
+endif()
+
+if (TARGET OpenSSL::SSL)
+    target_sources(tests PRIVATE core/ssl_peek.cpp)
+    target_link_libraries(tests PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+endif()
+
+target_link_libraries(tests PRIVATE common core input_common video_core tz)
+
+if (ENABLE_QT)
+    target_sources(tests PRIVATE qt_common/qt_config_ban_list.cpp)
+    target_link_libraries(tests PRIVATE qt_common input_common Qt6::Core SimpleIni::SimpleIni)
+    # QtConfig rewrites global Settings/UISettings, so it runs in its own process.
+    add_test(NAME qt_config_ban_list COMMAND tests "[qt_config]")
+endif()
 target_link_libraries(tests PRIVATE ${PLATFORM_LIBRARIES} Catch2::Catch2WithMain Threads::Threads)
 
 # Reference texts of the expect tests (tests/expect.h); ORCHID_EXPECT_UPDATE=1 rewrites them.
@@ -193,6 +221,10 @@ target_compile_definitions(tests PRIVATE
     ORCHID_NX_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/core/nx_fixtures")
 
 add_test(NAME tests COMMAND tests)
+add_test(NAME service_auto_stub COMMAND tests "[service]")
+foreach(keys_test eticket keyblob nax keys_file)
+    add_test(NAME crypto_${keys_test} COMMAND tests "[${keys_test}]")
+endforeach()
 
 # Separate processes exercise the cached opt-in and destruction order without a GPU or profile.
 add_executable(stall_diagnostics_session
@@ -238,7 +270,9 @@ endif()
 # A test source in no target is never built or run (maxwell_fmz.cpp and debug_stream_contract.cpp
 # sat unbuilt this way). Every .cpp here must belong to one of the targets above.
 file(GLOB_RECURSE test_sources RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS "*.cpp")
-set(listed_test_sources common/host_memory_commit.cpp) # added above on Windows only
+set(listed_test_sources common/host_memory_commit.cpp # added above on Windows only
+    input_common/silent_controller.cpp # added above on Linux only
+    qt_common/qt_config_ban_list.cpp) # added above with the Qt frontend only
 foreach(test_target IN ITEMS tests stall_diagnostics_session debug_stream_contract)
     get_target_property(target_sources ${test_target} SOURCES)
     list(APPEND listed_test_sources ${target_sources})

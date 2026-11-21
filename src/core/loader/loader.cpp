@@ -495,4 +495,15 @@ std::unique_ptr<AppLoader> GetLoader(Core::System& system, FileSys::VirtualFile 
     return GetFileLoader(system, std::move(file), type, program_id, program_index);
 }
 
+std::optional<FileSys::VirtualFile> ReadUninstalledRomFS(AppLoader& loader) {
+    if (loader.GetFileType() != FileType::NUP) {
+        return std::nullopt;
+    }
+    FileSys::VirtualFile romfs;
+    if (loader.ReadRomFS(romfs) != ResultStatus::Success) {
+        return FileSys::VirtualFile{};
+    }
+    return romfs;
+}
+
 } // namespace Loader

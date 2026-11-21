@@ -2513,6 +2513,7 @@ void MainWindow::ShutdownGame() {
 
     // TODO(crueter): make this common as well (frontend_common?)
     play_time_manager->Stop();
+    const u64 session = emu_session.Current();
     OnShutdownBegin();
     OnEmulationStopTimeExpired();
     emu_terminate_timer.stop();
@@ -2524,6 +2525,10 @@ void MainWindow::ShutdownGame() {
         connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
         timeout.start(EmuThreadStopTimeoutMs);
         loop.exec(QEventLoop::ExcludeUserInputEvents);
+    }
+    // The loop may have finalized this session and booted the next one (ExecuteProgram).
+    if (!emu_session.IsCurrent(session)) {
+        return;
     }
     TerminateEmulationThread();
     OnEmulationStopped();

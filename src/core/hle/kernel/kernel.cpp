@@ -162,6 +162,9 @@ struct KernelCore::Impl {
             auto& arena = system.DeviceMemory().buffer;
             arena.Unmap(0, arena.VirtualSize(), false);
         }
+        if (memory_manager) {
+            memory_manager->ReleaseFreeMemory();
+        }
 
         next_object_id = 0;
         next_kernel_process_id = KProcess::InitialProcessIdMin;

@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <variant>
 #include "video_core/present.h"
 #include "video_core/renderer_vulkan/present/anti_alias_pass.h"
@@ -54,6 +55,8 @@ VkFormat GetFormat(const Tegra::FramebufferConfig& framebuffer) {
         return VK_FORMAT_B8G8R8A8_UNORM;
     case Service::android::PixelFormat::Rgba1010102:
         return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+    case Service::android::PixelFormat::RgbaFp16:
+        return VK_FORMAT_R16G16B16A16_SFLOAT;
     default:
         UNIMPLEMENTED_MSG("Unknown framebuffer pixel format: {}",
                           static_cast<u32>(framebuffer.pixel_format));
@@ -63,7 +66,7 @@ VkFormat GetFormat(const Tegra::FramebufferConfig& framebuffer) {
 
 } // Anonymous namespace
 
-Layer::Layer(const Device& device, MemoryAllocator& memory_allocator_, Scheduler& scheduler_, Tegra::MaxwellDeviceMemoryManager& device_memory_, size_t image_count_, VkExtent2D output_size, VkDescriptorSetLayout layout, const PresentFilters& filters_)
+Layer::Layer(const Device& device, MemoryAllocator& memory_allocator_, Scheduler& scheduler_, Tegra::MaxwellDeviceMemoryManager& device_memory_, size_t image_count_, VkExtent2D output_size, VkDescriptorSetLayout layout, const PresentFilters& filters_, bool hdr_output)
     : memory_allocator(memory_allocator_)
     , scheduler(scheduler_)
     , device_memory(device_memory_)
@@ -72,13 +75,16 @@ Layer::Layer(const Device& device, MemoryAllocator& memory_allocator_, Scheduler
 {
     CreateDescriptorPool(device);
     CreateDescriptorSets(device, layout);
-    if (filters.get_scaling_filter() == Settings::ScalingFilter::Fsr) {
+    // An HDR frame bypasses the upscalers: do not allocate their images.
+    const auto scaling_filter = hdr_output ? Settings::ScalingFilter::Bilinear
+                                           : filters.get_scaling_filter();
+    if (scaling_filter == Settings::ScalingFilter::Fsr) {
         sr_filter.emplace<FSR>(device, memory_allocator, image_count, output_size);
-    } else if (filters.get_scaling_filter() == Settings::ScalingFilter::Sgsr) {
+    } else if (scaling_filter == Settings::ScalingFilter::Sgsr) {
         sr_filter.emplace<SGSR>(device, memory_allocator, image_count, output_size, false);
-    } else if (filters.get_scaling_filter() == Settings::ScalingFilter::SgsrEdge) {
+    } else if (scaling_filter == Settings::ScalingFilter::SgsrEdge) {
         sr_filter.emplace<SGSR>(device, memory_allocator, image_count, output_size, true);
-    } else if (filters.get_scaling_filter() == Settings::ScalingFilter::Fsr3) {
+    } else if (scaling_filter == Settings::ScalingFilter::Fsr3) {
         sr_filter.emplace<FSR3>(device, memory_allocator, image_count, output_size);
     }
 }
@@ -91,7 +97,7 @@ void Layer::ConfigureDraw(const Device& device, PresentPushConstants* out_push_c
                           VkDescriptorSet* out_descriptor_set, RasterizerVulkan& rasterizer,
                           VkSampler sampler, size_t image_index,
                           const Tegra::FramebufferConfig& framebuffer,
-                          const Layout::FramebufferLayout& layout) {
+                          const Layout::FramebufferLayout& layout, const HdrPresent& output) {
     const auto texture_info = rasterizer.AccelerateDisplay(
         framebuffer, framebuffer.address + framebuffer.offset, framebuffer.stride);
     const u32 texture_width = texture_info ? texture_info->width : framebuffer.width;
@@ -99,14 +105,17 @@ void Layer::ConfigureDraw(const Device& device, PresentPushConstants* out_push_c
     const u32 scaled_width = texture_info ? texture_info->scaled_width : texture_width;
     const u32 scaled_height = texture_info ? texture_info->scaled_height : texture_height;
     const bool use_accelerated = texture_info.has_value();
+    const bool hdr_output = output.IsHdr();
     const bool is_applet =
         (framebuffer.layer_stack_mask & Service::Nvnflinger::LayerStackBit(
                                             Service::Nvnflinger::LayerStackId::Recording)) == 0;
 
     RefreshResources(device, framebuffer);
-    SetAntiAliasPass(device);
+    if (!hdr_output) {
+        SetAntiAliasPass(device);
+    }
 #ifdef HAS_RESHADE
-    SetPostProcessPass(device, is_applet);
+    SetPostProcessPass(device, is_applet || hdr_output);
 #endif
 
     // Finish any pending renderpass
@@ -124,10 +133,26 @@ void Layer::ConfigureDraw(const Device& device, PresentPushConstants* out_push_c
     VkImageView source_image_view =
         texture_info ? texture_info->image_view : *raw_image_views[image_index];
 
-    if (auto* fxaa = std::get_if<FXAA>(&anti_alias)) {
-        fxaa->Draw(device, scheduler, image_index, &source_image, &source_image_view);
-    } else if (auto* smaa = std::get_if<SMAA>(&anti_alias)) {
-        smaa->Draw(device, scheduler, image_index, &source_image, &source_image_view);
+    const HdrConvertParams convert = MakeHdrConvertParams(framebuffer, output);
+    if (NeedsHdrConvert(convert)) {
+        if (!hdr_convert || hdr_convert->Extent().width != scaled_width ||
+            hdr_convert->Extent().height != scaled_height) {
+            for (const u64 tick : resource_ticks) {
+                scheduler.Wait(tick);
+            }
+            hdr_convert.emplace(device, memory_allocator, image_count,
+                                VkExtent2D{scaled_width, scaled_height});
+        }
+        hdr_convert->Draw(device, scheduler, image_index, convert, &source_image,
+                          &source_image_view);
+    }
+
+    if (!hdr_output) {
+        if (auto* fxaa = std::get_if<FXAA>(&anti_alias)) {
+            fxaa->Draw(device, scheduler, image_index, &source_image, &source_image_view);
+        } else if (auto* smaa = std::get_if<SMAA>(&anti_alias)) {
+            smaa->Draw(device, scheduler, image_index, &source_image, &source_image_view);
+        }
     }
 
 #ifdef HAS_RESHADE
@@ -142,19 +167,21 @@ void Layer::ConfigureDraw(const Device& device, PresentPushConstants* out_push_c
         .height = scaled_height,
     };
 
-    if (auto* fsr = std::get_if<FSR>(&sr_filter)) {
-        source_image_view = fsr->Draw(device, scheduler, image_index, source_image, source_image_view, render_extent, crop_rect);
-        crop_rect = {0, 0, 1, 1};
-    } else if (auto* sgsr = std::get_if<SGSR>(&sr_filter)) {
-        if (!is_applet) {
-            source_image_view = sgsr->Draw(device, scheduler, image_index, source_image,
+    if (!hdr_output) {
+        if (auto* fsr = std::get_if<FSR>(&sr_filter)) {
+            source_image_view = fsr->Draw(device, scheduler, image_index, source_image, source_image_view, render_extent, crop_rect);
+            crop_rect = {0, 0, 1, 1};
+        } else if (auto* sgsr = std::get_if<SGSR>(&sr_filter)) {
+            if (!is_applet) {
+                source_image_view = sgsr->Draw(device, scheduler, image_index, source_image,
+                                               source_image_view, render_extent, crop_rect);
+                crop_rect = {0, 0, 1, 1};
+            }
+        } else if (auto* fsr3 = std::get_if<FSR3>(&sr_filter)) {
+            source_image_view = fsr3->Draw(device, scheduler, image_index, source_image,
                                            source_image_view, render_extent, crop_rect);
             crop_rect = {0, 0, 1, 1};
         }
-    } else if (auto* fsr3 = std::get_if<FSR3>(&sr_filter)) {
-        source_image_view = fsr3->Draw(device, scheduler, image_index, source_image,
-                                       source_image_view, render_extent, crop_rect);
-        crop_rect = {0, 0, 1, 1};
     }
 
     SetMatrixData(device, *out_push_constants, layout);
@@ -205,15 +232,28 @@ void Layer::CreateRawImages(const Device& device, const Tegra::FramebufferConfig
 void Layer::RefreshResources(const Device& device, const Tegra::FramebufferConfig& framebuffer) {
     if (framebuffer.width == raw_width && framebuffer.height == raw_height &&
         framebuffer.pixel_format == pixel_format && !raw_images.empty()) {
+        // The staging buffer holds image_count slots of raw_stride pixel rows; a smaller stride
+        // fits. A larger one needs a larger buffer only: the images and the anti-aliasing pass
+        // do not depend on it. Its slots' ticks cover the copies that read it.
+        if (framebuffer.stride > raw_stride) {
+            for (const u64 tick : resource_ticks) {
+                scheduler.Wait(tick);
+            }
+            raw_stride = framebuffer.stride;
+            buffer.reset();
+            CreateStagingBuffer(device, framebuffer);
+        }
         return;
     }
 
     raw_width = framebuffer.width;
     raw_height = framebuffer.height;
+    raw_stride = framebuffer.stride;
     pixel_format = framebuffer.pixel_format;
-    anti_alias.emplace<std::monostate>();
 
+    // Waits for the GPU work of the last frames, which may still use the anti-aliasing pass.
     ReleaseRawImages();
+    anti_alias.emplace<std::monostate>();
     CreateStagingBuffer(device, framebuffer);
     CreateRawImages(device, framebuffer);
 }
@@ -297,7 +337,8 @@ u64 Layer::CalculateBufferSize(const Tegra::FramebufferConfig& framebuffer) cons
 
 u64 Layer::GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer,
                              size_t image_index) const {
-    return GetSizeInBytes(framebuffer) * image_index;
+    // Fixed slots: a smaller stride must not move a slot onto one the GPU may still read.
+    return u64{raw_stride} * framebuffer.height * GetBytesPerPixel(framebuffer) * image_index;
 }
 
 void Layer::SetMatrixData(const Device& device, PresentPushConstants& data, const Layout::FramebufferLayout& layout) const {
@@ -350,21 +391,31 @@ void Layer::UpdateRawImage(const Tegra::FramebufferConfig& framebuffer, size_t i
     const u8* const host_ptr = device_memory.GetPointer<u8>(framebuffer_addr);
 
     // TODO(Rodrigo): Read this from HLE
-    constexpr u32 block_height_log2 = 4;
+    constexpr u32 default_block_height_log2 = 4;
+    // A native FP16 image is detiled with its own block height and its padded row pitch (stride).
+    // One that cannot be read that way is shown black.
+    const bool fp16 = framebuffer.pixel_format == Service::android::PixelFormat::RgbaFp16;
+    const auto fp16_block_height = fp16 ? Tegra::Fp16DetileBlockHeight(framebuffer) : std::nullopt;
+    const u32 block_height_log2 = fp16_block_height.value_or(default_block_height_log2);
     const u32 bytes_per_pixel = GetBytesPerPixel(framebuffer);
     const u64 linear_size{GetSizeInBytes(framebuffer)};
-    const u64 tiled_size{Tegra::Texture::CalculateSize(
-        true, bytes_per_pixel, framebuffer.stride, framebuffer.height, 1, block_height_log2, 0)};
-    if (host_ptr) {
+    if (fp16 && (!fp16_block_height || !host_ptr)) {
+        std::ranges::fill(mapped_span.subspan(image_offset, linear_size), u8{});
+        buffer.Flush();
+    } else if (host_ptr) {
+        const u64 tiled_size{Tegra::Texture::CalculateSize(true, bytes_per_pixel,
+                                                           framebuffer.stride, framebuffer.height,
+                                                           1, block_height_log2, 0)};
         Tegra::Texture::UnswizzleTexture(
             mapped_span.subspan(image_offset, linear_size), std::span(host_ptr, tiled_size),
-            bytes_per_pixel, framebuffer.width, framebuffer.height, 1, block_height_log2, 0, 1, framebuffer.native_tiling);
+            bytes_per_pixel, fp16 ? framebuffer.stride : framebuffer.width, framebuffer.height, 1,
+            block_height_log2, 0, 1, framebuffer.native_tiling);
         buffer.Flush();  // Ensure host writes are visible before the GPU copy.
     }
 
     const VkBufferImageCopy copy{
         .bufferOffset = image_offset,
-        .bufferRowLength = 0,
+        .bufferRowLength = fp16 ? framebuffer.stride : 0,
         .bufferImageHeight = 0,
         .imageSubresource =
             {

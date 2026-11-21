@@ -111,6 +111,7 @@
 
 #include "qt_common/abstract/frontend.h"
 
+#include "qt_common/game_list/worker.h"
 #include "qt_common/qt_common.h"
 #include "qt_common/qt_string_lookup.h"
 
@@ -2255,9 +2256,11 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
 
     render_window->InitializeCamera();
 
-    std::string title_name;
     std::string title_version;
-    const auto res = QtCommon::system->GetGameName(title_name);
+    std::string loader_title;
+    if (QtCommon::system->GetGameName(loader_title) != Loader::ResultStatus::Success) {
+        loader_title.clear();
+    }
 
     const auto metadata = [title_id] {
         const FileSys::PatchManager pm(title_id, QtCommon::system->GetFileSystemController(),
@@ -2266,13 +2269,30 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
     }();
     if (metadata.first != nullptr) {
         title_version = metadata.first->GetVersionString();
-        title_name = metadata.first->GetApplicationName();
     }
-    if (res != Loader::ResultStatus::Success || title_name.empty()) {
-        title_name = Common::FS::PathToUTF8String(
-            std::filesystem::path{Common::U16StringFromBuffer(filename.utf16(), filename.size())}
-                .filename());
-    }
+    std::string title_name = Loader::DisplayTitle(
+        loader_title,
+        [&metadata] {
+            return metadata.first != nullptr &&
+                           QtCommon::system->GetAppLoader().GetFileType() ==
+                               Loader::FileType::DeconstructedRomDirectory
+                       ? metadata.first->GetApplicationName()
+                       : std::string{};
+        },
+        [title_id] {
+            const auto& game_file = QtCommon::system->GetAppLoader().GetFile();
+            if (game_file == nullptr) {
+                return std::string{};
+            }
+            std::error_code ec;
+            const auto game_path = std::filesystem::absolute(
+                Common::FS::ToU8String(game_file->GetFullPath()), ec);
+            return LooseDumpName(*QtCommon::vfs,
+                                 Common::FS::PathToUTF8String(game_path.lexically_normal()),
+                                 title_id)
+                .toStdString();
+        },
+        QFileInfo(filename).completeBaseName().toStdString());
     const bool is_64bit = QtCommon::system->Kernel().ApplicationProcess()->Is64Bit();
     const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");
     title_name = tr("%1 %2", "%1 is the title name. %2 indicates if the title is 64-bit or 32-bit")
@@ -2320,8 +2340,7 @@ bool MainWindow::OnShutdownBegin() {
 
     if (QtCommon::system->IsShuttingDown()) {
         status_bar_update_timer.stop();
-        connect(QtCommon::emu_thread.get(), &QThread::finished, this,
-                &MainWindow::OnEmulationStopped, Qt::UniqueConnection);
+        ConnectEmulationFinished();
         return false;
     }
 
@@ -2340,7 +2359,7 @@ bool MainWindow::OnShutdownBegin() {
     QtCommon::emu_thread->disconnect();
     QtCommon::emu_thread->SetRunning(true);
 
-    connect(QtCommon::emu_thread.get(), &QThread::finished, this, &MainWindow::OnEmulationStopped);
+    ConnectEmulationFinished();
     emit EmulationStopping();
 
     int shutdown_time = 1000;
@@ -2386,9 +2405,20 @@ void MainWindow::OnEmulationStopTimeout() {
     OnEmulationStopped();
 }
 
+void MainWindow::ConnectEmulationFinished() {
+    connect(QtCommon::emu_thread.get(), &QThread::finished, this,
+            [this, session = emu_session.Current()] {
+                if (emu_session.IsCurrent(session)) {
+                    OnEmulationStopped();
+                }
+            });
+}
+
 void MainWindow::TerminateEmulationThread() {
     if (QtCommon::emu_thread && QtCommon::emu_thread->isRunning()) {
         LOG_ERROR(Frontend, "Emulation thread failed to stop, terminating it");
+        // Both callers finalize after terminate(); a queued finished() would finalize again.
+        disconnect(QtCommon::emu_thread.get(), &QThread::finished, this, nullptr);
         QtCommon::emu_thread->terminate();
         QtCommon::emu_thread->wait();
     }
@@ -2401,6 +2431,7 @@ void MainWindow::OnEmulationStopped() {
     if (QtCommon::emu_thread && QtCommon::emu_thread->isRunning()) {
         return;
     }
+    emu_session.End();
     shutdown_timer.stop();
     emu_terminate_timer.stop();
     if (QtCommon::emu_thread) {
@@ -2491,6 +2522,7 @@ void MainWindow::ShutdownGame() {
 
     // TODO(crueter): make this common as well (frontend_common?)
     play_time_manager->Stop();
+    const u64 session = emu_session.Current();
     OnShutdownBegin();
     OnEmulationStopTimeExpired();
     emu_terminate_timer.stop();
@@ -2502,6 +2534,10 @@ void MainWindow::ShutdownGame() {
         connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
         timeout.start(EmuThreadStopTimeoutMs);
         loop.exec(QEventLoop::ExcludeUserInputEvents);
+    }
+    // The loop may have finalized this session and booted the next one (ExecuteProgram).
+    if (!emu_session.IsCurrent(session)) {
+        return;
     }
     TerminateEmulationThread();
     OnEmulationStopped();
@@ -2810,33 +2846,47 @@ void MainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pat
         return;
     }
 
-    FileSys::VirtualFile packed_update_raw{};
-    loader->ReadUpdateRaw(packed_update_raw);
-
+    u64 title_id = program_id;
+    FileSys::VirtualFile romfs;
+    const auto uninstalled = Loader::ReadUninstalledRomFS(*loader);
     const auto& installed = QtCommon::system->GetContentProvider();
-
-    u64 title_id{};
     u8 raw_type{};
-    if (!SelectRomFSDumpTarget(installed, program_id, &title_id, &raw_type)) {
+    bool game_file_selected = false;
+    if (!SelectRomFSDumpTarget(installed, program_id, uninstalled && *uninstalled, &title_id,
+                               &raw_type, &game_file_selected)) {
+        failed();
+        return;
+    }
+    if (game_file_selected) {
+        title_id = program_id;
+        romfs = *uninstalled;
+    } else {
+        FileSys::VirtualFile packed_update_raw{};
+        loader->ReadUpdateRaw(packed_update_raw);
+
+        const auto type = static_cast<FileSys::ContentRecordType>(raw_type);
+        const auto base_nca = installed.GetEntry(title_id, type);
+        if (!base_nca) {
+            failed();
+            return;
+        }
+
+        const FileSys::NCA update_nca{packed_update_raw, nullptr};
+        if (type != FileSys::ContentRecordType::Program ||
+            update_nca.GetStatus() != Loader::ResultStatus::ErrorMissingBKTRBaseRomFS ||
+            update_nca.GetTitleId() != FileSys::GetUpdateTitleID(title_id)) {
+            packed_update_raw = {};
+        }
+
+        const FileSys::PatchManager pm{title_id, QtCommon::system->GetFileSystemController(),
+                                       installed};
+        romfs = pm.PatchRomFS(base_nca.get(), base_nca->GetRomFS(), type, packed_update_raw, false);
+    }
+    if (romfs == nullptr) {
         failed();
         return;
     }
 
-    const auto type = static_cast<FileSys::ContentRecordType>(raw_type);
-    const auto base_nca = installed.GetEntry(title_id, type);
-    if (!base_nca) {
-        failed();
-        return;
-    }
-
-    const FileSys::NCA update_nca{packed_update_raw, nullptr};
-    if (type != FileSys::ContentRecordType::Program ||
-        update_nca.GetStatus() != Loader::ResultStatus::ErrorMissingBKTRBaseRomFS ||
-        update_nca.GetTitleId() != FileSys::GetUpdateTitleID(title_id)) {
-        packed_update_raw = {};
-    }
-
-    const auto base_romfs = base_nca->GetRomFS();
     const auto dump_dir =
         target == DumpRomFSTarget::Normal
             ? Common::FS::GetEdenPath(Common::FS::EdenPath::DumpDir)
@@ -2845,15 +2895,19 @@ void MainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pat
 
     const auto path = Common::FS::PathToUTF8String(dump_dir / romfs_dir);
 
-    const FileSys::PatchManager pm{title_id, QtCommon::system->GetFileSystemController(),
-                                   installed};
-    auto romfs = pm.PatchRomFS(base_nca.get(), base_romfs, type, packed_update_raw, false);
+    // The SDMC target can already hold the user's LayeredFS files; keep a folder that existed.
+    const bool existed = Common::FS::Exists(dump_dir / romfs_dir);
+    const auto discard = [&] {
+        if (!existed) {
+            QtCommon::vfs->DeleteDirectory(path);
+        }
+    };
 
     const auto out = VfsFilesystemCreateDirectoryWrapper(path, FileSys::OpenMode::ReadWrite);
 
     if (out == nullptr) {
         failed();
-        QtCommon::vfs->DeleteDirectory(path);
+        discard();
         return;
     }
 
@@ -2867,7 +2921,7 @@ void MainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pat
         selections, 0, false, &ok);
     if (!ok) {
         failed();
-        QtCommon::vfs->DeleteDirectory(path);
+        discard();
         return;
     }
 
@@ -2907,7 +2961,7 @@ void MainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pat
     } else {
         progress.close();
         failed();
-        QtCommon::vfs->DeleteDirectory(path);
+        discard();
     }
 }
 
@@ -3307,10 +3361,15 @@ void MainWindow::OnRestartGame() {
         return;
     }
 
-    if (ConfirmShutdownGame()) {
+    const u64 session = emu_session.Current();
+    if (ConfirmShutdownGame() && emu_session.IsCurrent(session)) {
         // Make a copy since ShutdownGame edits game_path
         const auto current_game = QString(current_game_path);
         ShutdownGame();
+        // Another program started while this one shut down; do not replace it.
+        if (emulation_running || !emu_session.IsCurrent(session + 1)) {
+            return;
+        }
         BootGame(current_game, ApplicationAppletParameters());
     }
 }
@@ -3334,7 +3393,8 @@ void MainWindow::OnPauseContinueGame() {
 }
 
 void MainWindow::OnStopGame() {
-    if (ConfirmShutdownGame()) {
+    const u64 session = emu_session.Current();
+    if (ConfirmShutdownGame() && emu_session.IsCurrent(session)) {
         play_time_manager->Stop();
         if (OnShutdownBegin()) {
             OnShutdownBeginDialog();
@@ -4120,6 +4180,13 @@ void MainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file_
 
     if (result != QDialog::Accepted && !UISettings::values.configuration_applied) {
         Settings::RestoreGlobalState(QtCommon::system->IsPoweredOn());
+        if (QtCommon::system->IsPoweredOn()) {
+            // Opening the dialog already reloaded the game's file and dropped the title defaults
+            // (Yoshi loads no save without reactive flushing, issue 181).
+            Core::GameSettings::LoadOverrides(QtCommon::system->GetApplicationProcessProgramID(),
+                                              QtCommon::system->Renderer());
+            QtCommon::system->ApplySettings();
+        }
         return;
     } else if (result == QDialog::Accepted) {
         dialog.ApplyConfiguration();
@@ -5137,7 +5204,9 @@ void MainWindow::SetFPSSuffix() {
 }
 
 bool MainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed, u64 program_id,
-                                       u64* selected_title_id, u8* selected_content_record_type) {
+                                       bool offer_game_file, u64* selected_title_id,
+                                       u8* selected_content_record_type,
+                                       bool* game_file_selected) {
     using ContentInfo = std::tuple<u64, FileSys::TitleType, FileSys::ContentRecordType>;
     boost::container::flat_set<ContentInfo> available_title_ids;
 
@@ -5157,14 +5226,20 @@ bool MainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed
     RetrieveEntries(FileSys::TitleType::Application, FileSys::ContentRecordType::LegalInformation);
     RetrieveEntries(FileSys::TitleType::AOC, FileSys::ContentRecordType::Data);
 
-    if (available_title_ids.empty()) {
+    // A loose game file (NUP) registers no installed program, so it is offered as its own entry.
+    const size_t game_file_entries = offer_game_file ? 1 : 0;
+    if (available_title_ids.size() + game_file_entries == 0) {
         return false;
     }
 
     size_t title_index = 0;
 
-    if (available_title_ids.size() > 1) {
+    if (available_title_ids.size() + game_file_entries > 1) {
         QStringList list;
+        if (offer_game_file) {
+            list.push_back(QStringLiteral("Program [%1] (game file)")
+                               .arg(QString::fromStdString(fmt::format("{:X}", program_id))));
+        }
         for (auto& [title_id, title_type, record_type] : available_title_ids) {
             const auto hex_title_id = QString::fromStdString(fmt::format("{:X}", title_id));
             if (record_type == FileSys::ContentRecordType::Program) {
@@ -5190,7 +5265,12 @@ bool MainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed
         title_index = list.indexOf(res);
     }
 
-    const auto& [title_id, title_type, record_type] = *available_title_ids.nth(title_index);
+    if (offer_game_file && title_index == 0) {
+        *game_file_selected = true;
+        return true;
+    }
+    const auto& [title_id, title_type, record_type] =
+        *available_title_ids.nth(title_index - game_file_entries);
     *selected_title_id = title_id;
     *selected_content_record_type = static_cast<u8>(record_type);
     return true;

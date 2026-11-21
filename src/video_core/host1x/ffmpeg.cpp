@@ -336,7 +336,8 @@ bool DecoderContext::SendPacket(const Packet& packet) {
 std::shared_ptr<Frame> DecoderContext::ReceiveFrame() {
     auto ReceiveImpl = [&](AVFrame* frame) -> int {
         const int ret = avcodec_receive_frame(m_codec_context, frame);
-        if (ret < 0 && ret != AVERROR_EOF && ret != AVERROR(EAGAIN)) {
+        m_receive_failed = ret < 0 && ret != AVERROR_EOF && ret != AVERROR(EAGAIN);
+        if (m_receive_failed) {
             LOG_ERROR(HW_GPU, "avcodec_receive_frame error: {}", AVError(ret));
         }
         return ret;

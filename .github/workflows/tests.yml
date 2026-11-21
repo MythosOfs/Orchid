@@ -87,6 +87,24 @@ jobs:
         shell: bash
         run: build/tests/bin/tests.exe --reporter console --durations yes
 
+      - name: Run tests in their own process
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: build/tests/bin/tests.exe "[service]" --reporter console --durations yes
+
+      - name: Run the key manager tests, each in its own process
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          for tag in eticket keyblob nax keys_file; do
+            build/tests/bin/tests.exe "[$tag]" --reporter console --durations yes || exit 1
+          done
+
       - name: Run dynarmic tests
         shell: bash
         run: build/tests/bin/dynarmic_tests.exe --durations yes
+
+      - name: Run the GPU split ring test in its own process
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: build/tests/bin/tests.exe "[gpu_split]" --reporter console --durations yes

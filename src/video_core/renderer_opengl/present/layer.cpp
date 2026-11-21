@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include "video_core/framebuffer_config.h"
 #include "video_core/present.h"
 #include "video_core/renderer_opengl/gl_blit_screen.h"
@@ -134,22 +135,41 @@ FramebufferTextureInfo Layer::LoadFBToScreenInfo(const Tegra::FramebufferConfig&
     info.scaled_height = framebuffer.height;
 
     // TODO(Rodrigo): Read this from HLE
-    constexpr u32 block_height_log2 = 4;
+    constexpr u32 default_block_height_log2 = 4;
+    // A native FP16 image is detiled with its own block height, GOB order and padded row pitch
+    // (stride). One that cannot be read that way is shown black.
+    const bool fp16 = framebuffer.pixel_format == Service::android::PixelFormat::RgbaFp16;
+    const auto fp16_block_height = fp16 ? Tegra::Fp16DetileBlockHeight(framebuffer) : std::nullopt;
+    const u32 block_height_log2 = fp16_block_height.value_or(default_block_height_log2);
     const auto pixel_format{
         VideoCore::Surface::PixelFormatFromGPUPixelFormat(framebuffer.pixel_format)};
     const u32 bytes_per_pixel{VideoCore::Surface::BytesPerBlock(pixel_format)};
-    const u64 size_in_bytes{Tegra::Texture::CalculateSize(
-        true, bytes_per_pixel, framebuffer.stride, framebuffer.height, 1, block_height_log2, 0)};
     const u8* const host_ptr{device_memory.GetPointer<u8>(framebuffer_addr)};
-    if (host_ptr) {
+    // Rows of the detiled image, and of the upload below.
+    const u32 row_length =
+        fp16 && fp16_block_height && host_ptr ? framebuffer.stride : framebuffer.width;
+    if (fp16 && (!fp16_block_height || !host_ptr)) {
+        std::ranges::fill(gl_framebuffer_data, u8{});
+    } else if (host_ptr) {
+        const size_t upload_size = size_t{row_length} * framebuffer.height * bytes_per_pixel;
+        if (gl_framebuffer_data.size() < upload_size) {
+            gl_framebuffer_data.resize(upload_size);
+        }
+        const u64 size_in_bytes{Tegra::Texture::CalculateSize(true, bytes_per_pixel,
+                                                              framebuffer.stride,
+                                                              framebuffer.height, 1,
+                                                              block_height_log2, 0)};
         const std::span<const u8> input_data(host_ptr, size_in_bytes);
         Tegra::Texture::UnswizzleTexture(gl_framebuffer_data, input_data, bytes_per_pixel,
-                                         framebuffer.width, framebuffer.height, 1,
-                                         block_height_log2, 0);
+                                         row_length, framebuffer.height, 1,
+                                         block_height_log2, 0, 1,
+                                         fp16 && framebuffer.native_tiling);
     }
 
     glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(framebuffer.stride));
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, static_cast<GLint>(row_length));
+    // Rows are tightly packed, also an odd-width RGB565 one.
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     // Update existing texture
     // TODO: Test what happens on hardware when you change the framebuffer dimensions so that
@@ -187,6 +207,11 @@ void Layer::ConfigureFramebufferTexture(const Tegra::FramebufferConfig& framebuf
         internal_format = GL_RGB10_A2;
         framebuffer_texture.gl_format = GL_RGBA;
         framebuffer_texture.gl_type = GL_UNSIGNED_INT_2_10_10_10_REV;
+        break;
+    case Service::android::PixelFormat::RgbaFp16:
+        internal_format = GL_RGBA16F;
+        framebuffer_texture.gl_format = GL_RGBA;
+        framebuffer_texture.gl_type = GL_HALF_FLOAT;
         break;
     case Service::android::PixelFormat::Rgb565:
         internal_format = GL_RGB565;

@@ -34,15 +34,14 @@ WindowAdaptPass::~WindowAdaptPass() = default;
 void WindowAdaptPass::Draw(const Device& device, RasterizerVulkan& rasterizer, Scheduler& scheduler, size_t image_index,
                            std::list<Layer>& layers,
                            std::span<const Tegra::FramebufferConfig> configs,
-                           const Layout::FramebufferLayout& layout, Frame* dst) {
+                           const Layout::FramebufferLayout& layout,
+                           VkFramebuffer framebuffer, VkExtent2D extent,
+                           const HdrPresent& output) {
 
-    const VkFramebuffer host_framebuffer{*dst->framebuffer};
+    const VkFramebuffer host_framebuffer{framebuffer};
     const VkRenderPass renderpass{*render_pass};
     const VkPipelineLayout graphics_pipeline_layout{*pipeline_layout};
-    const VkExtent2D render_area{
-        .width = dst->width,
-        .height = dst->height,
-    };
+    const VkExtent2D render_area{extent};
 
     const size_t layer_count = configs.size();
     std::vector<PresentPushConstants> push_constants(layer_count);
@@ -65,20 +64,21 @@ void WindowAdaptPass::Draw(const Device& device, RasterizerVulkan& rasterizer, S
         }
 
         layer_it->ConfigureDraw(device, &push_constants[i], &descriptor_sets[i], rasterizer, *sampler,
-                                image_index, configs[i], layout);
+                                image_index, configs[i], layout, output);
         layer_it++;
     }
 
     scheduler.Record([=](vk::CommandBuffer cmdbuf) {
-        const f32 bg_red = Settings::values.bg_red.GetValue() / 255.0f;
-        const f32 bg_green = Settings::values.bg_green.GetValue() / 255.0f;
-        const f32 bg_blue = Settings::values.bg_blue.GetValue() / 255.0f;
+        const auto background =
+            BackgroundClearColor(output, {Settings::values.bg_red.GetValue() / 255.0f,
+                                          Settings::values.bg_green.GetValue() / 255.0f,
+                                          Settings::values.bg_blue.GetValue() / 255.0f});
         const VkClearAttachment clear_attachment{
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .colorAttachment = 0,
             .clearValue =
                 {
-                    .color = {.float32 = {bg_red, bg_green, bg_blue, 1.0f}},
+                    .color = {.float32 = {background[0], background[1], background[2], 1.0f}},
                 },
         };
         const VkClearRect clear_rect{

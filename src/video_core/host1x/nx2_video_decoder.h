@@ -39,6 +39,23 @@ enum class Nx2PictureFormat : u32 {
     Bgra8,
 };
 
+/// Test seam: makes the host GPU decoder fail to open, reject every packet or answer every packet
+/// with EAGAIN. NoCpu rejects every packet and makes the CPU decoder fail to open. Replay rejects
+/// every packet and makes the CPU decoder reject the last packet it replays from the host GPU.
+/// Hold takes every packet without decoding it. SwitchReceive rejects every packet and fails the
+/// CPU decoder's receive after the packet that made it take over.
+enum class Nx2GpuDecodeFault {
+    None,
+    Open,
+    Packet,
+    Busy,
+    NoCpu,
+    Replay,
+    Hold,
+    ReplayReceive,
+    SwitchReceive,
+};
+
 /// Checks if stream data begins with an H.264 Annex-B start code or avcC/MP4 length-prefixed NALUs.
 bool IsH264Stream(std::span<const u8> data);
 
@@ -47,8 +64,11 @@ bool IsH264Stream(std::span<const u8> data);
 /// Used from one thread at a time.
 class Nx2VideoDecoder {
 public:
-    explicit Nx2VideoDecoder(std::span<const u8> configuration);
+    explicit Nx2VideoDecoder(std::span<const u8> configuration,
+                             Nx2GpuDecodeFault fault = Nx2GpuDecodeFault::None);
     ~Nx2VideoDecoder();
+
+    void SetGpuDecodeFault(Nx2GpuDecodeFault fault);
 
     bool IsOpen() const;
 

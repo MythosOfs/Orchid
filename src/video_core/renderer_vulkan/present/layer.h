@@ -16,6 +16,7 @@
 #include "video_core/renderer_vulkan/present/fsr3.h"
 #include "video_core/renderer_vulkan/present/sgsr.h"
 #include "video_core/renderer_vulkan/present/fxaa.h"
+#include "video_core/renderer_vulkan/present/hdr_convert.h"
 #ifdef HAS_RESHADE
 #include "video_core/renderer_vulkan/present/post_process.h"
 #endif
@@ -53,14 +54,16 @@ public:
     explicit Layer(const Device& device, MemoryAllocator& memory_allocator, Scheduler& scheduler,
                    Tegra::MaxwellDeviceMemoryManager& device_memory, size_t image_count,
                    VkExtent2D output_size, VkDescriptorSetLayout layout,
-                   const PresentFilters& filters);
+                   const PresentFilters& filters, bool hdr_output);
     ~Layer();
 
+    /// Prepares layer descriptors and push constants. The layer is converted to the frame's
+    /// encoding (output); an HDR frame bypasses anti-aliasing, post-processing and upscaling.
     void ConfigureDraw(const Device& device, PresentPushConstants* out_push_constants,
                        VkDescriptorSet* out_descriptor_set, RasterizerVulkan& rasterizer,
                        VkSampler sampler, size_t image_index,
                        const Tegra::FramebufferConfig& framebuffer,
-                       const Layout::FramebufferLayout& layout);
+                       const Layout::FramebufferLayout& layout, const HdrPresent& output);
 
 private:
     void CreateDescriptorPool(const Device& device);
@@ -97,10 +100,12 @@ private:
     std::vector<vk::ImageView> raw_image_views{};
     u32 raw_width{};
     u32 raw_height{};
+    u32 raw_stride{};
     Service::android::PixelFormat pixel_format{};
 
     Settings::AntiAliasing anti_alias_setting{};
     std::variant<std::monostate, FXAA, SMAA> anti_alias{};
+    std::optional<HdrConvert> hdr_convert{};
     std::variant<std::monostate, SGSR, FSR, FSR3> sr_filter{};
 #ifdef HAS_RESHADE
     std::optional<PostProcessChain> post_process{};

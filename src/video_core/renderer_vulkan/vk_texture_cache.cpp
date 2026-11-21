@@ -2458,6 +2458,12 @@ bool TextureCacheRuntime::CanDownloadMsaa(const VideoCommon::ImageInfo& info) co
     return true;
 }
 
+VideoCommon::ScaledExtentLimit TextureCacheRuntime::GetMaxScaledExtent() const noexcept {
+    const u32 dimension = device.GetMaxImageDimension2D();
+    return {(std::min)(dimension, device.GetMaxFramebufferWidth()),
+            (std::min)(dimension, device.GetMaxFramebufferHeight())};
+}
+
 bool TextureCacheRuntime::CanReportMemoryUsage() const {
     return device.CanReportMemoryUsage();
 }
@@ -3718,23 +3724,15 @@ bool Image::ScaleUp(bool ignore) {
         return false;
     }
     ASSERT(info.type != ImageType::Linear);
-    {
-        const bool is_2d = info.type == ImageType::e2D;
-        const u32 scaled_width = resolution.ScaleUp(info.size.width);
-        const u32 scaled_height = is_2d ? resolution.ScaleUp(info.size.height) : info.size.height;
-        // A scaled image past the device's 16384 guarantee or the 2^28-texel budget of the
-        // image math must not exist: the allocator falls back to an unbacked sparse image and
-        // binding it then loses the device (the 1.5x crash: a 12288^2 D16 scaled to 18432^2).
-        // Keep such images at native size - the framework already handles images that do not
-        // rescale (ImageCanRescale / the Rescaled flag).
-        if (scaled_width > 16384 || scaled_height > 16384 ||
-            u64{scaled_width} * scaled_height > (u64{1} << 28)) {
-            return false;
-        }
+    // Past the device's limits the scaled image would be unbacked and binding it loses the
+    // device; such images stay native (ImageCanRescale refuses them too).
+    if (!VideoCommon::ScaledImageFits(info, resolution, runtime->GetMaxScaledExtent())) {
+        return false;
     }
     flags |= ImageFlagBits::Rescaled;
     has_scaled = true;
-    if (!scaled_image) {
+    const bool fresh_scaled = !scaled_image;
+    if (fresh_scaled) {
         const bool is_2d = info.type == ImageType::e2D;
         const u32 scaled_width = resolution.ScaleUp(info.size.width);
         const u32 scaled_height = is_2d ? resolution.ScaleUp(info.size.height) : info.size.height;
@@ -3753,7 +3751,7 @@ bool Image::ScaleUp(bool ignore) {
         aspect_mask = ImageAspectMask(info.format);
     }
     if (NeedsScaleHelper()) {
-        if (!BlitScaleHelper(true)) {
+        if (!BlitScaleHelper(true, fresh_scaled)) {
             current_image = &Image::original_image;
             return false;
         }
@@ -3781,7 +3779,7 @@ bool Image::ScaleDown(bool ignore) {
         aspect_mask = ImageAspectMask(info.format);
     }
     if (NeedsScaleHelper()) {
-        if (!BlitScaleHelper(false)) {
+        if (!BlitScaleHelper(false, !ExchangeInitialization())) {
             current_image = &Image::scaled_image;
             flags |= ImageFlagBits::Rescaled;
             return false;
@@ -3792,7 +3790,7 @@ bool Image::ScaleDown(bool ignore) {
     return true;
 }
 
-bool Image::BlitScaleHelper(bool scale_up) {
+bool Image::BlitScaleHelper(bool scale_up, bool dst_undefined) {
     using namespace VideoCommon;
     static constexpr auto BLIT_OPERATION = Tegra::Engines::Fermi2D::Operation::SrcCopy;
     const bool is_color{aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT};
@@ -3804,12 +3802,19 @@ bool Image::BlitScaleHelper(bool scale_up) {
     const auto& resolution = runtime->resolution;
     const u32 scaled_width = resolution.ScaleUp(info.size.width);
     const u32 scaled_height = is_2d ? resolution.ScaleUp(info.size.height) : info.size.height;
+    const auto make_view = [this](std::unique_ptr<ImageView>& view, vk::Image Image::*image) {
+        if (!view) {
+            const auto previous = std::exchange(current_image, image);
+            const auto view_info = ImageViewInfo(ImageViewType::e2D, info.format);
+            view = std::make_unique<ImageView>(*runtime, view_info, NULL_IMAGE_ID, *this);
+            current_image = previous;
+        }
+    };
+    make_view(scale_view, &Image::scaled_image);
+    make_view(normal_view, &Image::original_image);
+    ImageView& src_view = scale_up ? *normal_view : *scale_view;
     std::unique_ptr<ImageView>& blit_view = scale_up ? scale_view : normal_view;
     std::optional<Framebuffer>& blit_framebuffer = scale_up ? scale_framebuffer : normal_framebuffer;
-    if (!blit_view) {
-        const auto view_info = ImageViewInfo(ImageViewType::e2D, info.format);
-        blit_view = std::make_unique<ImageView>(*runtime, view_info, NULL_IMAGE_ID, *this);
-    }
 
     const auto [samples_x, samples_y] = VideoCommon::SamplesLog2(info.num_samples);
     const u32 src_width = (scale_up ? info.size.width : scaled_width) >> samples_x;
@@ -3824,20 +3829,40 @@ bool Image::BlitScaleHelper(bool scale_up) {
         .start = {0, 0},
         .end = {s32(dst_width), s32(dst_height)},
     };
-    const VkExtent2D extent{
-        .width = (std::max)(scaled_width, info.size.width) >> samples_x,
-        .height = (std::max)(scaled_height, info.size.height) >> samples_y,
-    };
+    const VkExtent2D extent{dst_width, dst_height};
+
+    // An initialised destination keeps GENERAL: a depth-only helper leaves its stencil as is.
+    const VkImage dst_image = scale_up ? *scaled_image : *original_image;
+    const VkImageAspectFlags dst_aspect = aspect_mask;
+    const VkImageLayout dst_layout =
+        dst_undefined ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
+    scheduler->RequestOutsideRenderPassOperationContext();
+    scheduler->Record([dst_image, dst_aspect, dst_layout](vk::CommandBuffer cmdbuf) {
+        const VkImageMemoryBarrier barrier{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+            .oldLayout = dst_layout,
+            .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = dst_image,
+            .subresourceRange{dst_aspect, 0, 1, 0, 1},
+        };
+        cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, barrier);
+    });
 
     auto* view_ptr = blit_view.get();
     if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT) {
         if (!blit_framebuffer)
             blit_framebuffer.emplace(*runtime, view_ptr, nullptr, extent, scale_up);
         if (info.num_samples > 1) {
-            runtime->blit_image_helper.BlitColorMSAA(&*blit_framebuffer, *blit_view,
+            runtime->blit_image_helper.BlitColorMSAA(&*blit_framebuffer, src_view,
                 dst_region, src_region);
         } else {
-            runtime->blit_image_helper.BlitColor(&*blit_framebuffer, *blit_view,
+            runtime->blit_image_helper.BlitColor(&*blit_framebuffer, src_view,
                 dst_region, src_region, operation, BLIT_OPERATION);
         }
     } else if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
@@ -3847,13 +3872,13 @@ bool Image::BlitScaleHelper(bool scale_up) {
         const bool can_blit_stencil =
             has_stencil && runtime->device.IsExtShaderStencilExportSupported();
         if (info.num_samples > 1) {
-            runtime->blit_image_helper.BlitDepthStencilMSAA(&*blit_framebuffer, *blit_view,
+            runtime->blit_image_helper.BlitDepthStencilMSAA(&*blit_framebuffer, src_view,
                 dst_region, src_region);
         } else if (can_blit_stencil) {
-            runtime->blit_image_helper.BlitDepthStencil(&*blit_framebuffer, *blit_view,
+            runtime->blit_image_helper.BlitDepthStencil(&*blit_framebuffer, src_view,
                 dst_region, src_region, operation, BLIT_OPERATION);
         } else {
-            runtime->blit_image_helper.BlitDepth(&*blit_framebuffer, *blit_view, dst_region,
+            runtime->blit_image_helper.BlitDepth(&*blit_framebuffer, src_view, dst_region,
                                                  src_region);
         }
     } else {

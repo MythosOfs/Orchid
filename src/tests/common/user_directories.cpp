@@ -2,12 +2,19 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <string>
 #include <vector>
 #include <catch2/catch_test_macros.hpp>
 #include "common/fs/path_util.h"
+
+#ifndef _WIN32
+#include <pwd.h>
+#include <unistd.h>
+#endif
 
 namespace {
 namespace fs = std::filesystem;
@@ -125,3 +132,94 @@ TEST_CASE("UserDirectories: selection on the real filesystem", "[common]") {
 
     fs::remove_all(base);
 }
+
+#ifndef _WIN32
+namespace {
+/// Sets (or with nullptr unsets) an environment variable and restores it on scope exit.
+class ScopedEnv {
+public:
+    ScopedEnv(const char* name_, const char* value) : name{name_} {
+        if (const char* old = std::getenv(name)) {
+            previous = old;
+        }
+        if (value) {
+            setenv(name, value, 1);
+        } else {
+            unsetenv(name);
+        }
+    }
+    ~ScopedEnv() {
+        if (previous) {
+            setenv(name, previous->c_str(), 1);
+        } else {
+            unsetenv(name);
+        }
+    }
+
+private:
+    const char* name;
+    std::optional<std::string> previous;
+};
+
+constexpr const char* fake_home = "/nonexistent/orchid-test-home";
+
+struct XdgVar {
+    const char* name;
+    const char* home_default;
+};
+constexpr XdgVar xdg_vars[]{{"XDG_DATA_HOME", ".local/share"},
+                            {"XDG_CONFIG_HOME", ".config"},
+                            {"XDG_CACHE_HOME", ".cache"}};
+} // namespace
+
+TEST_CASE("UserDirectories: unset, empty or relative XDG variables use the home defaults",
+          "[common]") {
+    const ScopedEnv home{"HOME", fake_home};
+    for (const auto& var : xdg_vars) {
+        for (const char* value : {static_cast<const char*>(nullptr), "", "relative/dir", "./x"}) {
+            const ScopedEnv env{var.name, value};
+            INFO(var.name << "=" << (value ? value : "(unset)"));
+            CHECK(Common::FS::GetDataDirectory(var.name) == fs::path{fake_home} / var.home_default);
+        }
+    }
+}
+
+TEST_CASE("UserDirectories: absolute XDG variables are kept", "[common]") {
+    const ScopedEnv home{"HOME", fake_home};
+    SECTION("one at a time") {
+        for (const auto& var : xdg_vars) {
+            const ScopedEnv env{var.name, "/nonexistent/xdg"};
+            CHECK(Common::FS::GetDataDirectory(var.name) == fs::path{"/nonexistent/xdg"});
+        }
+    }
+    SECTION("all together") {
+        const ScopedEnv data{"XDG_DATA_HOME", "/nonexistent/data"};
+        const ScopedEnv config{"XDG_CONFIG_HOME", "/nonexistent/config"};
+        const ScopedEnv cache{"XDG_CACHE_HOME", "/nonexistent/cache"};
+        CHECK(Common::FS::GetDataDirectory("XDG_DATA_HOME") == fs::path{"/nonexistent/data"});
+        CHECK(Common::FS::GetDataDirectory("XDG_CONFIG_HOME") == fs::path{"/nonexistent/config"});
+        CHECK(Common::FS::GetDataDirectory("XDG_CACHE_HOME") == fs::path{"/nonexistent/cache"});
+    }
+}
+
+TEST_CASE("UserDirectories: a set HOME is used as is", "[common]") {
+    for (const char* value : {fake_home, "/abcd", "/a"}) {
+        const ScopedEnv home{"HOME", value};
+        CHECK(Common::FS::GetHomeDirectory() == fs::path{value});
+    }
+}
+
+TEST_CASE("UserDirectories: an empty HOME falls back to passwd", "[common]") {
+    const auto* entry = getpwuid(getuid());
+    const fs::path passwd_home{entry && entry->pw_dir ? entry->pw_dir : ""};
+    if (!passwd_home.is_absolute()) {
+        SKIP("The current UID has no absolute passwd home directory");
+    }
+    const ScopedEnv home{"HOME", ""};
+    CHECK(Common::FS::GetHomeDirectory() == passwd_home);
+    for (const auto& var : xdg_vars) {
+        const ScopedEnv env{var.name, nullptr};
+        CHECK(Common::FS::GetDataDirectory(var.name) == passwd_home / var.home_default);
+    }
+}
+#endif

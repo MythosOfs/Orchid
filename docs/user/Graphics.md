@@ -4,6 +4,59 @@ Graphical enhancements and visual quality improvments. This doesn't cover textur
 
 ## Visual Enhancements
 
+### Native HDR output
+
+**HDR output is Off by default.** Set Graphics > HDR output to Auto (Windows) or On to present
+the native HDR of Switch 2 games that have an HDR mode. It does not add HDR to SDR-only games.
+It needs Vulkan.
+
+- **Off**: the game is always told the display is SDR.
+- **Auto**: HDR while Windows HDR ("Use HDR") is on for the monitor that shows the game. Other
+  hosts cannot tell, so Auto means SDR there.
+- **On**: HDR whenever the display driver offers an HDR swapchain format. Android always
+  presents SDR.
+
+On Linux use On: Orchid has no way yet to ask the compositor whether the monitor runs in HDR.
+Mesa offers an HDR format on Wayland compositors with colour management and none on X11 or
+XWayland, so Orchid has to run as a Wayland client (`QT_QPA_PLATFORM=wayland`, which needs a
+build with Qt's Wayland platform plugin). The compositor maps the HDR image to the monitor, also
+when the monitor itself runs in SDR. Without an HDR format On presents SDR, like Off.
+
+While HDR output is on, Orchid presents an HDR swapchain: HDR10 (10-bit PQ BT.2020) or, with
+HDR format set to scRGB, a 16-bit float one. It uses the other one if the driver offers only
+that, and SDR if it offers neither. The game is told the display is HDR only while that
+swapchain really is HDR, with the peak luminance and reference white from HDR Peak Luminance
+and HDR Reference White. At 0 these follow the monitor on Windows (its peak luminance and the
+SDR content brightness); elsewhere they are 300 and 200 nits, the Switch 2 HDR calibration's
+starting values. An HDR10 swapchain gets HDR10 metadata with that peak where the driver
+supports it. Which images hold HDR follows that answer, not the pixel format: a game may draw
+SDR into 10-bit images.
+
+SDR layers (games without HDR, system menus) are shown at the reference white on an HDR
+swapchain. An HDR image shown on an SDR swapchain, and every screenshot or capture of an HDR
+frame, is tone mapped to SDR: brightness is taken relative to the reference white and highlights
+roll off so that the peak becomes SDR white.
+
+While HDR is active, anti-aliasing, post-processing, FSR/SGSR/FSR 3 upscaling and frame
+generation are off, and the window is scaled bilinearly. The upscaler that replaces a game's
+own DLSS (AMD FSR 3.1) runs inside the game's frame and keeps working.
+
+On Windows, Auto follows changes during play: toggling Windows HDR, moving the window to
+another monitor, changing the SDR content brightness or running the Windows HDR Calibration app
+is picked up within half a second. Orchid switches the swapchain when HDR was turned on or off,
+reports the new luminances, and asks the game to query the display again; games that listen
+switch between SDR and HDR images. Run the Windows HDR
+Calibration app for your monitor first: Windows reports the peak from the display's colour
+profile where one is set, else from its EDID, and the game tone maps to that peak.
+
+If HDR shows banding, try HDR format scRGB: some NVIDIA drivers band with a 10-bit swapchain in
+fullscreen.
+
+Windows Auto HDR applies to SDR output of DirectX 11 and 12 games and leaves an HDR swapchain
+alone. If you keep HDR output Off on an HDR desktop and Auto HDR engages for the emulator, turn
+Auto HDR off for `orchid.exe` in Settings > System > Display > Graphics, so SDR frames are shown
+as SDR.
+
 ### Anti-aliasing
 
 Enhancements aimed at removing jagged lines/sharp edges and/or masking artifacts.

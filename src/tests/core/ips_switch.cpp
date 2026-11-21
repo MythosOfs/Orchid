@@ -62,3 +62,13 @@ TEST_CASE("A patch line at the end of the file without a newline is applied", "[
     REQUIRE(bytes[15] == 'y');
     REQUIRE(bytes[3] == 'x');
 }
+
+TEST_CASE("Escapes in a quoted replacement give their control bytes", "[core][ipswitch]") {
+    const FileSys::IPSwitchCompiler compiler{Text("@enabled\n00000004 \"\\a\\e\\f\\q\"\n")};
+    const auto bytes = Patched(compiler);
+    REQUIRE(bytes[4] == 0x07);
+    REQUIRE(bytes[5] == 0x1b);
+    REQUIRE(bytes[6] == 0x0c);
+    REQUIRE(bytes[7] == 'q');
+    REQUIRE(bytes[8] == 0);
+}

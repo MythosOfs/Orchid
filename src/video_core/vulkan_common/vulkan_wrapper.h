@@ -354,6 +354,7 @@ struct DeviceDispatch : InstanceDispatch {
     PFN_vkResetFences vkResetFences{};
     PFN_vkResetQueryPool vkResetQueryPool{};
     PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT{};
+    PFN_vkSetHdrMetadataEXT vkSetHdrMetadataEXT{};
     PFN_vkSetDebugUtilsObjectTagEXT vkSetDebugUtilsObjectTagEXT{};
     PFN_vkUnmapMemory vkUnmapMemory{};
     PFN_vkUpdateDescriptorSetWithTemplate vkUpdateDescriptorSetWithTemplate{};
@@ -1179,6 +1180,10 @@ public:
                                  VkFence fence, u32* image_index) const noexcept {
         return dld->vkAcquireNextImageKHR(handle, swapchain, timeout, semaphore, fence,
                                           image_index);
+    }
+
+    void SetHdrMetadataEXT(VkSwapchainKHR swapchain, const VkHdrMetadataEXT& metadata) const noexcept {
+        dld->vkSetHdrMetadataEXT(handle, 1, &swapchain, &metadata);
     }
 
     VkResult WaitIdle() const noexcept {

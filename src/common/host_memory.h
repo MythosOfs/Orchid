@@ -77,6 +77,10 @@ public:
     /// A new kernel on this memory: everything a previous one used may hold data.
     void ForgetContents();
 
+    /// Unused backing: the host gets its RAM back now (Linux); later reads see zeros. The contents
+    /// stay marked dirty, so the next allocation still clears whatever was written after this.
+    void Discard(size_t physical_offset, size_t length);
+
     [[nodiscard]] u8* BackingBasePointer() noexcept {
         return backing_base;
     }

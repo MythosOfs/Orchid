@@ -259,6 +259,31 @@ void KMemoryManager::MarkDirty(KPhysicalAddress address, size_t num_pages) {
                                              num_pages * PageSize);
 }
 
+void KMemoryManager::ReleaseFreeMemory() {
+    // A stopped game's heap otherwise keeps its RAM in the idle frontend until the next game
+    // allocates it (issue 59). Only pages without a reference are given back: kernel objects live
+    // in slab memory and pool pages a kernel resource still uses keep their reference, so nothing
+    // reads a free page before the next allocation clears it (it stays marked dirty for that).
+    m_released.store(true);
+    for (size_t i = 0; i < m_num_managers; i++) {
+        KScopedLightLock lk(m_pool_locks[static_cast<size_t>(m_managers[i].GetPool())]);
+        m_managers[i].ForEachFreeBlock(
+            [this](KPhysicalAddress block, size_t num_pages) { this->Discard(block, num_pages); });
+    }
+}
+
+void KMemoryManager::ReleaseFreed(KPhysicalAddress address, size_t num_pages) {
+    // Covers pages whose last reference drops later, e.g. a process finalized after shutdown.
+    if (m_released.load()) {
+        this->Discard(address, num_pages);
+    }
+}
+
+void KMemoryManager::Discard(KPhysicalAddress address, size_t num_pages) {
+    m_system.DeviceMemory().buffer.Discard(GetInteger(address) - Core::DramMemoryMap::Base,
+                                           num_pages * PageSize);
+}
+
 Result KMemoryManager::AllocatePageGroupImpl(KPageGroup* out, size_t num_pages, Pool pool,
                                              Direction dir, bool unoptimized, bool random) {
     // Choose a heap based on our page size request.

@@ -187,6 +187,10 @@ public:
         return m_codec_context;
     }
 
+    bool ReceiveFailed() const {
+        return m_receive_failed;
+    }
+
     bool UsingDecodeOrder() const {
         return m_decode_order;
     }
@@ -196,6 +200,7 @@ private:
     AVCodecContext* m_codec_context{};
     std::shared_ptr<Frame> m_final_frame{};
     bool m_decode_order{};
+    bool m_receive_failed{};
 };
 
 struct FrameOffsets {

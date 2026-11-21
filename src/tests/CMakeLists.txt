@@ -82,6 +82,7 @@ add_executable(tests
     video_core/memory_budget.cpp
     video_core/astc_recompression_override.cpp
     video_core/nx2_video_configuration.cpp
+    video_core/nx2_video_gpu_fallback.cpp
     video_core/nx2_decoder_image.cpp
     video_core/nx2_present.cpp
     video_core/nx2_gpu_mappings.cpp

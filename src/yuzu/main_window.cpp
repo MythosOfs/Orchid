@@ -111,6 +111,7 @@
 
 #include "qt_common/abstract/frontend.h"
 
+#include "qt_common/game_list/worker.h"
 #include "qt_common/qt_common.h"
 #include "qt_common/qt_string_lookup.h"
 
@@ -2259,10 +2260,27 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
         title_version = metadata.first->GetVersionString();
         title_name = metadata.first->GetApplicationName();
     }
-    if (res != Loader::ResultStatus::Success || title_name.empty()) {
-        title_name = Common::FS::PathToUTF8String(
-            std::filesystem::path{Common::U16StringFromBuffer(filename.utf16(), filename.size())}
-                .filename());
+    if (res != Loader::ResultStatus::Success || title_name.empty() || title_name == " ") {
+        const auto& game_file = QtCommon::system->GetAppLoader().GetFile();
+        std::error_code ec;
+        const auto game_path =
+            game_file != nullptr
+                ? std::filesystem::absolute(Common::FS::ToU8String(game_file->GetFullPath()), ec)
+                      .lexically_normal()
+                : std::filesystem::path{};
+        const QString loose =
+            game_path.empty()
+                ? QString{}
+                : LooseDumpName(*QtCommon::vfs, Common::FS::PathToUTF8String(game_path), title_id);
+        if (!loose.isEmpty() && loose != QStringLiteral(" ")) {
+            title_name = loose.toStdString();
+        } else if (!game_path.empty()) {
+            title_name = Common::FS::PathToUTF8String(game_path.filename());
+        } else {
+            title_name = Common::FS::PathToUTF8String(std::filesystem::path{
+                Common::U16StringFromBuffer(filename.utf16(), filename.size())}
+                                                          .filename());
+        }
     }
     const bool is_64bit = QtCommon::system->Kernel().ApplicationProcess()->Is64Bit();
     const auto instruction_set_suffix = is_64bit ? tr("(64-bit)") : tr("(32-bit)");

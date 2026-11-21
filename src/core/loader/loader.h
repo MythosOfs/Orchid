@@ -375,6 +375,10 @@ public:
         return ResultStatus::ErrorNotImplemented;
     }
 
+    const FileSys::VirtualFile& GetFile() const {
+        return file;
+    }
+
 protected:
     FileSys::VirtualFile file;
     bool is_loaded = false;

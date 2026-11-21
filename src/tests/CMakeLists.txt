@@ -29,6 +29,7 @@ add_executable(tests
     common/range_set_move.cpp
     common/ring_buffer.cpp
     common/scratch_buffer.cpp
+    common/session_counter.cpp
     common/slot_vector.cpp
     common/undefined_fix.cpp
     common/unique_function.cpp

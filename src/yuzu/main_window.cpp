@@ -2331,8 +2331,7 @@ bool MainWindow::OnShutdownBegin() {
 
     if (QtCommon::system->IsShuttingDown()) {
         status_bar_update_timer.stop();
-        connect(QtCommon::emu_thread.get(), &QThread::finished, this,
-                &MainWindow::OnEmulationStopped, Qt::UniqueConnection);
+        ConnectEmulationFinished();
         return false;
     }
 
@@ -2351,7 +2350,7 @@ bool MainWindow::OnShutdownBegin() {
     QtCommon::emu_thread->disconnect();
     QtCommon::emu_thread->SetRunning(true);
 
-    connect(QtCommon::emu_thread.get(), &QThread::finished, this, &MainWindow::OnEmulationStopped);
+    ConnectEmulationFinished();
     emit EmulationStopping();
 
     int shutdown_time = 1000;
@@ -2397,12 +2396,20 @@ void MainWindow::OnEmulationStopTimeout() {
     OnEmulationStopped();
 }
 
+void MainWindow::ConnectEmulationFinished() {
+    connect(QtCommon::emu_thread.get(), &QThread::finished, this,
+            [this, session = emu_session.Current()] {
+                if (emu_session.IsCurrent(session)) {
+                    OnEmulationStopped();
+                }
+            });
+}
+
 void MainWindow::TerminateEmulationThread() {
     if (QtCommon::emu_thread && QtCommon::emu_thread->isRunning()) {
         LOG_ERROR(Frontend, "Emulation thread failed to stop, terminating it");
         // Both callers finalize after terminate(); a queued finished() would finalize again.
-        disconnect(QtCommon::emu_thread.get(), &QThread::finished, this,
-                   &MainWindow::OnEmulationStopped);
+        disconnect(QtCommon::emu_thread.get(), &QThread::finished, this, nullptr);
         QtCommon::emu_thread->terminate();
         QtCommon::emu_thread->wait();
     }
@@ -2415,6 +2422,7 @@ void MainWindow::OnEmulationStopped() {
     if (QtCommon::emu_thread && QtCommon::emu_thread->isRunning()) {
         return;
     }
+    emu_session.End();
     shutdown_timer.stop();
     emu_terminate_timer.stop();
     if (QtCommon::emu_thread) {

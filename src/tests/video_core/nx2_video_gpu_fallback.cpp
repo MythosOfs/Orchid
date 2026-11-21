@@ -281,22 +281,30 @@ TEST_CASE("Nx2 video falls back when the host GPU decoder only answered EAGAIN",
 
 TEST_CASE("Nx2 video decodes on the host GPU when FFmpeg can", "[nx2_video]") {
     // Whether FFmpeg on this host decodes the clip on the GPU (NV12 frames) or falls back itself.
-    FFmpeg::Decoder probe_decoder{Tegra::Host1x::NvdecCommon::VideoCodec::H264};
-    FFmpeg::HardwareContext probe_hardware;
-    FFmpeg::DecoderContext probe_context{probe_decoder};
-    bool host_gpu = false;
-    if (probe_hardware.InitializeForDecoder(probe_context, probe_decoder) &&
-        probe_context.OpenContext(probe_decoder, {})) {
+    // The probe drains and closes its decoder before the test opens one.
+    const bool host_gpu = [] {
+        FFmpeg::Decoder decoder{Tegra::Host1x::NvdecCommon::VideoCodec::H264};
+        FFmpeg::HardwareContext hardware;
+        FFmpeg::DecoderContext context{decoder};
+        if (!hardware.InitializeForDecoder(context, decoder) || !context.OpenContext(decoder, {})) {
+            return false;
+        }
+        std::optional<int> format;
+        const auto receive = [&] {
+            while (const auto frame = context.ReceiveFrame()) {
+                format = format.value_or(frame->GetFrame()->format);
+            }
+        };
         for (auto packet : Packets()) {
             const size_t size = packet.size();
             packet.resize(size + AV_INPUT_BUFFER_PADDING_SIZE);
-            probe_context.SendPacket(FFmpeg::Packet{std::span{packet.data(), size}});
-            if (const auto frame = probe_context.ReceiveFrame()) {
-                host_gpu = frame->GetFrame()->format == AV_PIX_FMT_NV12;
-                break;
-            }
+            context.SendPacket(FFmpeg::Packet{std::span{packet.data(), size}});
+            receive();
         }
-    }
+        avcodec_send_packet(context.GetCodecContext(), nullptr);
+        receive();
+        return format == AV_PIX_FMT_NV12;
+    }();
 
     Decoder decoder{Settings::NvdecEmulation::Gpu, Nx2GpuDecodeFault::None, Avc()};
     CHECK(decoder.Play(Packets(), Nx2GpuDecodeFault::None) == all_frames);

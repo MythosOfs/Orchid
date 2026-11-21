@@ -53,10 +53,6 @@ inline constexpr u64 YoshiMysteriousBookProgramId = 0x0400245021D2C000ULL;
 inline constexpr u64 SuperMarioBrosWonderProgramId = 0x010015100B514000ULL;
 inline constexpr u64 KirbyForgottenLandProgramId = 0x01004D300C5AE000ULL;
 
-inline constexpr bool ShowYoshi4kPatch(u64 program_id, bool global) {
-    return !global && program_id == YoshiMysteriousBookProgramId;
-}
-
 namespace Detail {
 inline auto SessionSetter() {
     return [](auto& setting, auto value) {

@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <QList>
@@ -29,12 +30,14 @@ namespace Ui {
 class ConfigurePerGameAddons;
 }
 
+struct BuiltinPatch;
+
 class ConfigurePerGameAddons : public QWidget {
     Q_OBJECT
 
 public:
     // ADDON_KEY: the disabled_addons key of a row whose text is not the key (embedded NUP content).
-    enum PatchData { NUMERIC_VERSION = Qt::UserRole, PATCH_LOCATION, ADDON_KEY };
+    enum PatchData { NUMERIC_VERSION = Qt::UserRole, PATCH_LOCATION, ADDON_KEY, BUILTIN_MODE };
 
     explicit ConfigurePerGameAddons(Core::System& system_, QWidget* parent = nullptr);
     ~ConfigurePerGameAddons() override;
@@ -64,6 +67,8 @@ private:
 
     void LoadConfiguration();
     void OnItemChanged(QStandardItem* item);
+    void LoadBuiltinPatches();
+    void EditBuiltinPatch(const QModelIndex& index);
 
     std::unique_ptr<Ui::ConfigurePerGameAddons> ui;
     FileSys::VirtualFile file;
@@ -75,6 +80,7 @@ private:
 
     std::vector<QList<QStandardItem*>> list_items;
     std::vector<QStandardItem*> update_items;
+    std::vector<std::pair<QStandardItem*, const BuiltinPatch*>> builtin_items;
 
     Core::System& system;
 };

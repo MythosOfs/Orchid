@@ -5,13 +5,19 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <array>
 #include <memory>
 #include <utility>
 
 #include <fmt/format.h>
 
+#include <QComboBox>
 #include <QDesktopServices>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QFormLayout>
 #include <QHeaderView>
+#include <QLabel>
 #include <QMenu>
 #include <QStandardItemModel>
 #include <QStandardPaths>
@@ -22,6 +28,8 @@
 #include "common/common_types.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
+#include "common/game_presets.h"
+#include "common/settings.h"
 #include "configuration/addon/mod_select_dialog.h"
 #include "core/core.h"
 #include "core/file_sys/patch_manager.h"
@@ -33,6 +41,93 @@
 #include "ui_configure_per_game_addons.h"
 #include "yuzu/configuration/configure_input.h"
 #include "yuzu/configuration/configure_per_game_addons.h"
+
+struct BuiltinPatch {
+    u64 title_id;
+    QString (*name)();
+    QString (*tooltip)();
+    Settings::SwitchableSetting<bool>* enabled;
+    QVariant (*load_mode)();
+    QString (*describe_mode)(const QVariant& mode);
+    QVariant (*edit_mode)(QWidget* parent, const QVariant& mode);
+    void (*apply_mode)(const QVariant& mode);
+};
+
+namespace {
+
+QStringList YoshiResolutionNames() {
+    return {ConfigurePerGameAddons::tr("1080p"), ConfigurePerGameAddons::tr("1440p"),
+            ConfigurePerGameAddons::tr("4K")};
+}
+
+QStringList YoshiAntiAliasingNames() {
+    return {ConfigurePerGameAddons::tr("No AA"), ConfigurePerGameAddons::tr("FXAA"),
+            ConfigurePerGameAddons::tr("DLAA")};
+}
+
+QVariant EditYoshiMode(QWidget* parent, const QVariant& mode) {
+    QDialog dialog(parent);
+    dialog.setWindowTitle(ConfigurePerGameAddons::tr("Fixed resolution"));
+    auto* const layout = new QFormLayout(&dialog);
+    auto* const resolution = new QComboBox;
+    resolution->addItems(YoshiResolutionNames());
+    resolution->setCurrentIndex(mode.toList().value(0).toInt());
+    auto* const anti_aliasing = new QComboBox;
+    anti_aliasing->addItems(YoshiAntiAliasingNames());
+    anti_aliasing->setCurrentIndex(mode.toList().value(1).toInt());
+    layout->addRow(ConfigurePerGameAddons::tr("Resolution:"), resolution);
+    layout->addRow(ConfigurePerGameAddons::tr("Anti-aliasing:"), anti_aliasing);
+    auto* const buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    QObject::connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    QObject::connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    layout->addRow(buttons);
+    if (dialog.exec() != QDialog::Accepted) {
+        return {};
+    }
+    return QVariantList{resolution->currentIndex(), anti_aliasing->currentIndex()};
+}
+
+const std::array BuiltinPatches{
+    BuiltinPatch{
+        Settings::YoshiMysteriousBookProgramId,
+        [] { return ConfigurePerGameAddons::tr("Fixed resolution (built-in, by Walnutoast830)"); },
+        [] {
+            return ConfigurePerGameAddons::tr(
+                "Renders the game at a fixed resolution with the chosen anti-aliasing instead of "
+                "upscaling a lower one, which removes the blur; the HUD keeps its size. "
+                "Double-click to choose the mode. Higher resolutions need a fast graphics card. "
+                "Leave the emulator's resolution scaling at 1x and do not combine it with another "
+                "resolution mod for this game (an installed one takes precedence). Only for game "
+                "version 1.0.2. Takes effect on the next game start. Patch by Walnutoast830.");
+        },
+        &Settings::values.yoshi_patch,
+        [] {
+            return QVariant{QVariantList{
+                static_cast<int>(Settings::values.yoshi_patch_resolution.GetValue()),
+                static_cast<int>(Settings::values.yoshi_patch_anti_aliasing.GetValue())}};
+        },
+        [](const QVariant& mode) -> QString {
+            return YoshiResolutionNames().value(mode.toList().value(0).toInt()) +
+                   QStringLiteral(", ") +
+                   YoshiAntiAliasingNames().value(mode.toList().value(1).toInt());
+        },
+        EditYoshiMode,
+        [](const QVariant& mode) {
+            Settings::values.yoshi_patch_resolution.SetGlobal(false);
+            Settings::values.yoshi_patch_resolution.SetValue(
+                static_cast<Settings::YoshiPatchResolution>(mode.toList().value(0).toInt()));
+            Settings::values.yoshi_patch_anti_aliasing.SetGlobal(false);
+            Settings::values.yoshi_patch_anti_aliasing.SetValue(
+                static_cast<Settings::YoshiPatchAntiAliasing>(mode.toList().value(1).toInt()));
+        },
+    },
+};
+
+QString BuiltinPatchText(const BuiltinPatch& patch, const QVariant& mode) {
+    return patch.name() + QStringLiteral(" \u2013 ") + patch.describe_mode(mode);
+}
+
+}
 
 ConfigurePerGameAddons::ConfigurePerGameAddons(Core::System& system_, QWidget* parent)
     : QWidget(parent), ui{std::make_unique<Ui::ConfigurePerGameAddons>()}, system{system_} {
@@ -82,6 +177,7 @@ ConfigurePerGameAddons::ConfigurePerGameAddons(Core::System& system_, QWidget* p
 
     connect(tree_view, &QTreeView::customContextMenuRequested, this,
             &ConfigurePerGameAddons::showContextMenu);
+    connect(tree_view, &QTreeView::activated, this, &ConfigurePerGameAddons::EditBuiltinPatch);
 }
 
 ConfigurePerGameAddons::~ConfigurePerGameAddons() = default;
@@ -131,6 +227,44 @@ void ConfigurePerGameAddons::ApplyConfiguration() {
     }
 
     Settings::values.disabled_addons[title_id] = disabled_addons;
+
+    for (const auto& [item, patch] : builtin_items) {
+        patch->enabled->SetGlobal(false);
+        patch->enabled->SetValue(item->checkState() == Qt::Checked);
+        patch->apply_mode(item->data(BUILTIN_MODE));
+    }
+}
+
+void ConfigurePerGameAddons::LoadBuiltinPatches() {
+    builtin_items.clear();
+    for (const auto& patch : BuiltinPatches) {
+        if (patch.title_id != title_id) {
+            continue;
+        }
+        const auto mode = patch.load_mode();
+        auto* const item = new QStandardItem{BuiltinPatchText(patch, mode)};
+        item->setEditable(false);
+        item->setCheckable(true);
+        item->setCheckState(patch.enabled->GetValue() ? Qt::Checked : Qt::Unchecked);
+        item->setData(mode, BUILTIN_MODE);
+        item->setToolTip(patch.tooltip());
+        builtin_items.emplace_back(item, &patch);
+        item_model->appendRow({item, new QStandardItem});
+    }
+}
+
+void ConfigurePerGameAddons::EditBuiltinPatch(const QModelIndex& index) {
+    auto* const item = item_model->itemFromIndex(index.siblingAtColumn(0));
+    for (const auto& [row, patch] : builtin_items) {
+        if (row != item) {
+            continue;
+        }
+        const auto mode = patch->edit_mode(this, item->data(BUILTIN_MODE));
+        if (mode.isValid()) {
+            item->setData(mode, BUILTIN_MODE);
+            item->setText(BuiltinPatchText(*patch, mode));
+        }
+    }
 }
 
 void ConfigurePerGameAddons::LoadFromFile(FileSys::VirtualFile file_) {
@@ -396,5 +530,6 @@ void ConfigurePerGameAddons::LoadConfiguration() {
         item_model->appendRow(list_items.back());
     }
 
+    LoadBuiltinPatches();
     tree_view->resizeColumnToContents(1);
 }

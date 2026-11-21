@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
+#include <filesystem>
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
 #include "common/game_fps.h"
@@ -16,7 +18,11 @@
 #include "config.h"
 
 #ifdef _WIN32
+#include <io.h>
 #include "common/string_util.h"
+#else
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 #include <boost/algorithm/string/replace.hpp>
@@ -76,11 +82,20 @@ void Config::WriteToIni() const {
         break;
     }
     LOG_INFO(Config, "Writing {} configuration to: {}", config_type, config_loc);
+    std::error_code error;
+    const std::filesystem::path path{FS::ToU8String(config_loc)};
+    auto target = std::filesystem::weakly_canonical(path, error);
+    if (error) {
+        target = path;
+    }
+    auto temporary = target;
+    temporary += ".tmp";
+
     FILE* fp = nullptr;
 #ifdef _WIN32
-    fp = _wfopen(Common::UTF8ToUTF16W(config_loc).data(), L"wb");
+    fp = _wfopen(temporary.c_str(), L"wb");
 #else
-    fp = fopen(config_loc.c_str(), "wb");
+    fp = fopen(temporary.c_str(), "wb");
 #endif
 
     if (fp == nullptr) {
@@ -89,11 +104,38 @@ void Config::WriteToIni() const {
     }
 
     CSimpleIniA::FileWriter writer(fp);
-    const SI_Error rc = config->Save(writer, false);
-    if (rc < 0) {
+    const bool written = config->Save(writer, false) >= 0 && !std::ferror(fp);
+#ifdef _WIN32
+    const bool synced = written && std::fflush(fp) == 0 && _commit(_fileno(fp)) == 0;
+#else
+    const bool synced = written && std::fflush(fp) == 0 && fsync(fileno(fp)) == 0;
+#endif
+    const bool closed = std::fclose(fp) == 0;
+    if (!synced || !closed) {
         LOG_ERROR(Frontend, "Config file could not be saved!");
+        std::filesystem::remove(temporary, error);
+        return;
     }
-    fclose(fp);
+
+    const auto status = std::filesystem::status(target, error);
+    if (!error && std::filesystem::exists(status)) {
+        std::filesystem::permissions(temporary, status.permissions(), error);
+    }
+    std::filesystem::rename(temporary, target, error);
+    if (error) {
+        LOG_ERROR(Frontend, "Config file could not be saved: {}", error.message());
+        std::filesystem::remove(temporary, error);
+        return;
+    }
+#ifndef _WIN32
+    const int folder_fd = open(target.parent_path().c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (folder_fd < 0 || fsync(folder_fd) != 0) {
+        LOG_WARNING(Frontend, "Config file saved, but its folder could not be synced");
+    }
+    if (folder_fd >= 0) {
+        close(folder_fd);
+    }
+#endif
 }
 
 void Config::SetUpIni() {

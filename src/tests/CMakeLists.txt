@@ -213,7 +213,9 @@ if (ENABLE_LIBUSB AND LINUX)
 endif()
 
 if (LINUX)
-    target_sources(tests PRIVATE input_common/silent_controller.cpp)
+    target_sources(tests PRIVATE input_common/silent_controller.cpp
+                                 frontend_common/config_persistence.cpp)
+    target_link_options(tests PRIVATE -Wl,--wrap=fflush,--wrap=fsync)
 endif()
 
 if (TARGET OpenSSL::SSL)

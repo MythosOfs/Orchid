@@ -43,51 +43,61 @@ constexpr std::string_view EncryptedKeyblob =
     "02"
     "0fc5b02403cfd28ce1ec6f5704ae660b3d4425dcaa38af9ddee1b07f3cf4d895";
 
-void Derive(std::string_view index, std::string_view lines) {
-    auto& keys = KeyManager::Instance();
-    std::filesystem::path directory;
-    std::random_device random;
-    do {
-        directory = std::filesystem::temp_directory_path() /
-                    ("orchid-keyblob-mac-test-" + std::to_string(random()));
-    } while (!std::filesystem::create_directory(directory));
-    {
-        std::ofstream file{directory / "prod.keys"};
-        const auto line = [&file](std::string_view name, char digit) {
-            file << name << " = " << std::string(0x20, digit) << '\n';
-        };
-        line("secure_boot_key", '1');
-        line("tsec_key", '2');
-        line("keyblob_key_source_" + std::string{index}, '3');
-        line("keyblob_mac_key_source", '4');
-        file << "keyblob_" << index << " = " << std::string(0x90 * 2, '0') << '\n';
-        file << lines;
+struct KeysDir {
+    KeysDir() {
+        std::random_device random;
+        do {
+            directory = std::filesystem::temp_directory_path() /
+                        ("orchid-keyblob-mac-test-" + std::to_string(random()));
+        } while (!std::filesystem::create_directory(directory));
+        previous = Common::FS::GetEdenPath(Common::FS::EdenPath::KeysDir);
+        std::filesystem::create_directories(previous);
+        Common::FS::SetEdenPath(Common::FS::EdenPath::KeysDir, directory);
     }
-    const auto previous = Common::FS::GetEdenPath(Common::FS::EdenPath::KeysDir);
-    std::filesystem::create_directories(previous);
-    Common::FS::SetEdenPath(Common::FS::EdenPath::KeysDir, directory);
-    keys.ReloadKeys();
-    keys.DeriveBase();
-    Common::FS::SetEdenPath(Common::FS::EdenPath::KeysDir, previous);
-    std::filesystem::remove_all(directory);
-}
+    ~KeysDir() {
+        Common::FS::SetEdenPath(Common::FS::EdenPath::KeysDir, previous);
+        std::filesystem::remove_all(directory);
+    }
 
-bool CanDerive(u64 index) {
-    const auto& keys = KeyManager::Instance();
-    return keys.BaseDeriveNecessary() && !keys.HasKey(S128KeyType::Package1, index);
-}
+    bool CanDerive(u64 index) const {
+        const auto& keys = KeyManager::Instance();
+        return keys.BaseDeriveNecessary() && !keys.HasKey(S128KeyType::Package1, index);
+    }
+
+    void Derive(std::string_view index, std::string_view lines) const {
+        {
+            std::ofstream file{directory / "prod.keys"};
+            const auto line = [&file](std::string_view name, char digit) {
+                file << name << " = " << std::string(0x20, digit) << '\n';
+            };
+            line("secure_boot_key", '1');
+            line("tsec_key", '2');
+            line("keyblob_key_source_" + std::string{index}, '3');
+            line("keyblob_mac_key_source", '4');
+            file << "keyblob_" << index << " = " << std::string(0x90 * 2, '0') << '\n';
+            file << lines;
+        }
+        auto& keys = KeyManager::Instance();
+        keys.ReloadKeys();
+        keys.DeriveBase();
+    }
+
+    std::filesystem::path directory;
+    std::filesystem::path previous;
+};
 
 TEST_CASE("A console keyblob is decrypted only with a valid MAC", "[.][crypto][keyblob]") {
-    auto& keys = KeyManager::Instance();
-    if (!CanDerive(0)) {
+    const KeysDir dir;
+    if (!dir.CanDerive(0)) {
         SKIP("Keys are installed");
     }
+    const auto& keys = KeyManager::Instance();
     std::string wrong_tag{EncryptedKeyblob};
     wrong_tag[0] = wrong_tag[0] == '0' ? '1' : '0';
-    Derive("00", "encrypted_keyblob_00 = " + wrong_tag + '\n');
+    dir.Derive("00", "encrypted_keyblob_00 = " + wrong_tag + '\n');
     CHECK_FALSE(keys.HasKey(S128KeyType::Package1, 0));
 
-    Derive("00", "encrypted_keyblob_00 = " + std::string{EncryptedKeyblob} + '\n');
+    dir.Derive("00", "encrypted_keyblob_00 = " + std::string{EncryptedKeyblob} + '\n');
     REQUIRE(keys.HasKey(S128KeyType::Package1, 0));
     CHECK(keys.GetKey(S128KeyType::Package1, 0) ==
           Common::HexStringToArray<0x10>("55555555555555555555555555555555"));
@@ -95,13 +105,14 @@ TEST_CASE("A console keyblob is decrypted only with a valid MAC", "[.][crypto][k
 
 TEST_CASE("A keys file keyblob is kept when a later keyblob line is too short",
           "[.][crypto][keyblob]") {
-    auto& keys = KeyManager::Instance();
-    if (!CanDerive(1)) {
+    const KeysDir dir;
+    if (!dir.CanDerive(1)) {
         SKIP("Keys are installed");
     }
-    Derive("01", "encrypted_keyblob_01 = " + std::string{EncryptedKeyblob} +
-                     "\nkeyblob_01 = " + std::string(0x80 * 2, '0') + std::string(0x10 * 2, '7') +
-                     "\nkeyblob_01 = " + std::string(0x8F * 2, '0') + '\n');
+    const auto& keys = KeyManager::Instance();
+    dir.Derive("01", "encrypted_keyblob_01 = " + std::string{EncryptedKeyblob} + "\nkeyblob_01 = " +
+                         std::string(0x80 * 2, '0') + std::string(0x10 * 2, '7') +
+                         "\nkeyblob_01 = " + std::string(0x8F * 2, '0') + '\n');
     REQUIRE(keys.HasKey(S128KeyType::Package1, 1));
     CHECK(keys.GetKey(S128KeyType::Package1, 1) ==
           Common::HexStringToArray<0x10>("77777777777777777777777777777777"));

@@ -89,7 +89,7 @@ struct TicketKeys {
         previous = Common::FS::GetEdenPath(Common::FS::EdenPath::KeysDir);
         std::filesystem::create_directories(previous);
         Common::FS::SetEdenPath(Common::FS::EdenPath::KeysDir, directory);
-        keys.ReloadKeys();
+        KeyManager::Instance().ReloadKeys();
     }
     ~TicketKeys() {
         Common::FS::SetEdenPath(Common::FS::EdenPath::KeysDir, previous);
@@ -109,16 +109,15 @@ struct TicketKeys {
         }
         std::memcpy(rights_id.data(), raw.data.rights_id.data(), raw.data.rights_id.size());
         REQUIRE_FALSE(HasTitleKey());
-        return keys.AddTicket(Ticket{raw});
+        return KeyManager::Instance().AddTicket(Ticket{raw});
     }
     bool HasTitleKey() const {
-        return keys.HasKey(S128KeyType::Titlekey, rights_id[1], rights_id[0]);
+        return KeyManager::Instance().HasKey(S128KeyType::Titlekey, rights_id[1], rights_id[0]);
     }
     Key128 TitleKey() const {
-        return keys.GetKey(S128KeyType::Titlekey, rights_id[1], rights_id[0]);
+        return KeyManager::Instance().GetKey(S128KeyType::Titlekey, rights_id[1], rights_id[0]);
     }
 
-    KeyManager& keys = KeyManager::Instance();
     std::filesystem::path directory;
     std::filesystem::path previous;
     u128 rights_id{};

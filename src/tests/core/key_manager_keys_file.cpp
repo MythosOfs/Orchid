@@ -21,6 +21,7 @@ TEST_CASE("A keys file line with a short value does not replace the key read bef
     const fs::path directory = fs::temp_directory_path() / ("orchid_keys_test_" + std::to_string(stamp));
     fs::create_directories(directory);
     const auto previous = Common::FS::GetEdenPath(Common::FS::EdenPath::KeysDir);
+    fs::create_directories(previous);
     Common::FS::SetEdenPath(Common::FS::EdenPath::KeysDir, directory);
     SCOPE_EXIT {
         Common::FS::SetEdenPath(Common::FS::EdenPath::KeysDir, previous);

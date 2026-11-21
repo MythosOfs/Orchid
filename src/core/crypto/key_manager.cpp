@@ -677,8 +677,8 @@ void KeyManager::LoadFromFile(const std::filesystem::path& file_path, bool is_ti
 
                     const auto index = std::strtoul(out[0].substr(8, 2).c_str(), nullptr, 16);
                     if (index >= keyblobs.size()) {
-                        LOG_WARNING(Crypto, "Skipping the keys file line \"{}\": no such keyblob",
-                                    out[0]);
+                        LOG_WARNING(Crypto, "Skipping keyblob {:02x} of {}: no such keyblob", index,
+                                    file_path.filename().string());
                         continue;
                     }
                     keyblobs[index] = Common::HexStringToArray<0x90>(out[1]);
@@ -689,8 +689,9 @@ void KeyManager::LoadFromFile(const std::filesystem::path& file_path, bool is_ti
 
                     const auto index = std::strtoul(out[0].substr(18, 2).c_str(), nullptr, 16);
                     if (index >= encrypted_keyblobs.size()) {
-                        LOG_WARNING(Crypto, "Skipping the keys file line \"{}\": no such keyblob",
-                                    out[0]);
+                        LOG_WARNING(Crypto,
+                                    "Skipping encrypted keyblob {:02x} of {}: no such keyblob",
+                                    index, file_path.filename().string());
                         continue;
                     }
                     encrypted_keyblobs[index] = Common::HexStringToArray<0xB0>(out[1]);

@@ -359,4 +359,27 @@ TEST_CASE("Ampere capture ends at the library RET behind an unpredicated CALL.RE
     REQUIRE(end(call) == 0);
 }
 
+TEST_CASE("Ampere geometry exit capture ends at the handler behind a body call",
+          "[video_core][ampere][kirby]") {
+    std::array<Instruction, 19> code{};
+    std::copy_n(ExitHandlerProgram.begin(), 5, code.begin());
+    code[1].words[1] = 0xe0;
+    code[5] = Instruction{{0x00007944, 0x10, 0x03c00000, 0x000fea00}};
+    code[6] = ExitHandlerProgram[6];
+    code[7] = Instruction{{0x08007950, 0xffffff80, 0x03c3ffff, 0x000fea00}};
+    code[8] = ExitHandlerProgram[6];
+    for (u32 index = 9; index < 14; ++index)
+        code[index] = Instruction{{0x00007918, 0, 0, 0x000fc000}};
+    std::copy_n(ExitHandlerProgram.begin() + 7, 3, code.begin() + 14);
+    code[17] = Instruction{{0x00007947, 0xfffffff0, 0x0383ffff, 0x000fc000}};
+    code[18] = Instruction{{0x0000734e, 0, 0, 0x000fe400}};
+    ProgramCaptureState capture;
+    for (u32 index = 0; index < 17; ++index) {
+        const auto expected = index == 16 ? ProgramCaptureState::Result::Complete
+                                          : ProgramCaptureState::Result::Continue;
+        INFO("instruction " << index);
+        REQUIRE(capture.Observe(code[index], index) == expected);
+    }
+}
+
 } // namespace

@@ -16,3 +16,4 @@ Decisions and facts the code cannot show. Code in `src/` carries no comments ([0
 | [0010](0010-shader-folding-and-ir-operands.md) | Bitfield constant folding, constant-buffer texture handles, immediate phi operands |
 | [0011](0011-kernel-thread-termination.md) | Scheduler and process lock ordering during thread termination |
 | [0012](0012-cmif-output-buffer-contents.md) | Preserving guest bytes in partially written CMIF output buffers |
+| [0013](0013-native-program-capture-geometry-exit-envelope.md) | Native program capture end at the geometry exit handler (issue 111) |

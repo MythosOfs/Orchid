@@ -14,7 +14,7 @@ namespace Core::HID {
 
 MotionInput::MotionInput() {
     // Initialize PID constants with default values
-    SetPID(0.3f, 0.005f, 0.0f);
+    SetPID(0.3f, 0.0f, 0.0f);
     SetGyroThreshold(ThresholdStandard);
     ResetQuaternion();
     ResetRotations();

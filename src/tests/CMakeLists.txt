@@ -48,6 +48,7 @@ add_executable(tests
     core/filesystem_rename.cpp
     core/kip_blz.cpp
     core/kip_sections.cpp
+    core/kip_truncated.cpp
     core/page_heap.cpp
     core/read_traps.cpp
     core/gpu_dirty_memory_manager.cpp

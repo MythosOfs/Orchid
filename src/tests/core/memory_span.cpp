@@ -47,6 +47,8 @@ TEST_CASE("Guest memory spans validate every covered page", "[core][memory_span]
     CHECK(memory.GetSpan(4 * page_size + 1, 3 * page_size - 1) ==
           backing + 16 * page_size + 1);
     CHECK(memory.GetSpan(4 * page_size, 3 * page_size + 1) == nullptr);
+    CHECK(memory.GetSpan(7 * page_size - 3, 5) == nullptr);
+    CHECK(memory.GetSpan(7 * page_size - 3, 3) == backing + 19 * page_size - 3);
 
     table.entries.GetAndFault(5).MarkRasterizerCached();
     CHECK(memory.GetSpan(4 * page_size, 3 * page_size) == backing + 16 * page_size);

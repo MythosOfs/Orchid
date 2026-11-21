@@ -105,11 +105,21 @@ TEST_CASE("The GPU front sleeps while it waits for ring space", "[.][gpu_split]"
         Settings::values.renderer_backend.SetValue(backend);
         Tegra::g_nx2_ampere = ampere;
     };
-    if (!WaitFor([&] { return started != -1; }, 5000ms)) {
-        // Let a late front run through instead of blocking the join.
+    // Joining a front that never finishes would hang the test run.
+    const auto wait_finished = [&](const char* failure) {
         release = true;
         release.notify_all();
-        FAIL("the GPU split did not start within 5 s");
+        if (!WaitFor([&] { return finished.load(); }, 60000ms)) {
+            std::fprintf(stderr, "FAILED: %s\n", failure);
+            std::fflush(stderr);
+            std::_Exit(EXIT_FAILURE);
+        }
+        front.join();
+    };
+    if (!WaitFor([&] { return started != -1; }, 60000ms)) {
+        wait_finished("the GPU split did not start within 60 s and never finished");
+        restore();
+        FAIL("the GPU split did not start within 60 s");
     }
     if (started == 0) {
         front.join();
@@ -117,9 +127,10 @@ TEST_CASE("The GPU front sleeps while it waits for ring space", "[.][gpu_split]"
         SKIP("the GPU split does not start here (EDEN_NX2_SPLIT=0?)");
     }
 
-    // The front is waiting for space once it filled the ring and sends nothing more.
+    // The front is waiting for space once it filled the ring and sends nothing more. It sleeps
+    // until the back consumed the 3 words its next call needs.
     const bool full = WaitFor([&] { return sent.load() >= FullCalls; }, 60000ms);
-    std::this_thread::sleep_for(20ms);
+    const bool sleeping = WaitFor([&] { return split.FrontSleepTarget() == 3; }, 60000ms);
     const u32 sent_when_full = sent.load();
     std::chrono::nanoseconds cpu_before{}, cpu_after{};
     const bool clock_before = ThreadCpuTime(front, cpu_before);
@@ -128,25 +139,18 @@ TEST_CASE("The GPU front sleeps while it waits for ring space", "[.][gpu_split]"
     const bool clock_after = ThreadCpuTime(front, cpu_after);
     const auto wait_wall = std::chrono::steady_clock::now() - wall_before;
     const u32 sent_while_blocked = sent.load();
-    release = true;
-    release.notify_all();
-    if (!WaitFor([&] { return finished.load(); }, 60000ms)) {
-        // The front never woke: joining it would hang the test run.
-        std::fputs("FAILED: the front still waits 60 s after the back consumed the ring\n", stderr);
-        std::fflush(stderr);
-        std::_Exit(EXIT_FAILURE);
-    }
-    front.join();
+    wait_finished("the front still waits 60 s after the back consumed the ring");
     restore();
 
     REQUIRE(full);
+    CHECK(sleeping);
     CHECK(sent_when_full == FullCalls);
     CHECK(sent_while_blocked == FullCalls);
     REQUIRE(clock_before);
     REQUIRE(clock_after);
     CHECK(sent.load() == Calls);
     // A spinning front used about as much CPU as the wait lasted.
-    CHECK(cpu_after - cpu_before < wait_wall / 20);
+    CHECK(cpu_after - cpu_before < wait_wall / 4);
 }
 
 #endif

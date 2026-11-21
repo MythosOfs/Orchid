@@ -219,7 +219,9 @@ set_tests_properties(debug_stream_contract_disabled debug_stream_contract_enable
 set_tests_properties(debug_stream_contract_enabled PROPERTIES DEPENDS debug_stream_contract_disabled)
 
 # Measures the CPU time of a waiting thread, so it runs alone in its own process.
-add_test(NAME gpu_split_ring COMMAND tests "[gpu_split]")
+if (WIN32 OR LINUX) # gpu_split_ring.cpp needs a per-thread CPU clock
+    add_test(NAME gpu_split_ring COMMAND tests "[gpu_split]")
+endif()
 
 # needed for vma
 if (NOT MSVC)

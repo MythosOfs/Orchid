@@ -107,6 +107,10 @@ public:
     void Publish();
     /// Waits until the back executed everything sent so far.
     void Drain();
+    /// The consumed position the front sleeps for, ~0 while it does not sleep (tests).
+    [[nodiscard]] u64 FrontSleepTarget() const {
+        return front_target.load(std::memory_order_seq_cst);
+    }
 
     /// Compute or copy work was just sent: what can write GPU-written command lists.
     void NoteWriter() {

@@ -324,6 +324,12 @@ TEST_CASE("FFmpeg decoder context tells a failed receive from a missing frame", 
     REQUIRE(context.OpenContext(decoder));
     CHECK(!context.ReceiveFrame());
     CHECK(!context.ReceiveFailed());
+    auto packet = Packets()[0];
+    const size_t size = packet.size();
+    packet.resize(size + AV_INPUT_BUFFER_PADDING_SIZE);
+    REQUIRE(context.SendPacket(FFmpeg::Packet{std::span{packet.data(), size}}));
+    CHECK(context.ReceiveFrame());
+    CHECK(!context.ReceiveFailed());
 }
 
 TEST_CASE("Nx2 video replays at most 64 packets", "[nx2_video]") {

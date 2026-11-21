@@ -3652,6 +3652,7 @@ void MainWindow::ShowFullscreen() {
             return;
         }
         window->hide();
+        window->setWindowState(window->windowState() & ~Qt::WindowMaximized);
         window->setWindowFlags(window->windowFlags() | Qt::FramelessWindowHint);
         const auto screen_geometry = GuessCurrentScreen(window)->geometry();
         window->setGeometry(screen_geometry.x(), screen_geometry.y(), screen_geometry.width(),

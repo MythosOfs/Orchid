@@ -12,7 +12,27 @@ Serve every Switch 2 graphics-system session on one host thread of its own (`Run
 
 ## Consequences
 
-Unknown commands still get zeroed replies (#187) and some layouts are guesses (#188). Changing a reply below breaks the title named next to it.
+Unknown commands still get zeroed replies and some layouts are guesses; "SDK evidence (#187, #188)" below lists what was identified and what is still open. Changing a reply below breaks the title named next to it.
+
+## SDK evidence (#187, #188)
+
+Read on 2026-11-21 from the statically linked SDK of Mario Tennis Fever (title version 327680, addresses below are offsets in its `sdk` module) and checked against Star Fox (131072); Donkey Kong Bananza (458752) sends the same commands. A command counts as identified when its client was found and the reply fields it reads are known.
+
+Identified:
+
+- gsv 201 then 202(u64): nn::syncpt::sdk::InitializeEx, 202 replies the syncpt session (handle word 3). gsv 204: see `AttachSyncptMemory`.
+- syncpt 1 GetEventSlotCount -> u32 (< 0x400); 21(u32 min(count, 63)) ReserveEventSlots -> result only; 22(u32 slot) GetSyncPointEvent -> copy handle; 201(slot, counter, u64 value, u8 mode) RequestSyncPointEvent -> result only, the client clears the slot's event afterwards; 202(slot) CancelSyncPointEvent -> result only, the client then waits on the slot's event in a 1 s loop (see `auto*& event`). The impl table is at 0xe02da8; MakeCounterId is a single `mvn`, so counter ids carry no base.
+- gsv 601() then 602(u64 1): nn::camera::sdk::CreateCameraContext; 602 replies the camera context session. 603() CameraFinalize -> result only, also sent when 602 fails.
+- gsv 903() and 1003(): the two Finalize requests of the video decoder client (901/1001 initialize), both result only.
+- nvhost-tsg-gpu: 0x01 BIND_CHANNEL(int fd), 0x02 UNBIND_CHANNEL(int fd), 0x08 SET_TIMESLICE(u32), 0x0b BIND_CHANNEL_EX(24 bytes: channel fd, subcontext id, 16 zero bytes; falls back to 0x01 when it fails). The client (NvRmGpu, TSG create at 0x5b6610, the timeslice vtable entry at 0x5b743c) reads no output of any of them.
+
+Open, with what is known:
+
+- syncpt 1's count (32 here): the client only bounds it; the console's value is unknown.
+- 204 RO page u32 at +4 ("base id"): copied into the client's state (+0 of the context at 0xece948+8); no reader found in either SDK and counter ids don't use it. 0 is written.
+- camera context CMIF 3, 21 and 29 (see `INx2CameraSession`; Welcome Tour and Mario Kart World, no scope title) and their results without the camera accessory: not read again. CMIF 4, 22, 24, 25 and 28 (Star Fox only, auto-stubbed): the client is nn::camera::UserInterface's CMIF proxy in Star Fox's `subsdk3`; its 21 request builders were found, the mapping from command id to method and reply layout was not finished.
+- 426/428 block height and pitch: no scope title sends 426, 428 or 1211.
+- gsv 5, 101, 113, 120-125, 131, 133, 187, 211-215, 303, 424, 425, 436, 461-468, 493, 613, 614, 802, 803, 813, 814, 1011, 1012, 1091, 1112, 1113, 1203, 1602, 1603 and nx2:gpu 23, 24, 25, 34, 51, 8001-8004: no scope title sent them in the harness runs up to 2026-11-18, so they were not read.
 
 ## Decision log
 
@@ -23,14 +43,14 @@ One entry per former code comment, by file, named after the code it described.
 - `inline std::atomic<bool> g_nx2_driver{false};`: Set once a Switch 2 NvRm has identified itself (0xD0-byte GetCharacteristics). Devices then answer ioctls they don't know with a logged, input-echoing success instead of NotImplemented.
 - `inline bool Nx2LogStubbedIoctl(std::string_view device, u32 ioctl)`: Stubbed ioctls a game repeats (per frame) were logged every time, on the thread serving the game's request: the first few of each kind, then one in 4096.
 - `std::fill(output.begin(), output.end(), u8{0});`: Echo the input (in/out ioctls keep their fields), zero the rest.
-- `in Stub()`: nvgpu TSG: subcontext create hands out a veid; bind/unbind/delete succeed; the SDK probes the rest and must see them unsupported.
+- `in Stub()`: nvgpu TSG: subcontext create hands out a veid; bind/unbind/delete and set timeslice succeed; the SDK probes the rest and must see them unsupported. 0x08 (u32 timeslice) is NvRmGpu's "failed to set TSG timeslice": sent right after the TSG is created, only when the characteristics report it (field 0x3c >= 8 and flag bit 8), so the console supports it; its failure was logged and the TSG kept the default timeslice.
 
 ### `src/core/hle/service/nx2_gsv.h`
 
 - `inline Kernel::KClientSession* CreateRawSession(Core::System& system, HLERequestContext& ctx,`: Creates a session served by `iface` and returns its client end. Unlike PushIpcInterface this works from a domain too, for callers that want a raw session handle.
 - `inline void TipcReplyWords(HLERequestContext& ctx, std::span<const u32> words)`: Replies to a TIPC request with success and raw u32 data words. ResponseBuilder::Push(Result) writes the CMIF two-word result, which shifts TIPC data one word past where the client reads it (and past the copied size); TIPC has a one-word result followed directly by the data.
 - `inline void TipcHandshake(HLERequestContext& ctx, std::string_view session)`: TIPC 0(u64 token) on the Switch 2 sessions: a handshake newer SDKs send first; the reply echoes the token. (The auto stub's reply only echoed it by leaving the request's words in place.)
-- `class INx2SyncptSession final : public ServiceFramework<INx2SyncptSession>`: Placeholder for the Switch 2 syncpoint server (nn::syncpt), handed out by gsv 202. TIPC 1 returns a u32 the SDK requires to be < 0x400 and then passes min(value, 63) to TIPC 21. Everything else is auto-stubbed through the nx2: prefix.
+- `class INx2SyncptSession final : public ServiceFramework<INx2SyncptSession>`: Placeholder for the Switch 2 syncpoint server (nn::syncpt), handed out by gsv 202 after gsv 201. TIPC 1 (GetEventSlotCount) returns a u32 the SDK requires to be < 0x400 and then passes min(value, 63) to TIPC 21 (ReserveEventSlots), which replies the result only. Everything else is auto-stubbed through the nx2: prefix.
   - TIPC 0(u64): handshake, echo the token (newer SDKs).
   - TIPC 22(u32 slot): an event handle for that slot (copy handle at word 3, result at word 4). NVN's NvOsEventPool asks for slots and multi-waits on them.
   - TIPC 201(slot, counter, u64 value, mode): signal the slot's event once the counter reaches value. The counter is a SyncCounterId, the bitwise NOT of the host1x syncpoint id; mode 0 compares 32-bit wrapping, mode 1 64-bit. Eden's guest syncpoints back it.

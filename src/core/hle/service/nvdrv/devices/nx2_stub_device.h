@@ -539,7 +539,7 @@ private:
                 return NvResult::Success;
             }
             if (command.raw != 0xc0045401 && command.raw != 0xc0045402 &&
-                command.raw != 0xc018540b) {
+                command.raw != 0xc0045408 && command.raw != 0xc018540b) {
                 return NvResult::NotImplemented;
             }
         }

@@ -10,19 +10,20 @@
 #include <cstdlib>
 #include <thread>
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <pthread.h>
-#include <time.h>
-#endif
-
 #include <catch2/catch_test_macros.hpp>
 
 #include "common/settings.h"
 #include "core/core.h"
 #include "video_core/gpu_split.h"
 #include "video_core/nx2.h"
+
+// After the project headers: windows.h macros (CreateEvent) would rename their members.
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <pthread.h>
+#include <time.h>
+#endif
 
 using namespace std::chrono_literals;
 

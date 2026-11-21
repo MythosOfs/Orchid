@@ -171,12 +171,12 @@ public:
         : ServiceFramework{system_, "nx2:syncpt"}, m_context{system_, "nx2:syncpt"} {
         RegisterHandlersTipc({
             {0, &INx2SyncptSession::Handshake, "Handshake"},
-            {1, &INx2SyncptSession::GetCount, "GetCount (guessed)"},
-            {22, &INx2SyncptSession::GetSlotEvent, "GetSlotEvent (guessed)"},
+            {1, &INx2SyncptSession::GetCount, "GetEventSlotCount"},
+            {22, &INx2SyncptSession::GetSlotEvent, "GetSyncPointEvent"},
             {103, &INx2SyncptSession::QueryCounter, "QueryCounter"},
-            {201, &INx2SyncptSession::RequestSlotEvent, "RequestSlotEvent (guessed)"},
-            {202, &INx2SyncptSession::CancelSlotEvent, "CancelSlotEvent (guessed)"},
-            {21, &INx2SyncptSession::StubReplyZeroed, "Unknown21"},
+            {201, &INx2SyncptSession::RequestSlotEvent, "RequestSyncPointEvent"},
+            {202, &INx2SyncptSession::CancelSlotEvent, "CancelSyncPointEvent"},
+            {21, &INx2SyncptSession::ReplySuccess, "ReserveEventSlots"},
         });
     }
 
@@ -196,6 +196,10 @@ public:
 private:
     void Handshake(HLERequestContext& ctx) {
         TipcHandshake(ctx, "nx2:syncpt");
+    }
+
+    void ReplySuccess(HLERequestContext& ctx) {
+        TipcReplyWords(ctx, {});
     }
 
     void GetCount(HLERequestContext& ctx) {
@@ -1288,9 +1292,9 @@ public:
           m_objects{std::move(objects_)} {
         RegisterHandlersTipc({
             {0, &INx2Vi2Session::Handshake, "Handshake"},
-            {1, &INx2Vi2Session::ReturnOne, "Unknown1"},
-            {3, &INx2Vi2Session::ReturnOne, "GetDisplayCount (guessed)"},
-            {5, &INx2Vi2Session::GetTimestampRecorderCount, "GetTimestampRecorderCount (guessed)"},
+            {1, &INx2Vi2Session::ReturnOne, "GetNotificationCount"},
+            {3, &INx2Vi2Session::ReturnOne, "GetNativeEventCount"},
+            {5, &INx2Vi2Session::GetTimestampRecorderCount, "GetTimestampRecorderCount"},
             {11, &INx2Vi2Session::GetNotificationEvent, "GetNotificationEvent"},
             {21, &INx2Vi2Session::GetNotifications, "GetNotifications"},
             {31, &INx2Vi2Session::AcquireNativeEvent, "AcquireNativeEvent"},
@@ -1319,21 +1323,21 @@ public:
             {228, &INx2Vi2Session::CancelClientBuffer, "CancelClientBuffer"},
             {229, &INx2Vi2Session::PresentClientBuffer, "PresentClientBuffer"},
             {13, &INx2Vi2Session::StubReplyZeroed, "Unknown13"},
-            {51, &INx2Vi2Session::StubReplyZeroed, "Unknown51"},
+            {51, &INx2Vi2Session::ReplySuccess, "ReserveTimestampRecorders"},
             {53, &INx2Vi2Session::GetRecordedTimestamps, "GetRecordedTimestamps"},
             {107, &INx2Vi2Session::QueryDisplayModeCapability, "QueryDisplayModeCapability"},
             {108, &INx2Vi2Session::StubReplyZeroed, "Unknown108"},
-            {111, &INx2Vi2Session::StubReplyZeroed, "Unknown111"},
-            {112, &INx2Vi2Session::StubReplyZeroed, "Unknown112"},
+            {111, &INx2Vi2Session::ReplySuccess, "SetEndpointLayer"},
+            {112, &INx2Vi2Session::ReplySuccess, "ClearEndpointLayer"},
             {113, &INx2Vi2Session::StubReplyZeroed, "Unknown113"},
             {230, &INx2Vi2Session::StubReplyZeroed, "Unknown230"},
             {231, &INx2Vi2Session::StubReplyZeroed, "Unknown231"},
             {232, &INx2Vi2Session::StubReplyZeroed, "Unknown232"},
-            {251, &INx2Vi2Session::StubReplyZeroed, "Unknown251"},
-            {252, &INx2Vi2Session::StubReplyZeroed, "Unknown252"},
-            {301, &INx2Vi2Session::StubReplyZeroed, "Unknown301"},
+            {251, &INx2Vi2Session::ReplySuccess, "AttachLayerToEndpoint"},
+            {252, &INx2Vi2Session::ReplySuccess, "DetachLayerFromEndpoint"},
+            {301, &INx2Vi2Session::ReplySuccess, "SetDisplayRefreshRateCapability"},
             {302, &INx2Vi2Session::StubReplyZeroed, "Unknown302"},
-            {351, &INx2Vi2Session::StubReplyZeroed, "Unknown351"},
+            {351, &INx2Vi2Session::ReplySuccess, "ApplyLayerPendingState"},
             {352, &INx2Vi2Session::StubReplyZeroed, "Unknown352"},
             {353, &INx2Vi2Session::StubReplyZeroed, "Unknown353"},
             {354, &INx2Vi2Session::StubReplyZeroed, "Unknown354"},
@@ -1360,6 +1364,10 @@ public:
 private:
     void Handshake(HLERequestContext& ctx) {
         TipcHandshake(ctx, "nx2:vi2");
+    }
+
+    void ReplySuccess(HLERequestContext& ctx) {
+        TipcReplyWords(ctx, {});
     }
 
     void PresentClientBuffer(HLERequestContext& ctx) {
@@ -2761,9 +2769,9 @@ public:
             {4, &INx2GraphicsSystemSession::Stub, "Boot (Switch 2, guessed)"},
             {5, &INx2GraphicsSystemSession::Stub, "Unknown5"},
             {101, &INx2GraphicsSystemSession::Stub, "Unknown101"},
-            {202, &INx2GraphicsSystemSession::OpenSyncptSession, "OpenSyncptSession (guessed)"},
-            {204, &INx2GraphicsSystemSession::AttachSyncptMemory, "AttachSyncptMemory (guessed)"},
-            {305, &INx2GraphicsSystemSession::OpenViSession, "OpenViSession (guessed)"},
+            {202, &INx2GraphicsSystemSession::OpenSyncptSession, "OpenSyncptSession"},
+            {204, &INx2GraphicsSystemSession::AttachSyncptMemory, "AttachSyncptMemory"},
+            {305, &INx2GraphicsSystemSession::OpenViSession, "OpenViSession"},
             {497, &INx2GraphicsSystemSession::OpenGpuSession, "OpenGpuSession (guessed)"},
             {1121, &INx2GraphicsSystemSession::OpenGpuTimeSession, "OpenGpuTimeSession"},
             {111, &INx2GraphicsSystemSession::CreateNativeMemory, "CreateNativeMemory"},
@@ -2790,8 +2798,8 @@ public:
             {906, &INx2GraphicsSystemSession::OpenVideoSession, "OpenVideoDecoderSessionWithVersion"},
             {1001, &INx2GraphicsSystemSession::Stub, "VideoInitialize2 (guessed)"},
             {1002, &INx2GraphicsSystemSession::OpenVideoSession, "OpenVideoDecoderSession2 (guessed)"},
-            {601, &INx2GraphicsSystemSession::Stub, "CameraInitialize (guessed)"},
-            {602, &INx2GraphicsSystemSession::OpenCameraSession, "OpenCameraContext (guessed)"},
+            {601, &INx2GraphicsSystemSession::Stub, "CameraInitialize"},
+            {602, &INx2GraphicsSystemSession::OpenCameraSession, "OpenCameraContext"},
             {1201, &INx2GraphicsSystemSession::Stub, "ChatInitialize (guessed)"},
             {1202, &INx2GraphicsSystemSession::OpenChatSession, "OpenChatSession (guessed)"},
             {1211, &INx2GraphicsSystemSession::CreateNativeImage, "CreateChatImagePool (guessed)"},
@@ -2842,7 +2850,7 @@ public:
             {468, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown468"},
             {493, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown493"},
             {494, &INx2GraphicsSystemSession::CheckPermission, "CheckPermission494"},
-            {603, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown603"},
+            {603, &INx2GraphicsSystemSession::ReplySuccess, "CameraFinalize"},
             {612, &INx2GraphicsSystemSession::DestroyNativeImage, "DestroyFeatureImagePool612"},
             {613, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown613"},
             {614, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown614"},
@@ -2857,7 +2865,7 @@ public:
             {814, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown814"},
             {861, &INx2GraphicsSystemSession::GetCpuImageDescriptor, "GetFeatureCpuImageDescriptor861"},
             {891, &INx2GraphicsSystemSession::CalculateChatImagePoolSize, "CalculateFeatureImagePoolSize891"},
-            {1003, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown1003"},
+            {1003, &INx2GraphicsSystemSession::ReplySuccess, "VideoFinalize2"},
             {1011, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown1011"},
             {1012, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown1012"},
             {1091, &INx2GraphicsSystemSession::StubReplyZeroed, "Unknown1091"},
@@ -2940,6 +2948,10 @@ private:
         }
         const u32 desc = cmd_buf[2];
         return 3 + ((desc & 1) ? 2 : 0) + ((desc >> 1) & 0xF) + ((desc >> 5) & 0xF);
+    }
+
+    void ReplySuccess(HLERequestContext& ctx) {
+        TipcReplyWords(ctx, {});
     }
 
     void Stub(HLERequestContext& ctx) {

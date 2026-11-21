@@ -12,7 +12,27 @@ Hold each present until the GPU thread has processed the frame and until the nex
 
 ## Consequences
 
-Pacing lives in `PaceToVblank`/`WaitForFrame`; any change needs an fps and frame-time check in the affected games. Frame history timestamps are approximations (#188).
+Pacing lives in `PaceToVblank`/`WaitForFrame`; any change needs an fps and frame-time check in the affected games. Frame history timestamps are emulator ticks, not the console compositor's (the 53 layout is confirmed, see below).
+
+## SDK evidence (#187, #188)
+
+Read on 2026-11-21 from the statically linked SDK of Mario Tennis Fever (title version 327680, offsets in its `sdk` module) and checked against Star Fox (131072); Donkey Kong Bananza (458752) sends the same commands, Star Fox also 108, 354-357. The public nn::vi2 functions call an impl table filled by nn::vi2::sdk::Initialize; the slots were named by following them to the public API. Every command below except 1, 3, 5 and 53 is result only: the client reads word 2 and nothing else.
+
+Identified:
+
+- gsv 305(u64) OpenViSession: replies this session (handle word 3).
+- 1 -> u32 notification count (< 0x400), then 11(u32 min(count, 0x3ff)) -> the notification event; 3 -> u32 native event count (< 8), then 31(index) per slot. The handles of 11 and 32 go to os::AttachReadableHandleToSystemEvent, so both are readable event handles; 31's handle is kept in the client's table. 32 carries one copy handle (the client's readable handle) and a u32 index.
+- 5 -> u32 timestamp recorder count (< 8), then 51(u32 min(count, 7)) ReserveTimestampRecorders; the client marks the indices above as used (CreateTimestampRecorder, 0x568e40).
+- 53(B buffer, u32 recorder, u64 checkpoint bits, u64 max 8): reply u64 bytes written (the client divides by 8) and a byte at word 5, 1 = still pending; the client polls every 100000 ticks or more and indexes the timestamps by popcount order. Matches `GetRecordedTimestamps`.
+- 111(3 x u64) SetEndpointLayer / 112(2 x u64) ClearEndpointLayer: an endpoint's front layer, from CreateLayer and DestroyLayer (0x566754, 0x566870).
+- 251(u64 layer, u64 endpoint token) AttachLayerToEndpoint / 252(u64 layer) DetachLayerFromEndpoint.
+- 301(3 x u64) SetDisplayRefreshRateCapability (0x567a64): rate 1 = 60 Hz, 2 = 120 Hz, 0x8000... = any.
+- 351(2 x u64): sent once from the layer present path (0x5661b0) while a pending flag is set; named ApplyLayerPendingState after that, the SDK's own name is unknown.
+
+Open, with what is known:
+
+- 352(u64 layer, 3 x f32) / 353(u64): set / clear the layer's HDR adjustable bezier (setter 0x5653a0 keeps the three floats), result only. Only Mario Kart World sends them; left unchanged.
+- 113(2 x u64): result only, no caller found; 13, 108, 230-232, 302, 354-359: not read (no scope title sends them).
 
 ## Decision log
 
@@ -55,7 +75,7 @@ One entry per former code comment, by file, named after the code it described.
 - `void GetBufferMaxResolution(HLERequestContext& ctx)`: The highest buffer resolution mode of the "default" display. Fire Emblem: Fortune's Weave picks its output from it: 1 -> 1280x720, 2 -> 1920x1080, 4 and 8 -> 2560x1440; 0 (the auto stub's reply), 3 and 5 fall back to 720p. Docked reports 4, handheld 2 (the screen is 1080p); EDEN_VI2_MAX_RESOLUTION_MODE=<n> overrides. Hyrule Warriors: Age of Imprisonment takes only 1 or 2 and terminates with 0x1472 otherwise.
 - `constexpr u64 DefaultDisplay = 0x00746c7561666564ULL`: "default"
 - `void GetTimestampRecorderCount(HLERequestContext& ctx)`: Must be < 8; nn::vi::detail::LayerHistory creates 7 timestamp recorders per layer.
-- `void GetRecordedTimestamps(HLERequestContext& ctx)` (open work: #188): 53(u32 recorder, u64 checkpoint bits, u64 max count; B: u64 timestamps): one system tick per set checkpoint bit, ascending; reply u64 bytes written, u32 still pending. Read from the SDK's GetRecordedTimestamp, which polls this until pending is 0. nn::vi::ListFrameHistory reports a frame as shown only once it has a timestamp, and Unreal Engine games (Orbitals) wait for a shown frame before the next one: the zeroed auto stub stalled them after 8 frames, and the game thread aborted after its render fence timeout.
+- `void GetRecordedTimestamps(HLERequestContext& ctx)`: 53(u32 recorder, u64 checkpoint bits, u64 max count; B: u64 timestamps): one system tick per set checkpoint bit, ascending; reply u64 bytes written, u32 still pending. Read from the SDK's GetRecordedTimestamp, which polls this until pending is 0. nn::vi::ListFrameHistory reports a frame as shown only once it has a timestamp, and Unreal Engine games (Orbitals) wait for a shown frame before the next one: the zeroed auto stub stalled them after 8 frames, and the game thread aborted after its render fence timeout.
 - `void GetNotificationEvent(HLERequestContext& ctx)`: 11: the notification event the SDK's render thread waits on while it tears a client down. One event per session, signalled as bitmaps fill (201/202, 101/102); a fresh, never signalled event per call left that thread blocked forever after 202.
 - `void GetNotifications(HLERequestContext& ctx)`: 21(W: 32 u32 notification counts): hand them over and clear.
 - `void OpenDisplay(HLERequestContext& ctx)`: 101(u64 display "default", u32 flags): remember which notification index this display owns.

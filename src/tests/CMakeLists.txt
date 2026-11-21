@@ -94,6 +94,7 @@ add_executable(tests
     core/romfs.cpp
     core/time_zone_fallback.cpp
     core/service_auto_stub.cpp
+    core/nx2_identified_replies.cpp
     core/internal_network/network.cpp
     video_core/shader_object_pool.cpp
     video_core/aftermath_dump.cpp

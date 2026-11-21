@@ -1168,6 +1168,24 @@ TEST_CASE("NUP extracts a multi-program archive into program folders and repacks
     REQUIRE(ReadAll(repacked) == ReadAll(archive));
 }
 
+TEST_CASE("NUP round trip preserves an empty metadata record", "[nup][nup_empty_metadata]") {
+    TempDir t;
+    const auto root = t.path / "Game";
+    MakeDump(root);
+    const std::string record{"\xFE\x7F\x00\x00\x00\x00\x00\x00", 8};
+    Put(root / "Base/.nupmeta", record);
+
+    const auto archive = t.path / "Game.nup";
+    REQUIRE(FileSys::Nup::PackDump(root, archive) == FileSys::Nup::PackResult::Success);
+    const auto output = t.path / "extracted" / "Game";
+    REQUIRE(FileSys::Nup::ExtractNup(archive, output) == FileSys::Nup::PackResult::Success);
+    CHECK(ReadAll(output / "base/.nupmeta").find(record) != std::string::npos);
+
+    const auto repacked = t.path / "repacked.nup";
+    REQUIRE(FileSys::Nup::PackDump(output, repacked) == FileSys::Nup::PackResult::Success);
+    CHECK(ReadAll(repacked) == ReadAll(archive));
+}
+
 TEST_CASE("NUP repacking an extracted archive keeps its metadata", "[nup]") {
     TempDir t;
     const auto root = t.path / "Game";

@@ -15,7 +15,7 @@
 using namespace Core::Crypto;
 
 TEST_CASE("A keys file line with a short value does not replace the key read before it",
-          "[core][crypto]") {
+          "[.][crypto][keys_file]") {
     namespace fs = std::filesystem;
     const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
     const fs::path directory = fs::temp_directory_path() / ("orchid_keys_test_" + std::to_string(stamp));
@@ -33,6 +33,7 @@ TEST_CASE("A keys file line with a short value does not replace the key read bef
         std::ofstream prod{directory / "prod.keys"};
         prod << "header_key = " << std::string(64, '1') << "\nheader_key = 00\n";
         prod << "master_key_00 = " << std::string(32, '3') << "\nmaster_key_00 = 0033\n";
+        prod << "master_key_00 = " << std::string(30, '6') << '\n';
         prod << "master_key_00 = 00 # " << std::string(40, 'x') << '\n';
         prod << "key_area_key_ocean_00 = " << std::string(32, '5') << " # comment\n";
         prod << "key_area_key_application_00 = " << std::string(32, '4')

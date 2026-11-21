@@ -85,7 +85,8 @@ Probe ProbeArchive(const FileSys::VirtualFile& file, const std::array<u8, 0x10>&
     return probe;
 }
 
-TEST_CASE("Parallel NAX0 parses agree with sequential ones", "[core][crypto]") {
+TEST_CASE("Parallel NAX0 parses with the SD keys already derived agree with sequential ones",
+          "[.][crypto][nax]") {
     auto& keys = KeyManager::Instance();
     std::filesystem::path directory;
     std::random_device random;

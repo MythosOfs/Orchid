@@ -43,7 +43,7 @@ constexpr std::string_view EncryptedKeyblob =
     "02"
     "0fc5b02403cfd28ce1ec6f5704ae660b3d4425dcaa38af9ddee1b07f3cf4d895";
 
-bool DeriveKeyblob(std::string encrypted_keyblob) {
+void Derive(std::string_view index, std::string_view lines) {
     auto& keys = KeyManager::Instance();
     std::filesystem::path directory;
     std::random_device random;
@@ -58,10 +58,9 @@ bool DeriveKeyblob(std::string encrypted_keyblob) {
         };
         line("secure_boot_key", '1');
         line("tsec_key", '2');
-        line("keyblob_key_source_00", '3');
+        line("keyblob_key_source_" + std::string{index}, '3');
         line("keyblob_mac_key_source", '4');
-        file << "keyblob_00 = " << std::string(0x120, '0') << '\n';
-        file << "encrypted_keyblob_00 = " << encrypted_keyblob << '\n';
+        file << lines;
     }
     const auto previous = Common::FS::GetEdenPath(Common::FS::EdenPath::KeysDir);
     std::filesystem::create_directories(previous);
@@ -70,21 +69,41 @@ bool DeriveKeyblob(std::string encrypted_keyblob) {
     keys.DeriveBase();
     Common::FS::SetEdenPath(Common::FS::EdenPath::KeysDir, previous);
     std::filesystem::remove_all(directory);
-    return keys.HasKey(S128KeyType::Package1, 0);
 }
 
-TEST_CASE("A console keyblob is decrypted only with a valid MAC", "[core][crypto]") {
+bool CanDerive(u64 index) {
+    const auto& keys = KeyManager::Instance();
+    return keys.BaseDeriveNecessary() && !keys.HasKey(S128KeyType::Package1, index);
+}
+
+TEST_CASE("A console keyblob is decrypted only with a valid MAC", "[.][crypto][keyblob]") {
     auto& keys = KeyManager::Instance();
-    if (keys.HasKey(S128KeyType::Package1, 0)) {
+    if (!CanDerive(0)) {
         SKIP("Keys are installed");
     }
     std::string wrong_tag{EncryptedKeyblob};
     wrong_tag[0] = wrong_tag[0] == '0' ? '1' : '0';
-    CHECK_FALSE(DeriveKeyblob(wrong_tag));
+    Derive("00", "encrypted_keyblob_00 = " + wrong_tag + '\n');
+    CHECK_FALSE(keys.HasKey(S128KeyType::Package1, 0));
 
-    REQUIRE(DeriveKeyblob(std::string{EncryptedKeyblob}));
+    Derive("00", "encrypted_keyblob_00 = " + std::string{EncryptedKeyblob} + '\n');
+    REQUIRE(keys.HasKey(S128KeyType::Package1, 0));
     CHECK(keys.GetKey(S128KeyType::Package1, 0) ==
           Common::HexStringToArray<0x10>("55555555555555555555555555555555"));
+}
+
+TEST_CASE("A keys file keyblob is kept when a later keyblob line is too short",
+          "[.][crypto][keyblob]") {
+    auto& keys = KeyManager::Instance();
+    if (!CanDerive(1)) {
+        SKIP("Keys are installed");
+    }
+    Derive("01", "encrypted_keyblob_01 = " + std::string{EncryptedKeyblob} +
+                     "\nkeyblob_01 = " + std::string(0x80 * 2, '0') + std::string(0x10 * 2, '7') +
+                     "\nkeyblob_01 = " + std::string(0x8F * 2, '0') + '\n');
+    REQUIRE(keys.HasKey(S128KeyType::Package1, 1));
+    CHECK(keys.GetKey(S128KeyType::Package1, 1) ==
+          Common::HexStringToArray<0x10>("77777777777777777777777777777777"));
 }
 
 } // namespace

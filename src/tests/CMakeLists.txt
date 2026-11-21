@@ -216,6 +216,9 @@ target_compile_definitions(tests PRIVATE
 
 add_test(NAME tests COMMAND tests)
 add_test(NAME service_auto_stub COMMAND tests "[service]")
+foreach(keys_test eticket keyblob nax keys_file)
+    add_test(NAME crypto_${keys_test} COMMAND tests "[${keys_test}]")
+endforeach()
 
 # Separate processes exercise the cached opt-in and destruction order without a GPU or profile.
 add_executable(stall_diagnostics_session

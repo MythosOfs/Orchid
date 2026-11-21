@@ -96,14 +96,17 @@ struct TicketKeys {
         std::filesystem::remove_all(directory);
     }
 
-    bool Add(TitleKeyType type, std::string_view block, std::string_view rights_id_hex) {
+    bool Add(TitleKeyType type, std::string_view block) {
         RSA2048Ticket raw{};
         raw.sig_type = SignatureType::RSA_2048_SHA256;
         constexpr std::string_view issuer = "Root-CA00000003-XS00000020";
         std::memcpy(raw.data.issuer.data(), issuer.data(), issuer.size());
         raw.data.type = type;
         raw.data.title_key_block = Common::HexStringToArray<0x100>(block);
-        raw.data.rights_id = Common::HexStringToArray<0x10>(rights_id_hex);
+        std::random_device random;
+        for (auto& byte : raw.data.rights_id) {
+            byte = u8(random());
+        }
         std::memcpy(rights_id.data(), raw.data.rights_id.data(), raw.data.rights_id.size());
         REQUIRE_FALSE(HasTitleKey());
         return keys.AddTicket(Ticket{raw});
@@ -122,48 +125,47 @@ struct TicketKeys {
 };
 
 TEST_CASE("A personalized ticket's title key is decrypted with the eticket RSA key",
-          "[core][crypto]") {
+          "[.][crypto][eticket]") {
     TicketKeys keys;
-    REQUIRE(
-        keys.Add(TitleKeyType::Personalized, TitleKeyBlock, "01004d5f17e4c0000000000000000041"));
+    REQUIRE(keys.Add(TitleKeyType::Personalized, TitleKeyBlock));
     CHECK(keys.TitleKey() == Common::HexStringToArray<0x10>("00112233445566778899aabbccddeeff"));
 }
 
 TEST_CASE("A personalized ticket whose decryption starts with two zero bytes gives its title key",
-          "[core][crypto]") {
+          "[.][crypto][eticket]") {
     TicketKeys keys;
-    REQUIRE(
-        keys.Add(TitleKeyType::Personalized, LeadingZeroBlock, "01004d5f17e4c0000000000000000043"));
+    REQUIRE(keys.Add(TitleKeyType::Personalized, LeadingZeroBlock));
     CHECK(keys.TitleKey() == Common::HexStringToArray<0x10>("ffeeddccbbaa99887766554433221100"));
 }
 
-TEST_CASE("A personalized ticket whose block holds no title key gives none", "[core][crypto]") {
+TEST_CASE("A personalized ticket whose block holds no title key gives none",
+          "[.][crypto][eticket]") {
     TicketKeys keys;
-    CHECK_FALSE(keys.Add(TitleKeyType::Personalized, EmptyMessageBlock,
-                         "01004d5f17e4c0000000000000000042"));
+    CHECK_FALSE(keys.Add(TitleKeyType::Personalized, EmptyMessageBlock));
     CHECK_FALSE(keys.HasTitleKey());
 }
 
-TEST_CASE("A personalized ticket with a corrupted block gives no title key", "[core][crypto]") {
+TEST_CASE("A personalized ticket with a corrupted block gives no title key",
+          "[.][crypto][eticket]") {
     TicketKeys keys;
     std::string block{TitleKeyBlock};
     block[100] = block[100] == '0' ? '1' : '0';
-    CHECK_FALSE(keys.Add(TitleKeyType::Personalized, block, "01004d5f17e4c0000000000000000044"));
+    CHECK_FALSE(keys.Add(TitleKeyType::Personalized, block));
     CHECK_FALSE(keys.HasTitleKey());
 }
 
-TEST_CASE("A personalized ticket with the wrong OAEP label gives no title key", "[core][crypto]") {
+TEST_CASE("A personalized ticket with the wrong OAEP label gives no title key",
+          "[.][crypto][eticket]") {
     TicketKeys keys;
-    CHECK_FALSE(
-        keys.Add(TitleKeyType::Personalized, WrongLabelBlock, "01004d5f17e4c0000000000000000046"));
+    CHECK_FALSE(keys.Add(TitleKeyType::Personalized, WrongLabelBlock));
     CHECK_FALSE(keys.HasTitleKey());
 }
 
-TEST_CASE("A common ticket's title key is taken as stored", "[core][crypto]") {
+TEST_CASE("A common ticket's title key is taken as stored", "[.][crypto][eticket]") {
     TicketKeys keys;
     std::string block{"0123456789abcdeffedcba9876543210"};
     block.resize(0x200, '0');
-    REQUIRE(keys.Add(TitleKeyType::Common, block, "01004d5f17e4c0000000000000000045"));
+    REQUIRE(keys.Add(TitleKeyType::Common, block));
     CHECK(keys.TitleKey() == Common::HexStringToArray<0x10>("0123456789abcdeffedcba9876543210"));
 }
 

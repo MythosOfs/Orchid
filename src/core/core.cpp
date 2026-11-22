@@ -73,7 +73,6 @@
 #include "hid_core/hid_core.h"
 #include "network/network.h"
 #include "video_core/host1x/host1x.h"
-#include "video_core/nx2.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
 
@@ -438,9 +437,6 @@ struct System::Impl {
                                             : Settings::values.timed_fps.GetValue();
         Settings::timed_fps_active.store(Settings::TimedFpsTarget(params.program_id, timed_fps),
                                          std::memory_order_relaxed);
-        // The per-title GPU decisions (Nx2NeedsBufferDownloads) need it before the first fence;
-        // the nvhost-ctrl-gpu query that also sets it may come later or not at all.
-        Tegra::g_nx2_program_id = params.program_id;
 
         // Track launch time for frontend launches
         LaunchTimestampCache::SaveLaunchTimestamp(params.program_id);

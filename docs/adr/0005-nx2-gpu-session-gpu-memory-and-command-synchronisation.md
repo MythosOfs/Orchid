@@ -14,6 +14,12 @@ Map GPU-accessible memory at GPU == CPU address, back GPU-only and sparse region
 
 GPU-session map jobs and the worker-session request complete at once, which is equivalent to the console (#189, evidence below). No console component copies the second page of a two-page GPU-accessible memory into the first; the mirror table that assumed one is gone (#191, evidence below). Memory accounting and lock order (`m_region_mutex`, the sparse state lock taken last) are load-bearing.
 
+## Native buffer readback
+
+A guest read of rasterizer-cached GPU memory resolves the CPU backing pointer to device addresses. The Vulkan rasterizer records those pages via `NoteCpuRead`. A first read of GPU-written data flushes it and marks the range preflushable. Subsequent GPU writes queue fence downloads for the parts intersecting those CPU-read or preflushable ranges.
+
+Native address spaces use these selective downloads. Legacy address spaces retain full fence downloads. `EDEN_NX2_BUFFER_DOWNLOADS=0/1` still overrides that policy for diagnostics. Hokkaido had previously removed Pokopia's blanket downloads after verifying the selective path on its targets. [Hokkaido commit 997d59b10f](https://github.com/pavelgajdo/Hokkaido/commit/997d59b10f40083c2929276c4eb3f9e383748af0)
+
 ## Decision log
 
 One entry per former code comment, by file, named after the code it described.

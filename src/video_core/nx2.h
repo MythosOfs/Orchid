@@ -20,17 +20,6 @@ namespace Tegra {
 
 inline std::atomic<bool> g_nx2_ampere{false};
 
-inline std::atomic<u64> g_nx2_program_id{0};
-
-inline bool Nx2NeedsBufferDownloads() {
-    switch (g_nx2_program_id.load(std::memory_order_relaxed)) {
-    case 0x0400A3A01EE4C000ULL:
-        return true;
-    default:
-        return false;
-    }
-}
-
 inline constexpr u64 Nx2WrittenPageBits = 12;
 inline std::array<std::atomic<u64>, (u64{1} << (36 - Nx2WrittenPageBits)) / 64> g_nx2_gpu_written_pages{};
 inline std::atomic<u64> g_nx2_gpu_written_generation{};

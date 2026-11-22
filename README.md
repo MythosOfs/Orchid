@@ -209,6 +209,17 @@ source and author in its message.
   race-free Dynarmic code-page invalidation); each commit names its source:
   [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (Zortos, zortos293, RomainROCH,
   Kaj, DuskDarf1).
+- Fork scan of 2026-11-21, presentation, audio and texture upload fixes (Cubeb and SDL streams
+  reopen after losing the host device, ASTC opacity scan without a copy, block-linear swizzle
+  GOB by GOB, inline uploads in native tiling, Bananza swap interval cap, Wonder release
+  fences); each commit names its source:
+  [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (zortos293, The Cashman),
+  [tomvita/Lichii](https://github.com/tomvita/Lichii) (tomvita),
+  [atmanli/Lichii](https://github.com/atmanli/Lichii) (Luke Evanson),
+  [gamehhh7/Lichii](https://github.com/gamehhh7/Lichii) (SmileyTatsu),
+  [maro-03/Lichii20](https://github.com/maro-03/Lichii20) (Maro),
+  [DuskDarf1/Lichii](https://github.com/DuskDarf1/Lichii) (DuskDarf1) and
+  [mariohbd/Lichii](https://github.com/mariohbd/Lichii) (mariohbd).
 - Fork scan of 2026-11-11, 68 fixes for correctness, stability and AMD hosts (audio ADPCM decode,
   guest memory and address space bookkeeping, shutdown hangs, syncpoint waits behind Yoshi's movie
   player abort, Vulkan barriers and samplers, shader NaN and atomics handling, texture cache

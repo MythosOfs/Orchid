@@ -25,7 +25,6 @@
 #include "video_core/gpu.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
 #include "video_core/memory_manager.h"
-#include "video_core/nx2.h"
 #include "video_core/renderer_null/null_rasterizer.h"
 
 namespace {
@@ -728,14 +727,11 @@ TEST_CASE("BufferCache: pending download budget waits for delivery and supports 
     CHECK_FALSE(runtime.out_of_bounds);
 }
 
-TEST_CASE("BufferCache: native fence downloads copy only CPU-visible pages of a large write",
+TEST_CASE("BufferCache: fence downloads follow tiling and CPU visibility",
           "[video_core][buffer_cache][selective_download]") {
+    const bool native_tiling = GENERATE(false, true);
     const bool old_multi_core = Settings::values.use_multi_core.GetValue();
-    const u64 old_title = Tegra::g_nx2_program_id.exchange(0x04003F40232DE000ULL);
-    SCOPE_EXIT {
-        Settings::values.use_multi_core.SetValue(old_multi_core);
-        Tegra::g_nx2_program_id.store(old_title);
-    };
+    SCOPE_EXIT { Settings::values.use_multi_core.SetValue(old_multi_core); };
     Settings::values.use_multi_core.SetValue(false);
     Core::System system;
     system.Initialize();
@@ -754,7 +750,6 @@ TEST_CASE("BufferCache: native fence downloads copy only CPU-visible pages of a 
     Tegra::MaxwellDeviceMemoryManager manager(system.DeviceMemory());
     manager.Map(dev, guest, extent, manager.RegisterProcess(&cpu));
     Tegra::MemoryManager address_space(system, manager);
-    address_space.EnableNativeTiling();
     FixtureRuntime runtime;
     auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
     cache->SetAddressSpace(address_space);
@@ -770,6 +765,19 @@ TEST_CASE("BufferCache: native fence downloads copy only CPU-visible pages of a 
         CHECK(std::ranges::all_of(bytes, [expected](u8 value) { return value == expected; }));
     };
 
+    if (!native_tiling) {
+        write(0x64);
+        cache->CommitAsyncFlushes();
+        REQUIRE(runtime.allocation_ids.size() == 1);
+        CHECK(runtime.deferred_stages.front().buffer->bytes.size() == extent);
+        cache->PopAsyncFlushes();
+        check_page(dev, 0x64);
+        check_page(dev + extent - page, 0x64);
+        CHECK_FALSE(runtime.out_of_bounds);
+        return;
+    }
+
+    address_space.EnableNativeTiling();
     write(0x31);
     // The first ordered CPU read downloads one dirty page and marks it Preflushable.
     const DAddr read_page = dev + 3 * page;
@@ -818,16 +826,6 @@ TEST_CASE("BufferCache: native fence downloads copy only CPU-visible pages of a 
         check_page(read_page, 0x53);
         check_page(dev + 5 * page, 0x53);
         check_page(dev + 7 * page, 0);
-    }
-    SECTION("titles requiring full asynchronous downloads still copy the whole write") {
-        Tegra::g_nx2_program_id.store(0x0400A3A01EE4C000ULL); // Pokopia's full-download policy.
-        write(0x64);
-        cache->CommitAsyncFlushes();
-        REQUIRE(runtime.allocation_ids.size() == 1);
-        CHECK(runtime.deferred_stages.front().buffer->bytes.size() == extent);
-        cache->PopAsyncFlushes();
-        check_page(dev, 0x64);
-        check_page(dev + extent - page, 0x64);
     }
     CHECK_FALSE(runtime.out_of_bounds);
 }

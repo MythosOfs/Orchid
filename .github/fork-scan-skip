@@ -7177,3 +7177,8 @@ fd5437067 zortos293/Eglantine: Orchid uses guest-thread GetService polling and l
 be2414796 zortos293/Eglantine: The per-pipeline SPIR-V snapshot bypasses Orchid's environment validation and duplicates retained shader data.
 e63d0a04d zortos293/Eglantine: The RAM policy relies on an unvalidated per-pipeline cost estimate and showed no incremental benefit.
 86296247b mja00/Lichii: Prevented evictions in Hyrule Warriors, but alternating soaks showed no clear frame-time benefit and higher median sampled peak RSS.
+043c2ce16 zortos293/Eglantine: Orchid's JoinImages never returns a null image (it creates unbacked images instead), so this path does not exist
+d66f4b0be SirenBrink/Lichii-DLSS-G: Same reason as 043c2ce16, CreateImageView never receives an empty image in Orchid
+9f0d96917 zortos293/Eglantine: Orchid already honours the GOB hint for all formats (maxwell_gobs); the rest needs the fork's overlap machinery
+29694224a snobalfyte/lichii: Builds on the fork's own feedback_depth_dirty; no repro for a missing barrier
+9069e5a84 zortos293/Eglantine: Duskbloods-only volume clear in Vulkan, neither testable nor reproducible here

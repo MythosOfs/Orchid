@@ -188,6 +188,7 @@ source and author in its message.
   the separate pipeline cache file names, an empty content provider for a fresh System, the NPDM
   platform reset on reload, update control metadata in NUPs, and keeping a Switch 2 Edition base
   program over a legacy update.
+  Reiixan: balance shader build progress when a queued Vulkan compute pipeline build is dropped.
   Radu Ursache: no mesh pipelines without `VK_EXT_mesh_shader`.
   Kaj (co-authored with Claude Opus 5.5): skip guest uploads for new render targets fully
   overwritten by a clear, adapted with framebuffer render-area, transformed-scissor,

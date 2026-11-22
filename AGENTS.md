@@ -178,7 +178,7 @@ computer use.
 
   | Game | Snapshot | Route | Ends in |
   |---|---|---|---|
-  | Mario Tennis Fever | `mtf-after-first-practice-20261107` | `mtf-stadium-match-v3` | Free Play match (waits for the player HUD) |
+  | Mario Tennis Fever | `mtf-after-first-practice-20261107` | `mtf-stadium-match-v4` | Free Play match (waits for the player HUD) |
   | Donkey Kong Bananza | `bananza-leon-import-20261107` | `bananza-leon-tunnel-entry-v4` | mining tunnel, HUD checkpoint |
   | Yoshi and the Mysterious Book | `yoshi-chapter-one-saved-20261106-2114` | `yoshi-wildwoods-entry-v2` | Wildwoods level, Yoshi controllable |
   | Super Mario Bros. Wonder | `wonder-goal60-overworld-20261107` | `wonder-level-entry-v2` | inside a level, HUD checkpoint |

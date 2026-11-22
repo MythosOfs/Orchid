@@ -114,6 +114,12 @@ The ASTC opacity scan borrows a contiguous guest span for the duration of the cl
 Fragmented ranges are copied into reusable scratch memory. Both paths run the same opacity
 classifier, so the selected BC format is the same.
 
+## Texture transfers
+
+Inline block-linear uploads use the address space's native GOB swizzle, as DMA does. Otherwise,
+16-byte sectors in the right half of small native compressed mip levels can land in the wrong
+rows.
+
 ## Evidence
 
 ### #189: what the GPU session's jobs wait for (2026-11-21)

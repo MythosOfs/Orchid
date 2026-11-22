@@ -8,6 +8,21 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <catch2/generators/catch_generators.hpp>
+
+#include "common/scope_exit.h"
+#include "common/settings.h"
+#include "core/core.h"
+#include "core/device_memory.h"
+#include "core/hle/kernel/k_page_table.h"
+#include "core/hle/kernel/k_process.h"
+#include "core/hle/kernel/kernel.h"
+#include "core/memory.h"
+#include "video_core/engines/engine_upload.h"
+#include "video_core/gpu.h"
+#include "video_core/host1x/gpu_device_memory_manager.h"
+#include "video_core/memory_manager.h"
+#include "video_core/renderer_null/null_rasterizer.h"
 #include "video_core/textures/decoders.h"
 
 namespace {
@@ -174,4 +189,62 @@ TEST_CASE("Texture unswizzle preserves independent array layer boundaries",
         }
         CHECK(result == expected);
     }
+}
+
+TEST_CASE("Inline block-linear uploads match DMA tiling", "[video_core][texture][inline_upload]") {
+    const bool native = GENERATE(false, true);
+    const bool saved_multi_core = Settings::values.use_multi_core.GetValue();
+    SCOPE_EXIT { Settings::values.use_multi_core.SetValue(saved_multi_core); };
+    Settings::values.use_multi_core.SetValue(false);
+    Core::System system;
+    system.Initialize();
+    Kernel::KProcess process(system.Kernel());
+    SCOPE_EXIT { system.Kernel().UnregisterKernelObject(&process); };
+    auto& cpu = process.GetMemory();
+    auto& table = process.GetPageTable().GetImpl();
+    table.Resize(32, 12);
+    cpu.SetCurrentPageTable(process);
+    constexpr u64 physical = 0x80000, guest = 0x200000, device = 0x100000;
+    constexpr GPUVAddr target = 0x300000;
+    constexpr size_t page = 4096;
+    cpu.MapMemoryRegion(table, Common::ProcessAddress{guest}, page,
+                        Common::PhysicalAddress{Core::DramMemoryMap::Base + physical},
+                        Common::MemoryPermission::ReadWrite, false);
+    system.DeviceMemory().buffer.ClearBackingRegion(physical, page, 0xa5);
+    Tegra::MaxwellDeviceMemoryManager manager(system.DeviceMemory());
+    manager.Map(device, guest, page, manager.RegisterProcess(&cpu));
+    Tegra::GPU gpu(system, false, false);
+    Null::RasterizerNull rasterizer(gpu);
+    Tegra::MemoryManager address_space(system, manager);
+    address_space.BindRasterizer(&rasterizer);
+    address_space.Map(target, device, page, Tegra::PTEKind::PITCH, false);
+    if (native) {
+        address_space.EnableNativeTiling();
+    }
+
+    Tegra::Engines::Upload::Registers regs{};
+    regs.line_length_in = 48;
+    regs.line_count = 3;
+    regs.dest.address_low = target;
+    regs.dest.width = 64;
+    regs.dest.height = 8;
+    regs.dest.depth = 1;
+    regs.dest.x = 16;
+    regs.dest.y = 1;
+    Tegra::Engines::Upload::State upload(address_space, regs);
+    upload.BindRasterizer(&rasterizer);
+    std::array<u32, 36> data{};
+    for (size_t i = 0; i < data.size(); ++i) {
+        data[i] = static_cast<u32>((i + 1) * 0x9e3779b9U);
+    }
+    upload.ProcessExec(false);
+    upload.ProcessData(data.data(), data.size());
+
+    const auto input = std::span{reinterpret_cast<const u8*>(data.data()), sizeof(data)};
+    std::vector<u8> expected(page, 0xa5);
+    Tegra::Texture::SwizzleSubrect(expected, input, 16, 4, 8, 1, 1, 1, 3, 3, 0, 0, 48, native);
+
+    std::vector<u8> actual(page);
+    address_space.ReadBlockUnsafe(target, actual.data(), actual.size());
+    CHECK(std::ranges::equal(actual, expected));
 }

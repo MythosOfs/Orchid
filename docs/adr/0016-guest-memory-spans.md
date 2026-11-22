@@ -1,4 +1,4 @@
-# 0009 Guest memory spans
+# 0016 Guest memory spans
 
 `Memory::GetSpan` exposes a guest range as a single host pointer. Each
 covered page must have the same host-minus-guest offset. A mapping ID

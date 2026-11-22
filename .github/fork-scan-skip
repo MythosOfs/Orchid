@@ -7193,3 +7193,13 @@ fd9c0133d zortos293/Eglantine: per-processor reservation cache lines are a false
 073003544 VilmaH/Lichii: relaxed acquire loads and cheaper DMB are a memory-model speed change with no red test; overlaps 20621cda9 and needs cross-core litmus verification first.
 9dd22d648 ThatGuyMcd/Lichii-TGM: locked OR instead of MFENCE is a memory-model speed change; the single-thread test does not prove cross-core ordering and no gain was measured.
 20621cda9 zortos293/Eglantine: plain loads for LDAR/LDAPR/LDAXR are a memory-model speed change with no red test; overlaps 073003544 and needs cross-core litmus verification first.
+c85e6d87c zortos293/Eglantine: requires upstream ASTC layer-batched decode and encoder offsets absent from Orchid, and RX 9070 XT cannot exercise the integrated-GPU branch.
+75832a4ab zortos293/Eglantine: Orchid lacks the fork's unlocked-process state and frame-generation pacing path. No unlocked-client 240 FPS case was demonstrated.
+031c8a83e zortos293/Eglantine: Orchid's Sysmix PurgeStream already returns success for output. The fork changes a different ring and cursor ownership implementation.
+51a3a5eaf tomvita/Lichii: pause and resume while detached are covered by ad9369421 on Orchid, which lacks the fork's IsReady API.
+fd08e02d8 tomvita/Lichii: Orchid's SinkStream has no IsReady readiness gate or Sysmix fault-on-not-ready transition.
+b804de140 sebjager/Eglantine: Orchid has an earlier converting Star Fox cutscene fallback. The broad replacement scan lacks its native image-handle scanner dependency and a reproduced docked failure.
+3f7cb2622 zortos293/Eglantine: GOB-by-GOB swizzle fill is a speed change; no test goes red on main and the microbenchmark ranges overlapped under host load.
+e05d5d036 maro-03/Lichii20: Caps Donkey Kong Bananza's swap interval at 2 by title ID, which deviates from the interval the game requests; no fps gain shown (tunnel at 60 fps with and without).
+49436caa2 DuskDarf1/Lichii: Wonder-only present release fence queue gated by title ID; no fps or pacing gain shown (60.00 fps, same p99 with and without).
+90a5d30f6 mariohbd/Lichii: Same design as 49436caa2 (Wonder release fences by title ID), no measured benefit.

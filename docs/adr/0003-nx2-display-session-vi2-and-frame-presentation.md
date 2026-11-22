@@ -105,3 +105,13 @@ Bananza can stay at an interval of three after a slow frame because its pacing m
 frames take 50 ms. At fixed refresh, cap the guest interval at two. The manual swap interval,
 per-title FPS target, and VRR controller keep their existing precedence. With VRR advertised,
 Bananza already picks a refresh rate between 40 and 60 Hz and falls back to interval two below it.
+
+## Wonder release fences
+
+Wonder can classify time spent inside the present IPC as CPU frame work and settle at 30 FPS.
+On multicore, when the acquire fence is ready and there is a pacing deadline, return a release
+fence in the present reply. Signal it after composition and the deadline, in submission order.
+The service still holds to the previous pending deadline to bound how far the client can run
+ahead. The queue has the advertised slot count of fifteen. Unavailable syncpoints and full
+queues fall back to synchronous pacing. Destruction drains outstanding waits before returning
+the syncpoint. Set `EDEN_NX2_PRESENT_QUEUE=0` to compare with synchronous pacing.

@@ -43,6 +43,7 @@
 #include "core/core.h"
 #include "core/hle/service/nx2_image_layout.h"
 #include "core/hle/service/nx2_present.h"
+#include "core/hle/service/nx2_present_queue.h"
 #include "core/hle/service/nx2_sparse_region.h"
 #include "core/device_memory.h"
 #include "video_core/rasterizer_interface.h"
@@ -1342,6 +1343,10 @@ public:
     }
 
     ~INx2Vi2Session() override {
+        if (m_release_queue) {
+            m_release_queue->Stop();
+            m_release_module->GetContainer().GetSyncpointManager().FreeSyncpoint(m_release_syncpoint);
+        }
         {
             std::scoped_lock lk{m_vsync->mutex};
             m_vsync->events.clear();
@@ -1393,9 +1398,29 @@ private:
         m_previous_fence_id = ~w[22];
         m_previous_fence_value = w[24];
         const auto waited = std::chrono::steady_clock::now();
-        Composite(w[5], ~w[22], w[24], w[6], w[7], w[8]);
-        const auto composited = std::chrono::steady_clock::now();
-        PaceToVblank(w[12]);
+        const bool queueable = UsesPresentReleaseFences() && (w[18] & 0xf) == 0 &&
+                               (~w[22] >= HostSyncpoints ||
+                                system.Host1x().GetSyncpointManager().IsReadyGuest(~w[22], w[24]));
+        std::optional<Nx2PresentReleaseQueue::Release> release;
+        std::optional<PresentClock::time_point> deadline;
+        auto hold_until = waited;
+        if (queueable) {
+            deadline = AdvancePresentDeadline(w[12]);
+            if (deadline) {
+                release = QueueRelease(*deadline, hold_until);
+            }
+        }
+        const bool submitted = Composite(w[5], ~w[22], w[24], w[6], w[7], w[8],
+                                          release ? release->on_composited : std::function<void()>{});
+        const auto composited = PresentClock::now();
+        if (release) {
+            if (!submitted) {
+                release->on_composited();
+            }
+            WaitUntilPresentDeadline(hold_until);
+        } else if (const auto wait = queueable ? deadline : AdvancePresentDeadline(w[12])) {
+            WaitUntilPresentDeadline(*wait);
+        }
         const auto paced = std::chrono::steady_clock::now();
         if (Common::HitchDiagnostic::Enabled()) {
             const s64 trace_begin_ns = Common::HitchDiagnostic::NowNs();
@@ -1489,8 +1514,48 @@ private:
         }
         constexpr u64 AvailableSlots = 0x7fff;
         TipcReplyWords(ctx, {static_cast<u32>(AvailableSlots),
-                             static_cast<u32>(AvailableSlots >> 32), 0, 0, 0, 0});
+                             static_cast<u32>(AvailableSlots >> 32),
+                             release ? ~release->syncpoint : 0U, 0,
+                             release ? release->value : 0U, 0});
     }
+
+    using PresentClock = std::chrono::steady_clock;
+
+    bool UsesPresentReleaseFences() const {
+        static const bool enabled = [] {
+            const char* value = std::getenv("EDEN_NX2_PRESENT_QUEUE");
+            return value == nullptr || value[0] != '0';
+        }();
+        return enabled && system.IsMulticore() &&
+               system.GetApplicationProcessProgramID() == Settings::WonderSwitch2ProgramId;
+    }
+
+    std::optional<Nx2PresentReleaseQueue::Release> QueueRelease(
+        PresentClock::time_point deadline, PresentClock::time_point& hold_until) {
+        if (!m_release_queue) {
+            const auto service = system.ServiceManager().GetService<Nvidia::NVDRV>("nvdrv", false);
+            if (!service) {
+                return std::nullopt;
+            }
+            auto module = service->GetModule();
+            const auto id = module->GetContainer().GetSyncpointManager().TryAllocateSyncpoint(true);
+            if (!id) {
+                return std::nullopt;
+            }
+            m_release_module = std::move(module);
+            m_release_syncpoint = *id;
+            m_release_queue = std::make_shared<Nx2PresentReleaseQueue>(
+                system.CoreTiming(), system.Host1x().GetSyncpointManager(), *id);
+        }
+        const auto now = PresentClock::now();
+        hold_until = now + m_release_queue->RunAhead();
+        return m_release_queue->Queue(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(deadline - now));
+    }
+
+    std::shared_ptr<Nvidia::Module> m_release_module;
+    u32 m_release_syncpoint{};
+    std::shared_ptr<Nx2PresentReleaseQueue> m_release_queue;
 
     u32 m_wait_timeouts{};
     struct PresentStats {
@@ -1516,7 +1581,7 @@ private:
     u32 m_swap_stable{};
     u32 m_swap_changes{};
 
-    void PaceToVblank(u32 timing) {
+    std::optional<PresentClock::time_point> AdvancePresentDeadline(u32 timing) {
         if (const u64 step_address = Settings::frame_step_address.load(std::memory_order_relaxed);
             step_address != 0) {
             const auto now = std::chrono::steady_clock::now();
@@ -1538,7 +1603,7 @@ private:
             }
         }
         if (!Settings::values.use_speed_limit.GetValue() || Settings::SpeedLimit() == 0) {
-            return;
+            return std::nullopt;
         }
         static const u32 forced_interval = [] {
             const char* value = std::getenv("EDEN_NX2_SWAP_INTERVAL");
@@ -1573,12 +1638,19 @@ private:
         const auto now = std::chrono::steady_clock::now();
         if (now > m_next_vblank + interval) {
             m_next_vblank = now;
-        } else if (now < m_next_vblank) {
-            const auto wait = std::chrono::duration_cast<std::chrono::nanoseconds>(m_next_vblank - now);
+        }
+        const auto deadline = m_next_vblank;
+        m_next_vblank += interval;
+        return deadline;
+    }
+
+    void WaitUntilPresentDeadline(PresentClock::time_point deadline) {
+        const auto now = PresentClock::now();
+        if (now < deadline) {
+            const auto wait = std::chrono::duration_cast<std::chrono::nanoseconds>(deadline - now);
             static_cast<void>(Kernel::GetCurrentThread(kernel).Sleep(
                 kernel, kernel.HardwareTimer().GetTick() + wait.count() + 2));
         }
-        m_next_vblank += interval;
     }
 
     bool WaitForFrame(u32 fence_id, u32 fence_value, bool unless_gpu_waits = false) {
@@ -1633,8 +1705,8 @@ private:
         return syncpoints.IsReadyGuest(fence_id, fence_value);
     }
 
-    void Composite(u32 image_id, u32 fence_id, u32 fence_value, u32 crop_origin, u32 crop_end,
-                   u32 flags) {
+    bool Composite(u32 image_id, u32 fence_id, u32 fence_value, u32 crop_origin, u32 crop_end,
+                   u32 flags, std::function<void()> on_composited) {
         NotifyHdrChange();
         u64 address{};
         Nx2ImageLayout layout{};
@@ -1644,11 +1716,11 @@ private:
             std::scoped_lock lk{m_objects->mutex};
             const auto image = m_objects->images.find(image_id);
             if (image == m_objects->images.end()) {
-                return;
+                return false;
             }
             const auto memory = m_objects->memories.find(image->second.memory);
             if (memory == m_objects->memories.end() || memory->second.address == 0) {
-                return;
+                return false;
             }
             address = memory->second.address;
             layout = Nx2CalculateImageLayout(image->second.preference.data());
@@ -1659,7 +1731,7 @@ private:
         if (!device) {
             LOG_WARNING(Service, "nx2:vi2 present: image {} at {:#x} has no device mapping",
                         image_id, address);
-            return;
+            return false;
         }
         auto crop = Nx2PresentCrop(crop_origin, crop_end, flags, layout.width, layout.height);
         if ((flags & 2) == 0) {
@@ -1733,12 +1805,16 @@ private:
         if (fence_id < HostSyncpoints) {
             fences.push_back({static_cast<s32>(fence_id), fence_value});
         }
-        system.GPU().RequestComposite(std::move(layers), std::move(fences));
+        const bool release_queued = static_cast<bool>(on_composited);
+        system.GPU().RequestComposite(std::move(layers), std::move(fences), std::move(on_composited));
         CaptureFrame();
         DumpRanges();
-        system.SpeedLimiter().DoSpeedLimiting(system.CoreTiming().GetGlobalTimeUs());
+        if (!release_queued) {
+            system.SpeedLimiter().DoSpeedLimiting(system.CoreTiming().GetGlobalTimeUs());
+        }
         system.GetPerfStats().EndSystemFrame();
         system.GetPerfStats().BeginSystemFrame();
+        return true;
     }
 
     void CaptureFrame() {

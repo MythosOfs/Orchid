@@ -2,6 +2,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <catch2/catch_test_macros.hpp>
+#include "common/scope_exit.h"
+#include "common/settings.h"
+#include "core/core.h"
+#include "core/hle/service/nvdrv/core/syncpoint_manager.h"
+#include "core/hle/service/nx2_present_queue.h"
+#include "video_core/host1x/host1x.h"
 
 #include "core/hle/service/nx2_present.h"
 #include "video_core/engines/native_upscale.h"
@@ -122,4 +128,123 @@ TEST_CASE("Bananza fixed-refresh pacing caps long swap intervals", "[nx2_present
             CHECK(Nx2PresentSwapInterval(timing, true, 3, true) == 3);
         }
     }
+}
+
+TEST_CASE("NX2 present releases wait for composition and deadline", "[nx2_present_queue]") {
+    using namespace std::chrono_literals;
+    Core::Timing::CoreTiming timing;
+    timing.SetMulticore(false);
+    timing.Initialize([] {});
+    Tegra::Host1x::SyncpointManager syncpoints;
+    constexpr u32 id = 12;
+    const auto queue = std::make_shared<Service::Nx2PresentReleaseQueue>(timing, syncpoints, id);
+    const auto release = queue->Queue(5ms);
+    REQUIRE(release);
+    CHECK(release->value == 1);
+    CHECK(release->syncpoint == id);
+    CHECK(queue->RunAhead() > 0ns);
+    SECTION("deadline first") {
+        timing.AddTicks(1'000'000'000);
+        timing.Advance();
+        CHECK(syncpoints.GetGuestSyncpointValue(id) == 0);
+        release->on_composited();
+    }
+    SECTION("composition first") {
+        release->on_composited();
+        timing.Advance();
+        CHECK(syncpoints.GetGuestSyncpointValue(id) == 0);
+        timing.AddTicks(1'000'000'000);
+    }
+    timing.Advance();
+    CHECK(syncpoints.GetGuestSyncpointValue(id) == 1);
+    CHECK(queue->RunAhead() == 0ns);
+}
+
+TEST_CASE("NX2 present queue bounds releases, signals in order and drains on stop",
+          "[nx2_present_queue]") {
+    using namespace std::chrono_literals;
+    Core::Timing::CoreTiming timing;
+    timing.SetMulticore(false);
+    timing.Initialize([] {});
+    Tegra::Host1x::SyncpointManager syncpoints;
+    constexpr u32 id = 12;
+    const auto queue = std::make_shared<Service::Nx2PresentReleaseQueue>(timing, syncpoints, id);
+    syncpoints.IncrementGuest(id + 1);
+    const auto first = queue->Queue(0ns);
+    REQUIRE(first);
+    std::vector<u32> order;
+    for (u32 value = 1; value <= Service::Nx2PresentReleaseQueue::Capacity; ++value) {
+        syncpoints.RegisterGuestAction(id, value, [&, value] { order.push_back(value); });
+        if (value > 1) {
+            const auto later = queue->Queue(0ns);
+            REQUIRE(later);
+            CHECK(later->value == value);
+            later->on_composited();
+        }
+    }
+    CHECK_FALSE(queue->Queue(0ns));
+    timing.Advance();
+    CHECK(order.empty());
+    first->on_composited();
+    timing.Advance();
+    REQUIRE(order.size() == Service::Nx2PresentReleaseQueue::Capacity);
+    CHECK(std::ranges::is_sorted(order));
+    const auto last = queue->Queue(120ms);
+    REQUIRE(last);
+    CHECK(last->value == order.size() + 1);
+    queue->Stop();
+    CHECK(syncpoints.GetGuestSyncpointValue(id) == last->value);
+    last->on_composited();
+    CHECK_FALSE(queue->Queue(0ns));
+    CHECK_FALSE(timing.Advance());
+    CHECK(syncpoints.GetGuestSyncpointValue(id + 1) == 1);
+}
+
+TEST_CASE("NX2 release syncpoint exhaustion falls back and permits safe reuse",
+          "[nx2_present_queue]") {
+    const bool saved_multi_core = Settings::values.use_multi_core.GetValue();
+    SCOPE_EXIT { Settings::values.use_multi_core.SetValue(saved_multi_core); };
+    Settings::values.use_multi_core.SetValue(false);
+    Core::System system;
+    system.Initialize();
+    auto host = std::make_unique<Tegra::Host1x::Host1x>(system);
+    Service::Nvidia::NvCore::SyncpointManager allocator{*host};
+    std::vector<u32> ids;
+    while (const auto id = allocator.TryAllocateSyncpoint(true)) {
+        REQUIRE(*id != 0);
+        REQUIRE(ids.size() < Tegra::Host1x::SyncpointManager::NUM_MAX_SYNCPOINTS);
+        CHECK(allocator.IsSyncpointAllocated(*id));
+        ids.push_back(*id);
+    }
+    REQUIRE_FALSE(ids.empty());
+    CHECK_FALSE(allocator.TryAllocateSyncpoint(true));
+    CHECK_FALSE(allocator.IsSyncpointAllocated(0));
+    allocator.FreeSyncpoint(ids.back());
+    CHECK(allocator.TryAllocateSyncpoint(true) == ids.back());
+    CHECK_FALSE(allocator.TryAllocateSyncpoint(true));
+}
+
+TEST_CASE("NX2 present continues a reused syncpoint and ignores late completions",
+          "[nx2_present_queue]") {
+    using namespace std::chrono_literals;
+    Core::Timing::CoreTiming timing;
+    timing.SetMulticore(false);
+    timing.Initialize([] {});
+    Tegra::Host1x::SyncpointManager syncpoints;
+    constexpr u32 id = 12;
+    syncpoints.IncrementGuest(id);
+    std::function<void()> late;
+    {
+        const auto queue = std::make_shared<Service::Nx2PresentReleaseQueue>(timing, syncpoints, id);
+        const auto release = queue->Queue(-5ms);
+        REQUIRE(release);
+        CHECK(release->value == 2);
+        CHECK(queue->RunAhead() == 0ns);
+        late = release->on_composited;
+        syncpoints.IncrementGuest(id);
+        syncpoints.IncrementGuest(id);
+    }
+    late();
+    CHECK(syncpoints.GetGuestSyncpointValue(id) == 3);
+    CHECK_FALSE(timing.Advance());
 }

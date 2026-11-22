@@ -203,6 +203,13 @@ source and author in its message.
 - [Djihads80/Eglantine](https://github.com/Djihads80/Eglantine) and its contributors: merged
   regularly. Idle staging buffers freed (Takoroka), the RangeSet empty-query guard (néo Luigi),
   test fixes (kraibse).
+- Fork scan of 2026-11-21, audio and texture upload fixes (Cubeb and SDL streams reopen after
+  losing the host device, ASTC opacity scan without a copy, inline uploads in native tiling); each
+  commit names its source:
+  [tomvita/Lichii](https://github.com/tomvita/Lichii) (tomvita),
+  [atmanli/Lichii](https://github.com/atmanli/Lichii) (Luke Evanson),
+  [gamehhh7/Lichii](https://github.com/gamehhh7/Lichii) (SmileyTatsu) and
+  [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (zortos293).
 - Fork scan of 2026-11-21, texture lifetime and guest memory fixes (unregistering and writing back
   images through their own GPU address space, scratch allocation recovery, sparse segments that
   no longer translate, clear coverage, targets padded to whole GOBs, guest memory span checks,

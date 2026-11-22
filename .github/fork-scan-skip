@@ -7170,3 +7170,7 @@ e8ce4d9c7 pete842/Lichii: Depends on the omitted warp shared-ordering pass and r
 dc9af208e zortos293/Eglantine: No Intel ANV GPU or matching in-scope shader capture is available to verify the driver-specific change.
 fd5437067 zortos293/Eglantine: Orchid uses guest-thread GetService polling and lacks the fork's host WaitForService and Close lifecycle.
 11dea9f87 zortos293/Eglantine: Available gameplay traces do not establish PREPO command 10500 usage or the returned interface's command ABI.
+784309c56 zortos293/Eglantine: Fixes a regression of the fork's own SelectProgram check that Orchid does not have; a test covers a base without an executable
+6edc1cc67 zortos293/Eglantine: NUP selection ported (acc5db4dc1); the loose identity check is covered by ResolveLooseProgramPath/FindLooseRomFS and an NPDM check would break placeholder-NPDM layouts; NSP/XCI GetPackedUpdateFile has no loose or NUP input
+31b3ac211 zortos293/Eglantine: NUP selection ported (acc5db4dc1); loose program/RomFS identity check already layered by ResolveLooseProgramPath and FindLooseRomFS
+5929f95d7 zortos293/Eglantine: NPDM platform and NUP update control ported (1c9de84764, b5d86b7550); ARP language fallback and NACP inflate hardening are not boot inputs and show no unit-test-visible effect

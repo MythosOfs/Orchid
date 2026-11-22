@@ -98,3 +98,10 @@ One entry per former code comment, by file, named after the code it described.
 
 - `in test "Native upscale uses active regions inside larger texture allocations"`: Handheld Xenoblade Chronicles 2: word 0 is 160 although its blocks are 128 wide.
 - `in test "Native upscale accepts only the formats it can copy"`: Kirby and the Forgotten Land had these two in its constants around scene changes.
+
+## Bananza fixed-refresh swap intervals
+
+Bananza can stay at an interval of three after a slow frame because its pacing makes subsequent
+frames take 50 ms. At fixed refresh, cap the guest interval at two. The manual swap interval,
+per-title FPS target, and VRR controller keep their existing precedence. With VRR advertised,
+Bananza already picks a refresh rate between 40 and 60 Hz and falls back to interval two below it.

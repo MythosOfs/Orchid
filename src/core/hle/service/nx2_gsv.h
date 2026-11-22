@@ -36,6 +36,7 @@
 #include "common/fs/path_util.h"
 #include "common/game_fps.h"
 #include "core/frame_step_fps.h"
+#include "common/game_presets.h"
 #include "common/settings.h"
 #include "common/swap.h"
 #include "common/thread.h"
@@ -1553,10 +1554,12 @@ private:
         } else if (m_swap_stable < stable_presents) {
             ++m_swap_stable;
         }
-        const u32 requested_interval = std::clamp<u32>(timing >> 16, 1, 4);
-        const u32 swap_interval = forced_interval != 0              ? forced_interval
-                                  : m_swap_stable >= stable_presents ? requested_interval
-                                                                     : 1;
+        static const bool env_vrr = std::getenv("EDEN_NX2_VRR") != nullptr;
+        const bool cap_bananza_interval =
+            system.GetApplicationProcessProgramID() == Settings::DonkeyKongBananzaProgramId &&
+            !Settings::values.vrr_display.GetValue() && !env_vrr;
+        const u32 swap_interval = Nx2PresentSwapInterval(
+            timing, m_swap_stable >= stable_presents, forced_interval, cap_bananza_interval);
         const u32 refresh_rate = (timing & 0xffff) >= 30 && (timing & 0xffff) <= 240 ? timing & 0xffff : 60;
         if (changed && m_swap_changes < 32) {
             ++m_swap_changes;

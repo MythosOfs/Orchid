@@ -11,6 +11,17 @@
 
 namespace Service {
 
+inline u32 Nx2PresentSwapInterval(u32 timing, bool stable, u32 forced_interval,
+                                  bool cap_bananza_interval) {
+    if (forced_interval != 0) {
+        return forced_interval;
+    }
+    if (!stable) {
+        return 1;
+    }
+    return std::clamp<u32>(timing >> 16, 1, cap_bananza_interval ? 2 : 4);
+}
+
 inline android::BufferTransformFlags Nx2PresentTransform(u32 flags) {
     return (flags & (1U << 18)) != 0 ? android::BufferTransformFlags::FlipV
                                     : android::BufferTransformFlags::Unset;

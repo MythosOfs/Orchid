@@ -107,3 +107,19 @@ TEST_CASE("Native upscale accepts only the formats it can copy", "[nx2_video]") 
     CHECK_FALSE(IsNativeUpscaleFormat(TextureFormat::DXN1));
     CHECK_FALSE(IsNativeUpscaleFormat(TextureFormat::R16G16));
 }
+
+TEST_CASE("Bananza fixed-refresh pacing caps long swap intervals", "[nx2_present_pacing]") {
+    using Service::Nx2PresentSwapInterval;
+    for (u32 refresh : {30U, 40U, 60U, 120U}) {
+        for (u32 requested : {0U, 1U, 2U, 3U, 4U, 5U}) {
+            const u32 timing = (requested << 16) | refresh;
+            CAPTURE(timing);
+            CHECK(Nx2PresentSwapInterval(timing, true, 0, true) ==
+                  std::clamp(requested, 1U, 2U));
+            CHECK(Nx2PresentSwapInterval(timing, true, 0, false) ==
+                  std::clamp(requested, 1U, 4U));
+            CHECK(Nx2PresentSwapInterval(timing, false, 0, true) == 1);
+            CHECK(Nx2PresentSwapInterval(timing, true, 3, true) == 3);
+        }
+    }
+}

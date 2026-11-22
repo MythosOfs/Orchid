@@ -116,6 +116,10 @@ classifier, so the selected BC format is the same.
 
 ## Texture transfers
 
+Inline block-linear uploads use the address space's native GOB swizzle, as DMA does. Otherwise,
+16-byte sectors in the right half of small native compressed mip levels can land in the wrong
+rows.
+
 Full-image swizzle with 16-byte units fills each GOB before moving to the next. The address
 permutation and pitch stay the same, including the unused sectors of truncated edge GOBs.
 The change targets block-linear writes, where row order would revisit each GOB eight times.

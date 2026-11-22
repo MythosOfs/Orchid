@@ -7182,3 +7182,14 @@ d66f4b0be SirenBrink/Lichii-DLSS-G: Same reason as 043c2ce16, CreateImageView ne
 9f0d96917 zortos293/Eglantine: Orchid already honours the GOB hint for all formats (maxwell_gobs); the rest needs the fork's overlap machinery
 29694224a snobalfyte/lichii: Builds on the fork's own feedback_depth_dirty; no repro for a missing barrier
 9069e5a84 zortos293/Eglantine: Duskbloods-only volume clear in Vulkan, neither testable nor reproducible here
+f80824016 zortos293/Eglantine: opt-in inline A64 counter is a performance feature, not a fix; no red test on Orchid and no measured combat-fps gain, and it rewrites the clock path this batch fixes.
+038d27ea6 wallaceman3/Lichii: spin-loop host yield changes scheduling with no guest-visible bug to test red and no measured benefit on Orchid.
+1c6a52e59 QuincyForbes/Lichii: ARM64-host-only fastmem metadata fix; cannot be exercised on the x86-64 test host or CI unit tests.
+68434f5c0 ThatGuyMcd/Lichii-TGM: only matters with Debugging accuracy and the return stack buffer option off, where PopRSBHint is also skipped, so the extra pushes change no guest behaviour and no test can go red.
+3dcfce024 ThatGuyMcd/Lichii-TGM: CRC32B/CRC32H table lookup is a pure speed change; vectors pass before and after and no Orchid speedup was shown.
+f94425117 ThatGuyMcd/Lichii-TGM: FCMP flags without RCL is a pure speed change; flag vectors pass before and after and no Orchid speedup was shown.
+131eab484 ThatGuyMcd/Lichii-TGM: page-indexed block invalidation is a speed change; the fork's invalidation tests pass before and after and no Orchid workload gain was shown.
+fd9c0133d zortos293/Eglantine: per-processor reservation cache lines are a false-sharing speed change across four backends; no red test and no measured gain.
+073003544 VilmaH/Lichii: relaxed acquire loads and cheaper DMB are a memory-model speed change with no red test; overlaps 20621cda9 and needs cross-core litmus verification first.
+9dd22d648 ThatGuyMcd/Lichii-TGM: locked OR instead of MFENCE is a memory-model speed change; the single-thread test does not prove cross-core ordering and no gain was measured.
+20621cda9 zortos293/Eglantine: plain loads for LDAR/LDAPR/LDAXR are a memory-model speed change with no red test; overlaps 073003544 and needs cross-core litmus verification first.

@@ -254,7 +254,8 @@ endif()
 target_link_libraries(tests PRIVATE common core frontend_common input_common video_core tz)
 
 if (ENABLE_QT)
-    target_sources(tests PRIVATE qt_common/qt_config_ban_list.cpp)
+    target_sources(tests PRIVATE qt_common/qt_config_ban_list.cpp
+                                 qt_common/game_list_patch_cache.cpp)
     target_link_libraries(tests PRIVATE qt_common input_common Qt6::Core SimpleIni::SimpleIni)
     # QtConfig rewrites global Settings/UISettings, so it runs in its own process.
     add_test(NAME qt_config_ban_list COMMAND tests "[qt_config]")
@@ -323,7 +324,8 @@ set(listed_test_sources audio_core/cubeb_recovery.cpp audio_core/sdl_recovery.cp
     common/host_memory_commit.cpp # added above on Windows only
     input_common/gc_adapter_libusb.cpp # added above with libusb on Linux only
     input_common/silent_controller.cpp # added above on Linux only
-    qt_common/qt_config_ban_list.cpp) # added above with the Qt frontend only
+    qt_common/qt_config_ban_list.cpp
+    qt_common/game_list_patch_cache.cpp) # added above with the Qt frontend only
 foreach(test_target IN ITEMS tests stall_diagnostics_session debug_stream_contract)
     get_target_property(target_sources ${test_target} SOURCES)
     list(APPEND listed_test_sources ${target_sources})

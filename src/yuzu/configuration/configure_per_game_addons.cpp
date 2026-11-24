@@ -26,8 +26,6 @@
 #include <QTreeView>
 
 #include "common/common_types.h"
-#include "common/fs/fs.h"
-#include "common/fs/path_util.h"
 #include "common/game_presets.h"
 #include "common/settings.h"
 #include "configuration/addon/mod_select_dialog.h"
@@ -218,13 +216,7 @@ void ConfigurePerGameAddons::ApplyConfiguration() {
         }
     }
 
-    auto current = Settings::values.disabled_addons[title_id];
     std::sort(disabled_addons.begin(), disabled_addons.end());
-    std::sort(current.begin(), current.end());
-    if (disabled_addons != current) {
-        Common::FS::RemoveFile(Common::FS::GetEdenPath(Common::FS::EdenPath::CacheDir) /
-                               "game_list" / fmt::format("{:016X}.pv.txt", title_id));
-    }
 
     Settings::values.disabled_addons[title_id] = disabled_addons;
 

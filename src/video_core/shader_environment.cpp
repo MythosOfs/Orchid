@@ -1109,6 +1109,9 @@ ComputeEnvironment::ComputeEnvironment(Tegra::Engines::KeplerCompute& kepler_com
 
 u32 ComputeEnvironment::ReadCbufValue(u32 cbuf_index, u32 cbuf_offset) {
     const auto& qmd{kepler_compute->launch_description};
+    if (cbuf_index >= qmd.const_buffer_config.size()) {
+        throw Shader::RuntimeError("Compute program reads constant buffer {}", cbuf_index);
+    }
     ASSERT(((qmd.const_buffer_enable_mask.Value() >> cbuf_index) & 1) != 0);
     const auto& cbuf{qmd.const_buffer_config[cbuf_index]};
     u32 value{};

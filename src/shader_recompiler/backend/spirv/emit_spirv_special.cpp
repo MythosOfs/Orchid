@@ -165,7 +165,7 @@ void EmitPrologue(EmitContext& ctx) {
     if (ctx.stage == Stage::VertexB || ctx.stage == Stage::Geometry) {
         SetFixedPipelinePointSize(ctx);
     }
-    if (ctx.stage == Stage::Task || ctx.stage == Stage::Mesh) {
+    if (ctx.stage == Stage::Task) {
         EmitMeshPrologue(ctx);
     }
 }

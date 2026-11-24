@@ -30,14 +30,15 @@ constexpr std::array<u32, 5> SportsHeader{0x000c0481, 0, 0, 0, 0xff000000};
 
 class StageEnvironment final : public Shader::Environment {
 public:
-    StageEnvironment(Shader::Stage stage_, std::span<const u64> code_) : code{code_} {
+    StageEnvironment(Shader::Stage stage_, std::span<const u64> code_, u32 max_vertices)
+        : code{code_} {
         stage = stage_;
         is_proprietary_driver = true;
         std::memcpy(&sph, SportsHeader.data(), sizeof(SportsHeader));
         if (stage == Shader::Stage::Mesh) {
             sph.vtg.omap_systemb.raw = 0xF0;
             sph.vtg.omap_generic_vector[0] = 0x1;
-            mesh_registers = {4U | (32U << 4) | (16U << 13), 32U << 20, 32U | (1U << 12)};
+            mesh_registers = {4U | (max_vertices << 4) | (16U << 13), 32U << 20, 32U | (1U << 12)};
         } else {
             mesh_registers = {0, 0, 32 | (1U << 12)};
         }
@@ -99,8 +100,11 @@ TEST_CASE("Task and mesh programs read back the output stage buffer word they wr
     INFO(lowered.error << " at " << lowered.error_offset);
     REQUIRE(lowered);
 
-    for (const Shader::Stage stage : {Shader::Stage::Task, Shader::Stage::Mesh}) {
-        StageEnvironment env{stage, lowered.instructions};
+    for (const auto& [stage, max_vertices] : {std::pair{Shader::Stage::Task, 0U},
+                                             std::pair{Shader::Stage::Mesh, 32U},
+                                             std::pair{Shader::Stage::Mesh, 33U}}) {
+        CAPTURE(stage, max_vertices);
+        StageEnvironment env{stage, lowered.instructions, max_vertices};
         Shader::ObjectPool<Shader::Maxwell::Flow::Block> flow_pool;
         Shader::Maxwell::Flow::CFG cfg{env, flow_pool, Shader::Maxwell::Location{0x50}};
         Shader::ObjectPool<IR::Inst> inst_pool;
@@ -108,6 +112,8 @@ TEST_CASE("Task and mesh programs read back the output stage buffer word they wr
         auto program = Shader::Maxwell::TranslateProgram(inst_pool, block_pool, env, cfg,
                                                          Shader::HostTranslateInfo{});
         REQUIRE(program.stage == stage);
+        REQUIRE(program.mesh.max_vertices == max_vertices);
+        REQUIRE(program.workgroup_size[0] == 32);
         u32 output_reads{}, input_reads{}, writes{};
         for (const auto* block : program.blocks) {
             for (const auto& inst : *block) {
@@ -138,22 +144,59 @@ TEST_CASE("Task and mesh programs read back the output stage buffer word they wr
         REQUIRE(spirv.size() > 5);
         REQUIRE(spirv[0] == 0x07230203);
         u32 nan_id = 0;
+        u32 limit_id = 0;
+        u32 stride_id = 0;
+        u32 invocation_id = 0;
+        u32 tail_vertex = 0;
+        u32 limit_check = 0;
+        u32 store_label = 0;
+        u32 merge_label = 0;
+        u32 current_label = 0;
         u32 nan_stores = 0;
+        u32 guarded_stores = 0;
+        bool found_barrier = false;
         for (std::size_t i = 5; i < spirv.size();) {
             const u32 wc = spirv[i] >> 16;
-            const u32 op = spirv[i] & 0xFFFFU;
-            if (wc == 0 || i + wc > spirv.size()) {
-                break;
-            }
-            if (op == static_cast<u32>(spv::Op::OpConstant) && wc == 4 &&
-                spirv[i + 3] == 0x7fc00000U) {
-                nan_id = spirv[i + 2];
-            } else if (op == static_cast<u32>(spv::Op::OpStore) && wc >= 3 && nan_id != 0 &&
-                       spirv[i + 2] == nan_id) {
+            const auto op = static_cast<spv::Op>(spirv[i] & 0xFFFFU);
+            REQUIRE(wc != 0);
+            REQUIRE(i + wc <= spirv.size());
+            if (op == spv::Op::OpConstant && wc == 4) {
+                if (spirv[i + 3] == 0x7fc00000U) {
+                    nan_id = spirv[i + 2];
+                }
+                if (spirv[i + 3] == max_vertices) {
+                    limit_id = spirv[i + 2];
+                }
+                if (spirv[i + 3] == 32U) {
+                    stride_id = spirv[i + 2];
+                }
+            } else if (op == spv::Op::OpCompositeExtract) {
+                invocation_id = spirv[i + 2];
+            } else if (op == spv::Op::OpIAdd && spirv[i + 3] == invocation_id &&
+                       spirv[i + 4] == stride_id) {
+                tail_vertex = spirv[i + 2];
+            } else if (op == spv::Op::OpULessThan && spirv[i + 3] == tail_vertex &&
+                       spirv[i + 4] == limit_id) {
+                limit_check = spirv[i + 2];
+            } else if (op == spv::Op::OpBranchConditional && spirv[i + 1] == limit_check) {
+                store_label = spirv[i + 2];
+                merge_label = spirv[i + 3];
+            } else if (op == spv::Op::OpLabel) {
+                current_label = spirv[i + 1];
+            } else if (op == spv::Op::OpStore && nan_id != 0 && spirv[i + 2] == nan_id) {
                 ++nan_stores;
+                guarded_stores += store_label != 0 && current_label == store_label;
+            } else if (op == spv::Op::OpControlBarrier) {
+                found_barrier = true;
+                if (max_vertices == 33) {
+                    CHECK(current_label == merge_label);
+                }
+                break;
             }
             i += wc;
         }
-        CHECK(nan_stores == (stage == Shader::Stage::Mesh ? 4U : 0U));
+        CHECK(found_barrier);
+        CHECK(nan_stores == (max_vertices == 33 ? 8U : max_vertices == 32 ? 4U : 0U));
+        CHECK(guarded_stores == (max_vertices == 33 ? 4U : 0U));
     }
 }

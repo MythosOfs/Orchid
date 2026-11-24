@@ -226,31 +226,34 @@ void EmitMeshPrologue(EmitContext& ctx) {
     if (ctx.stage != Stage::Mesh) {
         return;
     }
-    // Every invocation stores the zero: no branch here, the entry block's label is a phi
-    // predecessor for later blocks.
-    ctx.OpStore(ctx.mesh_primitive_count, ctx.u32_zero_value);
     const Id invocation{LocalInvocation(ctx)};
+    If(ctx, ctx.OpIEqual(ctx.U1, invocation, ctx.u32_zero_value),
+       [&] { ctx.OpStore(ctx.mesh_primitive_count, ctx.u32_zero_value); });
     const u32 step{(std::max)(ctx.mesh_threads, 1U)};
     const auto& lines{ctx.mesh_info.vertex_lines};
     const u32 num_lines{static_cast<u32>(lines.size())};
     const Id nan{ctx.Const(0x7fc00000U)};
     const u32 max_vertices{ctx.mesh_info.max_vertices};
-    for (u32 line = 0; line < num_lines; ++line) {
-        const auto attribute{static_cast<IR::Attribute>(lines[line])};
-        if (attribute < IR::Attribute::PositionX || attribute > IR::Attribute::PositionW) {
-            continue;
-        }
-        for (u32 first = 0; first < max_vertices; first += step) {
-            const Id vertex{ctx.OpUMin(ctx.U32[1],
-                                       ctx.OpIAdd(ctx.U32[1], invocation, ctx.Const(first)),
-                                       ctx.Const(max_vertices - 1))};
+    for (u32 first = 0; first < max_vertices; first += step) {
+        const Id vertex{ctx.OpIAdd(ctx.U32[1], invocation, ctx.Const(first))};
+        const auto initialize_positions = [&] {
             const Id group{ctx.OpShiftRightLogical(ctx.U32[1], vertex, ctx.Const(5U))};
             const Id slot{ctx.OpBitwiseAnd(ctx.U32[1], vertex, ctx.Const(31U))};
-            const Id index{ctx.OpIAdd(
-                ctx.U32[1],
-                ctx.OpIMul(ctx.U32[1], group, ctx.Const(num_lines * 32)),
-                ctx.OpIAdd(ctx.U32[1], slot, ctx.Const(line * 32)))};
-            ctx.OpStore(SharedWord(ctx, ctx.mesh_attributes, index), nan);
+            const Id base{ctx.OpIAdd(ctx.U32[1], slot,
+                                     ctx.OpIMul(ctx.U32[1], group, ctx.Const(num_lines * 32)))};
+            for (u32 line = 0; line < num_lines; ++line) {
+                const auto attribute{static_cast<IR::Attribute>(lines[line])};
+                if (attribute < IR::Attribute::PositionX || attribute > IR::Attribute::PositionW) {
+                    continue;
+                }
+                const Id index{ctx.OpIAdd(ctx.U32[1], base, ctx.Const(line * 32))};
+                ctx.OpStore(SharedWord(ctx, ctx.mesh_attributes, index), nan);
+            }
+        };
+        if (first + step > max_vertices) {
+            If(ctx, ctx.OpULessThan(ctx.U1, vertex, ctx.Const(max_vertices)), initialize_positions);
+        } else {
+            initialize_positions();
         }
     }
     Barrier(ctx);

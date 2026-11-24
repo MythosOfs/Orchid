@@ -6,7 +6,7 @@
 #include <random>
 #include <catch2/catch_test_macros.hpp>
 
-#include "shader_recompiler/frontend/ampere/lower_to_maxwell.h"
+#include "shader_recompiler/frontend/ampere/lower_to_maxwell_upstream.h"
 
 namespace {
 using Shader::Ampere::Instruction;
@@ -461,6 +461,48 @@ TEST_CASE("Ampere register IMAD honors addend negation and the execution predica
     const auto rejected = LowerToMaxwell(std::array{invalid_register_field, Exit});
     CHECK_FALSE(rejected);
     CHECK(rejected.error == "native integer register multiply mode");
+}
+
+TEST_CASE("Ampere fallback lowers register IMAD and output ISBERD together",
+          "[video_core][ampere][integer_multiply][orbitals_imad][mesh]") {
+    constexpr Instruction output_read{{0x1e237923, 0x00002400, 0x0000b800, 0x000e2400}};
+    constexpr Instruction imad{{0x02037224, 3, 0x078e0a05, 0x000fca00}};
+    const auto primary = LowerToMaxwell(std::array{imad, output_read, Exit});
+    REQUIRE_FALSE(primary);
+    REQUIRE(primary.error == "native stage buffer read outside geometry stage");
+
+    for (const u32 guard : {1U, 7U, 9U}) {
+        for (const u32 addend : {5U, 255U}) {
+            for (const bool negate : {false, true}) {
+                CAPTURE(guard, addend, negate);
+                auto instruction = imad;
+                instruction.words[0] = (imad.words[0] & ~0xf000U) | (guard << 12);
+                instruction.words[2] = 0x078e0200U | (u32{negate} << 11) | addend;
+                const auto lowered = Shader::Ampere::LowerToMaxwellUpstream(
+                    std::array{instruction, output_read, Exit});
+                INFO(lowered.error);
+                REQUIRE(lowered);
+                const auto read_offset = lowered.source_instruction_offsets.at(1);
+                REQUIRE(lowered.instructions.at(read_offset) == 0xefc0b00002471e23ULL);
+                CHECK(read_offset == (negate && addend != 255 ? 5U : 4U));
+
+                auto machine = SeedMachine();
+                machine.registers[2] = 0x80000003U;
+                machine.registers[3] = 3;
+                machine.registers[5] = 12;
+                const auto before = machine;
+                const u32 product = before.Read(2) * before.Read(3);
+                const u32 c = before.Read(addend);
+                machine.Run(std::span{lowered.instructions}.first(read_offset));
+                CHECK(machine.Read(3) == (guard == 9 ? 3U : product + (negate ? 0U - c : c)));
+                CheckUnchanged(before, machine, 3, 1);
+            }
+        }
+    }
+
+    auto extended = imad;
+    extended.words[2] |= 0x400U;
+    CHECK_FALSE(Shader::Ampere::LowerToMaxwellUpstream(std::array{extended, output_read, Exit}));
 }
 
 TEST_CASE("Ampere integer multiplication rejects unsupported modifiers",

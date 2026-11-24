@@ -241,6 +241,11 @@ Id DefineMain(EmitContext& ctx, IR::Program& program) {
     for (IR::Block* const block : program.blocks) {
         block->SetDefinition(ctx.OpLabel());
     }
+    if (ctx.stage == Stage::Mesh) {
+        ctx.AddLabel(ctx.OpLabel());
+        EmitMeshPrologue(ctx);
+        ctx.OpBranch(program.syntax_list.front().data.block->Definition<Id>());
+    }
     Traverse(ctx, program);
     ctx.OpFunctionEnd();
     return main;

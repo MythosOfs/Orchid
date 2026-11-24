@@ -39,6 +39,7 @@ add_executable(tests
     common/user_directories.cpp
     common/zstd_compression.cpp
     audio_core/adpcm_decode.cpp
+    audio_core/null_sink.cpp
     core/address_arbiter_read.cpp
     core/address_space.cpp
     core/kernel_finish_termination.cpp

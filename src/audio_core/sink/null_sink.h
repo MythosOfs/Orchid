@@ -21,9 +21,24 @@ namespace AudioCore::Sink {
 class NullSinkStreamImpl final : public SinkStream {
 public:
     explicit NullSinkStreamImpl(Core::System& system_, StreamType type_)
-        : SinkStream{system_, type_} {}
-    ~NullSinkStreamImpl() override {}
-    void AppendBuffer(SinkBuffer&, std::span<s16>) override {}
+        : SinkStream{system_, type_} {
+        if (type == StreamType::Render || type == StreamType::Out) {
+            StartSilentDevice();
+        }
+    }
+    ~NullSinkStreamImpl() override {
+        Finalize();
+    }
+    void Finalize() override {
+        SignalPause();
+        StopSilentDevice();
+    }
+    void Start(bool = false) override {
+        paused = false;
+    }
+    void Stop() override {
+        SignalPause();
+    }
     std::vector<s16> ReleaseBuffer(u64) override {
         return {};
     }
@@ -37,30 +52,34 @@ public:
     explicit NullSink(std::string_view) {}
     ~NullSink() override = default;
 
-    SinkStream* AcquireSinkStream(Core::System& system, u32, const std::string&,
+    SinkStream* AcquireSinkStream(Core::System& system, u32 system_channels_, const std::string&,
                                   StreamType type) override {
-        if (null_sink == nullptr) {
-            null_sink = std::make_unique<NullSinkStreamImpl>(system, type);
-            null_sink->SetDeviceVolume(device_volume);
-        }
-        return null_sink.get();
+        SinkStreamPtr& stream =
+            sink_streams.emplace_back(std::make_unique<NullSinkStreamImpl>(system, type));
+        stream->SetSystemChannels(system_channels_);
+        stream->SetDeviceVolume(device_volume);
+        return stream.get();
     }
 
-    void CloseStream(SinkStream*) override {}
-    void CloseStreams() override {}
+    void CloseStream(SinkStream* stream) override {
+        std::erase_if(sink_streams, [stream](const SinkStreamPtr& s) { return s.get() == stream; });
+    }
+    void CloseStreams() override {
+        sink_streams.clear();
+    }
     f32 GetDeviceVolume() const override {
         return device_volume;
     }
     void SetDeviceVolume(f32 volume) override {
         device_volume = volume;
-        if (null_sink != nullptr) {
-            null_sink->SetDeviceVolume(volume);
+        for (auto& stream : sink_streams) {
+            stream->SetDeviceVolume(volume);
         }
     }
     void SetSystemVolume(f32 volume) override {}
 
 private:
-    SinkStreamPtr null_sink{};
+    std::vector<SinkStreamPtr> sink_streams{};
 };
 
 } // namespace AudioCore::Sink

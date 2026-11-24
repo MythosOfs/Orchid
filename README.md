@@ -362,6 +362,16 @@ source and author in its message.
   from [zortos293/Lichii](https://github.com/zortos293/Lichii) #1932 (`a3b4397afd`, Zortos, with
   ZeroOneTV's variant), the present device-loss handling from HeyListen `619a8d58c` (Yanis
   Manseur).
+- Network, loader, audio, profile and game-list fixes of the fork-scan batch 1:
+  [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (Zortos: would-block socket
+  logging, non-IPv4 socket domain logging, per-scan game-list patch cache, Switch 2 Edition add-on
+  matching; cerroverb: zero-product IMAD negated constant-buffer addend; Daniel Jesús Martín Flores:
+  duplicated XTS key handling, profile reset current user and numeric `-u` parsing; Dimitris Zervas:
+  real-time Null sink pacing; atk3001: audio controller boot volume),
+  [astraea-emu/nx2](https://github.com/astraea-emu/nx2) (astraea-emu: absent NPDM null check and
+  header tests), [inxomnyaa/Lichii](https://github.com/inxomnyaa/Lichii) (inxomnyaa: avoid folder
+  rescan on Show Game Name toggle) and [atmanli/Lichii](https://github.com/atmanli/Lichii) (Luke
+  Evanson: AM fallback language when control data is missing).
 
 ## License
 

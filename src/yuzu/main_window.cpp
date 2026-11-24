@@ -548,6 +548,9 @@ MainWindow::MainWindow(bool has_broken_vulkan)
             args_cstr.push_back(e.data());
 
         auto const lp = Core::ParseLaunchParams(*QtCommon::system, args_cstr.size(), args_cstr.data(), nullptr);
+        if (lp.selected_user) {
+            Core::ApplyLaunchParams(Core::LaunchParams{.selected_user = lp.selected_user});
+        }
 
         // Override fullscreen setting if gamepath or argument is provided
         if (!lp.filepath.empty() || lp.fullscreen) {

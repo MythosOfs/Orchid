@@ -63,17 +63,33 @@ TEST_CASE("LaunchParams treats -u as an index only when all digits and replaces 
         std::array<char*, 4> argv{arg0, flag, name, nullptr};
         const auto params = Core::ParseLaunchParams(system, 3, argv.data(), nullptr);
         CHECK(params.selected_user == 1);
-        CHECK(params.selected_user_name == "2Alice");
+        CHECK(Settings::values.current_user.GetValue() == 0);
     }
 
     {
         char arg0[] = "orchid";
-        char flag[] = "-u";
+        char flag1[] = "-u";
+        char name[] = "2Alice";
+        char flag2[] = "-u";
         char missing[] = "2NoSuchUser";
-        std::array<char*, 4> argv{arg0, flag, missing, nullptr};
-        const auto params = Core::ParseLaunchParams(system, 3, argv.data(), nullptr);
+        std::array<char*, 6> argv{arg0, flag1, name, flag2, missing, nullptr};
+        const auto params = Core::ParseLaunchParams(system, 5, argv.data(), nullptr);
         CHECK_FALSE(params.selected_user.has_value());
-        CHECK(params.selected_user_name == "2NoSuchUser");
+        CHECK(Settings::values.current_user.GetValue() == 0);
+        Core::ApplyLaunchParams(params);
+        CHECK(Settings::values.current_user.GetValue() == 0);
+    }
+
+    {
+        char arg0[] = "orchid";
+        char flag1[] = "-u";
+        char name[] = "2Alice";
+        char flag2[] = "-u";
+        char out_of_range[] = "4294967297";
+        std::array<char*, 6> argv{arg0, flag1, name, flag2, out_of_range, nullptr};
+        const auto params = Core::ParseLaunchParams(system, 5, argv.data(), nullptr);
+        CHECK_FALSE(params.selected_user.has_value());
+        CHECK(Settings::values.current_user.GetValue() == 0);
     }
 
     {
@@ -85,7 +101,9 @@ TEST_CASE("LaunchParams treats -u as an index only when all digits and replaces 
         std::array<char*, 6> argv{arg0, flag1, name, flag2, index, nullptr};
         const auto params = Core::ParseLaunchParams(system, 5, argv.data(), nullptr);
         CHECK(params.selected_user == 2);
-        CHECK(params.selected_user_name.empty());
+        CHECK(Settings::values.current_user.GetValue() == 0);
+        Core::ApplyLaunchParams(params);
+        CHECK(Settings::values.current_user.GetValue() == 2);
     }
 }
 

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <regex>
 #include <string_view>
 
@@ -114,24 +115,29 @@ LaunchParams ParseLaunchParams(Core::System& system, int argc, char *argv[], wch
                     return isdigit(static_cast<unsigned char>(c)) != 0;
                 });
                 p.selected_user.reset();
-                p.selected_user_name.clear();
+                int candidate = -1;
                 if (argument_ok) {
-                    p.selected_user = atoi(optarg);
+                    const auto parsed = std::from_chars(argument.data(),
+                                                        argument.data() + argument.size(), candidate);
+                    if (parsed.ec != std::errc{}) {
+                        LOG_ERROR(Frontend, "Invalid user index '{}'", argument);
+                        break;
+                    }
                 } else {
-                    p.selected_user_name = optarg;
                     // try to look it up by username, only finds the first username that matches.
                     auto const user_idx = system.GetProfileManager().GetUserIndex(optarg);
                     if (user_idx != std::nullopt) {
-                        p.selected_user = user_idx.value();
+                        candidate = static_cast<int>(user_idx.value());
                     } else {
                         LOG_ERROR(Frontend, "Invalid user argument '{}'", optarg);
                         break;
                     }
                 }
-                if (system.GetProfileManager().UserExistsIndex(*p.selected_user)) {
-                    Settings::values.current_user = s32(*p.selected_user);
+                if (candidate >= 0 &&
+                    system.GetProfileManager().UserExistsIndex(static_cast<std::size_t>(candidate))) {
+                    p.selected_user = candidate;
                 } else {
-                    LOG_ERROR(Frontend, "Selected user {} doesn't exist", *p.selected_user);
+                    LOG_ERROR(Frontend, "Selected user {} doesn't exist", candidate);
                 }
                 break;
             }

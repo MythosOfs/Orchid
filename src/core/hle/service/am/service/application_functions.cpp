@@ -26,7 +26,7 @@
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/filesystem/save_data_controller.h"
 #include "core/hle/service/glue/glue_manager.h"
-#include "core/hle/service/ns/application_manager_interface.h"
+#include "core/hle/service/ns/read_only_application_control_data_interface.h"
 #include "core/hle/service/ns/service_getter_interface.h"
 #include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
@@ -180,47 +180,57 @@ Result IApplicationFunctions::EnsureSaveData(Out<u64> out_size, Common::UUID use
     R_SUCCEED();
 }
 
-Result IApplicationFunctions::GetDesiredLanguage(Out<u64> out_language_code) {
-    // FIXME: all of this stuff belongs to ns
-    // TODO(bunnei): This should be configurable
-    LOG_DEBUG(Service_AM, "called");
-
-    // Get supported languages from NACP, if possible
-    // Default to 0 (all languages supported)
+Result ResolveDesiredLanguage(NS::IReadOnlyApplicationControlDataInterface& control_data,
+                              u64 program_id, const FileSys::NACP* installed_control,
+                              Loader::AppLoader* app_loader, Out<u64> out_language_code) {
     u32 supported_languages = 0;
 
-    const auto res = GetApplicationMetadata(system, m_applet->program_id);
-    if (res.first != nullptr) {
-        supported_languages = res.first->GetSupportedLanguages();
-    } else {
-        LOG_WARNING(Service_AM,
-                    "No control data for program_id={:016X}; reporting the fallback language",
-                    m_applet->program_id);
+    if (installed_control != nullptr) {
+        supported_languages = installed_control->GetSupportedLanguages();
+    } else if (app_loader != nullptr) {
+        u64 loader_program_id{};
+        FileSys::NACP control{};
+        if (app_loader->ReadProgramId(loader_program_id) == Loader::ResultStatus::Success &&
+            FileSys::GetBaseTitleID(loader_program_id) == FileSys::GetBaseTitleID(program_id) &&
+            app_loader->ReadControlData(control) == Loader::ResultStatus::Success) {
+            supported_languages = control.GetSupportedLanguages();
+        }
     }
 
-    // Call IApplicationManagerInterface implementation.
-    auto& service_manager = system.ServiceManager();
-    auto ns_am2 = service_manager.GetService<NS::IServiceGetterInterface>("ns:am2");
-
-    std::shared_ptr<NS::IApplicationManagerInterface> app_man;
-    R_TRY(ns_am2->GetApplicationManagerInterface(&app_man));
-
-    if (res.first == nullptr) {
-        R_TRY(app_man->ConvertApplicationLanguageToLanguageCode(
+    if (supported_languages == 0) {
+        LOG_WARNING(Service_AM,
+                    "No supported languages for program_id={:016X}; reporting the fallback language",
+                    program_id);
+        R_TRY(control_data.ConvertApplicationLanguageToLanguageCode(
             out_language_code, NS::ApplicationLanguage::AmericanEnglish));
         LOG_DEBUG(Service_AM, "got desired_language={:016X}", *out_language_code);
         R_SUCCEED();
     }
 
-    // Get desired application language
     NS::ApplicationLanguage desired_language{};
-    R_TRY(app_man->GetApplicationDesiredLanguage(&desired_language, supported_languages));
-
-    // Convert to settings language code.
-    R_TRY(app_man->ConvertApplicationLanguageToLanguageCode(out_language_code, desired_language));
+    R_TRY(control_data.GetApplicationDesiredLanguage(&desired_language, supported_languages));
+    R_TRY(control_data.ConvertApplicationLanguageToLanguageCode(out_language_code, desired_language));
 
     LOG_DEBUG(Service_AM, "got desired_language={:016X}", *out_language_code);
     R_SUCCEED();
+}
+
+Result IApplicationFunctions::GetDesiredLanguage(Out<u64> out_language_code) {
+    // FIXME: all of this stuff belongs to ns
+    // TODO(bunnei): This should be configurable
+    LOG_DEBUG(Service_AM, "called");
+
+    const auto res = GetApplicationMetadata(system, m_applet->program_id);
+
+    auto& service_manager = system.ServiceManager();
+    auto ns_am2 = service_manager.GetService<NS::IServiceGetterInterface>("ns:am2");
+
+    std::shared_ptr<NS::IReadOnlyApplicationControlDataInterface> control_data;
+    R_TRY(ns_am2->GetReadOnlyApplicationControlDataInterface(&control_data));
+
+    auto* app_loader = res.first ? nullptr : &system.GetAppLoader();
+    R_RETURN(ResolveDesiredLanguage(*control_data, m_applet->program_id, res.first.get(),
+                                    app_loader, out_language_code));
 }
 
 Result IApplicationFunctions::SetTerminateResult(Result terminate_result) {

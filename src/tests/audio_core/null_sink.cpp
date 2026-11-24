@@ -46,8 +46,11 @@ TEST_CASE("Null sink tracks streams per caller and propagates volume", "[audio_c
     CHECK(first->GetSystemChannels() == 2);
     CHECK(second->GetSystemChannels() == 6);
     null.SetDeviceVolume(0.5f);
+    CHECK(null.GetDeviceVolume() == 0.5f);
     CHECK(first->GetDeviceVolume() == 0.5f);
     CHECK(second->GetDeviceVolume() == 0.5f);
+    auto* third = null.AcquireSinkStream(system, 2, "third", AudioCore::Sink::StreamType::In);
+    CHECK(third->GetDeviceVolume() == 0.5f);
 
     second->Start();
     AudioCore::Sink::SinkBuffer block{240, 0, 0, false};
@@ -61,5 +64,36 @@ TEST_CASE("Null sink tracks streams per caller and propagates volume", "[audio_c
     REQUIRE(second->GetQueueSize() == 0);
 
     null.CloseStream(first);
+    null.SetDeviceVolume(0.75f);
+    CHECK(second->GetDeviceVolume() == 0.75f);
+    null.CloseStreams();
+}
+
+TEST_CASE("Null sink handles concurrent stream acquire, volume updates, and close",
+          "[audio_core][null_sink]") {
+    Core::System system;
+    AudioCore::Sink::NullSink null{"auto"};
+    std::array<bool, 4> valid_volumes{};
+    std::array<std::thread, 4> workers;
+    for (std::size_t idx = 0; idx < workers.size(); ++idx) {
+        workers[idx] = std::thread([&system, &null, &valid = valid_volumes[idx], idx] {
+            const auto type = (idx % 2 == 0) ? AudioCore::Sink::StreamType::Render
+                                             : AudioCore::Sink::StreamType::Out;
+            valid = true;
+            for (int iter = 0; iter < 8; ++iter) {
+                auto* stream = null.AcquireSinkStream(system, 2, "worker", type);
+                null.SetDeviceVolume(0.25f * static_cast<f32>((iter % 4) + 1));
+                const f32 volume = null.GetDeviceVolume();
+                valid &= stream != nullptr && volume >= 0.25f && volume <= 1.0f;
+                null.CloseStream(stream);
+            }
+        });
+    }
+    for (auto& worker : workers) {
+        worker.join();
+    }
+    for (const bool valid : valid_volumes) {
+        CHECK(valid);
+    }
     null.CloseStreams();
 }

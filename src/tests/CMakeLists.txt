@@ -84,6 +84,7 @@ add_executable(tests
     core/nx_archive.cpp
     core/nup_writer.cpp
     core/loose_directory.cpp
+    core/desired_language.cpp
     core/display_title.cpp
     core/priority_queue.cpp
     core/program_metadata.cpp

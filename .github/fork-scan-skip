@@ -7617,7 +7617,7 @@ fede2657e zortos293/Eglantine: write_count switch for the Ocarina per-tap gather
 ffa4d0cdf Amnesia1000/Fritchii: FRITCHII_ZERO_UPLOAD (default 0) GPU clear for all-zero uploads: needs nx2_debug_control/nx2_hitch and a new Image::ClearToZero; evidence is an Ocarina of Time Castle Town 12288x12288 D16 target (outside scope) and it adds a gues…
 8727f7e6f zortos293/Eglantine: Lock-free VirtualProtect races with b9a05459d1's UnmapOnePlaceholder protection query/restore, which relies on Protect holding placeholder_mutex; Windows-only perf change.
 10ca7744b luizIK/Kizuna: Depends on Fritchii's GetSystemCommitRoom, FRITCHII_TEST_COMMIT_REFUSE and Windows crash handler absent from Orchid; guest memory commit retry is already in 7ec3758dff.
-8e7348b26 zortos293/Eglantine: Depends on Common::FS::FileLock absent from Orchid, and Orchid's FileBackend rotates per-game logs via SetGame under recursive_mutex rather than single-slot startup rotation.
+8e7348b26 zortos293/Eglantine: Depends on Common::FS::FileLock absent from Orchid.
 3155f159c dzervas/Lichii: Already in Orchid as b9a05459d1 (keep page protections across partial unmaps on Windows).
 09085c1b7 zortos293/Eglantine: Superseded in Orchid by aa119796c7 (PR #209 generalizes IsPaddedSquare to IsPaddedWidth for all Switch 2 GOB-padded targets).
 ba590516e luizIK/Kizuna: Already in Orchid via PR #202's sampler fallback (c3a82e8792, same Fritchii origin); FRITCHII_TEST_SAMPLER_LIMIT omitted.

@@ -12,6 +12,7 @@
 #include "core/hle/service/service.h"
 
 namespace FileSys {
+class NACP;
 enum class SaveDataType : u8;
 }
 
@@ -19,10 +20,22 @@ namespace Kernel {
 class KReadableEvent;
 }
 
+namespace Loader {
+class AppLoader;
+}
+
+namespace Service::NS {
+class IReadOnlyApplicationControlDataInterface;
+}
+
 namespace Service::AM {
 
 struct Applet;
 class IStorage;
+
+Result ResolveDesiredLanguage(NS::IReadOnlyApplicationControlDataInterface& control_data,
+                              u64 program_id, const FileSys::NACP* installed_control,
+                              Loader::AppLoader* app_loader, Out<u64> out_language_code);
 
 class IApplicationFunctions final : public ServiceFramework<IApplicationFunctions> {
 public:

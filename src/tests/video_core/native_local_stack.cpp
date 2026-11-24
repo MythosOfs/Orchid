@@ -18,7 +18,7 @@ namespace IR = Shader::IR;
 constexpr u64 ExitInsn = 0xe30000000007000fULL;
 
 constexpr u64 MakeLocalInsn(u64 base_opcode, u32 reg, u32 addr_reg, u32 offset) {
-    return base_opcode | (u64{reg} & 0xFFULL) | ((u64{addr_reg} & 0xFFULL) << 8) |
+    return base_opcode | (7ULL << 16) | (u64{reg} & 0xFFULL) | ((u64{addr_reg} & 0xFFULL) << 8) |
            ((u64{offset} & 0xFFFFFFULL) << 20) | (u64{4} << 48);
 }
 
@@ -38,7 +38,7 @@ public:
     }
     u64 ReadInstruction(u32 address) override {
         for (u32 i = 0; i < code.size(); ++i) {
-            if (address == i * 8 + ((i + 1) / 3) * 8) {
+            if (address == 8U + i * 8U + (i / 3U) * 8U) {
                 return code[i];
             }
         }
@@ -68,15 +68,6 @@ private:
     bool native;
 };
 
-IR::Program Translate(LocalEnv& env) {
-    Shader::ObjectPool<Shader::Maxwell::Flow::Block> flow_pool;
-    Shader::Maxwell::Flow::CFG cfg{env, flow_pool, Shader::Maxwell::Location{0}};
-    Shader::ObjectPool<IR::Inst> inst_pool;
-    Shader::ObjectPool<IR::Block> block_pool;
-    return Shader::Maxwell::TranslateProgram(inst_pool, block_pool, env, cfg,
-                                             Shader::HostTranslateInfo{});
-}
-
 }
 
 TEST_CASE("Native programs reserve a local stack region and map top-of-window accesses",
@@ -93,7 +84,12 @@ TEST_CASE("Native programs reserve a local stack region and map top-of-window ac
 
     LocalEnv native_env{code, declared, true};
     CHECK(native_env.LocalArraySize() == declared + Shader::Environment::NATIVE_STACK_BYTES + 4U);
-    const auto native_prog = Translate(native_env);
+    Shader::ObjectPool<Shader::Maxwell::Flow::Block> flow_pool;
+    Shader::Maxwell::Flow::CFG native_cfg{native_env, flow_pool, Shader::Maxwell::Location{8}};
+    Shader::ObjectPool<IR::Inst> inst_pool;
+    Shader::ObjectPool<IR::Block> block_pool;
+    const auto native_prog = Shader::Maxwell::TranslateProgram(
+        inst_pool, block_pool, native_env, native_cfg, Shader::HostTranslateInfo{});
     CHECK(native_prog.local_memory_size ==
           declared + Shader::Environment::NATIVE_STACK_BYTES + 4U);
 
@@ -118,6 +114,12 @@ TEST_CASE("Native programs reserve a local stack region and map top-of-window ac
 
     LocalEnv legacy_env{code, declared, false};
     CHECK(legacy_env.LocalArraySize() == declared);
-    const auto legacy_prog = Translate(legacy_env);
+    Shader::ObjectPool<Shader::Maxwell::Flow::Block> legacy_flow_pool;
+    Shader::Maxwell::Flow::CFG legacy_cfg{legacy_env, legacy_flow_pool,
+                                          Shader::Maxwell::Location{8}};
+    Shader::ObjectPool<IR::Inst> legacy_inst_pool;
+    Shader::ObjectPool<IR::Block> legacy_block_pool;
+    const auto legacy_prog = Shader::Maxwell::TranslateProgram(
+        legacy_inst_pool, legacy_block_pool, legacy_env, legacy_cfg, Shader::HostTranslateInfo{});
     CHECK(legacy_prog.local_memory_size == declared);
 }

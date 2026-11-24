@@ -11,14 +11,14 @@
 #include <spirv/unified1/spirv.hpp11>
 
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
-#include "shader_recompiler/frontend/ampere/lower_to_maxwell.h"
+#include "shader_recompiler/frontend/ampere/lower_to_maxwell_upstream.h"
 #include "shader_recompiler/frontend/maxwell/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate_program.h"
 #include "shader_recompiler/host_translate_info.h"
 
 namespace {
 using Shader::Ampere::Instruction;
-using Shader::Ampere::LowerToMaxwell;
+using Shader::Ampere::LowerToMaxwellUpstream;
 namespace IR = Shader::IR;
 
 constexpr Instruction Exit{{0x0000794d, 0, 0x03800000, 0}};
@@ -35,8 +35,8 @@ public:
         is_proprietary_driver = true;
         std::memcpy(&sph, SportsHeader.data(), sizeof(SportsHeader));
         if (stage == Shader::Stage::Mesh) {
-            sph.vtg.omap.pos.Assign(0xF);
-            mesh_registers = {32, 16, 32 | (1U << 12)};
+            sph.vtg.omap_systemb.raw = 0xF0;
+            mesh_registers = {4U | (32U << 4) | (16U << 13), 32U << 20, 32U | (1U << 12)};
         } else {
             mesh_registers = {0, 0, 32 | (1U << 12)};
         }
@@ -75,7 +75,7 @@ private:
 
 TEST_CASE("Ampere ISBERD.ATTR.32.O lowers to an output stage buffer read",
           "[video_core][ampere][mesh]") {
-    const auto lowered = LowerToMaxwell(std::array{OutputRead, Exit}, false);
+    const auto lowered = LowerToMaxwellUpstream(std::array{OutputRead, Exit});
     INFO(lowered.error << " at " << lowered.error_offset);
     REQUIRE(lowered);
     REQUIRE(lowered.instructions[0] == 0xefc0b00002471e23ULL);
@@ -87,14 +87,14 @@ TEST_CASE("Ampere ISBERD.ATTR.32.O lowers to an output stage buffer read",
     auto map = OutputRead;
     map.words[2] &= ~(3U << 12);
     for (const Instruction rejected : {skew, byte, map}) {
-        REQUIRE_FALSE(LowerToMaxwell(std::array{rejected, Exit}, false));
+        REQUIRE_FALSE(LowerToMaxwellUpstream(std::array{rejected, Exit}));
     }
 }
 
 TEST_CASE("Task and mesh programs read back the output stage buffer word they wrote",
           "[video_core][ampere][mesh]") {
     const std::array code{ClearAddress, StoreFirst, OutputRead, StoreRead, Exit};
-    const auto lowered = LowerToMaxwell(code, false);
+    const auto lowered = LowerToMaxwellUpstream(code);
     INFO(lowered.error << " at " << lowered.error_offset);
     REQUIRE(lowered);
 

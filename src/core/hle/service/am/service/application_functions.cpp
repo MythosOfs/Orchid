@@ -192,6 +192,10 @@ Result IApplicationFunctions::GetDesiredLanguage(Out<u64> out_language_code) {
     const auto res = GetApplicationMetadata(system, m_applet->program_id);
     if (res.first != nullptr) {
         supported_languages = res.first->GetSupportedLanguages();
+    } else {
+        LOG_WARNING(Service_AM,
+                    "No control data for program_id={:016X}; reporting the fallback language",
+                    m_applet->program_id);
     }
 
     // Call IApplicationManagerInterface implementation.
@@ -200,6 +204,13 @@ Result IApplicationFunctions::GetDesiredLanguage(Out<u64> out_language_code) {
 
     std::shared_ptr<NS::IApplicationManagerInterface> app_man;
     R_TRY(ns_am2->GetApplicationManagerInterface(&app_man));
+
+    if (res.first == nullptr) {
+        R_TRY(app_man->ConvertApplicationLanguageToLanguageCode(
+            out_language_code, NS::ApplicationLanguage::AmericanEnglish));
+        LOG_DEBUG(Service_AM, "got desired_language={:016X}", *out_language_code);
+        R_SUCCEED();
+    }
 
     // Get desired application language
     NS::ApplicationLanguage desired_language{};

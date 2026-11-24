@@ -118,9 +118,10 @@ public:
     /// @brief Gets NACP metadata (accounting for any patches or updates)
     [[nodiscard]] static PatchManager::Metadata GetMetadataFromBaseOrUpdate(Core::System& system, u64 application_id) noexcept;
 
+    [[nodiscard]] std::vector<std::string> GetDisabledAddons() const;
+
 private:
     [[nodiscard]] VirtualDir GetModificationLoadRoot(bool sdmc = false) const;
-    [[nodiscard]] std::vector<std::string> GetDisabledAddons() const;
     void ApplyLayeredFS(VirtualFile& romfs, ContentRecordType type) const;
     [[nodiscard]] std::vector<VirtualFile> CollectPatches(const std::vector<VirtualDir>& patch_dirs,
                                                           const std::string& build_id) const;

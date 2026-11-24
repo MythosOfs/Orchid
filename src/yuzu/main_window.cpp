@@ -5215,11 +5215,19 @@ bool MainWindow::SelectRomFSDumpTarget(const FileSys::ContentProvider& installed
     using ContentInfo = std::tuple<u64, FileSys::TitleType, FileSys::ContentRecordType>;
     boost::container::flat_set<ContentInfo> available_title_ids;
 
+    std::vector<u64> add_on_content;
+    for (const auto& entry :
+         installed.ListEntriesFilter(FileSys::TitleType::AOC, FileSys::ContentRecordType::Data)) {
+        add_on_content.push_back(entry.title_id);
+    }
+    const u64 add_on_base = FileSys::GetAddOnApplicationID(program_id, add_on_content);
+
     const auto RetrieveEntries = [&](FileSys::TitleType title_type,
                                      FileSys::ContentRecordType record_type) {
+        const u64 base = title_type == FileSys::TitleType::AOC ? add_on_base : program_id;
         const auto entries = installed.ListEntriesFilter(title_type, record_type);
         for (const auto& entry : entries) {
-            if (FileSys::GetBaseTitleID(entry.title_id) == program_id &&
+            if (FileSys::GetBaseTitleID(entry.title_id) == base &&
                 installed.GetEntry(entry)->GetStatus() == Loader::ResultStatus::Success) {
                 available_title_ids.insert({entry.title_id, title_type, record_type});
             }

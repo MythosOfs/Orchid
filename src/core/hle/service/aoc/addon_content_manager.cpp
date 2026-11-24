@@ -55,6 +55,16 @@ static u64 GetCallerBaseTitleID(Core::System& system, const ClientProcessId& pro
     return FileSys::GetBaseTitleID(GetCallerAOCBaseTitleID(system, process_id));
 }
 
+static bool IsCallerDlcDisabled(Core::System& system, const ClientProcessId& process_id) {
+    const u64 program_id = system.ResolveCallerProgramId(*process_id);
+    const FileSys::PatchManager pm{program_id, system.GetFileSystemController(),
+                                   system.GetContentProvider()};
+    auto disabled = pm.GetDisabledAddons();
+    const auto& base = Settings::values.disabled_addons[FileSys::GetBaseTitleID(program_id)];
+    disabled.insert(disabled.end(), base.begin(), base.end());
+    return std::ranges::find(disabled, "DLC") != disabled.end();
+}
+
 static std::vector<u64> AccumulateAOCTitleIDs(Core::System& system) {
     std::vector<u64> add_on_content;
     const auto& rcu = system.GetContentProvider();
@@ -122,9 +132,7 @@ Result IAddOnContentManager::CountAddOnContent(Out<u32> out_count, ClientProcess
 
     const auto current = GetCallerBaseTitleID(system, process_id);
 
-    const auto& disabled = Settings::values.disabled_addons[
-        FileSys::GetBaseTitleID(system.ResolveCallerProgramId(*process_id))];
-    if (std::find(disabled.begin(), disabled.end(), "DLC") != disabled.end()) {
+    if (IsCallerDlcDisabled(system, process_id)) {
         *out_count = 0;
         R_SUCCEED();
     }
@@ -147,9 +155,7 @@ Result IAddOnContentManager::ListAddOnContent(Out<u32> out_count,
     const auto current = GetCallerBaseTitleID(system, process_id);
 
     std::vector<u32> out;
-    const auto& disabled = Settings::values.disabled_addons[
-        FileSys::GetBaseTitleID(system.ResolveCallerProgramId(*process_id))];
-    if (std::find(disabled.begin(), disabled.end(), "DLC") == disabled.end()) {
+    if (!IsCallerDlcDisabled(system, process_id)) {
         add_on_content = AccumulateAOCTitleIDs(system);
         for (u64 content_id : add_on_content) {
             if (FileSys::GetBaseTitleID(content_id) != current) {

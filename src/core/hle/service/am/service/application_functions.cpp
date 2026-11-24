@@ -4,6 +4,8 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <optional>
+
 #include <openssl/evp.h>
 
 #include "common/hex_util.h"
@@ -183,7 +185,7 @@ Result IApplicationFunctions::EnsureSaveData(Out<u64> out_size, Common::UUID use
 Result ResolveDesiredLanguage(NS::IReadOnlyApplicationControlDataInterface& control_data,
                               u64 program_id, const FileSys::NACP* installed_control,
                               Loader::AppLoader* app_loader, Out<u64> out_language_code) {
-    u32 supported_languages = 0;
+    std::optional<u32> supported_languages;
 
     if (installed_control != nullptr) {
         supported_languages = installed_control->GetSupportedLanguages();
@@ -197,9 +199,9 @@ Result ResolveDesiredLanguage(NS::IReadOnlyApplicationControlDataInterface& cont
         }
     }
 
-    if (supported_languages == 0) {
+    if (!supported_languages.has_value()) {
         LOG_WARNING(Service_AM,
-                    "No supported languages for program_id={:016X}; reporting the fallback language",
+                    "No control data for program_id={:016X}; reporting the fallback language",
                     program_id);
         R_TRY(control_data.ConvertApplicationLanguageToLanguageCode(
             out_language_code, NS::ApplicationLanguage::AmericanEnglish));
@@ -208,7 +210,7 @@ Result ResolveDesiredLanguage(NS::IReadOnlyApplicationControlDataInterface& cont
     }
 
     NS::ApplicationLanguage desired_language{};
-    R_TRY(control_data.GetApplicationDesiredLanguage(&desired_language, supported_languages));
+    R_TRY(control_data.GetApplicationDesiredLanguage(&desired_language, *supported_languages));
     R_TRY(control_data.ConvertApplicationLanguageToLanguageCode(out_language_code, desired_language));
 
     LOG_DEBUG(Service_AM, "got desired_language={:016X}", *out_language_code);

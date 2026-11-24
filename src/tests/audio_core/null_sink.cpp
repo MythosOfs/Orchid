@@ -3,12 +3,15 @@
 
 #include <array>
 #include <chrono>
+#include <latch>
 #include <thread>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "audio_core/sink/null_sink.h"
 #include "audio_core/sink/sink_stream.h"
+#include "common/scope_exit.h"
+#include "common/settings.h"
 #include "core/core.h"
 
 TEST_CASE("Null sink plays render output at the device rate", "[audio_core][null_sink]") {
@@ -96,4 +99,51 @@ TEST_CASE("Null sink handles concurrent stream acquire, volume updates, and clos
         CHECK(valid);
     }
     null.CloseStreams();
+}
+
+TEST_CASE("Null sink mixes buffers during concurrent volume updates", "[audio_core][null_sink]") {
+    Core::System system;
+    AudioCore::Sink::NullSink null{"auto"};
+    auto* stream = null.AcquireSinkStream(system, 2, "render", AudioCore::Sink::StreamType::Render);
+    REQUIRE(stream != nullptr);
+
+    const auto old_volume = Settings::values.volume.GetValue();
+    const auto old_muted = Settings::values.audio_muted.GetValue();
+    SCOPE_EXIT {
+        Settings::values.volume.SetValue(old_volume);
+        Settings::values.audio_muted.SetValue(old_muted);
+    };
+    Settings::values.volume.SetValue(Settings::values.volume.GetDefault());
+    Settings::values.audio_muted.SetValue(false);
+    null.SetDeviceVolume(0.25f);
+    stream->SetSystemVolume(0.25f);
+
+    std::latch updating{1};
+    std::jthread update_volume{[&](std::stop_token stop) {
+        updating.count_down();
+        while (!stop.stop_requested()) {
+            null.SetDeviceVolume(0.5f);
+            stream->SetSystemVolume(0.5f);
+            null.SetDeviceVolume(0.25f);
+            stream->SetSystemVolume(0.25f);
+        }
+    }};
+    updating.wait();
+
+    AudioCore::Sink::SinkBuffer block{1, 0, 0, false};
+    for (u32 i = 0; i < 1024; ++i) {
+        std::array<s16, 2> samples{1024, 1024};
+        stream->AppendBuffer(block, samples);
+        CHECK(samples[0] == samples[1]);
+        CHECK((samples[0] == 64 || samples[0] == 128 || samples[0] == 256));
+    }
+    CHECK(stream->GetQueueSize() == 1024);
+
+    update_volume.request_stop();
+    update_volume.join();
+    null.SetDeviceVolume(0.25f);
+    stream->SetSystemVolume(0.5f);
+    std::array<s16, 2> samples{1024, 1024};
+    stream->AppendBuffer(block, samples);
+    CHECK((samples == std::array<s16, 2>{128, 128}));
 }

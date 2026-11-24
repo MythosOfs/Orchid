@@ -76,7 +76,9 @@ TEST_CASE("ResolveDesiredLanguage reads AppLoader control data when installed me
     Core::System system;
     IReadOnlyApplicationControlDataInterface control_data{system};
     constexpr u64 base_id = 0x0400000000002000ULL;
-    constexpr u64 program1_id = 0x0400000000002001ULL;
+    constexpr u64 program_id = 0x0400000000002001ULL;
+    constexpr u64 update_id = 0x0400000000002800ULL;
+    constexpr u64 dlc_id = 0x0400000000003001ULL;
 
     SECTION("installed control data takes precedence over AppLoader") {
         const auto installed = MakeControl(GetSupportedLanguageFlag(ApplicationLanguage::German));
@@ -94,10 +96,14 @@ TEST_CASE("ResolveDesiredLanguage reads AppLoader control data when installed me
                                     Loader::ResultStatus::Success,
                                     GetSupportedLanguageFlag(ApplicationLanguage::German) |
                                         GetSupportedLanguageFlag(ApplicationLanguage::Japanese)};
-        u64 language_code{};
-        REQUIRE(ResolveDesiredLanguage(control_data, program1_id, nullptr, &loader, &language_code)
-                    .IsSuccess());
-        CHECK(language_code == static_cast<u64>(LanguageCode::DE));
+        for (const u64 related_id : {program_id, update_id, dlc_id}) {
+            CAPTURE(related_id);
+            u64 language_code{};
+            REQUIRE(ResolveDesiredLanguage(control_data, related_id, nullptr, &loader,
+                                           &language_code)
+                        .IsSuccess());
+            CHECK(language_code == static_cast<u64>(LanguageCode::DE));
+        }
     }
 
     SECTION("AppLoader mask restricts system language to a supported language") {
@@ -111,7 +117,7 @@ TEST_CASE("ResolveDesiredLanguage reads AppLoader control data when installed me
     }
 }
 
-TEST_CASE("ResolveDesiredLanguage falls back to AmericanEnglish without control data or zero mask",
+TEST_CASE("ResolveDesiredLanguage distinguishes absent control data from a zero language mask",
           "[core][am][language]") {
     const auto previous_language = Settings::values.language_index.GetValue();
     Settings::values.language_index.SetValue(Settings::Language::German);
@@ -123,6 +129,8 @@ TEST_CASE("ResolveDesiredLanguage falls back to AmericanEnglish without control 
     IReadOnlyApplicationControlDataInterface control_data{system};
     constexpr u64 base_id = 0x0400000000002000ULL;
     constexpr u64 other_id = 0x010000000000100DULL;
+    constexpr u64 other_update_id = 0x0400000000004800ULL;
+    constexpr u64 other_dlc_id = 0x0400000000005001ULL;
     const u32 german_mask = GetSupportedLanguageFlag(ApplicationLanguage::German);
 
     SECTION("no installed control and null AppLoader") {
@@ -135,10 +143,14 @@ TEST_CASE("ResolveDesiredLanguage falls back to AmericanEnglish without control 
     SECTION("AppLoader belongs to a different base title ID") {
         FakeControlAppLoader loader{Loader::ResultStatus::Success, base_id,
                                     Loader::ResultStatus::Success, german_mask};
-        u64 language_code{};
-        REQUIRE(ResolveDesiredLanguage(control_data, other_id, nullptr, &loader, &language_code)
-                    .IsSuccess());
-        CHECK(language_code == static_cast<u64>(LanguageCode::EN_US));
+        for (const u64 unrelated_id : {other_id, other_update_id, other_dlc_id}) {
+            CAPTURE(unrelated_id);
+            u64 language_code{};
+            REQUIRE(ResolveDesiredLanguage(control_data, unrelated_id, nullptr, &loader,
+                                           &language_code)
+                        .IsSuccess());
+            CHECK(language_code == static_cast<u64>(LanguageCode::EN_US));
+        }
     }
 
     SECTION("AppLoader ReadProgramId fails") {
@@ -165,17 +177,18 @@ TEST_CASE("ResolveDesiredLanguage falls back to AmericanEnglish without control 
         u64 language_code{};
         REQUIRE(ResolveDesiredLanguage(control_data, base_id, nullptr, &loader, &language_code)
                     .IsSuccess());
-        CHECK(language_code == static_cast<u64>(LanguageCode::EN_US));
+        CHECK(language_code == static_cast<u64>(LanguageCode::DE));
     }
 
     SECTION("installed control has a zero language mask") {
         const auto installed = MakeControl(0);
         FakeControlAppLoader loader{Loader::ResultStatus::Success, base_id,
-                                    Loader::ResultStatus::Success, german_mask};
+                                    Loader::ResultStatus::Success,
+                                    GetSupportedLanguageFlag(ApplicationLanguage::Japanese)};
         u64 language_code{};
         REQUIRE(ResolveDesiredLanguage(control_data, base_id, &installed, &loader, &language_code)
                     .IsSuccess());
-        CHECK(language_code == static_cast<u64>(LanguageCode::EN_US));
+        CHECK(language_code == static_cast<u64>(LanguageCode::DE));
     }
 }
 

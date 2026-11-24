@@ -36,7 +36,7 @@ void SinkStream::AppendBuffer(SinkBuffer& buffer, std::span<s16> samples) {
     auto yuzu_volume = Settings::Volume();
     if (yuzu_volume > 1.0f)
         yuzu_volume = 0.6f + 20.0f * std::log10(yuzu_volume);
-    auto const volume = system_volume * device_volume * yuzu_volume;
+    auto const volume = GetSystemVolume() * GetDeviceVolume() * yuzu_volume;
 
     if (system_channels > device_channels) {
         static constexpr std::array<f32, 4> tcoeff{1.0f, 0.596f, 0.354f, 0.707f};
@@ -94,7 +94,7 @@ std::vector<s16> SinkStream::ReleaseBuffer(u64 num_samples) {
     // TODO: Play with this and find something that works better.
     constexpr s32 min = (std::numeric_limits<s16>::min)();
     constexpr s32 max = (std::numeric_limits<s16>::max)();
-    auto volume{system_volume * device_volume * 8};
+    auto volume{GetSystemVolume() * GetDeviceVolume() * 8};
     for (u32 i = 0; i < samples.size(); i++)
         samples[i] = s16(std::clamp(s32(f32(samples[i]) * volume), min, max));
 

@@ -121,7 +121,7 @@ public:
      * @return The current system volume.
      */
     f32 GetSystemVolume() const {
-        return system_volume;
+        return system_volume.load(std::memory_order_relaxed);
     }
 
     /**
@@ -130,7 +130,7 @@ public:
      * @return The current device volume.
      */
     f32 GetDeviceVolume() const {
-        return device_volume;
+        return device_volume.load(std::memory_order_relaxed);
     }
 
     /**
@@ -139,7 +139,7 @@ public:
      * @param volume_ - The new system volume.
      */
     void SetSystemVolume(f32 volume_) {
-        system_volume = volume_;
+        system_volume.store(volume_, std::memory_order_relaxed);
     }
 
     /**
@@ -148,7 +148,7 @@ public:
      * @param volume_ - The new device volume.
      */
     void SetDeviceVolume(f32 volume_) {
-        device_volume = volume_;
+        device_volume.store(volume_, std::memory_order_relaxed);
     }
 
     /**
@@ -269,9 +269,9 @@ private:
     /// The time the two above tracking variables were last written to
     std::chrono::nanoseconds last_sample_count_update_time{};
     /// Set by the audio render/in/out system which uses this stream
-    f32 system_volume{1.0f};
+    std::atomic<float> system_volume{1.0f};
     /// Set via IAudioDevice service calls
-    f32 device_volume{1.0f};
+    std::atomic<float> device_volume{1.0f};
     /// Signalled when ring buffer entries are consumed
     std::condition_variable_any release_cv;
     std::mutex release_mutex;

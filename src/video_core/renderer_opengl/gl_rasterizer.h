@@ -266,6 +266,7 @@ private:
     /// Number of commands queued to the OpenGL driver. Reset on flush.
     size_t num_queued_commands = 0;
     bool has_written_global_memory = false;
+    float polygon_offset_slope_scale = 1.0f;
 
     u32 last_clip_distance_mask = 0;
 };

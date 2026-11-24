@@ -2231,8 +2231,13 @@ void RasterizerVulkan::UpdateDepthBias(Tegra::Engines::Maxwell3D::Regs& regs) {
         }
     }
 
-    scheduler.Record([constant = units, clamp = regs.depth_bias_clamp,
-                      factor = regs.slope_scale_depth_bias, this](vk::CommandBuffer cmdbuf) {
+    float factor = regs.slope_scale_depth_bias;
+    if (texture_cache.IsRescaling()) {
+        factor *= Settings::values.resolution_info.up_factor;
+    }
+
+    scheduler.Record([constant = units, clamp = regs.depth_bias_clamp, factor,
+                      this](vk::CommandBuffer cmdbuf) {
         if (device.IsExtDepthBiasControlSupported()) {
             static VkDepthBiasRepresentationInfoEXT bias_info{
                 .sType = VK_STRUCTURE_TYPE_DEPTH_BIAS_REPRESENTATION_INFO_EXT,

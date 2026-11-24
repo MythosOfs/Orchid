@@ -1301,10 +1301,13 @@ void RasterizerOpenGL::SyncLineState() {
 
 void RasterizerOpenGL::SyncPolygonOffset() {
     auto& flags = maxwell3d->dirty.flags;
-    if (!flags[Dirty::PolygonOffset]) {
+    const float slope_scale =
+        texture_cache.IsRescaling() ? Settings::values.resolution_info.up_factor : 1.0f;
+    if (!flags[Dirty::PolygonOffset] && slope_scale == polygon_offset_slope_scale) {
         return;
     }
     flags[Dirty::PolygonOffset] = false;
+    polygon_offset_slope_scale = slope_scale;
 
     const auto& regs = maxwell3d->regs;
     oglEnable(GL_POLYGON_OFFSET_FILL, regs.polygon_offset_fill_enable);
@@ -1314,7 +1317,7 @@ void RasterizerOpenGL::SyncPolygonOffset() {
     if (regs.polygon_offset_fill_enable || regs.polygon_offset_line_enable ||
         regs.polygon_offset_point_enable) {
         // Hardware divides polygon offset units by two
-        glPolygonOffsetClamp(regs.slope_scale_depth_bias, regs.depth_bias / 2.0f,
+        glPolygonOffsetClamp(regs.slope_scale_depth_bias * slope_scale, regs.depth_bias / 2.0f,
                              regs.depth_bias_clamp);
     }
 }

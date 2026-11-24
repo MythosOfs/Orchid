@@ -7655,3 +7655,4 @@ a5ec91989 SokolskyNikita/Lichii: Merge of HyperCed macOS/Hypervisor PR #1970; ma
 945202e4b QuincyForbes/Lichii: Large Ocarina of Time dynamic texture handle array rewrite; OoT is outside Orchid's target game scope and Orchid's BuildHandleNode path differs.
 df46b3775 zortos293/Eglantine: NVN graphics slot declared sizes already honored; Orchid's graphics SSBO path always reads the 16-byte descriptor and StorageBufferSizeLimit uses packed_size up to the kind extent (native bare-pointer sizing applies only to compute).
 894f2c119 Djihads80/Eglantine: Alternate of df46b37751 (same batch, take one); skipped for the same reason, graphics descriptors already honor the declared size word.
+13557c329 zortos293/Eglantine: 65 KiB per-access global-memory routing rewrite targeting an Intel ANV compile hang in Ocarina of Time (#1756); outside Orchid target scope and untestable on Linux RADV host.

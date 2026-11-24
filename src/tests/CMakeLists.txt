@@ -57,6 +57,7 @@ add_executable(tests
     core/memory_span.cpp
     core/page_heap.cpp
     core/profile_orphans.cpp
+    core/profile_manager_reset.cpp
     core/read_traps.cpp
     core/gpu_dirty_memory_manager.cpp
     core/nx2_image_layout.cpp

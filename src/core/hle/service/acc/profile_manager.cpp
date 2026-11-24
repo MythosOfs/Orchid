@@ -54,7 +54,10 @@ constexpr char ACC_SAVE_AVATORS_BASE_PATH[] = "system/save/8000000000000010/su/a
 
 ProfileManager::ProfileManager() {
     ParseUserSaveFile();
+    OpenCurrentUser();
+}
 
+void ProfileManager::OpenCurrentUser() {
     // Create an user if none are present
     if (user_count == 0) {
         CreateNewUser(UUID::MakeRandom(), "Eden");
@@ -487,6 +490,7 @@ void ProfileManager::ResetUserSaveFile()
 {
     RemoveAllProfiles();
     ParseUserSaveFile();
+    OpenCurrentUser();
 }
 
 std::vector<UUID> ProfileManager::FindExistingProfileUUIDs()

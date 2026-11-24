@@ -91,6 +91,7 @@ add_executable(tests
     core/partition_filesystem.cpp
     core/eticket_title_key.cpp
     core/keyblob_cmac.cpp
+    core/aes_xts.cpp
     core/nax_hmac.cpp
     core/romfs.cpp
     core/time_zone_fallback.cpp

@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <openssl/err.h>
@@ -94,7 +95,11 @@ Crypto::AESCipher<Key>::AESCipher(Key key, Mode mode) : ctx(std::make_unique<Cip
 
     ASSERT(ctx->encryption_context && ctx->decryption_context && ctx->cipher && "OpenSSL cipher context failed init!");
     // now init ciphers
-    ASSERT(EVP_CipherInit_ex2(ctx->encryption_context, ctx->cipher, key.data(), NULL, 1, NULL));
+    const auto half = key.size() / 2;
+    const bool duplicated_xts_keys =
+        mode == Mode::XTS && std::equal(key.begin(), key.begin() + half, key.begin() + half);
+    ASSERT(EVP_CipherInit_ex2(ctx->encryption_context, ctx->cipher,
+                              duplicated_xts_keys ? nullptr : key.data(), NULL, 1, NULL));
     ASSERT(EVP_CipherInit_ex2(ctx->decryption_context, ctx->cipher, key.data(), NULL, 0, NULL));
 
     EVP_CIPHER_CTX_set_padding(ctx->encryption_context, 0);

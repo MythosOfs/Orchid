@@ -402,6 +402,15 @@ source and author in its message.
   header tests), [inxomnyaa/Lichii](https://github.com/inxomnyaa/Lichii) (inxomnyaa: avoid folder
   rescan on Show Game Name toggle) and [atmanli/Lichii](https://github.com/atmanli/Lichii) (Luke
   Evanson: AM fallback language when control data is missing).
+- Shader, mesh and rasterizer fixes of the fork-scan batch 2:
+  [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (pete842 with Pierre Kohler:
+  negated register IMAD addend in Orbitals compute shaders; zortos293: reject compute constant
+  buffers past slot 7, output stage buffer readback `ISBERD.ATTR.32.O`, ignore leftover vertex
+  input on native mesh pipeline keys, scale slope depth bias on rescaled targets),
+  [SokolskyNikita/Lichii](https://github.com/SokolskyNikita/Lichii) (Nikita Sokolsky: native mesh
+  prologue NaN guard for unwritten vertices) and
+  [kurebeyashi-noah/Lichii](https://github.com/kurebeyashi-noah/Lichii) (Kurebayashi: native local
+  stack mapping and per-width `SignedZeroInfNanPreserve` selection).
 
 ## License
 

@@ -58,6 +58,24 @@ ResultStatus Load(std::vector<u8> bytes) {
 
 } // Anonymous namespace
 
+TEST_CASE("NPDM rejects missing, malformed and truncated headers", "[core][file_sys]") {
+    ProgramMetadata npdm;
+    REQUIRE(npdm.Load(nullptr) == ResultStatus::ErrorBadNPDMHeader);
+    REQUIRE(npdm.Reload(nullptr) == ResultStatus::ErrorBadNPDMHeader);
+
+    std::vector<u8> header(0x80, 0);
+    std::memcpy(header.data(), "META", 4);
+    REQUIRE(Load(npdm, header) == ResultStatus::ErrorBadACIDHeader);
+
+    std::memcpy(header.data(), "NX2!", 4);
+    REQUIRE(Load(npdm, header) == ResultStatus::ErrorBadNPDMHeader);
+    REQUIRE(npdm.Reload(std::make_shared<FileSys::VectorVfsFile>(header, "main.npdm")) ==
+            ResultStatus::ErrorBadNPDMHeader);
+
+    header.resize(0x7F);
+    REQUIRE(Load(npdm, std::move(header)) == ResultStatus::ErrorBadNPDMHeader);
+}
+
 TEST_CASE("NPDM in the Switch 1 and Switch 2 layouts loads", "[core][file_sys]") {
     for (const bool switch2 : {false, true}) {
         ProgramMetadata npdm;

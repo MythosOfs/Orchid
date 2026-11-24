@@ -136,6 +136,7 @@ void TranslatorVisitor::ISBE_nx2(u64 insn) {
         BitField<20, 24, u64> offset;
         BitField<44, 1, u64> is_32;
         BitField<45, 1, u64> attribute;
+        BitField<47, 1, u64> output;
         BitField<48, 1, u64> write;
     } const isbe{insn};
 
@@ -145,7 +146,7 @@ void TranslatorVisitor::ISBE_nx2(u64 insn) {
     }
     const IR::U32 address{ir.IAdd(X(isbe.address_reg), ir.Imm32(static_cast<u32>(isbe.offset)))};
     if (isbe.write == 0) {
-        X(isbe.reg, ir.IsbeRead(address));
+        X(isbe.reg, isbe.output != 0 ? ir.IsbeReadOutput(address) : ir.IsbeRead(address));
         return;
     }
     const IR::U32 value{X(isbe.reg)};

@@ -198,6 +198,7 @@ add_executable(tests
     video_core/ampere_bindless_surfaces.cpp
     video_core/ampere_kirby_fsel.cpp
     video_core/ampere_register_pressure.cpp
+    video_core/ampere_stage_buffer_output.cpp
     video_core/syncpoint_manager.cpp
     video_core/native_macro_fifo.cpp
     video_core/turing_macro_ram.cpp

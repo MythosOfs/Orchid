@@ -438,6 +438,13 @@ TEST_CASE("Ampere register IMAD honors addend negation and the execution predica
     auto zero_addend = captured;
     zero_addend.words[2] |= 0xffU;
     check(zero_addend, 0x80000009U);
+    auto positive_zero = zero_addend;
+    positive_zero.words[2] &= ~0x800U;
+    const auto negated_zero = LowerToMaxwell(std::array{zero_addend, Exit});
+    const auto unnegated_zero = LowerToMaxwell(std::array{positive_zero, Exit});
+    REQUIRE(negated_zero);
+    REQUIRE(unnegated_zero);
+    CHECK(negated_zero.instructions.size() == unnegated_zero.instructions.size());
 
     auto guarded = captured;
     guarded.words[0] = (guarded.words[0] & ~0xf000U) | 0x1000U;

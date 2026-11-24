@@ -48,6 +48,18 @@ TEST_CASE("Null sink tracks streams per caller and propagates volume", "[audio_c
     null.SetDeviceVolume(0.5f);
     CHECK(first->GetDeviceVolume() == 0.5f);
     CHECK(second->GetDeviceVolume() == 0.5f);
+
+    second->Start();
+    AudioCore::Sink::SinkBuffer block{240, 0, 0, false};
+    std::array<s16, 1440> samples{};
+    second->AppendBuffer(block, samples);
+    const auto start = std::chrono::steady_clock::now();
+    while (second->GetQueueSize() != 0 &&
+           std::chrono::steady_clock::now() - start < std::chrono::seconds{2}) {
+        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+    }
+    REQUIRE(second->GetQueueSize() == 0);
+
     null.CloseStream(first);
     null.CloseStreams();
 }

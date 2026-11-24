@@ -413,6 +413,49 @@ TEST_CASE("Ampere runtime traps are not silently erased",
     REQUIRE(LowerToMaxwell(std::array{Instruction{{0xf95c, 0, 0, 0}}, Exit}));
 }
 
+TEST_CASE("Ampere register IMAD honors addend negation and the execution predicate",
+          "[video_core][ampere][integer_multiply][orbitals_imad]") {
+    constexpr Instruction captured{{0x02037224, 0x00000003, 0x078e0a05, 0x000fca00}};
+    const auto check = [](Instruction instruction, u32 expected) {
+        const auto lowered = LowerToMaxwell(std::array{instruction, Exit});
+        INFO(lowered.error);
+        REQUIRE(lowered);
+        auto machine = SeedMachine();
+        machine.registers[2] = 0x80000003U;
+        machine.registers[3] = 3;
+        machine.registers[5] = 12;
+        const auto before = machine;
+        machine.Run(lowered.instructions);
+        CHECK(machine.Read(3) == expected);
+        CheckUnchanged(before, machine, 3, 1);
+    };
+    check(captured, 0x7ffffffdU);
+
+    auto positive = captured;
+    positive.words[2] &= ~0x800U;
+    check(positive, 0x80000015U);
+
+    auto zero_addend = captured;
+    zero_addend.words[2] |= 0xffU;
+    check(zero_addend, 0x80000009U);
+
+    auto guarded = captured;
+    guarded.words[0] = (guarded.words[0] & ~0xf000U) | 0x1000U;
+    check(guarded, 0x7ffffffdU);
+    guarded.words[0] |= 0x8000U;
+    check(guarded, 3);
+
+    auto extended = captured;
+    extended.words[2] |= 0x400U;
+    CHECK_FALSE(LowerToMaxwell(std::array{extended, Exit}));
+
+    auto invalid_register_field = captured;
+    invalid_register_field.words[1] |= 0x100U;
+    const auto rejected = LowerToMaxwell(std::array{invalid_register_field, Exit});
+    CHECK_FALSE(rejected);
+    CHECK(rejected.error == "native integer register multiply mode");
+}
+
 TEST_CASE("Ampere integer multiplication rejects unsupported modifiers",
           "[video_core][ampere][integer_multiply]") {
     for (const u32 opcode : {0x225U, 0x625U, 0x825U, 0x227U, 0x827U, 0xa27U}) {

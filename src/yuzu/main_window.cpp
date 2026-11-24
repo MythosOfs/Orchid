@@ -3836,7 +3836,6 @@ void MainWindow::ToggleShowGameName() {
     CheckIconSize();
 
     game_list->UpdateIconSizes();
-    game_list->RefreshGameDirectory();
 }
 
 void MainWindow::ApplyInterfaceStyle() {

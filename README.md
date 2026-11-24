@@ -28,6 +28,7 @@ Mario Tennis Fever first, plus the shader, kernel and graphics work other games 
   <a href="#branches-and-builds">Branches and builds</a> |
   <a href="#what-orchid-adds">What Orchid adds</a> |
   <a href="#performance-and-compatibility">Performance</a> |
+  <a href="#showcase">Showcase</a> |
   <a href="#download">Download</a> |
   <a href="#build-the-newest-commit-yourself">Build it yourself</a> |
   <a href="#documentation">Documentation</a> |
@@ -108,7 +109,23 @@ Compared with the Eglantine it started from:
 | Star Fox | 60 |  |
 | Pokémon Pokopia | 60 | |
 | Orbitals | 30 | Background Texture flickering |
+| Kirby and the Forgotten Land – Nintendo Switch 2 Edition + Star-Crossed World | 60 | Playable; reported 100 % completion on v0.12.0 (Windows, Vulkan, NVIDIA) |
 | Kirby Air Riders |DO NOT PLAY MOST LIKELY CRASHES YOUR PC 30 SECONDS IN A RACE|
+
+## Showcase
+
+Community-reported playthrough highlights on current releases.
+
+![Kirby and the Forgotten Land – Nintendo Switch 2 Edition + Star-Crossed World final boss title card on Orchid v0.12.0 at 60 FPS](docs/screenshots/kirby-forgotten-land-boss-statusbar.webp)
+
+<table>
+  <tr>
+    <td width="49%"><img src="docs/screenshots/kirby-forgotten-land-victory.webp" alt="Kirby and the Forgotten Land Ultimate Cup Z EX victory screen in Orchid v0.12.0"></td>
+    <td width="51%"><img src="docs/screenshots/kirby-forgotten-land-completion.webp" alt="Kirby and the Forgotten Land Star-Crossed World completion screen"></td>
+  </tr>
+</table>
+
+*Kirby and the Forgotten Land – Nintendo Switch 2 Edition + Star-Crossed World, played to 100 % completion on Orchid v0.12.0 (Windows, Vulkan, NVIDIA). Screenshots by [@GameplaysconElPepe](https://github.com/GameplaysconElPepe).*
 
 ## Download
 

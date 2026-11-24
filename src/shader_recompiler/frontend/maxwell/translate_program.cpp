@@ -393,7 +393,7 @@ IR::Program TranslateProgram(ObjectPool<IR::Inst>& inst_pool, ObjectPool<IR::Blo
     program.blocks = GenerateBlocks(program.syntax_list);
     program.post_order_blocks = PostOrder(program.syntax_list.front());
     program.stage = env.ShaderStage();
-    program.local_memory_size = env.LocalMemorySize();
+    program.local_memory_size = env.LocalArraySize();
     switch (program.stage) {
     case Stage::TessellationControl: {
         const ProgramHeader& sph{env.SPH()};

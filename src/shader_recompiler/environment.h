@@ -106,6 +106,14 @@ public:
 
     [[nodiscard]] virtual u32 LocalMemorySize() const = 0;
 
+    static constexpr u32 LOCAL_WINDOW_BYTES = 0x1000000;
+    static constexpr u32 NATIVE_STACK_BYTES = 0x800;
+
+    [[nodiscard]] u32 LocalArraySize() const {
+        const u32 declared = (LocalMemorySize() + 3U) & ~3U;
+        return IsNativeProgram() ? declared + NATIVE_STACK_BYTES + 4U : LocalMemorySize();
+    }
+
     [[nodiscard]] virtual u32 SharedMemorySize() const = 0;
 
     [[nodiscard]] virtual std::array<u32, 3> WorkgroupSize() const = 0;

@@ -210,6 +210,7 @@ add_executable(tests
     video_core/spirv_atomic_retry.cpp
     video_core/spirv_min_max_denorms.cpp
     video_core/spirv_signed_nan.cpp
+    video_core/native_local_stack.cpp
     video_core/spirv_screen_linear.cpp
     video_core/usage_tracker.cpp
     video_core/expect_shader_ir.cpp

@@ -47,6 +47,7 @@ LaunchParams ParseLaunchParams(Core::System& system, int argc, char *argv[], wch
         // clang-format on
     };
 
+    optind = 1;
     while (optind < argc) {
         // -d takes an optional port (-d1234); -i takes the input profile. Both read optarg but
         // were declared without arguments, so optarg was null and they crashed.

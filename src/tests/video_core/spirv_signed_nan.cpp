@@ -31,7 +31,8 @@ std::vector<u32> SignedNanWidths(const std::vector<u32>& spirv) {
     return widths;
 }
 
-std::vector<u32> EmitWithSignedNan(bool uses_fp16, bool uses_fp64, bool broken_fp16) {
+std::vector<u32> EmitWithSignedNan(bool uses_fp16, bool uses_fp64, bool broken_fp16,
+                                   bool support_fp16 = true) {
     Shader::ObjectPool<IR::Inst> pool;
     IR::Block block{pool};
     IR::Program program;
@@ -47,7 +48,7 @@ std::vector<u32> EmitWithSignedNan(bool uses_fp16, bool uses_fp64, bool broken_f
     Shader::Profile profile{};
     profile.supported_spirv = 0x00010300;
     profile.support_float_controls = true;
-    profile.support_fp16_signed_zero_nan_preserve = true;
+    profile.support_fp16_signed_zero_nan_preserve = support_fp16;
     profile.support_fp32_signed_zero_nan_preserve = true;
     profile.support_fp64_signed_zero_nan_preserve = true;
     profile.has_broken_fp16_float_controls = broken_fp16;
@@ -62,5 +63,6 @@ TEST_CASE("Broken fp16 float controls omit only fp16 SignedZeroInfNanPreserve",
     CHECK(EmitWithSignedNan(true, false, true) == std::vector<u32>{32U});
     CHECK(EmitWithSignedNan(true, true, true) == std::vector<u32>{32U, 64U});
     CHECK(EmitWithSignedNan(true, false, false) == std::vector<u32>{16U, 32U});
+    CHECK(EmitWithSignedNan(true, false, false, false) == std::vector<u32>{32U});
     CHECK(EmitWithSignedNan(false, false, false) == std::vector<u32>{32U});
 }

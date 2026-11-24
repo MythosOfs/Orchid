@@ -75,9 +75,11 @@ TEST_CASE("Native programs reserve a local stack region and map top-of-window ac
     constexpr u32 declared = 0x10;
     constexpr u32 stack_top_word = Shader::Environment::LOCAL_WINDOW_BYTES - 4U;
     constexpr u32 oob_offset = 0x1000;
+    constexpr u32 deep_stack_oob = Shader::Environment::LOCAL_WINDOW_BYTES / 2U;
     const std::array code{
         MakeStl32(1, 255, stack_top_word),
         MakeStl32(2, 255, oob_offset),
+        MakeStl32(4, 255, deep_stack_oob),
         MakeLdl32(3, 255, stack_top_word),
         ExitInsn,
     };
@@ -110,7 +112,7 @@ TEST_CASE("Native programs reserve a local stack region and map top-of-window ac
         }
     }
     CHECK(write_stack_word == 1);
-    CHECK(write_spare_word == 1);
+    CHECK(write_spare_word == 2);
 
     LocalEnv legacy_env{code, declared, false};
     CHECK(legacy_env.LocalArraySize() == declared);

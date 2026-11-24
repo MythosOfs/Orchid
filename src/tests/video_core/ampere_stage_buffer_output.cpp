@@ -36,6 +36,7 @@ public:
         std::memcpy(&sph, SportsHeader.data(), sizeof(SportsHeader));
         if (stage == Shader::Stage::Mesh) {
             sph.vtg.omap_systemb.raw = 0xF0;
+            sph.vtg.omap_generic_vector[0] = 0x1;
             mesh_registers = {4U | (32U << 4) | (16U << 13), 32U << 20, 32U | (1U << 12)};
         } else {
             mesh_registers = {0, 0, 32 | (1U << 12)};
@@ -136,7 +137,23 @@ TEST_CASE("Task and mesh programs read back the output stage buffer word they wr
         const auto spirv = Shader::Backend::SPIRV::EmitSPIRV(profile, runtime, program, bindings);
         REQUIRE(spirv.size() > 5);
         REQUIRE(spirv[0] == 0x07230203);
-        const bool has_nan_const = std::ranges::find(spirv, 0x7fc00000U) != spirv.end();
-        CHECK(has_nan_const == (stage == Shader::Stage::Mesh));
+        u32 nan_id = 0;
+        u32 nan_stores = 0;
+        for (std::size_t i = 5; i < spirv.size();) {
+            const u32 wc = spirv[i] >> 16;
+            const u32 op = spirv[i] & 0xFFFFU;
+            if (wc == 0 || i + wc > spirv.size()) {
+                break;
+            }
+            if (op == static_cast<u32>(spv::Op::OpConstant) && wc == 4 &&
+                spirv[i + 3] == 0x7fc00000U) {
+                nan_id = spirv[i + 2];
+            } else if (op == static_cast<u32>(spv::Op::OpStore) && wc >= 3 && nan_id != 0 &&
+                       spirv[i + 2] == nan_id) {
+                ++nan_stores;
+            }
+            i += wc;
+        }
+        CHECK(nan_stores == (stage == Shader::Stage::Mesh ? 4U : 0U));
     }
 }

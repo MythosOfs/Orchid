@@ -1,12 +1,14 @@
 // SPDX-FileCopyrightText: Copyright 2026 Orchid Emulator Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <optional>
 #include <span>
 
 #include <catch2/catch_test_macros.hpp>
+#include <spirv/unified1/spirv.hpp11>
 
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/frontend/ampere/lower_to_maxwell.h"
@@ -134,5 +136,7 @@ TEST_CASE("Task and mesh programs read back the output stage buffer word they wr
         const auto spirv = Shader::Backend::SPIRV::EmitSPIRV(profile, runtime, program, bindings);
         REQUIRE(spirv.size() > 5);
         REQUIRE(spirv[0] == 0x07230203);
+        const bool has_nan_const = std::ranges::find(spirv, 0x7fc00000U) != spirv.end();
+        CHECK(has_nan_const == (stage == Shader::Stage::Mesh));
     }
 }

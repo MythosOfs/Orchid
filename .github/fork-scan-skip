@@ -7203,3 +7203,453 @@ b804de140 sebjager/Eglantine: Orchid has an earlier converting Star Fox cutscene
 e05d5d036 maro-03/Lichii20: Caps Donkey Kong Bananza's swap interval at 2 by title ID, which deviates from the interval the game requests; no fps gain shown (tunnel at 60 fps with and without).
 49436caa2 DuskDarf1/Lichii: Wonder-only present release fence queue gated by title ID; no fps or pacing gain shown (60.00 fps, same p99 with and without).
 90a5d30f6 mariohbd/Lichii: Same design as 49436caa2 (Wonder release fences by title ID), no measured benefit.
+4c353ef15 zortos293/Eglantine: not for Orchid: off-by-default traces
+e612af1c2 zortos293/Eglantine: not for Orchid: the fork's online network provider
+070e214d3 zortos293/Eglantine: not for Orchid: the fork's game list design
+5b0954691 zortos293/Eglantine: not for Orchid: the fork's theme, dialogs and What's new
+b933bc145 zortos293/Eglantine: not for Orchid: the fork's AGENTS.md
+73a1b58e7 zortos293/Eglantine: not for Orchid: reworks the fork's CallMethodFast and EDEN_NX2_PERF_VERIFY paths, which main lacks
+6f5a03143 zortos293/Eglantine: not for Orchid: no looping event in main makes up for its lateness (the fork's sysmix pump does); the callbacks ignore ns_late
+435a62f9e kurebeyashi-noah/Lichii: not for Orchid: main has no DLSS network probe (vk_dlss_network_probe)
+7b6fc27bb kurebeyashi-noah/Lichii: not for Orchid: main has no shader_warm; FromSoftware bundles only
+a87db945d kurebeyashi-noah/Lichii: not for Orchid: the fork's online redirect setting
+ef13740b7 kurebeyashi-noah/Lichii: not for Orchid: the fork's stand-in online servers
+038ab99b7 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+07dd64745 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+09177f047 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+1fdfd7563 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+286ebb4bd Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+2df8668e2 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+2ec8c2087 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+2fa740a0c Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+3430e6e00 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+38718e244 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+48d130ffd Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+4adb8b8e9 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+4c0964600 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+53c311c1c Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+56052325b Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+569bfab4e Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+604d22bab Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+6459a7235 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+6674d175f Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+68451e0c6 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+7aeaae8db Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+80d1e1bee Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+81dd55375 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+8205abe5a Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+91862b311 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+92346e5e4 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+9ccb6f429 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+9d8e61f0f Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+a8164dc02 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+b2c423657 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+b44773a10 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+b71ef9aab Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+b9d9283f0 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+bafee746f Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+c07fa61b0 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+c5199a56a Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+c7b59ec28 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+cfa3de68d Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+cfe850b1e Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+d0abc0b6e Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+d60670db1 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+d88e9feed Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+da8787494 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+daf967943 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+dcf753ed2 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+dda3420ad Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+e1426ef96 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+ef2be5903 Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+efda293ab Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+f560c7cde Lichii-Style/Lichii: not for Orchid: the fork's library styles, themes and loading screen
+1ded026e9 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+227bff39a murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+57281c891 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+61bbe393b murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+88c3145e6 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+9d0710555 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+b3a3c64e8 murapixel/Lichii: not for Orchid: the fork's online network provider
+c545d3da5 murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+e73830b7d murapixel/Lichii: not for Orchid: back-stages prototype, marked never merge
+ed7f7c235 murapixel/Lichii: not for Orchid: UI feature (mod categories)
+fc64776d9 murapixel/Lichii: not for Orchid: the fork's online network provider
+1069ce609 astraea-emu/nx2: not for Orchid: docs of the fork
+305934166 astraea-emu/nx2: not for Orchid: docs of the fork
+3a3f026a4 astraea-emu/nx2: not for Orchid: build preset of the fork
+6f63e99cc astraea-emu/nx2: not for Orchid: RealVfsFilesystem::OpenDirectory never returns null, and a missing game file already fails in CreateApplicationProcess
+88eba1e5c astraea-emu/nx2: already in main: TerminateAllProcesses moves the list out under the lock (kernel.cpp)
+d811ccaad astraea-emu/nx2: not for Orchid: test for 6f63e99cc
+00fafa7b1 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+0e0abd4b9 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+3ad55c1e5 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+66696da74 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+67525fe9f jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+6cf7c0344 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+735c22c26 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+7567732e9 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+80d4ee3c4 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+837359a0a jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+979dc556d jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+9917a0d8a jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+9e0aed5d1 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+c77f2a74c jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+ca9efd825 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+caed8d3f0 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+de7086bc0 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+e42a5e2f4 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+e9a0c6b12 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+f8ad96ca7 jns6001/Lichii: not for Orchid: opt-in Switch 1 experiments for Breath of the Wild, built on fork features main lacks (fast draws, early payload release)
+06b9ea17f inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+080a57b28 inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+17f843051 inxomnyaa/Lichii: not for Orchid: main has no fast draw reuse (nx2_fast_draw.h)
+22c921b55 inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+284336a4b inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+401d5e0f2 inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+45921d39f inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+466397513 inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+66d0e90ec inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+7221a3b64 inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+8011151dd inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+a0b7ae4a0 inxomnyaa/Lichii: not for Orchid: the fork's game list styles
+e03f6830c inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+fe8cd63ad inxomnyaa/Lichii: not for Orchid: the fork's online network provider
+45e17623d zejiran/Lichii: not for Orchid: docs of the fork
+dd31667ac zejiran/Lichii: not for Orchid: docs of the fork
+052b56e46 moirod64/Lichii: not for Orchid: eight guest cores, reverted by the fork itself in 704577274
+36bc5b050 moirod64/Lichii: not for Orchid: follow-up of the reverted eight-core change
+704577274 moirod64/Lichii: not for Orchid: reverts 052b56e46
+d05312adc moirod64/Lichii: not for Orchid: trace roles for the reverted eight-core change
+173390436 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+4093421ae Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+42bebd075 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+45ae1c550 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+a432aaa85 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+bf721ade4 Arthiyart/Lichii-Theme: not for Orchid: the fork's themes and overlay
+06aca34a0 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+0bbc83b99 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+5dc419a98 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+9a5f97d42 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+ed2fcb798 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+f4eb08793 JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+f91bea23b JalenJaceX2/zortoscerroverb: not for Orchid: the fork's private server support
+0a7e5fe38 2600box/Lichii: not for Orchid: CI and packaging of the fork
+0ac96247b 2600box/Lichii: not for Orchid: CI and packaging of the fork
+4314beab6 2600box/Lichii: not for Orchid: CI and packaging of the fork
+48e18c089 2600box/Lichii: not for Orchid: CI and packaging of the fork
+52f79c719 2600box/Lichii: not for Orchid: CI and packaging of the fork
+57637986a 2600box/Lichii: not for Orchid: CI and packaging of the fork
+57a29a975 2600box/Lichii: not for Orchid: CI and packaging of the fork
+57bcdef69 2600box/Lichii: not for Orchid: CI and packaging of the fork
+6dd588acc 2600box/Lichii: not for Orchid: CI and packaging of the fork
+7b81b9021 2600box/Lichii: not for Orchid: CI and packaging of the fork
+b86d4bf48 2600box/Lichii: not for Orchid: CI and packaging of the fork
+d09304e46 2600box/Lichii: not for Orchid: CI and packaging of the fork
+b3aff6d54 Suxto/Lichii: not for Orchid: CI of the fork
+fcce4e6af Suxto/Lichii: not for Orchid: CI of the fork
+fd166c536 Suxto/Lichii: not for Orchid: CI of the fork
+5c49428b6 AlfaDev23/Lichii: not for Orchid: opt-in diagnostic switches, no default behaviour change
+77c5f2114 AlfaDev23/Lichii: not for Orchid: opt-in switch, no default behaviour change
+bddba3301 AlfaDev23/Lichii: not for Orchid: opt-in switch, no default behaviour change
+c843e2b30 AlfaDev23/Lichii: not for Orchid: docs of the fork
+e551d6200 AlfaDev23/Lichii: not for Orchid: docs of the fork
+34d0d1543 joaopedrocampos/Lichii: not for Orchid: release workflow of the fork
+e8db1cb80 intellq/Lichii: not for Orchid: test-only switch, marked not for merge
+d8c42ecd2 viwe-monai/Lichii: not for Orchid: docs of the fork
+914a9e72c StiensWout/Lichii: not for Orchid: credits of the fork
+0c1e98565 BrodXI/Lichii: not for Orchid: docs of the fork
+14aa90b8a BrodXI/Lichii: not for Orchid: README of the fork
+163e0ca5f BrodXI/Lichii: not for Orchid: README of the fork
+23f880f4e BrodXI/Lichii: not for Orchid: main's ReportRuntimePipeline formats no pipeline identifiers
+2636a123e BrodXI/Lichii: not for Orchid: CI of the fork
+26f925fe7 BrodXI/Lichii: not for Orchid: build fix for the fork's own merge
+396318ec7 BrodXI/Lichii: not for Orchid: CI of the fork
+3f34c281a BrodXI/Lichii: not for Orchid: Ocarina of Time settings UI
+54fb61cc5 BrodXI/Lichii: not for Orchid: Ocarina of Time only (built-in game patch)
+698d9eae1 BrodXI/Lichii: not for Orchid: CI of the fork
+87a633c0d BrodXI/Lichii: not for Orchid: Ocarina of Time settings UI
+8c6b0e2d7 BrodXI/Lichii: not for Orchid: CI of the fork
+b0b170b8d BrodXI/Lichii: not for Orchid: CI of the fork
+dc6ff4c06 BrodXI/Lichii: not for Orchid: CI of the fork
+102ad024a nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+23c75a7f6 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+2bf0d5896 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+5cc630318 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+5dc49ac86 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+73c637f92 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+982e579cc nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+a77515ea5 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+cc6360d0c nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+d6238ba0d nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+ea19152f0 nodesire7/Lichii: not for Orchid: the fork's launcher and translations
+295885ef6 lachlan-kelly/Kokirii: not for Orchid: rebrand
+963f07a2d lachlan-kelly/Kokirii: not for Orchid: README of the fork
+04593ac9a zortos293/Eglantine: Cyberpunk-only forms. Needs fork b14a268ebc (TLD.B 0x367; main has no case 0x367). No scope-game log shows 'unsupported native opcode [op 367' or 'native texture dimension query mode'
+0769988d0 Frizti/Fritchii: Build fix for fritchii_ui.cpp (absent in main); the vulkan.h Bool/Status/Success undefs are not needed, main builds with enum class Status in nvnflinger/status.h.
+07df3de23 mastorok/Eglantine: EDEN_NX2_ACQ_PREDICT acquire prediction, hang reports, Yoshi video diagnostics: needs fork puller acquire prediction and nx2_sampler hang watchdog; experiment
+08e671076 thatrandomalt/Lichii: Already in main: Orchid eae725230c puller: accept a release still waiting for the host GPU at the first (Puller::ProcessSemaphoreTriggerMethod uses rasterizer->PendingSemaphoreRelease)
+0b546a2ce ThatGuyMcd/Lichii-TGM: Needs DeviceMemoryManager::KeepWrites/ReadKept/WriteKept (kept_pages) which main lacks, plus an OOT dist/notes script and a 464-line nx2_gsv.h rewrite for the fork sparse-block model
+0de9d55c1 Djihads80/Eglantine: needs mesh_as_compute (compute emulation of task/mesh), has_broken_mesh_global_memory_calls and shader_warm/warm_records.h, none exist in main; Ocarina of Time tree fix on Pascal
+0ec71fe7c JuliusBairaktaris/Lichii: UserConfig::code_image / CodeImageLink (relocatable code images, step 3 of the fork's native backend) needs conf.core_independent_code; none exist in main
+1081bad5e cookiedanslesac/Eglantine-pr: Needs the compute-based mesh emulation (devices without VK_EXT_mesh_shader) which main lacks: main skips mesh draws with report_failure when VK_EXT_mesh_shader is missing
+113e31ee9 zortos293/Eglantine: Adds a RequireVerified NCA signature policy no caller selects (default AllowUnverified, no verify_sign1 key in main's GetCryptoConfiguration); the key-size change is moot because GenerateKey copies min(dst, 0x10) bytes for the he…
+115e8cba5 n0ctbyte/Lichii: NSZ eligibility refactor: needs Core::Crypto::IsSupportedNCZ/DecompressNCZForInstall rework and NSP::GetNCAFileById that main lacks; NSZ support is not a project-scope target and main already rejects solid NCZ via ContainerIsFull…
+11b75674e ThatGuyMcd/Lichii-TGM: Fork integration on fork-only structures: buffer_cache read_back_pages/NoteReportPending, GpuSplit tick_state, PresentFenceHistory, MemoryManager map_serial cache; none exist in main
+13df1296a Amnesia1000/Fritchii: Already in main: aba347d6a4 core: gather GPU-dirty CPU writes without a lock when there are none: GPUDirtyMemoryManager::Gather returns before the exchange and does not advance generation when nothing is pending
+172606da7 javocsoft/Kaichii: duplicate of the AM DropPendingProcess part of 0794dd12e/53ac6f38d (try_to_lock variant); take 53ac6f38d
+18a5a8ea8 conongnang/Lichii: Depends on worker_only_build/NeedNow/PipelineBuild::Wait(bool) job scheduler absent in main (main waits on a plain condvar in GraphicsPipeline::ConfigureImpl); the equivalent idea for main is 56881674fe in Pipeline cancellation
+18ed38843 daniel-lynch/Lichii: Lock-free read fast path (Nx2MayBeGpuWritten, texture_cache.page_filter) needs page_filter.h, absent in main; main's GetFlushArea runs buffer_cache.NoteCpuRead for every guest read (cpu_read_ranges feeds the Pokopia sky fix), so…
+1adade1f1 the-cashman/Lichii: EvictDeadRenderTargets/TransientTarget for Ocarina of Time Market (outside scope); needs MarkStale/stale_pages and g_nx2_ampere-gated collector state that main's texture cache lacks
+1b7407661 liubowwen/Lichii: step of the sideways left Joy-Con series (needs is_sideways_left from 20cdf7827); Switch Sports Resort specific
+1b8a20151 Amnesia1000/Fritchii: FRITCHII_EXTENT_SHARED/_CBUF/FEEDER_LANE naming and timing of marks: diagnostics of Fritchii extent proofs, absent in main
+1c1050d14 danieljesus/Lichii: Duplicate: same subject as 8e7348b26: Main's FileBackend still removes and renames orchid_log.txt unconditionally; 81710b07d1 only closes the handle around SetGame. Needs a small lock helper (flock/LockFileEx) since common/fs/fil…
+1e1f387d2 QuincyForbes/Lichii: MoltenVK/Metal only (mesh_emulation_inputs, EDEN_NX2_NATIVE_PER_PRIMITIVE); needs mesh compute emulation absent in main
+1f94eda09 JalenJaceX2/duckbuds: Duskbloods exposure flicker alias controls (alias_sync_always, perf_flip): needs the fork debug server and Nx2Perf switches absent in main; Duskbloods is outside README scope
+20375cf51 daniel-lynch/Lichii: Texture Pool x2 builtin patch for Ocarina of Time guard house freeze (zortos #1313); needs the OoT builtin patch framework absent in main (BuiltinPatchRecord), OoT out of scope
+213b6f1a1 jvhuaxia/lichii: removes WaitForPendingDownloads/LandedDownloads fallout from the fork's buffer cache; neither exists in main
+218e8c151 the-cashman/Lichii: same subject as 1fa42f290: Deletes aliased images without proof that newer images preserve the whole backing and freshness
+23f985e18 myshadowww/Lichii: same as b1076ef09: needs texture_cache.page_filter (absent in main)
+253dac162 JalenJaceX2/duckbuds: Duskbloods-only alias_sync_always default, unverified precaution on the fork perf_flip switches (nx2_debug_tools.cpp absent); main keeps the alias early-out in TextureCache::SynchronizeAliases
+267985021 Silvia-Ty/Eglantine_Intel_Arc_A770: Intel matrix register accumulation behind a launch switch; needs fork's Intel 8x8x16 HMMA lowering and vk_cooperative_hmma_test, not in main
+26b46019b myshadowww/Lichii: Already in main: main 625a75707a filesystem: bound file and storage I/O by the IPC buffer sizes (identical checks; the fork's test and friend declaration are not needed)
+26f5cce85 the-cashman/Lichii: Equal/mask early acquire (Puller::PendingAcquire::CheckEarly, GPU-written guard) absent; main deliberately drains for equal/mask (puller.cpp MetBeforeDrain comment: a queued release may change the word); gain measured only in Oca…
+2706dd077 javocsoft/Kaichii: same subject as ecc1b2153: Fork Duskbloods network-test default is outside the scoped target list; global behavior needs a sampler fixture.
+27aabe0ff daniel-lynch/Lichii: Hot pages (WordManager hot bit, EDEN_NX2_HOT_PAGES) measured on Ocarina only; the fork itself made it opt-in/default off later (379a30fc5) and needed review fixes (d2bdac6d0); conflicts with main's CpuWriteEpoch sync memo; no Hot…
+283e2d356 liubowwen/Lichii: step of the sideways left Joy-Con series (needs GetConfiguredNpadStyleIndex from 20cdf7827): mirrors single Joy-Con motion to both dual sensors for Switch Sports
+28ec21491 danieljesus/Lichii: same subject as aa423acb1: Needs Nextendo host routing layer and its IPv6 sockaddr representation.
+2af38167d Silvia-Ty/Eglantine_Intel_Arc_A770: Needs fork's nx2_gpu_latency.h/Nx2GpuLatency::NotePresent (53ebf6cd4), absent in main
+2bf93b3a0 c4k3ss/Lichii: texture_cache half needs NewerGpuOverlaps/overlap write-back (cerroverb cherry-picks, absent in main: no CanWriteBack/WriteBackImage); memory_manager half (notify ModifyGPUMemory when a mapped page is repointed) already in main P…
+2c6ccb2b4 elkarbeenus/LakuenPlay: Already in main: ssa_rewrite_pass.cpp: pending phis (operands_begin/pending_operands, MaterializePhi) and the Identity removal at the end of SsaRewritePass are in main; main 60ef6d2750 "COMMIT TO nx2 source"
+2fcacb2fe jvhuaxia/lichii: HostTranslateInfo::needs_lrz_disable (Qualcomm/Adreno FragDepth write) has no consumer in main (grep finds no needs_lrz_disable); Android/Adreno driver workaround outside the PC focus
+31b7d67ed zortos293/Eglantine: same subject as 18ed38843: Lock-free read fast path (Nx2MayBeGpuWritten, texture_cache.page_filter) needs page_filter.h, absent in main; main's GetFlushArea runs buffer_cache.NoteCpuRead for every guest read (cpu_read_ranges feed…
+31c04aea8 bxzty777/Lichii_astryx: Needs WriteBackMemory/ClearStaleGpu and the overlap download queue absent in main
+3415da8cc cerroverb/Lichii: same subject as 54caf03b1: Fast-negative check requires no false negatives across alias creation/remap/interleaved updates. A stale omission would suppress a needed download.
+3427684ea Reiixan/Lichii: Reverted by the fork itself (8a89d71d5); also needs WriteBackImage and IsRescaledBc
+3440aa69e dzervas/Lichii: Needs Nx2FastDraw::BindDeltaOn/VerifyEnabled (nx2_fast_draw.h, absent in main); gain measured only in Mario Kart World (out of scope); main's BindGraphicsUniformBuffer still resets buffer_id per bind
+3841fd1c1 liomaroliveira/Lichii: Needs the task/mesh compute fallback (absent in main), see edc42e5b3.
+3885cd209 HyperCed/Lichii: same subject as 18ed38843: Lock-free read fast path (Nx2MayBeGpuWritten, texture_cache.page_filter) needs page_filter.h, absent in main; main's GetFlushArea runs buffer_cache.NoteCpuRead for every guest read (cpu_read_ranges feed…
+38ad8bbe7 Takoroka/Eglantine: Already in main: Main releases freed SMMU ranges through Nx2GpuMemoryRegistry::Unregister -> pending_releases -> DrainReleases -> nvhost_as_gpu::Nx2Release (nx2_stub_device.h:73,460; nvhost_as_gpu.cpp:279), which erases nx2_device_ranges and unma…
+397c0c9ad andrewleeog/Eglantine: Needs the back thread's idle deferred-submit hook (GpuSplit::Exclusive); main's gpu_split has no idle hook
+3a2984e77 liomaroliveira/Lichii: WIP back-split prototype; its own message says image is black and the emulator aborts at 77 s with EDEN_NX2_BACK_SPLIT=1; needs nx2_back_split*.h absent in main
+3a4748f9a the-cashman/Lichii: Write-back queue of the fork collector (QueueWriteBack/IsPending/CanEvict/landing ranges) does not exist in main; batching itself is taken from 7b3b275a2 (deferred staging, victims stay tracked until swizzle)
+3b8c4e2fd DuskDarf1/Lichii: same subject as 929282918: Fork page-key FindBuffer cache needs separate invalidation evidence; Orchid has its own mapping-range cache
+3bf4dbad0 javocsoft/Kaichii: game list UX: lists NSP/XCI that need missing keys (IsMissingKeyStatus, GetContainerProgramStatus not in main); not a correctness fix, fork-style UI behaviour
+3d212faa5 tlombardo1-sudo/Lichii: Already in main: bf1de8f401 'Switch 2: suspend channels on semaphore acquires; fix pushbuffer d...': Puller::PendingAcquire/CanResumeAcquire/ResumeAcquire, Scheduler::ResumePending and pending_channels already in main
+4023b4d7f Amnesia1000/Fritchii: FRITCHII_LOST_KEEP: needs lost_contents.h/FRITCHII_STALE_ZERO series (absent in main); OoT HUD flash
+4336f3fac fab918/Eglantine: Needs the task/mesh compute fallback (absent in main), see edc42e5b3.
+44d090fca Amnesia1000/Fritchii: FRITCHII_CB_MERGE (joined constant buffer blocks in the Fritchii ring) and FRITCHII_HOSTTIMING_OFF_GPU; both need Fritchii ring/pinning code absent in main
+45950876d tasarren/Lichii: Needs Tegra::Nx2MayBeGpuWritten, runtime.ClearImage and a Linux SEEK_DATA hole probe on the memfd; none exist in main (UploadInChunks has no hole path); Ocarina-driven
+46be5fcb6 Takoroka/Eglantine: Already in main: ssa_rewrite_pass.cpp has the pending phi (ReadState operands_begin/operand_count, pending_operands, ResolvePendingPhi/MaterializePhi); main 60ef6d2750 "COMMIT TO nx2 source"
+48761a3d8 intellq/Lichii: RetireStaleTargets for Ocarina of Time render targets (outside scope); needs MarkStale/stale_pages and a new ClearImage runtime path that main lacks
+4a5d0ac0d c4k3ss/Lichii: same subject as 5a6ba7574: Content-changing clear shortcut. Test exact title, channel mask and geometry coverage before allowing clear value substitution.
+4edae62ec GabrielDieterly/Lichii: Needs fork's nx2_video_input_queue.h (RefuseAt/busy 3603 refusal and ready watermark) which main lacks; main's SubmitInput never refuses and sets room = size < MaxQueuedInputs, so the both-sides-waiting deadlock cannot occur
+500f5b61f PantACRO4life/Lichii: Needs the fork's spirv_inline_control.h (MarkSharedFunctionsDontInline) and shader_warm precache version markers, neither exists in main (no src/video_core/spirv_inline_control.h or shader_warm/); AMD proprietary Windows driver o…
+519a6e399 Amnesia1000/Fritchii: FRITCHII_KILL_RT_POOL: colour render-target VMA pool for OoT Stalchild kills; opt-in default 0, 290 lines in vulkan_memory_allocator.cpp, needs nx2_debug_control.h
+52d86ccc0 rikomusicx-lgtm/Ocarina2: Already in main: ssa_rewrite_pass.cpp pending phi machinery (pending_operands, ResolvePendingPhi, MaterializePhi) is in main; main 60ef6d2750 "COMMIT TO nx2 source"
+539c4d7db tasarren/Lichii: same subject as 48761a3d8: RetireStaleTargets for Ocarina of Time render targets (outside scope); needs MarkStale/stale_pages and a new ClearImage runtime path that main lacks
+53bba97eb dzervas/Lichii: Duplicate: same subject as 3c3cc7f46: No dependency needed: drop the fork-only TryAppendOutputBlock and reuse main's SinkStream::StartSilentDevice (54ef2d093a) for Render/Out null streams; remove NullSinkStreamImpl's no-op Append…
+53ebf6cd4 Djihads80/Eglantine: Needs fork's video_core/nx2_gpu_latency.h (Nx2GpuLatency hold, EDEN_NX2_GPU_LATENCY_US, SubmitListCommand::submit_time) which main lacks; per-title timing heuristic that cost about 3 fps without its pacing gate
+543767a4a javocsoft/Kaichii: Same three fixes as 6d844cddc (Zortos #1731 eb758fb850: CanEvict before spending an iteration, old-age pass through Collect, block_image_bytes drop) adapted to the fork's pending-download collector; take 6d844cddc
+564f4de89 fpvfeline/Lichii: Adds `#define _USE_STD_VECTOR_ALGORITHMS 0` to work around a fork MSVC compile error; Windows toolchain workaround for fork code, main's build does not need it
+568d24447 dzervas/Lichii: Mario Kart World dynamic-resolution pool (outside scope); needs superseded_overlap.h (absent) and deletes at frame end, while main's RunGarbageCollector replaced-pass already frees BadOverlap images any newer write replaced (9db0…
+56e93610a nitramvi/Lichii-arc: Intel Windows driver cap for native draw waits: main has no NativePendingMode/native_wait_budget/BuiltPipeline wait path (vk_pipeline_cache.cpp:1245 only skips or builds), plus LICHII_NATIVE_HARD_WAIT_MS and CI workflow change
+57302bdde daniel-lynch/Lichii: same subject as 9f932fe3c: Wakes couple host timeline and guest semaphore across multiple owners. Need proven missed wake freedom, particularly map teardown, stop and device loss.
+58afd5132 JalenJaceX2/duckbuds: Needs fork's SysmixOutput/Nx2SysmixStreams timer with Pump() (nx2_sysmix.cpp); main's nx2_audio_device_manager.h drain_timer uses owed_frames by elapsed time, so a late wake does not drop ticks
+5a1fa784a thatrandomalt/Lichii: QMD predictor step (pending semaphore releases into QMD words); predictor absent in main
+5a9dcde29 joebenberry-afk/Eglantine: Opt-in (off by default) EDEN_NX2_SPLIT_AT_HIGH variant of #1808 needing FlushCachedCommands, WaitForSync and RasterizerInterface::MayHoldImagesOrReports; e4f54040f keeps the split under High without them
+5b0ef8841 liomaroliveira/Lichii: Bounded retire scan (retire cap, kept() check, resume position) for the fork's render-target retirement does not exist in main (only pending_download.h mentions retire)
+5bd8edc3a fab918/Eglantine: needs Scheduler render_pass_has_stores/NoteRenderPassStores/storage_writes_unordered tracking and SyncFixEnabled (EGLANTINE_SYNC_FIX), absent in main (main's WaitForIdle at vk_rasterizer.cpp:1645 always ends the pass); counts are…
+5cba82c2f Hengle/Lichii: same subject as 09085c1b7: Motivated by OoT target/sample extent mismatch. Need a scoped trace proving equivalent memory layout and sampling before folding sizes.
+5cd240b4b HyperCed/Lichii: Needs fork's MergeGlyphs standard font (impl->builtin_standard_font) which main lacks; main's OpenFont writes plain shared_font regions
+5d211cf29 fab918/Lichii: needs nxformat API immutable_reads/immutable_view/open_mapped and reader.cache_raw_verification; externals/nxformat in main has none of them
+5dbc070d1 liomaroliveira/Lichii: same subject as 18ed38843: Lock-free read fast path (Nx2MayBeGpuWritten, texture_cache.page_filter) needs page_filter.h, absent in main; main's GetFlushArea runs buffer_cache.NoteCpuRead for every guest read (cpu_read_ranges feed…
+5edea96bd danieljesus/Lichii: Already in main: ssa_rewrite_pass.cpp: pending phis (operands_begin/pending_operands, MaterializePhi) and the Identity removal at the end of SsaRewritePass are in main; main 60ef6d2750 "COMMIT TO nx2 source"
+5f303cc43 joebenberry-afk/Eglantine: Opt-in (off by default) EDEN_NX2_SPLIT_AT_HIGH variant of #1808 needing FlushCachedCommands, WaitForSync and RasterizerInterface::MayHoldImagesOrReports; e4f54040f keeps the split under High without them
+5f7c4b5e0 NoobOFN/Lichii: same subject as 5ea28675f: Mixed depth, subgroup and Intel-specific deltas need separate correctness evidence; logs alone do not establish value.
+601a4c287 JalenJaceX2/duckbuds: same subject as ecc1b2153: Fork Duskbloods network-test default is outside the scoped target list; global behavior needs a sampler fixture.
+6043dce4d the-cashman/Lichii: same subject as 3a4748f9a: Write-back queue of the fork collector (QueueWriteBack/IsPending/CanEvict/landing ranges) does not exist in main; batching itself is taken from 7b3b275a2 (deferred staging, victims stay tracked until sw…
+6133bea6f intellq/Lichii: same subject as 18ed38843: Lock-free read fast path (Nx2MayBeGpuWritten, texture_cache.page_filter) needs page_filter.h, absent in main; main's GetFlushArea runs buffer_cache.NoteCpuRead for every guest read (cpu_read_ranges feed…
+627181b81 the-cashman/Lichii: Needs the fork's collector write-back path (WriteBackImage, WritebackTitles list, EXP57 one-write-back-a-frame limit) that main lacks; Fire Emblem Fortune's Weave and Duskbloods/OoT loading screens are outside README scope
+63e730bbe HyperCed/Lichii: same subject as 18ed38843: Lock-free read fast path (Nx2MayBeGpuWritten, texture_cache.page_filter) needs page_filter.h, absent in main; main's GetFlushArea runs buffer_cache.NoteCpuRead for every guest read (cpu_read_ranges feed…
+661422b2f Diriande/Fritchii: Adreno/Qualcomm LRZ workaround (needs_lrz_disable writes FragDepth); Android/Qualcomm only, no needs_lrz_disable in main
+676826b72 tasarren/Lichii: same subject as 1fa42f290: Deletes aliased images without proof that newer images preserve the whole backing and freshness
+6ad2360d8 jvhuaxia/lichii: MinGW build fix for the fork rasterizer in_flight/wait_downloads flag and WaitForPendingDownloads loop in OnCPURead; none of it exists in main
+6b726533b zortos293/Eglantine: Needs the task/mesh compute fallback (absent in main), see edc42e5b3.
+6b8b6bd3f danieljesus/Lichii: EvictDeadRenderTargets/TransientTarget for Ocarina of Time Market (outside scope); needs MarkStale/stale_pages and g_nx2_ampere-gated collector state that main's texture cache lacks
+6c72de645 n0ctbyte/Lichii: needs Network::Errno::ADDRINUSE and proxy bind reservations from the n0ctbyte room-proxy series (6621cb211..fe450fb23); online/room networking, not Switch 2 scope
+6ceeea6e5 Takoroka/Eglantine: Mario Kart World frame-debt heuristic for swap interval 2 (title outside project scope; Fire Emblem tuning); needs fork's m_previous_release/m_frame_debt in PaceToVblank
+6cfa7b640 rikomusicx-lgtm/Ocarina2: Windows SleepForOneTick for the sleep_for(50us) pending-channel poll; main has no sleep_for(50us) there (gpu_thread.cpp polls with yield then PopWaitFor 250 us)
+6cfe93313 Amnesia1000/Fritchii: "none" microphone needs Sink::SilentInputStream/UseSilentInput and configure_microphone UI, none of which exist in main (sysmix input also absent)
+6d2870c3e myshadowww/Lichii: macOS getifaddrs/SystemConfiguration interface enumeration for LAN/online play; macOS build experimental and no target game needs it
+6d6c7bdd6 intellq/Lichii: same subject as 26f5cce85: Equal/mask early acquire (Puller::PendingAcquire::CheckEarly, GPU-written guard) absent; main deliberately drains for equal/mask (puller.cpp MetBeforeDrain comment: a queued release may change the word)…
+6f8034b22 zortos293/Eglantine: Numeric IPv4 GetNameInfoRequestWithOptions (sfdnsres cmd 13 unimplemented in main); online DNS feature, no target game needs it
+707bd5fa2 rikomusicx-lgtm/Ocarina2: Already in main: Moot in main: ssa_rewrite_pass.cpp ReadVariable always walks the shared read_stack (`auto& stack{read_stack}`) so PendingFrame(block) searching read_stack is correct; the fork bug came from its per-read local stack variant; main…
+70ad55ff8 auz466/Lichiistein: needs the precompiled-shader preparation (EDEN_NX2_PRECOMPILED, canonical_native_keys, Prepare precompiled shaders setting), none of which exist in main
+71a8db585 Amnesia1000/Fritchii: FRITCHII_COVERED_RETIRE/COLLECT_LAND_UNDER: needs fork's EXP121 collector landings and cold sweep (absent in main); OoT pot room; opt-in
+720afa976 luizIK/Kizuna: Opt-in Fritchii occlusion flag experiment: needs video_core/fritchii_occl_flag.h, RuntimeInfo::occl_flag_store and the occl flag store function, none of which exist in main
+724bb7b2f Tobim6/Eglantine: Needs the scheduler held render pass hoist (RecordBeforeRenderPass, PrePassStage, PassEpoch, CanHoistUpload) which main lacks; opt-in EDEN_NX2_UPLOAD_HOIST
+72548514f ThatGuyMcd/Lichii-TGM: complete command snapshots and sole-owner draw reuse: needs buffer_cache/command_read_snapshots.h, command_read_scope.h, nx2_fast_draw.h which do not exist in main
+72fba6c4a Takoroka/Eglantine: Early CPU-read flush on the split back needs a cpu_read flag on RequestSyncOperation; main routes CPU reads through CpuReadCommand/GPUThread::ReadMemory with a readback generation, so the patch does not apply; gain measured only…
+7556cc33a zortos293/Eglantine: macOS getifaddrs/SystemConfiguration interface enumeration for LAN/online play; macOS build experimental and no target game needs it
+7a0aa20b6 n0ctbyte/Lichii: depends on the closed-socket state added by the n0ctbyte room-proxy series; main's ProxySocket::GetPendingError has no closed flag; online/room networking
+7a1cf7bb6 danieljesus/Lichii: Follow-up of #1808 safe reads on the split: needs DmaPusher::FlushCachedCommands and GpuSplit::WaitForSync, which main lacks; main stops the split for DMA level Safe instead
+7a1dc272c Amnesia1000/Fritchii: Needs fork's Nx2Sparse replay-of-recorded-blocks/Nx2SparseTile and m_reserve (nx2_gsv.h) which main lacks; main's Nx2Sparse/Nx2BackSparse hold the mutex throughout, so the duplicate-map window does not exist
+7a4b58f7b tasarren/Lichii: Bounded retire scan (retire cap, kept() check, resume position) for the fork's render-target retirement does not exist in main (only pending_download.h mentions retire)
+7ab366dca Djihads80/Eglantine: needs nx2_debug_control UnrejectEpoch and KeplerCompute::rejected_compute_programs, neither exists in main (debug-server reject_shaders feature)
+7b55dc98e marcochiusso-lgtm/Lichii: Needs the divergence analysis of the fork's ConditionalBarrierPass rewrite (IsDivergentSource, dc9af208eb/5ec18c0ef) and the IsbeReadOutput opcode, neither in main (main's conditional_barrier_pass.cpp is the original 44-line pass…
+7bc8db390 atmanli/Lichii: needs the fork debug server (src/core/debugger/nx2_debug_tools.cpp, g_nx2_present_hook, ResourceManager::UpdateNpad sync); main has no nx2 debug server
+7c6903a9b the-cashman/Lichii: Write-back queue of the fork collector (QueueWriteBack/IsPending/CanEvict/landing ranges) does not exist in main; batching itself is taken from 7b3b275a2 (deferred staging, victims stay tracked until swizzle)
+7c7f723b6 zortos293/Eglantine: Nextendo online feature: needs common/nextendo.h (Common::Nextendo::OnlinePlayActive), which main lacks; only trigger is Splatoon 3 online (outside scope)
+7d47e5297 anthonyloukinas/Lichii: Already in main: same subject as 46be5fcb6: ssa_rewrite_pass.cpp has the pending phi (ReadState operands_begin/operand_count, pending_operands, ResolvePendingPhi/MaterializePhi); main 60ef6d2750 "COMMIT TO nx2 source"
+7e9f11346 danieljesus/Lichii: Follow-up of #1808 safe reads on the split: needs DmaPusher::FlushCachedCommands and GpuSplit::WaitForSync, which main lacks; main stops the split for DMA level Safe instead
+804bc5eec rikomusicx-lgtm/Ocarina2: Superseded: the Protect hunk is the simple lock-free VirtualProtect that can lose a protection to a concurrent partial unmap (use 93c453d93); #1789 needs texture_cache page_filter (absent), #1796 targets the batched ASTC transcod…
+85be2edf4 Takoroka/Eglantine: Needs fork's movie clock (m_clock_offset/AnchorClock/MaxCatchUp/MkwMovieActivity late-frame dropping) which main's INx2VideoSession lacks; main never drops frames as late
+8a5fcadcf ThatGuyMcd/Lichii-TGM: Preset part superseded by main game_presets (quality tiers, SetXRecommendedSettings); teardown part needs common/shutdown_progress.h which main lacks, stuck-stop is covered by the 10695b082 port
+8b1c0b313 skolvolt/Lichii: Texture Pool x2 builtin patch for Ocarina of Time guard house freeze (zortos #1313); needs the OoT builtin patch framework absent in main (BuiltinPatchRecord), OoT out of scope
+8b8112e16 the-cashman/Lichii: Write-back queue of the fork collector (QueueWriteBack/IsPending/CanEvict/landing ranges) does not exist in main; batching itself is taken from 7b3b275a2 (deferred staging, victims stay tracked until swizzle)
+8bdcf290d JalenJaceX2/duckbuds: same subject as 5a6ba7574: Content-changing clear shortcut. Test exact title, channel mask and geometry coverage before allowing clear value substitution.
+8c43bccb9 intellq/Lichii: Needs the fork's collector write-back path (WriteBackImage, WritebackTitles list, EXP57 one-write-back-a-frame limit) that main lacks; Fire Emblem Fortune's Weave and Duskbloods/OoT loading screens are outside README scope
+8f81f70dc the-cashman/Lichii: same subject as 09085c1b7: Motivated by OoT target/sample extent mismatch. Need a scoped trace proving equivalent memory layout and sampling before folding sizes.
+8f927a5e4 Diriande/Fritchii: same as b1076ef09: needs texture_cache.page_filter (absent in main)
+920a54e2b Reiixan/Lichii: Needs the task/mesh compute fallback (absent in main), see edc42e5b3.
+9227e7c00 intellq/Lichii: Needs the fork's collector write-back path (WriteBackImage, WritebackTitles list, EXP57 one-write-back-a-frame limit) that main lacks; Fire Emblem Fortune's Weave and Duskbloods/OoT loading screens are outside README scope
+9418f77f8 zortos293/Eglantine: same subject as 661422b2f: Adreno/Qualcomm LRZ workaround (needs_lrz_disable writes FragDepth); Android/Qualcomm only, no needs_lrz_disable in main
+9475801b3 GabrielDieterly/Lichii: Needs nx2_list_grid.h ClaimSlot/kept list slots (absent in main)
+9494de8af the-cashman/Lichii: Opt-in EDEN_NX2_SYNC_SPIN micro-spin in WaitForSyncOperation (off by default, no measurement for main); also needs EDEN_NX2_FLUSH_DRAWS
+94ad6e00e Frizti/Fritchii: main has no dynamic_cast in src/video_core (fritchii_e_split.cpp, memstage_shadow.cpp do not exist) and maxwell_dma.cpp has no u64{regs.pitch_out} narrowing; EngineCast not needed
+984ae23e7 elkarbeenus/LakuenPlay: Needs stale_pages, Tegra::g_nx2_ampere and Nx2MayBeGpuWritten (absent in main) for the fresh-render-target upload skip; the buffer-over-budget half touches code outside main's texture cache; Ocarina of Time
+98e90b454 joebenberry-afk/Eglantine: Only the PendingUnswizzle::cancelled field declaration; the implementation is 7b3b275a2, ported there
+9a2e9caf7 nauxph/Lichii-AMD: Needs Promote on the shader job scheduler: pipeline_build.h and heavy-skip accounting (heavy_skip_begin) do not exist in main
+9a3a759ba intellq/Lichii: Bounded retire scan (retire cap, kept() check, resume position) for the fork's render-target retirement does not exist in main (only pending_download.h mentions retire)
+9b963fc16 dscx/Eglantine: Apple/MoltenVK tile-store optimisation for Ocarina of Time; needs nx2_perf Opt switches, wait_for_idle_state/fragment_barrier_state that main lacks
+9c794f756 the-cashman/Lichii: Write-back queue of the fork collector (QueueWriteBack/IsPending/CanEvict/landing ranges) does not exist in main; batching itself is taken from 7b3b275a2 (deferred staging, victims stay tracked until swizzle)
+9d79fb24f kurebeyashi-noah/Lichii: Needs the fork's map-time run index (continuous_runs, MappingSnapshot, CurrentSnapshot) which main's memory_manager lacks; main answers GetSubmappedRange by the page walk GetSubmappedRangeImpl
+9e73ece9b skolvolt/Lichii: Needs shader_warm_builder.cpp (recipes lookup) which main lacks; main GetExeDirectory has no Linux caller (only Windows path_util.cpp:122 and main.cpp:160)
+9eab74249 zortos293/Eglantine: IApplicationAccessor commands only a HOME Menu applet calls to launch apps; no scope game uses them, and attribute/save-permission replies are copied from Ryujinx-Nextendo, not verified
+a05eab8d5 QuincyForbes/Lichii: MoltenVK/Metal only (flat_per_primitive_inputs, EmulateFailedNativeMesh, EDEN_NX2_FLAT_PER_PRIMITIVE); needs mesh compute emulation absent in main
+a5b87da94 the-cashman/Lichii: same subject as 8b8112e16: Write-back queue of the fork collector (QueueWriteBack/IsPending/CanEvict/landing ranges) does not exist in main; batching itself is taken from 7b3b275a2 (deferred staging, victims stay tracked until sw…
+a7bf371e1 rikomusicx-lgtm/Ocarina2: Texture Pool x2 builtin patch for Ocarina of Time guard house freeze (zortos #1313); needs the OoT builtin patch framework absent in main (BuiltinPatchRecord), OoT out of scope
+a85ba18b3 pavelgajdo/Hokkaido: same subject as 27aabe0ff: Hot pages (WordManager hot bit, EDEN_NX2_HOT_PAGES) measured on Ocarina only; the fork itself made it opt-in/default off later (379a30fc5) and needed review fixes (d2bdac6d0); conflicts with main's CpuW…
+a9a832442 conongnang/Lichii: same subject as 27aabe0ff: Hot pages (WordManager hot bit, EDEN_NX2_HOT_PAGES) measured on Ocarina only; the fork itself made it opt-in/default off later (379a30fc5) and needed review fixes (d2bdac6d0); conflicts with main's CpuW…
+a9df95e73 FrsrG/Lichii: ClaimCpuWrites of the fork (claim pending CPU writes before page downloads) targets WriteMemory downloading whole pages; main's WriteMemory only does ClearDownload/gpu_modified_ranges.Subtract per byte range and cpu_held_ranges (…
+adc34041b Tobim6/Eglantine: same subject as 5bd8edc3a: needs Scheduler render_pass_has_stores/NoteRenderPassStores/storage_writes_unordered tracking and SyncFixEnabled (EGLANTINE_SYNC_FIX), absent in main (main's WaitForIdle at vk_rasterizer.cpp:1645 always…
+ae7513b8b Amnesia1000/Fritchii: FRITCHII_VRAM_* small-card switches (EXP42 image pool fit, simulated limit, AMD overallocation) default 0; needs nx2_debug_control.h and fork image pool
+b1076ef09 joebenberry-afk/Eglantine: needs texture_cache.page_filter (monotonic page filter from Lichii 'skip GPU-write invalidations' commits), absent in main; main's OnCPUWrite (vk_rasterizer.cpp:1472) always takes texture_cache.mutex; no measured gain
+b163fcd6f ServerOmega/Fritchii: Needs fork's host pacer (vk_host_pacer.*, nx2_perf.h PublishDisplay, vk_present_manager pacer state log) and yuzu_cmd SDL display events; main has none of it
+b25f60109 danieljesus/Lichii: Duplicate: same subject as 93d939430: Main's GpuSplit::MaybeStart (gpu_split.cpp:100) refuses to start when safe_reads or IsGPULevelHigh, and High is the desktop default (settings.h:531) for titles without a Low override; needs D…
+b28471134 tasarren/Lichii: Bounded retire scan (retire cap, kept() check, resume position) for the fork's render-target retirement does not exist in main (only pending_download.h mentions retire)
+b3e601831 QuincyForbes/Lichii: EDEN_NX2_GPU_READ_LAND for guest read traps (iOS/macOS, default off elsewhere); needs fork DownloadLanding
+b5284de3e Hydro74000/Edlws: flips use_reactive_flushing default to off on desktop; worse trade-off for main: Yoshi save load needs it on (game_settings.cpp issue 181) and per-title overrides already exist
+b6ccb9413 Amnesia1000/Fritchii: EXP114 PAUSE-paced pending polls (off by default, nx2_debug_control.h absent); main polls pending channels with PopWaitFor(250us) and yield instead of SwitchToThread
+b6d7b1bd7 fab918/Eglantine: same subject as 724bb7b2f: Needs the scheduler held render pass hoist (RecordBeforeRenderPass, PrePassStage, PassEpoch, CanHoistUpload) which main lacks; opt-in EDEN_NX2_UPLOAD_HOIST
+b6f2b4ffa rikomusicx-lgtm/Ocarina2: needs Common::WaitForFlag/UMWAIT idle wait (Lichii #1373 kernel half) which main lacks; main's PhysicalCore::Idle blocks at once unless EDEN_NX2_IDLE_SPIN_US is set, so the 100 us yield-poll the fork replaces is not default behav…
+b7e8e2009 Frizti/Fritchii: Needs fork's host frame pacer (renderer_vulkan/vk_host_pacer.*, DisplayRefreshQuery, video_core/nx2_perf.h) which main lacks; FRITCHII_HOST_REFRESH_HZ fork switch
+b8e3fd8e9 zortos293/Eglantine: Background prebuild of every skipped cached pipeline plus GPU-thread build logging: needs vk_pipeline_cache_prebuild.h and shader job scheduler, not in main
+b989d34b2 Lkubt/Lichii: same subject as 6ceeea6e5: Mario Kart World frame-debt heuristic for swap interval 2 (title outside project scope; Fire Emblem tuning); needs fork's m_previous_release/m_frame_debt in PaceToVblank
+bcd5d2afe myshadowww/Lichii: duplicate of the AM DropPendingProcess part of 0794dd12e/53ac6f38d (try_to_lock variant); take 53ac6f38d
+be2e1ef30 Diriande/Fritchii: write_count switch for the Ocarina per-tap gather proof and call-link alias walk does not exist in main's lower_to_maxwell.h (main's touches_uniform_bank already lists 0x899, 0x8a4, 0xc11, register_pressure.h has 0x224); Ocarina…
+becc59d33 elkarbeenus/LakuenPlay: Frame-gen present spacing tuned on Ocarina of Time (out of scope): needs fork's Tegra::g_nx2_guest_frame_interval_ns, FrameGenPacer::PlanningInterval and an always-on present thread when frame gen is on, trading latency for even…
+c0a588fef danieljesus/Lichii: EvictDeadRenderTargets/TransientTarget for Ocarina of Time Market (outside scope); needs MarkStale/stale_pages and g_nx2_ampere-gated collector state that main's texture cache lacks
+c11bdf711 elkarbeenus/LakuenPlay: Frame-gen present spacing tuned on Ocarina of Time (out of scope): needs fork's Tegra::g_nx2_guest_frame_interval_ns, FrameGenPacer::PlanningInterval and an always-on present thread when frame gen is on, trading latency for even…
+c34305707 luizIK/Kizuna: reuses the occlusion flush query vectors per fence in a spare pool (spare_flush_queries); one vector allocation per fence, author expects little change; main's pending_flush_queries (vk_query_cache.cpp:390) has no such pool
+c39c17bfa GingerSnaps258/Eglantine: needs nx2_debug_control UnrejectEpoch and KeplerCompute::rejected_compute_programs, neither exists in main (debug-server reject_shaders feature)
+c4805c6e1 Frizti/Fritchii: Linux NVIDIA DLSS via NGX needs fork streamline.cpp/vk_streamline_dlss.cpp; main has no Streamline/DLSS layer
+c6b4fddcb the-cashman/Lichii: Write-back queue of the fork collector (QueueWriteBack/IsPending/CanEvict/landing ranges) does not exist in main; batching itself is taken from 7b3b275a2 (deferred staging, victims stay tracked until swizzle)
+c78fedf2e Riddsc/satronho-nx: Duplicate of the stuck-stop/atomic-config port (zortos 269be4bda); apply 10695b082, which is already adapted to src/yuzu; this copy also needs src/common/windows/crash_handler.cpp, absent in main
+ca8bf5066 danieljesus/Lichii: Frame-gen present spacing tuned on Ocarina of Time (out of scope): needs fork's Tegra::g_nx2_guest_frame_interval_ns, FrameGenPacer::PlanningInterval and an always-on present thread when frame gen is on, trading latency for even…
+cb7d2c2d7 myshadowww/Lichii: write_count switch for the Ocarina per-tap gather proof and call-link alias walk does not exist in main's lower_to_maxwell.h (main's touches_uniform_bank already lists 0x899, 0x8a4, 0xc11, register_pressure.h has 0x224); Ocarina…
+cc069f5ca pavelgajdo/Hokkaido: same subject as f1b361173: Requires the fork’s safe draw-written page proof and list-read API that identifies synchronization. Removing the guard alone permits premature read.
+ce672a632 liomaroliveira/Lichii: Bounded retire scan (retire cap, kept() check, resume position) for the fork's render-target retirement does not exist in main (only pending_download.h mentions retire)
+d029dc8ec elkarbeenus/LakuenPlay: needs FrontSkipsLoopWrite, Maxwell3D fast_maxwell3d and perf_verify, absent in main (instance-loop begin runs)
+d0cb44410 Amnesia1000/Fritchii: FRITCHII_STORE_MEMO store memo in core/memory.cpp WriteToRasterizer; needs fritchii_page_flags.h store epoch, absent in main
+d19509dc7 Amnesia1000/Fritchii: EXP121 deferred collector downloads (QueueCollectDownload, CollectPending flag) do not exist in main; off by default in the fork
+d1c8da80e Amnesia1000/Fritchii: FRITCHII_NOTED_FAST per-page note chains in GpuSplit (pending_writes notes); main has no NotedWriteSince/pending_writes
+d38300623 Amnesia1000/Fritchii: needs Kernel::Nx2ThreadStats (EDEN_NX2_GUEST_THREAD_STATS/IDLE_STATS); nx2_thread_stats.h does not exist in main
+d3bac7fb6 elkarbeenus/LakuenPlay: ComputePipelineCacheEntry.pending, MaxComputeRebuilds, ComputePipeline::IsBuilt and null-pointer-slot compute rebuilds do not exist in main (compute_cache is a plain map in vk_pipeline_cache.h); Ocarina only
+d4df53b3b Diriande/Fritchii: Pokopia sky needs reactive flushing under NCE (phones); main has no Pokopia/NCE special case and use_reactive_flushing defaults to true off Android (settings.h:626)
+d54fe989c the-cashman/Lichii: needs DownloadLanding/DownloadLandingState in rasterizer_download_area.h and buffer-cache download landing, absent in main
+d5af8295f HyperCed/Lichii: Needs the fsr4-vk port (WantsFsr4Port, CheckFsr4Port); main has no FSR 4 code.
+d77458616 DuskDarf1/Lichii: Needs fork's Nx2PresentPacer m_present_pacer/Advance in nx2_gsv.h (main has no Nx2PresentPacer); only adjusts that pacer's single-core handling
+d9ef05359 tasarren/Lichii: Hole detection (device_memory.IsHole, Tegra::Nx2MayBeGpuWritten, runtime.ClearImage) does not exist in main; Ocarina of Time 288 MiB depth image
+db5e85c54 the-cashman/Lichii: Needs the fork's collector write-back path (WriteBackImage, WritebackTitles list, EXP57 one-write-back-a-frame limit) that main lacks; Fire Emblem Fortune's Weave and Duskbloods/OoT loading screens are outside README scope
+dbcb1a7be tasarren/Lichii: needs native_async_draws and task/mesh pipeline skipping in vk_pipeline_cache.cpp, absent in main; measured only on Ocarina of Time
+dc1cfb47c rikomusicx-lgtm/Ocarina2: write_count switch for the Ocarina per-tap gather proof and call-link alias walk does not exist in main's lower_to_maxwell.h (main's touches_uniform_bank already lists 0x899, 0x8a4, 0xc11, register_pressure.h has 0x224); Ocarina…
+dd9c6b980 tasarren/Lichii: Prebuilt pipelines joining the graphics cache for the kept-limit eviction: needs vk_pipeline_cache_prebuild.h and RAM-limit eviction (Pipeline retention batch, not yet in main)
+df1826fad liomaroliveira/Lichii: --precompile-all needs shader cache v2 (LoadPipelinesV2, ShaderWarm::BuildWarmFiles) and src/lichii_cmd; none exist in main
+df757e0d4 the-cashman/Lichii: same subject as d54fe989c: needs DownloadLanding/DownloadLandingState in rasterizer_download_area.h and buffer-cache download landing, absent in main
+df9c2efb6 karimalsalah/Lichii: Needs fork sysmix capture path (nx2_sysmix.cpp input streams, Sink::InputOpenMayBlock); main sysmix has only output streams (nx2_audio_device_manager.h AcquireSinkStream Out)
+dfaeb0fa1 anthonyloukinas/Lichii: Already in main: same subject as 46be5fcb6: ssa_rewrite_pass.cpp has the pending phi (ReadState operands_begin/operand_count, pending_operands, ResolvePendingPhi/MaterializePhi); main 60ef6d2750 "COMMIT TO nx2 source"
+e009ace42 Amnesia1000/Fritchii: Already in main: same subject as 2c6ccb2b4: ssa_rewrite_pass.cpp: pending phis (operands_begin/pending_operands, MaterializePhi) and the Identity removal at the end of SsaRewritePass are in main; main 60ef6d2750 "COMMIT TO nx2 source"
+e20a1402c Amnesia1000/Fritchii: OoT-specific (Hyrule Castle pots) opt-in FRITCHII_TC_COLLECT_OVER port of zortos293#1306; main's memory_budget.h CollectorIterations already scales 4x under out_of_memory; needs nx2_debug_control.h
+e2e7f5ca7 kyc/Lichii: EvictDeadRenderTargets/TransientTarget for Ocarina of Time Market (outside scope); needs MarkStale/stale_pages and g_nx2_ampere-gated collector state that main's texture cache lacks
+e3f86fcab danieljesus/Lichii: same subject as bd2c4aa82: Applies to fork friend-list filtering that parses a UUID after a 32-bit offset. Need the relevant friend service implementation and target IPC capture before taking its parser detail.
+e4059bd0b n0ctbyte/Lichii: needs Network::Errno::ADDRINUSE (absent in core/internal_network) from the n0ctbyte room-proxy series; online/room networking, not Switch 2 scope
+e44f46a87 Touxten/Lichii: same subject as b8e3fd8e9: Background prebuild of every skipped cached pipeline plus GPU-thread build logging: needs vk_pipeline_cache_prebuild.h and shader job scheduler, not in main
+e497bf5d1 Nolar-Hack/Lichii: Already in main: ssa_rewrite_pass.cpp: pending phis (operands_begin/pending_operands, MaterializePhi) and the Identity removal at the end of SsaRewritePass are in main; main 60ef6d2750 "COMMIT TO nx2 source"
+e674ce205 Kvinkxerli/Fritchii: bundle of default-on EXP53/EXP31/EXP32 (nx2_debug_control.h and those switches absent) plus a <5 GiB VRAM clamp; main already follows the driver budget with margins in TextureCache::TickFrame; DLSS skip needs streamline.cpp (abse…
+e6f9107cc sanchodecuba11-del/Lichii: needs FrontSkipsLoopWrite, Maxwell3D fast_maxwell3d and perf_verify, absent in main (instance-loop begin runs)
+e84908679 zortos293/Eglantine: Already in main: ssa_rewrite_pass.cpp: pending phis (operands_begin/pending_operands, MaterializePhi) and the Identity removal at the end of SsaRewritePass are in main; main 60ef6d2750 "COMMIT TO nx2 source"
+edc42e5b3 elkarbeenus/LakuenPlay: Needs the task/mesh compute fallback; main has none (vk_rasterizer.cpp reports a failure and skips mesh draws when VK_EXT_mesh_shader is off), so disabling the extension would drop the draws.
+edc6e075b intellq/Lichii: Needs the fsr4-vk port (WantsFsr4Port, CheckFsr4Port); main has no FSR 4 code.
+ef8e1dcd2 ThatGuyMcd/Lichii-TGM: Needs MemoryTrackerBase::MarkRegionAsWrittenTracked/ForgetSynchronized and InvalidateCachedWrites(constant_buffer_data) of the fork's #1436 port; neither exists in main
+f0101cc10 JalenJaceX2/duckbuds: Same as 58afd5132: needs fork's SysmixOutput Pump()/catch_up (nx2_sysmix.cpp), absent in main
+f159e1813 liomaroliveira/Lichii: RetireStaleTargets for Ocarina of Time render targets (outside scope); needs MarkStale/stale_pages and a new ClearImage runtime path that main lacks
+f1b361173 zortos293/Eglantine: Needs the fork's past_sync / Nx2ListRead::NeedsSync list-read API; main's Nx2ReadListCopy (buffer_cache.h) has no past_sync parameter, so dropping the draw_written guard alone would read draw-written pages early
+f1f9c57c6 liomaroliveira/Lichii: same as b1076ef09: needs texture_cache.page_filter (absent in main)
+f214d4b50 daniel-lynch/Lichii: EDEN_NX2_QUEUE_PRIORITY global-priority switch, default off; no queue priority code in main and no Orchid scope game needs it.
+f29436d16 Takoroka/Eglantine: Needs bsd.cpp SelectClock deadline code and vk_dlss_network_probe.cpp, neither in main
+f2f7cecb4 danieljesus/Lichii: macOS memory-pressure cap (kern.memorystatus_vm_pressure_level, HostPressureLimit); needs fork host_memory_limit.h
+f49d24a3f sof006/Lichii: Texture Pool x2 builtin patch for Ocarina of Time guard house freeze (zortos #1313); needs the OoT builtin patch framework absent in main (BuiltinPatchRecord), OoT out of scope
+f59e10524 the-cashman/Lichii: same subject as 9c794f756: Write-back queue of the fork collector (QueueWriteBack/IsPending/CanEvict/landing ranges) does not exist in main; batching itself is taken from 7b3b275a2 (deferred staging, victims stay tracked until sw…
+f7a93a1eb nitramvi/Lichii-arc: Off-by-default experiment (LICHII_COMPUTE_SKIP/LICHII_DRAW_HISTORY_GUARD) on the fork's native_async_draws policy (async_draw_policy.h, DecideNativePending, ShaderJobPriority) that main lacks; motivated by OoT, outside scope
+f8d8354a4 AugustoCesarAC/Fritchii: Already in main: same subject as 2c6ccb2b4: ssa_rewrite_pass.cpp: pending phis (operands_begin/pending_operands, MaterializePhi) and the Identity removal at the end of SsaRewritePass are in main; main 60ef6d2750 "COMMIT TO nx2 source"
+f99fdd2e2 intellq/Lichii: same subject as 9227e7c00: Needs the fork's collector write-back path (WriteBackImage, WritebackTitles list, EXP57 one-write-back-a-frame limit) that main lacks; Fire Emblem Fortune's Weave and Duskbloods/OoT loading screens are…
+faa4bd13a zortos293/Eglantine: Frame-gen present spacing tuned on Ocarina of Time (out of scope): needs fork's Tegra::g_nx2_guest_frame_interval_ns, FrameGenPacer::PlanningInterval and an always-on present thread when frame gen is on, trading latency for even…
+faa8726f9 liomaroliveira/Lichii: same subject as 172606da7: duplicate of the AM DropPendingProcess part of 0794dd12e/53ac6f38d (try_to_lock variant); take 53ac6f38d
+fab281683 intellq/Lichii: Bounded retire scan (retire cap, kept() check, resume position) for the fork's render-target retirement does not exist in main (only pending_download.h mentions retire)
+fb555f37c bxzty777/Lichii_astryx: Needs WriteBackMemory and the per-address-space write-back (AIO-9) absent in main
+fbcdcf34b javocsoft/Kaichii: Mesh pipeline input aliases need the fork's task/mesh draw path (MeshVertexInputs, mesh_draw in vk_pipeline_cache.cpp), absent in main; Ocarina motivated
+fd447caf6 ThatGuyMcd/Lichii-TGM: Cross-buffer VariablePointers capability belongs to the fork's candidate-select path in DefineGlobalMemoryFunctions which main lacks; log slot ownership needs fork fs/file_lock.cpp (absent) and per-slot rotation; GPU site timesta…
+fd8331d7e Amnesia1000/Fritchii: Fritchii memory stage step 7: needs memory_stage_link.cpp, vk_mem_stage.cpp, fritchii_write_ring.h, all absent in main
+fedc4c35e GabrielDieterly/Lichii: List-fed grid macro calls need nx2_list_grid.h and EDEN_NX2_LIST_HLE_VERIFY (944 lines), absent in main
+fede2657e zortos293/Eglantine: write_count switch for the Ocarina per-tap gather proof and call-link alias walk does not exist in main's lower_to_maxwell.h (main's touches_uniform_bank already lists 0x899, 0x8a4, 0xc11, register_pressure.h has 0x224); Ocarina…
+ffa4d0cdf Amnesia1000/Fritchii: FRITCHII_ZERO_UPLOAD (default 0) GPU clear for all-zero uploads: needs nx2_debug_control/nx2_hitch and a new Image::ClearToZero; evidence is an Ocarina of Time Castle Town 12288x12288 D16 target (outside scope) and it adds a gues…
+8727f7e6f zortos293/Eglantine: Lock-free VirtualProtect races with b9a05459d1's UnmapOnePlaceholder protection query/restore, which relies on Protect holding placeholder_mutex; Windows-only perf change.
+10ca7744b luizIK/Kizuna: Depends on Fritchii's GetSystemCommitRoom, FRITCHII_TEST_COMMIT_REFUSE and Windows crash handler absent from Orchid; guest memory commit retry is already in 7ec3758dff.
+8e7348b26 zortos293/Eglantine: Depends on Common::FS::FileLock absent from Orchid, and Orchid's FileBackend rotates per-game logs via SetGame under recursive_mutex rather than single-slot startup rotation.
+3155f159c dzervas/Lichii: Already in Orchid as b9a05459d1 (keep page protections across partial unmaps on Windows).
+09085c1b7 zortos293/Eglantine: Superseded in Orchid by aa119796c7 (PR #209 generalizes IsPaddedSquare to IsPaddedWidth for all Switch 2 GOB-padded targets).
+ba590516e luizIK/Kizuna: Already in Orchid via PR #202's sampler fallback (c3a82e8792, same Fritchii origin); FRITCHII_TEST_SAMPLER_LIMIT omitted.
+61dd4f9ad SokolskyNikita/Lichii: Duplicate of 2552b4222 (same native mesh NaN guard commit on another branch of the same fork).
+abe858549 DuskDarf1/Lichii: Depends on nx2_present_queue.h (49436caa2) and the unlocked-client cap (75832a4ab), both turned down in PR #213 (6b35f32adf).
+f983d9da8 intellq/Lichii: Follow-up of 20621cda9 (plain loads for LDAR/LDAPR/LDAXR), which was turned down in PR #211 (f080ac287f).
+646b5d171 zortos293/Eglantine: Intel Windows conditional-barrier workaround depending on dc9af208e (turned down in PR #204, no Intel ANV/Windows test hardware).
+04148ba76 zortos293/Eglantine: MoltenVK-only tiler occlusion query path; untestable on Linux RADV host.
+c6b00848f zortos293/Eglantine: MoltenVK-only update-after-bind pool for Metal's 16-sampler limit; untestable on Linux RADV host.
+a92221658 zortos293/Eglantine: macOS-only SDL reversed stick axis workaround; untestable on Linux host.
+5ea28675f AlfaDev23/Lichii: Intel Windows driver version decoding; untestable on Linux RADV host.
+9f932fe3c zortos293/Eglantine: Depends on Common::WaitForFlag (MONITORX/UMWAIT) from PR #1376's kernel idle commit, absent from Orchid.
+246e1ad0b inxomnyaa/Lichii: Depends on fork GPU-split idle hooks (SettleIdleBack, BackQueueIdle) absent from Orchid.
+54caf03b1 zortos293/Eglantine: Depends on PageFilter (e67d38959) across texture, query and shader caches, absent from Orchid.
+6762d5097 zortos293/Eglantine: Depends on fork 3a8a90476 (merged global-memory routing helpers with OpPhi), absent from Orchid; NVIDIA proprietary only.
+929282918 DuskDarf1/Lichii: Pure speed optimization (FindBuffer 256-slot memo) with no red correctness test and no measured Orchid workload gain.
+797a9b5fc zortos293/Eglantine: Pure micro-optimization (BufferCacheRuntime::CurrentTick inline getter) with no behaviour change or measured gain in LTO builds.
+008e9648f NoobOFN/Lichii: Depends on AMD wait-on-newest-query copy (bf4c42e22) absent from Orchid; targets Intel Xe3.
+4b6b3998e intellq/Lichii: Same memory-aware pipeline eviction policy as e63d0a04d, turned down in PR #207 (b4cacb54e7).
+6500c8e2c intellq/Lichii: Same per-pipeline SPIR-V retention snapshot as be2414796, turned down in PR #207 (b4cacb54e7).
+df86e9307 intellq/Lichii: Same x64 TSO plain loads for LDAR/LDAPR/LDAXR as 20621cda9, turned down in PR #211 (f080ac287f).
+04671930a StiensWout/Lichii: Already in Orchid (60ef6d2750 behavioral equivalent for SPIR-V scalar constant ID caching).
+bab5a1080 StiensWout/Lichii: Already in Orchid (60ef6d2750 behavioral equivalent for failed storage buffer search memoization).
+de46ed482 StiensWout/Lichii: Already in Orchid (7bf134b294 behavioral equivalent for SSA predicate/flag definitions).
+49d1e8cb7 Djihads80/Eglantine: Already in Orchid (b73662d156 behavioral equivalent for command lists on freshly mapped memory).
+b1394ee49 zortos293/Eglantine: Adjusts Lichii's per-title Age of Imprisonment read throttle; Orchid already uses a uniform 40 MB/s read throttle (cf37246c06 skipped).
+93d939430 zortos293/Eglantine: Large fork GPU-split High-accuracy rewrite (GpuSplit front/back cache flushing) requiring fork split-thread infrastructure absent from Orchid.
+71f8f6859 zortos293/Eglantine: 3266-line split-front QMD release evaluator depending on fork GpuSplit Writes/Defer/PublishHold absent from Orchid.
+818cda0d5 moirod64/Lichii: Bundled ARM64/x64 CPU speed patch (LSE atomics, inline CNTPCT, fastmem fault threshold) overlapping PR #211 skipped commits with no red correctness test.
+9dca35a1e kurebeyashi-noah/Lichii: Duskbloods static-sweep Ampere lowering batch (lowest priority title per project rules); ISBERD task/mesh readback is tracked separately via 31f1378a3.
+415001974 zortos293/Eglantine: HOME Menu (QLaunch) Switch 2 session handoff; outside Orchid's direct-boot target game scope.
+37089d9be SokolskyNikita/Lichii: Merge of Lichii PR #1902 (skip unchanged native uniform bank re-uploads); Orchid refreshes native 64 KiB banks via native_indirect_uniform_refresh, pure perf change without measured gain.
+8e9db463b SokolskyNikita/Lichii: Duplicate of 37089d9be on oot26-on-mac branch (skip unchanged native uniform bank re-uploads).
+a5ec91989 SokolskyNikita/Lichii: Merge of HyperCed macOS/Hypervisor PR #1970; macOS-only except an unverified Vulkan buffer upload-reorder barrier change with no red test or measured gain.
+945202e4b QuincyForbes/Lichii: Large Ocarina of Time dynamic texture handle array rewrite; OoT is outside Orchid's target game scope and Orchid's BuildHandleNode path differs.

@@ -429,20 +429,19 @@ void SetupDenormControl(const Profile& profile, const IR::Program& program, Emit
 
 void SetupSignedNanCapabilities(const Profile& profile, const IR::Program& program,
                                 EmitContext& ctx, Id main_func) {
-    if (profile.has_broken_fp16_float_controls && program.info.uses_fp16) {
-        return;
-    }
-    if (program.info.uses_fp16 && profile.support_fp16_signed_zero_nan_preserve) {
+    const auto preserve = [&](u32 width) {
         ctx.AddCapability(spv::Capability::SignedZeroInfNanPreserve);
-        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve, 16U);
+        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve, width);
+    };
+    if (program.info.uses_fp16 && profile.support_fp16_signed_zero_nan_preserve &&
+        !profile.has_broken_fp16_float_controls) {
+        preserve(16U);
     }
     if (profile.support_fp32_signed_zero_nan_preserve) {
-        ctx.AddCapability(spv::Capability::SignedZeroInfNanPreserve);
-        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve, 32U);
+        preserve(32U);
     }
     if (program.info.uses_fp64 && profile.support_fp64_signed_zero_nan_preserve) {
-        ctx.AddCapability(spv::Capability::SignedZeroInfNanPreserve);
-        ctx.AddExecutionMode(main_func, spv::ExecutionMode::SignedZeroInfNanPreserve, 64U);
+        preserve(64U);
     }
 }
 

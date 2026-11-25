@@ -15,6 +15,7 @@
 #include "shader_recompiler/frontend/maxwell/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate_program.h"
 #include "shader_recompiler/host_translate_info.h"
+#include "video_core/renderer_vulkan/task_payload_limit.h"
 
 namespace {
 using Shader::Ampere::Instruction;
@@ -199,4 +200,13 @@ TEST_CASE("Task and mesh programs read back the output stage buffer word they wr
         CHECK(nan_stores == (max_vertices == 33 ? 8U : max_vertices == 32 ? 4U : 0U));
         CHECK(guarded_stores == (max_vertices == 33 ? 4U : 0U));
     }
+}
+
+TEST_CASE("Task payload declarations respect the device byte limit", "[shader][task_payload]") {
+    constexpr u32 limit = 16 * 1024;
+    CHECK_FALSE(Vulkan::TaskPayloadExceedsLimit(32, limit));
+    CHECK_FALSE(Vulkan::TaskPayloadExceedsLimit(4096, limit));
+    CHECK(Vulkan::TaskPayloadExceedsLimit(4097, limit));
+    CHECK(Vulkan::TaskPayloadExceedsLimit(6976, limit));
+    CHECK(Vulkan::TaskPayloadExceedsLimit(4096, limit - 1));
 }

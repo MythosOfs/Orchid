@@ -717,6 +717,10 @@ FN_MAX_LIMIT_LIST
                features.mesh_shader.meshShader;
     }
 
+    u32 GetMaxTaskPayloadSize() const {
+        return properties.mesh_shader.maxTaskPayloadSize;
+    }
+
     /// Returns true if the device supports VK_KHR_image_format_list.
     bool IsKhrImageFormatListSupported() const {
         return extensions.image_format_list || instance_version >= VK_API_VERSION_1_2;
@@ -1397,6 +1401,7 @@ private:
         VkPhysicalDeviceMaintenance5PropertiesKHR maintenance5{};
         VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve{};
         VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_border_color{};
+        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader{};
 
         VkPhysicalDeviceProperties properties{};
     };

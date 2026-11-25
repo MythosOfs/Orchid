@@ -1352,6 +1352,11 @@ bool Device::GetSuitability(bool requires_swapchain) {
         SetNext(next, properties.custom_border_color);
     }
 
+    if (IsExtMeshShaderSupported()) {
+        properties.mesh_shader.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
+        SetNext(next, properties.mesh_shader);
+    }
+
     // Perform the property fetch.
     physical.GetProperties2(properties2);
 

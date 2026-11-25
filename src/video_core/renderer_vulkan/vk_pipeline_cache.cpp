@@ -38,6 +38,7 @@
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
 #include "video_core/renderer_vulkan/pipeline_helper.h"
 #include "video_core/renderer_vulkan/pipeline_statistics.h"
+#include "video_core/renderer_vulkan/task_payload_limit.h"
 #include "video_core/renderer_vulkan/vertex_repack.h"
 #include "video_core/renderer_vulkan/vk_compute_pipeline.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
@@ -1461,6 +1462,19 @@ std::shared_ptr<ReusableShaders> PipelineCache::BuildGraphicsShaders(
             // Each half fit its texture arrays to the stage limits on its own; joined, they are
             // one stage.
             Shader::Optimization::LimitSampledTextureArrays(programs[index], host_info);
+        }
+
+        if (programs[index].stage == Shader::Stage::Task) {
+            const u32 payload_words = programs[index].mesh.payload_words;
+            const u32 max_payload_bytes = device.GetMaxTaskPayloadSize();
+            if (TaskPayloadExceedsLimit(payload_words, max_payload_bytes)) {
+                LOG_WARNING(Render_Vulkan,
+                            "Skipping graphics pipeline: task shader {:#018x} declares {} bytes "
+                            "of payload, device maxTaskPayloadSize is {} bytes",
+                            key.unique_hashes[index], u64{payload_words} * sizeof(u32),
+                            max_payload_bytes);
+                return nullptr;
+            }
         }
 
         if (device.GetDriverID() != VK_DRIVER_ID_NVIDIA_PROPRIETARY && Shader::Optimization::HasBrokenPattern(programs[index])) {

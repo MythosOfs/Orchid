@@ -240,6 +240,11 @@ public:
         return m_tls_address;
     }
 
+    void SetDummyThreadTlsAddress(KProcessAddress address) {
+        ASSERT(IsDummyThread());
+        m_tls_address = address;
+    }
+
     // ponytail: diagnostics only (EDEN_PKP_BT sampler). Last SVC id + first 4 args, set by svc::Call.
     void SetLastSvc(u32 id, const std::array<u64, 8>& args) {
         m_last_svc = id;

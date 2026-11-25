@@ -23,6 +23,7 @@
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/core_timing.h"
+#include "core/device_memory.h"
 #include "core/hle/ipc.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_thread.h"
@@ -200,6 +201,30 @@ TEST_CASE("Unknown commands: auto stub replies every time and logs once", "[.][s
         auto service = std::make_shared<StubReplyService>(system);
         manager->SetSessionHandler(Service::SessionRequestHandlerPtr{service});
 
+        constexpr u64 TlsAddress = 0x4000;
+        auto& table = process.GetPageTable().GetImpl();
+        table.Resize(20, 12);
+        auto* page = system.DeviceMemory().buffer.BackingBasePointer() + 0x10000;
+        auto& tls_entry = table.entries.GetAndFault(TlsAddress >> 12);
+        tls_entry.Store(false, Common::PageType::Memory, 1,
+                        reinterpret_cast<uintptr_t>(page) - TlsAddress);
+        auto& memory = process.GetMemory();
+        memory.SetCurrentPageTable(process);
+        client.SetDummyThreadTlsAddress(TlsAddress);
+        SCOPE_EXIT {
+            client.SetDummyThreadTlsAddress({});
+            tls_entry.Store(false, Common::PageType::Unmapped, 0, 0);
+        };
+
+        const auto write_and_read_reply = [&](Service::HLERequestContext& request) {
+            std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> reply;
+            reply.fill(0xffffffffU);
+            REQUIRE(memory.WriteBlock(TlsAddress, reply.data(), sizeof(reply)));
+            REQUIRE(request.WriteToOutgoingCommandBuffer().IsSuccess());
+            REQUIRE(memory.ReadBlock(TlsAddress, reply.data(), sizeof(reply)));
+            return reply;
+        };
+
         for (int i = 0; i < 3; ++i) {
             std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
             words[0] = 11 + 16;
@@ -207,12 +232,12 @@ TEST_CASE("Unknown commands: auto stub replies every time and logs once", "[.][s
             request.SetSessionRequestManager(manager);
             REQUIRE(request.PopulateFromIncomingCommandBuffer(words.data()).IsSuccess());
             service->InvokeRequestTipc(request);
-            CHECK((request.CommandBuffer()[1] & 0x3ff) == 33);
-            CHECK(request.CommandBuffer()[2] == ResultSuccess.raw);
+            const auto reply = write_and_read_reply(request);
+            CHECK((reply[1] & 0x3ff) == 33);
+            CHECK(reply[2] == ResultSuccess.raw);
         }
 
         manager->ConvertToDomain();
-        process.GetMemory().SetCurrentPageTable(process);
         for (u32 object_id = 2; object_id <= 5; ++object_id) {
             const bool direct = object_id == 5;
             std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
@@ -232,8 +257,7 @@ TEST_CASE("Unknown commands: auto stub replies every time and logs once", "[.][s
             request.SetSessionRequestManager(manager);
             REQUIRE(request.PopulateFromIncomingCommandBuffer(words.data()).IsSuccess());
             service->InvokeRequest(request);
-            REQUIRE(request.WriteToOutgoingCommandBuffer().IsSuccess());
-            const auto* reply = request.CommandBuffer();
+            const auto reply = write_and_read_reply(request);
             CHECK((reply[1] & 0x3ff) == 15);
             CHECK(reply[4] == 1);
             CHECK(reply[8] == Common::MakeMagic('S', 'F', 'C', 'O'));

@@ -1769,9 +1769,24 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
         Binding& binding = channel_state->compute_storage_buffers[index];
         const bool is_written =
             ((channel_state->written_compute_storage_buffers >> index) & 1) != 0;
+        const bool capturing = kepler_compute && kepler_compute->DlssTraceCapturing();
         if (BindMultiRangeStorage(binding, is_written, compute_segments)) {
             if (matching)
                 trace->binding_state = diag::BindingState::MultiRange;
+            if (capturing) {
+                u64 host_span = 0;
+                u32 host_offset = 0;
+                for (u32 segment = 0; segment < binding.segment_count; ++segment) {
+                    const MultiRangeSegment& seg =
+                        compute_segments[binding.segment_first + segment];
+                    if (segment == 0) {
+                        host_offset = slot_buffers[seg.buffer_id].Offset(seg.device_addr);
+                    }
+                    host_span += seg.size;
+                }
+                kepler_compute->NoteDlssTraceSsboHost(index, true, 2, host_offset, host_span,
+                                                      binding.segment_count);
+            }
             return;
         }
         const u32 size = binding.physical_size ? binding.physical_size : binding.size;
@@ -1785,6 +1800,12 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
 
         const u32 offset = buffer.Offset(binding.device_addr);
         buffer.MarkUsage(offset, size);
+        if (capturing) {
+            const bool bound = binding.buffer_id != NULL_BUFFER_ID && size != 0;
+            kepler_compute->NoteDlssTraceSsboHost(index, bound, bound ? u8{1} : u8{0},
+                                                  bound ? offset : 0, bound ? size : 0,
+                                                  bound ? 1 : 0);
+        }
 
         if (is_written) {
             // Native compute (physical_size set) only has a guessed extent.
@@ -2133,15 +2154,6 @@ void BufferCache<P>::UpdateComputeStorageBuffers() {
         const bool is_written =
             ((channel_state->written_compute_storage_buffers >> index) & 1) != 0;
         ResolveMultiRangeStorage(binding, is_written, compute_segments);
-        if (kepler_compute && kepler_compute->DlssTraceCapturing()) {
-            u64 host_span = 0;
-            for (u32 segment = 0; segment < binding.segment_count; ++segment) {
-                host_span += compute_segments[binding.segment_first + segment].size;
-            }
-            kepler_compute->NoteDlssTraceSsboHost(index, binding.buffer_id != NULL_BUFFER_ID,
-                                                  host_span ? host_span : binding.physical_size,
-                                                  binding.segment_count);
-        }
     });
 }
 
@@ -2461,7 +2473,9 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr dev
     for (; device_addr >> CACHING_PAGEBITS < Common::DivCeil(end, CACHING_PAGESIZE);
          device_addr += CACHING_PAGESIZE) {
         ++pages_scanned;
-        ++overlap_pages_scanned;
+        if constexpr (requires { runtime.overlap_pages_scanned; }) {
+            ++runtime.overlap_pages_scanned;
+        }
         const BufferId overlap_id = page_table[device_addr >> CACHING_PAGEBITS];
         if (!overlap_id) {
             continue;

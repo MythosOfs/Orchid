@@ -29,6 +29,8 @@ public:
         bool dlss_dispatch{};
         u8 size_rule{};
         u32 logical_range{};
+        u8 host_path{};
+        u32 host_offset{};
         u64 host_span{};
         u32 host_segments{};
     };
@@ -140,7 +142,8 @@ public:
         }
     }
 
-    void NoteSsboHost(u32 ssbo_index, bool bound, u64 host_span, u32 host_segments) {
+    void NoteSsboHost(u32 ssbo_index, bool bound, u8 host_path, u32 host_offset, u64 host_span,
+                      u32 host_segments) {
         if (!Enabled() || !has_pending || !capturing || Emitted()) {
             return;
         }
@@ -148,6 +151,8 @@ public:
             SsboRecord& record = pending.ssbos[i - 1];
             if (record.ssbo_index == ssbo_index) {
                 record.bound = bound;
+                record.host_path = host_path;
+                record.host_offset = host_offset;
                 record.host_span = host_span;
                 record.host_segments = host_segments;
                 return;
@@ -195,6 +200,17 @@ private:
         }
     }
 
+    static const char* HostPathName(u8 path) {
+        switch (path) {
+        case 1:
+            return "single";
+        case 2:
+            return "multi";
+        default:
+            return "null";
+        }
+    }
+
     void Emit() {
         capturing = false;
         sequences.push_back(Sequence{
@@ -214,7 +230,7 @@ private:
                 const SsboRecord& ssbo = entry.ssbos[i];
                 LOG_INFO(HW_GPU,
                          "DLSS chain trace:   ssbo[{}] cbuf{}+{:#x} mode={} rule={} declared={:#x} "
-                         "next={} logical={:#x} chosen={:#x} host={:#x}/{} bound={}",
+                         "next={} logical={:#x} chosen={:#x} path={} host={:#x}+{:#x}/{} bound={}",
                          ssbo.ssbo_index, ssbo.cbuf_index, ssbo.cbuf_offset,
                          ssbo.dlss_dispatch ? "dlss"
                          : ssbo.native_compute ? "native"
@@ -222,8 +238,8 @@ private:
                          SizeRuleName(ssbo.size_rule), ssbo.declared_word,
                          ssbo.next_word ? fmt::format("{:#x}", *ssbo.next_word)
                                         : std::string{"unavailable"},
-                         ssbo.logical_range, ssbo.chosen_size, ssbo.host_span,
-                         ssbo.host_segments, ssbo.bound);
+                         ssbo.logical_range, ssbo.chosen_size, HostPathName(ssbo.host_path),
+                         ssbo.host_offset, ssbo.host_span, ssbo.host_segments, ssbo.bound);
             }
             if (entry.ssbo_overflow) {
                 LOG_INFO(HW_GPU, "DLSS chain trace:   {} further SSBOs not recorded",

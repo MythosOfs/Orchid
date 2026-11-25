@@ -27,14 +27,26 @@ evidence that one miss is one scan.
 The DLSS trace retains up to two complete sequences per process, each from a matching prepass key
 through the output key and the next ordinary dispatch, flagged `truncated` past the chain bound.
 Entries record the launch outcome (succeeded / rejected / keyless), the per-SSBO size rule
-(declared / bare / cap), the logical range, and the actual host span filled in by the storage
-update pass — the summed multi-range segments when the binding split, not the fallback prefix.
-The trace object itself is a `std::optional` allocated on first opt-in, and per-SSBO diagnostic
-records exist only while a sequence is actively capturing.
+(declared / bare / cap), the logical range, and the actual host span — reported from inside
+`BindHostComputeStorageBuffers`, at the branch that really bound: `path=multi` with the summed
+segment spans when `BindMultiRangeStorage` succeeded, `path=single` with the fallback
+buffer's offset and span when the runtime refused the multi-range bind, `path=null` when
+nothing bound. Reporting the planned segments from the planning pass would claim a bind that
+can still fall back. The trace object itself is a `std::optional` allocated on first opt-in,
+per-SSBO diagnostic records exist only while a sequence is actively capturing, and the host
+report itself is gated by `DlssTraceCapturing` so the disabled path does no trace work.
 
-The GL pipeline trace line logs the actual runtime mode and effective limit before SSBO
-resolution under `EDEN_NX2_TRACE_GL_SSBO`, plus a once-per-runtime independent
-GL_MAX_SHADER_STORAGE_BLOCK_SIZE for the checker to hold SSBO-mode ranges against.
+`overlap_pages_scanned` is test-only instrumentation: production `BufferCache` carries no
+op-count state; `ResolveOverlaps` increments it only when the runtime type exposes the member
+(a `requires` hook), so `FixtureRuntime` counts walked slots while the Vulkan and GL runtimes
+pay nothing. The counts are op counts, not timings — no performance claim is made from them.
+
+The GL pipeline trace emits a `begin runtime=R block_size=` marker on first Configure per
+runtime (the independent GL_MAX_SHADER_STORAGE_BLOCK_SIZE), per-Configure lines carrying a
+global serial and requested-vs-actual mode before SSBO resolution, and an
+`end runtime=R configures=N` marker at static teardown. The checker requires the whole
+envelope — missing begin/end proves truncation, a repeated begin proves replay, serials must
+span 0..N-1 gapless, and the end count must equal the configure lines present.
 
 ## Consequences
 
@@ -42,5 +54,6 @@ GL_MAX_SHADER_STORAGE_BLOCK_SIZE for the checker to hold SSBO-mode ranges agains
   compute merge leaves every pre-existing buffer usable (unpicked, stale entries restored).
 - The second sequence distinguishes cold/warm program captures; a reject or keyless launch is no
   longer logged as plain success.
-- No live GL run yet: the checker is proven on synthetic matching, stale and single-mode logs;
-  the same-runtime mixed-workload recipe stays prepared-unrun in the gate plan.
+- No live GL run yet: the checker is proven on pinned positive/negative logs through
+  run-ssbo-checker-cases.sh; the orchid MCP transport is agent-session-only, so the launch
+  and negative-control stay an agent-side recipe in the gate plan.

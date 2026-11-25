@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <mutex>
 #include <numeric>
-#include <unordered_set>
+#include <unordered_map>
 #include "common/cityhash.h"
 #include "common/logging.h"
 #include "common/settings.h"
@@ -92,20 +92,31 @@ void ComputePipeline::Configure() {
     static const bool trace_mode = std::getenv("EDEN_NX2_TRACE_GL_SSBO") != nullptr;
     if (trace_mode) {
         static std::atomic<u64> configure_serial{};
-        static std::mutex runtime_mutex;
-        static std::unordered_set<const void*> runtime_seen;
-        const void* const runtime_id = static_cast<const void*>(&buffer_cache.runtime);
-        {
-            const std::scoped_lock lock{runtime_mutex};
-            if (runtime_seen.insert(runtime_id).second) {
-                LOG_INFO(Render_OpenGL, "compute SSBO runtime={} block_size={:#x}", runtime_id,
-                         buffer_cache.runtime.DeviceMaxStorageBufferBlockSize());
+        struct TraceRuntimes {
+            std::mutex mutex;
+            std::unordered_map<const void*, u64> serials;
+            ~TraceRuntimes() {
+                for (const auto& [runtime, count] : serials) {
+                    LOG_INFO(Render_OpenGL, "compute SSBO end runtime={} configures={}", runtime,
+                             count);
+                }
             }
+        };
+        static TraceRuntimes trace_runtimes;
+        const void* const runtime_id = static_cast<const void*>(&buffer_cache.runtime);
+        const u64 serial = configure_serial.fetch_add(1);
+        {
+            const std::scoped_lock lock{trace_runtimes.mutex};
+            auto [it, first] = trace_runtimes.serials.try_emplace(runtime_id, 0);
+            if (first) {
+                LOG_INFO(Render_OpenGL, "compute SSBO begin runtime={} block_size={:#x}",
+                         runtime_id, buffer_cache.runtime.DeviceMaxStorageBufferBlockSize());
+            }
+            ++it->second;
         }
         LOG_INFO(Render_OpenGL,
-                 "compute SSBO configure={} runtime={} requested={} actual={} range={:#x}",
-                 configure_serial.fetch_add(1), runtime_id, use_storage_buffers,
-                 buffer_cache.runtime.UseStorageBuffers(),
+                 "compute SSBO configure={} runtime={} requested={} actual={} range={:#x}", serial,
+                 runtime_id, use_storage_buffers, buffer_cache.runtime.UseStorageBuffers(),
                  buffer_cache.runtime.GetMaxStorageBufferRange());
     }
     buffer_cache.SetComputeUniformBufferState(info.constant_buffer_mask, &uniform_buffer_sizes);

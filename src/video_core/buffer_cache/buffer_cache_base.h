@@ -503,10 +503,6 @@ public:
         recent[next++ % recent.size()] = {device_addr, size, removals};
     }
 
-    /// Page-table slots ResolveOverlaps walked, cumulative: one scan per cache miss, so a miss
-    /// over K mapped pages adds K (the removed probe pass doubled it).
-    u64 overlap_pages_scanned{};
-
 protected:
     [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
                                                bool is_written, bool native_compute = false,

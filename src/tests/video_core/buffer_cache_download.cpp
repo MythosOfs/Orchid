@@ -68,14 +68,40 @@ struct FixtureRuntime {
     }
     u64 storage_buffer_range{std::numeric_limits<u32>::max()};
     mutable u64 range_queries{};
+    u64 overlap_pages_scanned{};
     bool PrefersSparseSources() const {
         return true;
     }
     bool BindMultiRangeStorageBuffer(u64 key, bool is_written) {
         multi_range_binds.emplace_back(key, is_written);
-        return true;
+        return !multi_range_fail;
     }
+    bool multi_range_fail{};
     std::vector<std::pair<u64, bool>> multi_range_binds;
+    void ResetMultiRange() {
+        multi_range_sources.clear();
+    }
+    void PushMultiRangeSource(const FixtureBuffer& buffer, u32 offset, u32 size) {
+        multi_range_sources.emplace_back(buffer.CpuAddr(), offset, size);
+    }
+    void InvalidateMultiRange(u64 key) {
+        invalidated_multi_range.push_back(key);
+    }
+    std::vector<std::tuple<u64, u32, u32>> multi_range_sources;
+    std::vector<u64> invalidated_multi_range;
+    void BindStorageBuffer(const FixtureBuffer& buffer, u32 offset, u32 size, bool is_written) {
+        storage_binds.emplace_back(buffer.CpuAddr(), offset, size, is_written);
+    }
+    std::vector<std::tuple<u64, u32, u32, bool>> storage_binds;
+    u32 GetUniformBufferAlignment() const {
+        return 256;
+    }
+    void BindUniformBuffer(const FixtureBuffer&, u32, u32) {}
+    std::span<u8> BindMappedUniformBuffer(u32, u32, u32) {
+        return {};
+    }
+    void BindTextureBuffer(const FixtureBuffer&, u32, u32,
+                           VideoCore::Surface::PixelFormat) {}
     bool out_of_bounds{};
     std::vector<std::pair<u64, u64>> copied;
     struct DeferredStage {
@@ -783,6 +809,7 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         rasterizer.on_dispatch = [&] {
             cache->BindComputeStorageBuffer(0, 0, 0, true);
             cache->UpdateComputeBuffers();
+            cache->BindHostComputeBuffers();
         };
         launch();
 
@@ -797,8 +824,60 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         CHECK(record.logical_range == 0x2000);
         CHECK(record.chosen_size == 0x1000);
         CHECK(record.bound);
+        CHECK(record.host_path == 2);
         CHECK(record.host_segments == 2);
         CHECK(record.host_span == 0x2000);
+        CHECK(record.host_offset == 0);
+        REQUIRE(runtime.multi_range_binds.size() == 1);
+        CHECK(runtime.multi_range_sources.size() == 2);
+    }
+
+    SECTION("the trace reports the single span after an attempted multi-range bind falls back") {
+        FixtureRuntime runtime;
+        auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+        cache->SetKeplerCompute(&kepler);
+        cache->SetAddressSpace(address_space);
+        cache->EnableChannelState();
+        kepler.DlssTrace().SetTestEnabled(true);
+        runtime.multi_range_fail = true;
+        constexpr GPUVAddr desc = 0x700000, t1 = 0x810000;
+        address_space.Map(desc, device + 0x58000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Map(t1, device + 0x40000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Map(t1 + 0x1000, device + 0x50000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Write<u64>(desc, t1);
+        address_space.Write<u64>(desc + 8, 0x2000);
+        qmd[20] = 1;
+        qmd[32] = u32(desc);
+        qmd[33] = (u32(desc >> 32) & 0xff) | (((0x1000 >> 4) & 0x1fff) << 19);
+        rasterizer.on_dispatch = [&] {
+            kepler.NoteComputeProgram(
+                Tegra::Engines::DlssDispatchChain::fortunes_weave_prepass_key, false);
+        };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            kepler.NoteComputeProgram(
+                Tegra::Engines::DlssDispatchChain::fortunes_weave_output_key, false);
+        };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            cache->BindComputeStorageBuffer(0, 0, 0, true);
+            cache->UpdateComputeBuffers();
+            cache->BindHostComputeBuffers();
+        };
+        launch();
+
+        const auto& sequences = kepler.DlssTrace().Sequences();
+        REQUIRE(sequences.size() == 1);
+        const auto& entries = sequences.front().entries;
+        REQUIRE(entries.size() == 3);
+        REQUIRE(entries[2].ssbo_count == 1);
+        const auto& record = entries[2].ssbos[0];
+        CHECK(record.bound);
+        CHECK(record.host_path == 1);
+        CHECK(record.host_segments == 1);
+        CHECK(record.host_span != 0);
+        REQUIRE(runtime.multi_range_binds.size() == 1);
+        REQUIRE(runtime.storage_binds.size() == 1);
     }
 
     SECTION("a cached native binding still reports the capped size rule") {
@@ -844,9 +923,9 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         for (u32 i = 0; i < 8; ++i) {
             cache->Obtain(base + i * 0x10000, 0x4000);
         }
-        const u64 before = cache->overlap_pages_scanned;
+        const u64 before = runtime.overlap_pages_scanned;
         CHECK(cache->Obtain(base, 0x80000));
-        CHECK(cache->overlap_pages_scanned - before == 8);
+        CHECK(runtime.overlap_pages_scanned - before == 8);
         auto& channel = cache->Channel();
         channel.enabled_compute_storage_buffers = 1;
         channel.compute_storage_buffers[0] = VideoCommon::Binding{};

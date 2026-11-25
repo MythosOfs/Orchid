@@ -107,4 +107,26 @@ TEST_CASE("LaunchParams treats -u as an index only when all digits and replaces 
     }
 }
 
+TEST_CASE("Home Menu startup accepts the CLI flag and existing shortcut", "[home-menu]") {
+    ScopedSystemTestContext fixture;
+    Core::System system;
+    char app[] = "orchid";
+    char flag[] = "--home-menu";
+    char shortcut[] = "-qlaunch";
+    char fullscreen[] = "-f";
+    std::array<char*, 2> plain{app, nullptr};
+    CHECK_FALSE(Core::ParseLaunchParams(system, 1, plain.data(), nullptr).launch_qlaunch);
+
+    std::array<char*, 3> cli{app, flag, nullptr};
+    const auto direct = Core::ParseLaunchParams(system, 2, cli.data(), nullptr);
+    CHECK(direct.launch_qlaunch);
+    CHECK(direct.filepath.empty());
+
+    std::array<char*, 4> old{app, fullscreen, shortcut, nullptr};
+    const auto legacy = Core::ParseLaunchParams(system, 3, old.data(), nullptr);
+    CHECK(legacy.launch_qlaunch);
+    CHECK(legacy.fullscreen);
+    CHECK(legacy.filepath.empty());
+}
+
 }

@@ -12,6 +12,11 @@
 
 namespace FileSys {
 
+[[nodiscard]] constexpr bool IsFirmwareProgramId(u64 title_id) {
+    const u64 platform = title_id >> 56;
+    return (platform == 0x01 || platform == 0x04) && (title_id & 0x00FFFFFFFFFFFFFFULL) < 0x2000;
+}
+
 constexpr u64 AOC_TITLE_ID_MASK = 0x7FF;
 constexpr u64 AOC_TITLE_ID_OFFSET = 0x1000;
 constexpr u64 BASE_TITLE_ID_MASK = 0xFFFFFFFFFFFFE000;

@@ -12,6 +12,7 @@
 #include <optional>
 
 #include "common/common_types.h"
+#include "core/hle/result.h"
 #include "core/hle/service/am/am_types.h"
 
 namespace Core {
@@ -40,14 +41,19 @@ public:
     void RequestUpdate();
 
 public:
-    void TrackApplet(std::shared_ptr<Applet> applet, bool is_application);
+    void TrackApplet(std::shared_ptr<Applet> applet, bool is_application, bool defer_start = false);
+    bool HasNativeHomeMenu();
+    bool ReserveApplicationSlot();
+    void ReleaseApplicationSlotReservation();
+    bool CancelPendingApplication(Applet& applet);
+    Result StartApplication(Applet& applet);
     std::shared_ptr<Applet> GetByAppletResourceUserId(u64 aruid);
     std::shared_ptr<Applet> GetMainApplet();
     std::shared_ptr<Applet> GetOverlayDisplayApplet();
 
 public:
     void RequestHomeMenuToGetForeground();
-    void RequestApplicationToGetForeground();
+    bool RequestApplicationToGetForeground(const Applet* expected = nullptr);
     void RequestLockHomeMenuIntoForeground();
     void RequestUnlockHomeMenuIntoForeground();
     void RequestAppletVisibilityState(Applet& applet, bool visible);
@@ -90,6 +96,7 @@ private:
     // Foreground roots.
     Applet* m_home_menu{};
     Applet* m_application{};
+    bool m_application_slot_reserved{};
     Applet* m_overlay_display{};
 
     // Applet map by aruid.

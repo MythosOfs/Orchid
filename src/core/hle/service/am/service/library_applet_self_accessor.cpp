@@ -180,7 +180,8 @@ Result ILibraryAppletSelfAccessor::GetMainAppletStorageId(Out<FileSys::StorageId
 Result ILibraryAppletSelfAccessor::ExitProcessAndReturn() {
     LOG_INFO(Service_AM, "called");
 
-    if (const auto caller_applet = m_applet->caller_applet.lock(); caller_applet) {
+    if (m_applet->caller_applet.lock() || m_applet->launched_from_native_home_menu ||
+        m_applet->program_id == static_cast<u64>(AppletProgramId::QLaunchNx2)) {
         m_applet->process->Terminate();
     } else {
         system.GetUserChannel() = m_applet->user_channel_launch_parameter;

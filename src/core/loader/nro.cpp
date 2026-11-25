@@ -343,10 +343,12 @@ AppLoader_NRO::LoadResult AppLoader_NRO::Load(Kernel::KProcess& process, Core::S
 
     u64 program_id{};
     ReadProgramId(program_id);
-    system.GetFileSystemController().RegisterProcess(
-        process.GetProcessId(), program_id,
-        std::make_unique<FileSys::RomFSFactory>(*this, system.GetContentProvider(),
-                                                system.GetFileSystemController()));
+    auto& fs = system.GetFileSystemController();
+    if (fs.RegisterProcess(process.GetProcessId(), program_id,
+            std::make_shared<FileSys::RomFSFactory>(*this, system.GetContentProvider(), fs))
+            .IsError()) {
+        return {ResultStatus::ErrorNotInitialized, {}};
+    }
 
     is_loaded = true;
     return {ResultStatus::Success, LoadParameters{Kernel::KThread::DefaultThreadPriority,

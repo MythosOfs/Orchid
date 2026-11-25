@@ -202,3 +202,20 @@ TEST_CASE("Extracted NSP launch reaches the ExeFS loader without a title ID",
           "[core][loader][nca_header_key]") {
     CHECK(LoadNsp({{"main", {0}}, {"main.npdm", {0}}}) == Loader::ResultStatus::ErrorBadNPDMHeader);
 }
+
+TEST_CASE("Direct NCA application registration excludes both firmware namespaces", "[home-menu]") {
+    ScopedSystemTestContext environment;
+    Core::System system;
+    FileSys::ManualContentProvider manual;
+    for (const u64 id : {0x0100000000001000ULL, 0x0400000000001000ULL,
+                         0x0100123456780000ULL}) {
+        auto file = std::make_shared<FileSys::VectorVfsFile>(
+            MakeNca(id, NcaHeader::ContentType::Program, {{"main", {1}}, {"main.npdm", {2}}}),
+            "program.nca");
+        auto loader = Loader::GetLoader(system, file);
+        REQUIRE(loader);
+        REQUIRE(loader->GetFileType() == Loader::FileType::NCA);
+        manual.RegisterApplicationNca(*loader, file);
+        CHECK(manual.HasEntry(id, FileSys::ContentRecordType::Program) == (id == 0x0100123456780000ULL));
+    }
+}

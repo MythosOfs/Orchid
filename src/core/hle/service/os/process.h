@@ -7,6 +7,7 @@
 #pragma once
 
 #include <utility>
+#include <string>
 
 #include "common/common_types.h"
 
@@ -37,12 +38,18 @@ public:
         : m_system(other.m_system), m_process(std::exchange(other.m_process, nullptr)),
           m_main_thread_stack_size(std::exchange(other.m_main_thread_stack_size, 0)),
           m_main_thread_priority(std::exchange(other.m_main_thread_priority, 0)),
-          m_process_started(std::exchange(other.m_process_started, false)) {}
+          m_process_started(std::exchange(other.m_process_started, false)),
+          m_display_version(std::move(other.m_display_version)),
+          m_loose_exefs(other.m_loose_exefs) {}
 
     bool Initialize(Loader::AppLoader& loader, Loader::ResultStatus& out_load_result);
     void Finalize();
+    void RetireRegistrations();
+    const std::string& GetDisplayVersion() const { return m_display_version; }
+    bool PrefersInstalledDisplayVersion() const { return m_loose_exefs; }
 
     bool Run();
+    bool HasStarted() const { return m_process_started; }
     void Terminate();
     void Suspend(bool suspended);
     void ResetSignal();
@@ -67,6 +74,8 @@ private:
     u64 m_main_thread_stack_size{};
     s32 m_main_thread_priority{};
     bool m_process_started{};
+    std::string m_display_version;
+    bool m_loose_exefs{};
 };
 
 } // namespace Service

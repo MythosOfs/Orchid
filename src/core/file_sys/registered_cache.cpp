@@ -22,11 +22,13 @@
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/nca_metadata.h"
+#include "core/file_sys/program_metadata.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/submission_package.h"
 #include "core/file_sys/vfs/vfs_concat.h"
 #include "core/loader/loader.h"
+#include "core/loader/nx.h"
 
 namespace FileSys {
 
@@ -1246,7 +1248,99 @@ const ExternalContentProvider* ContentProviderUnion::GetExternalProvider() const
     return static_cast<const ExternalContentProvider*>(providers[size_t(ContentProviderUnionSlot::External)]);
 }
 
+std::vector<u64> ContentProviderUnion::ListApplicationIds() const {
+    const auto* manual = static_cast<const ManualContentProvider*>(
+        GetSlotProvider(ContentProviderUnionSlot::FrontendManual));
+    auto ids = manual ? manual->ListApplicationFiles() : std::vector<u64>{};
+    for (const auto& entry : ListEntriesFilter(TitleType::Application,
+                                               ContentRecordType::Program, std::nullopt)) {
+        if (entry.title_id == 0 || IsFirmwareProgramId(entry.title_id)) {
+            continue;
+        }
+        if ((entry.title_id & 0xFFF) == 0 ||
+            ((entry.title_id >> 56) == 0x04 &&
+             !ListEntriesFilter(TitleType::Application, ContentRecordType::Meta,
+                                entry.title_id).empty())) {
+            ids.push_back(entry.title_id);
+        }
+    }
+    std::sort(ids.begin(), ids.end());
+    ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+    return ids;
+}
+
+ContentProviderUnion::ApplicationProgram ContentProviderUnion::GetApplicationProgram(
+    u64 title_id) const {
+    for (size_t i = 0; i < providers.size(); ++i) {
+        if (const auto* provider = providers[i]) {
+            if (auto file = provider->GetEntryRaw(title_id, ContentRecordType::Program)) {
+                return {std::move(file), ContentProviderUnionSlot(i), false};
+            }
+        }
+    }
+
+    const auto* manual = static_cast<const ManualContentProvider*>(
+        GetSlotProvider(ContentProviderUnionSlot::FrontendManual));
+    if (manual) {
+        if (auto file = manual->GetApplicationFile(title_id)) {
+            return {std::move(file), ContentProviderUnionSlot::FrontendManual, true};
+        }
+    }
+    return {};
+}
+
 ManualContentProvider::~ManualContentProvider() = default;
+
+void ManualContentProvider::RegisterApplicationFile(Loader::AppLoader& loader,
+                                                    VirtualFile file) {
+    u64 title_id{};
+    if (!file || loader.ReadProgramId(title_id) != Loader::ResultStatus::Success ||
+        title_id == 0 || IsFirmwareProgramId(title_id)) {
+        return;
+    }
+
+    const auto type = loader.GetFileType();
+    if (type == Loader::FileType::NX) {
+        if (Loader::AppLoader_NX::ReadPlatform(file, title_id) != 2) {
+            return;
+        }
+    } else if (type == Loader::FileType::NUP ||
+               type == Loader::FileType::DeconstructedRomDirectory) {
+        FileSys::ProgramMetadata metadata;
+        if (loader.ReadProgramMetadata(metadata) != Loader::ResultStatus::Success ||
+            !metadata.IsSwitch2()) {
+            return;
+        }
+    } else {
+        return;
+    }
+    application_files.try_emplace(title_id, std::move(file));
+}
+
+VirtualFile ManualContentProvider::GetApplicationFile(u64 title_id) const {
+    const auto it = application_files.find(title_id);
+    return it == application_files.end() ? nullptr : it->second;
+}
+
+std::vector<u64> ManualContentProvider::ListApplicationFiles() const {
+    std::vector<u64> ids;
+    ids.reserve(application_files.size());
+    for (const auto& [id, file] : application_files) {
+        ids.push_back(id);
+    }
+    return ids;
+}
+
+void ManualContentProvider::RegisterApplicationNca(Loader::AppLoader& loader, VirtualFile file) {
+    u64 title_id{};
+    if (loader.GetFileType() != Loader::FileType::NCA ||
+        loader.ReadProgramId(title_id) != Loader::ResultStatus::Success ||
+        IsFirmwareProgramId(title_id)) {
+        return;
+    }
+    const auto type = GetCRTypeFromNCAType(NCA{file}.GetType());
+    AddEntry(TitleType::Application, type, title_id, std::move(file));
+}
 
 void ManualContentProvider::AddEntry(TitleType title_type, ContentRecordType content_type, u64 title_id, VirtualFile file) {
     entries.insert_or_assign({title_type, content_type, title_id}, file);
@@ -1310,6 +1404,9 @@ bool ManualContentProvider::AddEntriesFromContainer(VirtualFile file, bool only_
         nsp, only_content, base_program_id,
         [this](TitleType title_type, ContentRecordType content_type, u64 title_id,
                const VirtualFile& entry_file, u32 version, const std::string& version_string) {
+            if (title_type == TitleType::Application && IsFirmwareProgramId(title_id)) {
+                return;
+            }
             if (title_type == TitleType::Update) {
                 AddEntryWithVersion(title_type, content_type, title_id, version, version_string,
                                     entry_file);
@@ -1322,11 +1419,13 @@ bool ManualContentProvider::AddEntriesFromContainer(VirtualFile file, bool only_
 void ManualContentProvider::ClearAllEntries() {
     entries.clear();
     multi_version_entries.clear();
+    application_files.clear();
 }
 
 void ManualContentProvider::SwapEntries(ManualContentProvider& other) noexcept {
     entries.swap(other.entries);
     multi_version_entries.swap(other.multi_version_entries);
+    application_files.swap(other.application_files);
 }
 
 void ManualContentProvider::Refresh() {}

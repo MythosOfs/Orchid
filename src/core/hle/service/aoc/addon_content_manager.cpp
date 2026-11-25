@@ -22,6 +22,7 @@
 #include "core/hle/service/aoc/addon_content_manager.h"
 #include "core/hle/service/aoc/purchase_event_manager.h"
 #include "core/hle/service/cmif_serialization.h"
+#include "core/hle/service/filesystem/filesystem.h"
 #include "core/hle/service/ipc_helpers.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/am/am_results.h"
@@ -35,17 +36,11 @@ static bool CheckAOCTitleIDMatchesBase(u64 title_id, u64 base) {
 
 static u64 GetCallerAOCBaseTitleID(Core::System& system, const ClientProcessId& process_id) {
     const u64 program_id = system.ResolveCallerProgramId(*process_id);
-    if (FileSys::GetBaseTitleID(program_id) ==
-        FileSys::GetBaseTitleID(system.GetApplicationProcessProgramID())) {
-        FileSys::NACP control;
-        if (system.GetAppLoader().ReadControlData(control) == Loader::ResultStatus::Success &&
-            control.GetDLCBaseTitleId() != 0) {
-            return control.GetDLCBaseTitleId();
-        }
+    if (const auto control = system.GetProcessControlData(*process_id);
+        control && control->GetDLCBaseTitleId() != 0) {
+        return control->GetDLCBaseTitleId();
     }
-    const FileSys::PatchManager pm{program_id, system.GetFileSystemController(),
-                                   system.GetContentProvider()};
-    const auto metadata = pm.GetControlMetadata();
+    const auto metadata = FileSys::PatchManager::GetApplicationControlMetadata(system, program_id);
     return metadata.first && metadata.first->GetDLCBaseTitleId() != 0
                ? metadata.first->GetDLCBaseTitleId()
                : FileSys::GetAOCBaseTitleID(program_id);
@@ -65,7 +60,7 @@ static bool IsCallerDlcDisabled(Core::System& system, const ClientProcessId& pro
     return std::ranges::find(disabled, "DLC") != disabled.end();
 }
 
-static std::vector<u64> AccumulateAOCTitleIDs(Core::System& system) {
+static std::vector<u64> AccumulateAOCTitleIDs(Core::System& system, u64 process_id) {
     std::vector<u64> add_on_content;
     const auto& rcu = system.GetContentProvider();
     const auto list =
@@ -80,7 +75,8 @@ static std::vector<u64> AccumulateAOCTitleIDs(Core::System& system) {
                        Loader::ResultStatus::Success;
             }),
         add_on_content.end());
-    for (const u64 tid : FileSys::ListBootContent(FileSys::ContentRecordType::Data)) {
+    for (const u64 tid : system.GetFileSystemController().ListProcessBootContent(
+             process_id, FileSys::ContentRecordType::Data)) {
         if (std::find(add_on_content.begin(), add_on_content.end(), tid) == add_on_content.end()) {
             add_on_content.push_back(tid);
         }
@@ -89,7 +85,7 @@ static std::vector<u64> AccumulateAOCTitleIDs(Core::System& system) {
 }
 
 IAddOnContentManager::IAddOnContentManager(Core::System& system_)
-    : ServiceFramework{system_, "aoc:u"}, add_on_content{AccumulateAOCTitleIDs(system)},
+    : ServiceFramework{system_, "aoc:u"},
       service_context{system_, "aoc:u"} {
     // clang-format off
     static const FunctionInfo functions[] = {
@@ -138,7 +134,7 @@ Result IAddOnContentManager::CountAddOnContent(Out<u32> out_count, ClientProcess
     }
 
     // The service outlives a single boot; pick up add-on content registered by the current load.
-    add_on_content = AccumulateAOCTitleIDs(system);
+    const auto add_on_content = AccumulateAOCTitleIDs(system, *process_id);
     *out_count = static_cast<u32>(
         std::count_if(add_on_content.begin(), add_on_content.end(),
                       [current](u64 tid) { return CheckAOCTitleIDMatchesBase(tid, current); }));
@@ -156,7 +152,7 @@ Result IAddOnContentManager::ListAddOnContent(Out<u32> out_count,
 
     std::vector<u32> out;
     if (!IsCallerDlcDisabled(system, process_id)) {
-        add_on_content = AccumulateAOCTitleIDs(system);
+        const auto add_on_content = AccumulateAOCTitleIDs(system, *process_id);
         for (u64 content_id : add_on_content) {
             if (FileSys::GetBaseTitleID(content_id) != current) {
                 continue;

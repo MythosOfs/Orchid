@@ -4,6 +4,9 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/settings.h"
+#include "common/scope_exit.h"
+#include "core/hle/kernel/svc_results.h"
 #include "core/file_sys/nca_metadata.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/hle/service/am/am_types.h"
@@ -23,28 +26,36 @@ namespace Service::AM {
 namespace {
 
 Result CreateGuestApplication(SharedPointer<IApplicationAccessor>* out_application_accessor, Core::System& system, WindowSystem& window_system, u64 program_id) {
-    FileSys::VirtualFile nca_raw{};
-
-    // Get the program NCA from storage.
-    auto& storage = system.GetContentProviderUnion();
-    nca_raw = storage.GetEntryRaw(program_id, FileSys::ContentRecordType::Program);
-
-    // Ensure we retrieved a program NCA.
-    R_UNLESS(nca_raw != nullptr, ResultUnknown);
+    const auto source = system.GetContentProviderUnion().GetApplicationProgram(program_id);
+    R_UNLESS(source.file != nullptr, ResultUnknown);
+    if ((source.loader_backed || (program_id >> 56) == 0x04) &&
+        !Settings::CurrentProgramIsSwitch2()) {
+        LOG_WARNING(Service_AM, "Switch 2 application {:016X} requires Switch 2 Home Menu firmware",
+                    program_id);
+        R_THROW(ResultUnknown);
+    }
 
     std::vector<u8> control;
     std::unique_ptr<Loader::AppLoader> loader;
-    Loader::ResultStatus result;
-    auto process = CreateApplicationProcess(control, loader, result, system, nca_raw, program_id, 0);
-    R_UNLESS(process != nullptr, ResultUnknown);
+    Loader::ResultStatus result{};
+    auto process = CreateApplicationProcess(control, loader, result, system, source.file,
+                                            program_id, 0, source.slot);
+    if (!process) {
+        LOG_WARNING(Service_AM, "Loading application {:016X} failed with loader result {}",
+                    program_id, static_cast<u16>(result));
+        R_THROW(ResultUnknown);
+    }
+    LOG_INFO(Service_AM, "Loaded Home Menu application {:016X} ({}), process program {:016X}",
+             program_id, Loader::GetFileTypeString(loader->GetFileType()), process->GetProgramId());
 
     const auto applet = std::make_shared<Applet>(system, std::move(process), true);
+    applet->launched_from_native_home_menu = window_system.HasNativeHomeMenu();
     applet->program_id = program_id;
     applet->applet_id = AppletId::Application;
     applet->type = AppletType::Application;
     applet->library_applet_mode = LibraryAppletMode::AllForeground;
 
-    window_system.TrackApplet(applet, true);
+    window_system.TrackApplet(applet, true, true);
 
     *out_application_accessor = std::make_shared<IApplicationAccessor>(system, applet, window_system);
     R_SUCCEED();
@@ -71,14 +82,18 @@ IApplicationCreator::~IApplicationCreator() = default;
 Result IApplicationCreator::CreateApplication(
     Out<SharedPointer<IApplicationAccessor>> out_application_accessor, u64 application_id) {
     LOG_INFO(Service_NS, "called, application_id={:016X}", application_id);
+    R_UNLESS(m_window_system.ReserveApplicationSlot(), Kernel::ResultBusy);
+    SCOPE_EXIT { m_window_system.ReleaseApplicationSlotReservation(); };
+    R_TRY(CreateGuestApplication(out_application_accessor, system, m_window_system, application_id));
     Core::LaunchTimestampCache::SaveLaunchTimestamp(application_id);
-    R_RETURN(
-        CreateGuestApplication(out_application_accessor, system, m_window_system, application_id));
+    R_SUCCEED();
 }
 
 Result IApplicationCreator::CreateSystemApplication(
     Out<SharedPointer<IApplicationAccessor>> out_application_accessor, u64 application_id) {
 
+    R_UNLESS(m_window_system.ReserveApplicationSlot(), Kernel::ResultBusy);
+    SCOPE_EXIT { m_window_system.ReleaseApplicationSlotReservation(); };
     FileSys::VirtualFile nca_raw{};
 
     auto& storage = system.GetContentProviderUnion();
@@ -92,12 +107,13 @@ Result IApplicationCreator::CreateSystemApplication(
     R_UNLESS(process != nullptr, ResultUnknown);
 
     const auto applet = std::make_shared<Applet>(system, std::move(process), true);
+    applet->launched_from_native_home_menu = m_window_system.HasNativeHomeMenu();
     applet->program_id = application_id;
     applet->applet_id = AppletId::Starter;
     applet->type = AppletType::LibraryApplet;
     applet->library_applet_mode = LibraryAppletMode::AllForeground;
 
-    m_window_system.TrackApplet(applet, true);
+    m_window_system.TrackApplet(applet, true, true);
 
     *out_application_accessor = std::make_shared<IApplicationAccessor>(system, applet, m_window_system);
     Core::LaunchTimestampCache::SaveLaunchTimestamp(application_id);

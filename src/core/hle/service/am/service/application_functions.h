@@ -49,7 +49,6 @@ private:
     Result GetDesiredLanguage(Out<u64> out_language_code);
     Result SetTerminateResult(Result terminate_result);
     Result GetDisplayVersion(Out<DisplayVersion> out_display_version);
-    bool LooseDumpDisplayVersion(std::string& version);
     // The user id is an 8-byte aligned nn::account::Uid after the u8 type: u128 keeps that layout
     // (Common::UUID is byte aligned and would be read from offset 1).
     Result ExtendSaveData(Out<u64> out_required_size, FileSys::SaveDataType type, u128 user_id,

@@ -19,6 +19,7 @@ class System;
 }
 
 namespace FileSys {
+struct BootContent;
 class BISFactory;
 class ExternalContentProvider;
 class NCA;
@@ -72,6 +73,9 @@ public:
 
     Result RegisterProcess(ProcessId process_id, ProgramId program_id,
                            std::shared_ptr<FileSys::RomFSFactory>&& factory);
+    void UnregisterProcess(ProcessId process_id);
+    Result SetProcessBootContent(ProcessId process_id, std::vector<FileSys::BootContent> entries);
+    std::vector<u64> ListProcessBootContent(ProcessId process_id, FileSys::ContentRecordType type);
     Result OpenProcess(ProgramId* out_program_id,
                        std::shared_ptr<SaveDataController>* out_save_data_controller,
                        std::shared_ptr<RomFsController>* out_romfs_controller,

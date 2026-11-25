@@ -35,6 +35,8 @@ struct FrontendAppletParameters {
     LaunchType launch_type{};
     s32 program_index{};
     s32 previous_program_index{-1};
+
+    constexpr bool IsGameLaunch() const { return applet_type == AppletType::Application; }
 };
 
 class AppletManager {

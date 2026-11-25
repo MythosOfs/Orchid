@@ -547,7 +547,8 @@ MainWindow::MainWindow(bool has_broken_vulkan)
         for (auto& e : qba)
             args_cstr.push_back(e.data());
 
-        auto const lp = Core::ParseLaunchParams(*QtCommon::system, args_cstr.size(), args_cstr.data(), nullptr);
+        args_cstr.push_back(nullptr);
+        auto const lp = Core::ParseLaunchParams(*QtCommon::system, args.size(), args_cstr.data(), nullptr);
         if (lp.selected_user) {
             Core::ApplyLaunchParams(Core::LaunchParams{.selected_user = lp.selected_user});
         }
@@ -923,7 +924,7 @@ void MainWindow::WebBrowserOpenWebPage(const std::string& main_url,
     }
 
     ui->action_Pause->setEnabled(true);
-    ui->action_Restart->setEnabled(true);
+    ui->action_Restart->setEnabled(!native_home_menu_running);
     ui->action_Stop->setEnabled(true);
 
     ui->menubar->removeAction(exit_action);
@@ -1670,6 +1671,10 @@ void MainWindow::ConnectMenuEvents() {
 void MainWindow::UpdateMenuState() {
     const bool is_paused = QtCommon::emu_thread == nullptr || !QtCommon::emu_thread->IsRunning();
     const bool is_firmware_available = CheckFirmwarePresence();
+    const auto* system_nand = QtCommon::system->GetFileSystemController().GetSystemNANDContents();
+    const bool has_nx2_home_menu = system_nand &&
+        system_nand->HasEntry(u64(Service::AM::AppletProgramId::QLaunchNx2),
+                              FileSys::ContentRecordType::Program);
 
     const std::array running_actions{
         ui->action_Stop,
@@ -1679,11 +1684,13 @@ void MainWindow::UpdateMenuState() {
         ui->action_Pause,
     };
 
+    ui->action_Restart->setEnabled(emulation_running && !native_home_menu_running);
+
     const std::array applet_actions{
         ui->action_Launch_PhotoViewer,       ui->action_Launch_Cabinet_Nickname_Owner,
         ui->action_Launch_Cabinet_Eraser,    ui->action_Launch_Cabinet_Restorer,
         ui->action_Launch_Cabinet_Formatter, ui->action_Launch_MiiEdit,
-        ui->action_Launch_QLaunch,           ui->action_Launch_Controller};
+        ui->action_Launch_Controller};
 
     for (QAction* action : running_actions) {
         action->setEnabled(emulation_running);
@@ -1696,6 +1703,11 @@ void MainWindow::UpdateMenuState() {
     for (QAction* action : applet_actions) {
         action->setEnabled(is_firmware_available && !emulation_running);
     }
+
+    ui->menu_Applets->setEnabled(is_firmware_available || has_nx2_home_menu);
+    ui->menu_Create_Shortcuts->setEnabled(is_firmware_available || has_nx2_home_menu);
+    ui->action_Launch_QLaunch->setEnabled(
+        (is_firmware_available || has_nx2_home_menu) && !emulation_running);
 
     ui->action_Capture_Screenshot->setEnabled(emulation_running && !is_paused);
 
@@ -1967,8 +1979,8 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
     }
     LOG_INFO(Frontend, "Orchid starting...");
 
-    if (params.program_id == 0 ||
-        params.program_id > static_cast<u64>(Service::AM::AppletProgramId::MaxProgramId)) {
+    const bool application = params.IsGameLaunch();
+    if (application) {
         StoreRecentFile(filename); // Put the filename on top of the list
     }
 
@@ -2013,7 +2025,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
 
     // Firmware applets are not games. Keep this independent of preset overrides so every
     // unsupported game launch requires acknowledgement, including launches with global settings.
-    if (title_id > static_cast<u64>(Service::AM::AppletProgramId::MaxProgramId) &&
+    if (application && !FileSys::IsFirmwareProgramId(title_id) && title_id != 0 &&
         !Settings::IsSupportedGame(title_id)) {
         QMessageBox warning(QMessageBox::Warning, tr("Unsupported Game"),
                             tr("I do not provide support for this game and will not investigate "
@@ -2187,6 +2199,9 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
         LOG_ERROR(Frontend, "Core load failed: elapsed_ms={}", load_timer.elapsed());
         return;
     }
+    native_home_menu_running =
+        params.applet_id == Service::AM::AppletId::QLaunch &&
+        params.program_id == u64(Service::AM::AppletProgramId::QLaunchNx2);
     LOG_INFO(Frontend, "Core load completed: elapsed_ms={}", load_timer.elapsed());
 
     QtCommon::system->SetShuttingDown(false);
@@ -2499,6 +2514,7 @@ void MainWindow::OnEmulationStopped() {
     }
 
     current_game_path.clear();
+    native_home_menu_running = false;
 
     // When closing the game, destroy the GLWindow to clear the context after the game is closed
     render_window->ReleaseRenderTarget();
@@ -3360,7 +3376,7 @@ void MainWindow::OnStartGame() {
 }
 
 void MainWindow::OnRestartGame() {
-    if (!QtCommon::system->IsPoweredOn()) {
+    if (native_home_menu_running || !QtCommon::system->IsPoweredOn()) {
         return;
     }
 
@@ -3441,6 +3457,10 @@ void MainWindow::OnLoadComplete() {
 }
 
 void MainWindow::OnExecuteProgram(std::size_t program_index) {
+    if (native_home_menu_running) {
+        return;
+    }
+
     const u64 previous_program_id = QtCommon::system->GetApplicationProcessProgramID();
 
     const auto current_path =
@@ -4411,6 +4431,7 @@ void MainWindow::OnGameListRefresh() {
     game_list->RefreshGameDirectory();
     game_list->RefreshExternalContent();
     SetFirmwareVersion();
+    UpdateMenuState();
 }
 
 void MainWindow::OnGameListConvertToNup(const std::string& game_path) {
@@ -4631,8 +4652,30 @@ void MainWindow::RunNupJob(const QString& window_title, const QString& title, co
 
 void MainWindow::LaunchFirmwareApplet(u64 raw_program_id,
                                       std::optional<Service::NFP::CabinetMode> cabinet_mode) {
-    auto const program_id = Service::AM::AppletProgramId(raw_program_id);
-    auto result = FirmwareManager::VerifyFirmware(*QtCommon::system.get());
+    using Service::AM::AppletProgramId;
+    auto program_id = AppletProgramId(raw_program_id);
+    const auto* bis_system = QtCommon::system->GetFileSystemController().GetSystemNANDContents();
+    if (program_id == AppletProgramId::QLaunch) {
+        if (game_list->IsPopulating()) {
+            connect(game_list, &GameList::PopulatingCompleted, this,
+                    [this, raw_program_id, cabinet_mode] {
+                        if (!emulation_running) {
+                            LaunchFirmwareApplet(raw_program_id, cabinet_mode);
+                        }
+                    },
+                    Qt::ConnectionType(Qt::QueuedConnection | Qt::SingleShotConnection));
+            return;
+        }
+        if (bis_system &&
+            bis_system->HasEntry(u64(AppletProgramId::QLaunchNx2),
+                                 FileSys::ContentRecordType::Program)) {
+            program_id = AppletProgramId::QLaunchNx2;
+        }
+    }
+
+    const auto result = program_id == AppletProgramId::QLaunchNx2
+                            ? FirmwareManager::FirmwareGood
+                            : FirmwareManager::VerifyFirmware(*QtCommon::system);
     using namespace QtCommon::StringLookup;
     switch (result) {
     case FirmwareManager::ErrorFirmwareMissing:
@@ -4645,9 +4688,9 @@ void MainWindow::LaunchFirmwareApplet(u64 raw_program_id,
     default:
         break;
     }
-    auto bis_system = QtCommon::system->GetFileSystemController().GetSystemNANDContents();
     if (auto applet_nca =
-            bis_system->GetEntry(u64(program_id), FileSys::ContentRecordType::Program);
+            bis_system ? bis_system->GetEntry(u64(program_id), FileSys::ContentRecordType::Program)
+                       : nullptr;
         applet_nca) {
         if (auto const applet_id =
                 [program_id] {
@@ -4656,6 +4699,7 @@ void MainWindow::LaunchFirmwareApplet(u64 raw_program_id,
                     case AppletProgramId::OverlayDisplay:
                         return AppletId::OverlayDisplay;
                     case AppletProgramId::QLaunch:
+                    case AppletProgramId::QLaunchNx2:
                         return AppletId::QLaunch;
                     case AppletProgramId::Starter:
                         return AppletId::Starter;
@@ -5177,15 +5221,11 @@ void MainWindow::SetFirmwareVersion() {
 
     if (result.IsError() || !CheckFirmwarePresence()) {
         LOG_INFO(Frontend, "Installed firmware: No firmware available");
-        ui->menu_Applets->setEnabled(false);
-        ui->menu_Create_Shortcuts->setEnabled(false);
         firmware_label->setVisible(false);
         return;
     }
 
     firmware_label->setVisible(true);
-    ui->menu_Applets->setEnabled(true);
-    ui->menu_Create_Shortcuts->setEnabled(true);
 
     const std::string display_version(firmware_data.display_version.data());
     const std::string display_title(firmware_data.display_title.data());

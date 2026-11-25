@@ -75,6 +75,7 @@ void Applet::SetInteractibleLocked(bool pad_interactible, bool touch_interactibl
 }
 
 void Applet::OnProcessTerminatedLocked() {
+    process->RetireRegistrations();
     is_completed = true;
     state_changed_event.Signal(context.kernel);
 }

@@ -26,6 +26,7 @@ class EmuWindow;
 } // namespace Core::Frontend
 
 namespace FileSys {
+class NACP;
 class ContentProvider;
 class ContentProviderUnion;
 enum class ContentProviderUnionSlot;
@@ -332,6 +333,7 @@ public:
     [[nodiscard]] u64 GetProgramIdForProcessId(u64 process_id) const;
 
     [[nodiscard]] u64 ResolveCallerProgramId(u64 process_id) const;
+    [[nodiscard]] std::unique_ptr<FileSys::NACP> GetProcessControlData(u64 process_id) const;
 
     /// Gets the name of the current game
     [[nodiscard]] Loader::ResultStatus GetGameName(std::string& out) const;
@@ -339,6 +341,7 @@ public:
     [[nodiscard]] Loader::AppLoader& GetAppLoader();
     [[nodiscard]] const Loader::AppLoader& GetAppLoader() const;
 
+    [[nodiscard]] bool HasServiceManager() const;
     [[nodiscard]] Service::SM::ServiceManager& ServiceManager();
     [[nodiscard]] const Service::SM::ServiceManager& ServiceManager() const;
 

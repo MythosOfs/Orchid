@@ -1324,6 +1324,30 @@ PatchManager::Metadata PatchManager::ParseControlNCA(const NCA& nca) const {
     return {std::move(nacp), icon_file};
 }
 
+PatchManager::Metadata PatchManager::GetApplicationControlMetadata(Core::System& system,
+                                                                   u64 application_id) {
+    auto& storage = system.GetContentProviderUnion();
+    const auto source = storage.GetApplicationProgram(application_id);
+    if (source.loader_backed) {
+        const auto loader = Loader::GetLoader(system, source.file, application_id);
+        if (loader) {
+            auto nacp = std::make_unique<NACP>();
+            if (loader->ReadControlData(*nacp) != Loader::ResultStatus::Success) {
+                nacp.reset();
+            }
+            std::vector<u8> icon_data;
+            VirtualFile icon;
+            if (loader->ReadIcon(icon_data) == Loader::ResultStatus::Success && !icon_data.empty()) {
+                icon = std::make_shared<VectorVfsFile>(std::move(icon_data));
+            }
+            return {std::move(nacp), std::move(icon)};
+        }
+    }
+
+    const PatchManager patch{application_id, system.GetFileSystemController(), storage};
+    return patch.GetControlMetadata();
+}
+
 [[nodiscard]] PatchManager::Metadata PatchManager::GetMetadataFromBaseOrUpdate(Core::System& system, u64 application_id) noexcept {
     const FileSys::PatchManager pm{application_id, system.GetFileSystemController(), system.GetContentProvider()};
     auto metadata = pm.GetControlMetadata();

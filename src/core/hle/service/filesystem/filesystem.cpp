@@ -336,6 +336,7 @@ Result FileSystemController::RegisterProcess(
     std::shared_ptr<FileSys::RomFSFactory>&& romfs_factory) {
     std::scoped_lock lk{registration_lock};
 
+    R_UNLESS(!registrations.contains(process_id), FileSys::ResultInvalidArgument);
     registrations.emplace(process_id, Registration{
                                           .program_id = program_id,
                                           .romfs_factory = std::move(romfs_factory),
@@ -344,6 +345,31 @@ Result FileSystemController::RegisterProcess(
 
     LOG_DEBUG(Service_FS, "Registered for process {}", process_id);
     return ResultSuccess;
+}
+
+void FileSystemController::UnregisterProcess(ProcessId process_id) {
+    std::scoped_lock lk{registration_lock};
+    if (const auto it = registrations.find(process_id); it != registrations.end()) {
+        it->second.romfs_factory->SetBootContent({});
+        registrations.erase(it);
+    }
+}
+
+Result FileSystemController::SetProcessBootContent(
+    ProcessId process_id, std::vector<FileSys::BootContent> entries) {
+    std::scoped_lock lk{registration_lock};
+    const auto it = registrations.find(process_id);
+    R_UNLESS(it != registrations.end(), FileSys::ResultTargetNotFound);
+    it->second.romfs_factory->SetBootContent(std::move(entries));
+    R_SUCCEED();
+}
+
+std::vector<u64> FileSystemController::ListProcessBootContent(
+    ProcessId process_id, FileSys::ContentRecordType type) {
+    std::scoped_lock lk{registration_lock};
+    const auto it = registrations.find(process_id);
+    return it != registrations.end() ? it->second.romfs_factory->ListBootContent(type)
+                                     : std::vector<u64>{};
 }
 
 Result FileSystemController::OpenProcess(

@@ -28,6 +28,7 @@ public:
     ~HidRegistration();
 
     void RegisterCurrentProcess();
+    void UnregisterCurrentProcess();
     void EnableAppletToGetInput(bool enable_pad, bool enable_touch);
 
 private:

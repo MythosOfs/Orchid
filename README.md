@@ -92,6 +92,14 @@ Compared with the Eglantine it started from:
 - **Updates:** release builds check this repository for updates and only offer builds of their
   own channel.
 
+## Home Menu startup
+
+Run `orchid --home-menu` or choose **Tools > Launch Applet > Home Menu** in the Qt frontend.
+Switch 2 Home Menu firmware is required to launch Switch 2 titles from the applet. Add
+your Switch 2 game folder to Orchid's game list so the applet can find its titles. To relaunch a
+game started from the Switch 2 Home Menu, exit it and select it again from Home Menu. In-game
+restart and program switching are currently unavailable for these launches.
+
 ## Performance and compatibility
 
 > [!NOTE]

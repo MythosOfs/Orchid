@@ -334,30 +334,6 @@ TEST_CASE("Loose sibling programs resolve by program index", "[loose_directory]"
     CHECK(entries.front().first == 0x0400453019AA8000ULL);
     REQUIRE(entries.front().second->GetFile("data.bin"));
 
-    FileSys::SetBootContent(
-        {{entries.front().first, FileSys::ContentRecordType::Program, entries.front().second}});
-    CHECK(FileSys::OpenBootContent(0x0400453019AA8002ULL, FileSys::ContentRecordType::Program) ==
-          nullptr);
-    CHECK(FileSys::OpenBootContent(0x0400453019AA8000ULL, FileSys::ContentRecordType::Data) ==
-          nullptr);
-    CHECK(FileSys::ListBootContent(FileSys::ContentRecordType::Program) ==
-          std::vector<u64>{0x0400453019AA8000ULL});
-    CHECK(FileSys::ListBootContent(FileSys::ContentRecordType::Data).empty());
-    const auto romfs =
-        FileSys::OpenBootContent(0x0400453019AA8000ULL, FileSys::ContentRecordType::Program);
-    REQUIRE(romfs);
-    CHECK(FileSys::OpenBootContent(0x0400453019AA8000ULL, FileSys::ContentRecordType::Program) ==
-          romfs);
-    const auto extracted = FileSys::ExtractRomFS(romfs);
-    REQUIRE(extracted);
-    const auto data = extracted->GetFile("data.bin");
-    REQUIRE(data);
-    const auto bytes = data->ReadAllBytes();
-    CHECK(std::string(bytes.begin(), bytes.end()) == "payload");
-    FileSys::SetBootContent({});
-    CHECK(FileSys::OpenBootContent(0x0400453019AA8000ULL, FileSys::ContentRecordType::Program) ==
-          nullptr);
-
     LooseTestDirectory::ExeFS(t.root / "Flat/exefs");
     CHECK(Loader::FindLooseSiblingPrograms(vfs.OpenDirectory((t.root / "Flat/exefs").string()),
                                            0x0400453019AA8001ULL)
@@ -407,7 +383,6 @@ TEST_CASE("RomFS factory serves loose sibling programs by program index", "[loos
     for (auto& [id, romfs] : Loader::FindLooseAOC(exefs, 0x0400453019AA8001ULL)) {
         content.push_back({id, FileSys::ContentRecordType::Data, std::move(romfs)});
     }
-    FileSys::SetBootContent(std::move(content));
 
     Core::System system;
     NoRomFSLoader loader;
@@ -415,7 +390,8 @@ TEST_CASE("RomFS factory serves loose sibling programs by program index", "[loos
     for (std::size_t slot = 0; slot < std::size_t(FileSys::ContentProviderUnionSlot::Count); ++slot) {
         provider.SetSlot(FileSys::ContentProviderUnionSlot(slot), nullptr);
     }
-    const FileSys::RomFSFactory factory{loader, provider, system.GetFileSystemController()};
+    FileSys::RomFSFactory factory{loader, provider, system.GetFileSystemController()};
+    factory.SetBootContent(std::move(content));
     const auto romfs = factory.OpenPatchedRomFSWithProgramIndex(
         0x0400453019AA8001ULL, 0, FileSys::ContentRecordType::Program);
     REQUIRE(romfs);
@@ -427,7 +403,7 @@ TEST_CASE("RomFS factory serves loose sibling programs by program index", "[loos
     CHECK(factory.OpenPatchedRomFSWithProgramIndex(0x0400453019AA8001ULL, 2,
                                                    FileSys::ContentRecordType::Program) == nullptr);
     // Add-on content is served as Data under the running program's platform byte.
-    CHECK(FileSys::ListBootContent(FileSys::ContentRecordType::Data) ==
+    CHECK(factory.ListBootContent(FileSys::ContentRecordType::Data) ==
           std::vector<u64>{0x0400453019AA9001ULL});
     const auto addon = factory.Open(0x0400453019AA9001ULL, FileSys::StorageId::None,
                                     FileSys::ContentRecordType::Data);
@@ -435,7 +411,6 @@ TEST_CASE("RomFS factory serves loose sibling programs by program index", "[loos
     const auto addon_files = FileSys::ExtractRomFS(addon);
     REQUIRE(addon_files);
     CHECK(addon_files->GetFile("addon.bin"));
-    FileSys::SetBootContent({});
 }
 
 TEST_CASE("Loose wrapped program1 keeps its own update RomFS tier", "[loose_directory]") {

@@ -20,6 +20,8 @@
 #include "core/core_timing.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
+#include "core/hle/kernel/k_process.h"
+#include "core/hle/kernel/k_thread.h"
 #include "core/hle/service/acc/acc.h"
 #include "core/hle/service/acc/async_context.h"
 #include "core/hle/service/acc/errors.h"
@@ -994,26 +996,15 @@ void Module::Interface::GetBaasAccountManagerForApplication(HLERequestContext& c
 
 void Module::Interface::IsUserAccountSwitchLocked(HLERequestContext& ctx) {
     LOG_DEBUG(Service_ACC, "called");
-    FileSys::NACP nacp;
-    const auto res = system.GetAppLoader().ReadControlData(nacp);
-
-    bool is_locked = false;
-
-    if (res != Loader::ResultStatus::Success) {
-        const FileSys::PatchManager pm{system.GetApplicationProcessProgramID(),
-                                       system.GetFileSystemController(),
-                                       system.GetContentProvider()};
-        const auto nacp_unique = pm.GetControlMetadata().first;
-
-        if (nacp_unique != nullptr) {
-            is_locked = nacp_unique->GetUserAccountSwitchLock();
-        } else {
-            LOG_ERROR(Service_ACC, "nacp_unique is null!");
-        }
-    } else {
-        is_locked = nacp.GetUserAccountSwitchLock();
+    const auto* const owner = ctx.GetThread().GetOwnerProcess();
+    auto control = owner ? system.GetProcessControlData(owner->GetProcessId()) : nullptr;
+    if (!control && owner) {
+        const FileSys::PatchManager patch{owner->GetProgramId(), system.GetFileSystemController(),
+                                          system.GetContentProvider()};
+        control = patch.GetControlMetadata().first;
     }
 
+    const bool is_locked = control && control->GetUserAccountSwitchLock();
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(ResultSuccess);
     rb.Push(is_locked);

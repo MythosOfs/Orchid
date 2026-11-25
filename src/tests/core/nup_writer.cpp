@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <list>
 #include <map>
 #include <string>
 #include <vector>
@@ -18,17 +19,50 @@
 #include <openssl/evp.h>
 
 #include "common/settings.h"
+#include "common/cpu_features.h"
+#include "common/fs/path_util.h"
+#include "core/launch_timestamp_cache.h"
+#include "core/hle/kernel/k_readable_event.h"
+#include "core/hle/kernel/k_scheduler.h"
+#include "common/scope_exit.h"
+#include "core/core_timing.h"
 #include "core/core.h"
 #include "core/file_sys/common_funcs.h"
 #include "core/file_sys/control_metadata.h"
+#include "core/file_sys/fssystem/fssystem_nca_header.h"
 #include "core/file_sys/nup_container.h"
 #include "core/file_sys/nup_writer.h"
+#include "core/file_sys/patch_manager.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/vfs/vfs_real.h"
 #include "core/file_sys/vfs/vfs_vector.h"
 #include "core/loader/nup.h"
+#include "core/hle/kernel/k_process.h"
+#include "core/hle/kernel/k_thread.h"
+#include "core/hle/kernel/svc.h"
+#include "core/memory.h"
+#include "core/hle/kernel/kernel.h"
+#include "core/hle/service/acc/acc.h"
+#include "core/hle/service/aoc/addon_content_manager.h"
+#include "core/hle/service/am/applet_manager.h"
+#include "core/hle/service/am/applet.h"
+#include "core/hle/service/am/window_system.h"
+#include "core/hle/service/am/service/application_accessor.h"
+#include "core/hle/service/am/service/application_creator.h"
+#include "core/hle/kernel/svc_results.h"
+#include "core/hle/service/glue/arp.h"
+#include "core/hle/service/am/service/application_functions.h"
+#include "core/hle/service/hle_ipc.h"
+#include "core/hle/service/server_manager.h"
+#include "core/hle/service/am/process_creation.h"
+#include "core/hle/service/filesystem/filesystem.h"
+#include "core/hle/service/filesystem/romfs_controller.h"
+#include "core/hle/service/glue/glue_manager.h"
+#include "core/hle/service/ns/read_only_application_control_data_interface.h"
+#include "core/hle/service/os/process.h"
+#include "tests/core/system_test_context.h"
 
 namespace {
 
@@ -1753,4 +1787,737 @@ TEST_CASE("PackDump preserves control metadata owned by an update", "[nup][nup-u
     } else {
         CHECK(parsed.GetPackages()[1].nacp == patched);
     }
+}
+
+TEST_CASE("Home Menu selects native NUP programs and preserves registered content",
+          "[home-menu][nup]") {
+    TempDir t;
+    constexpr u64 legacy_id = 0x0100ABCD00010000ULL;
+    constexpr u64 edition_id = TitleId + 1;
+    constexpr u64 system_id = 0x0400000000001000ULL;
+    const auto root = t.path / "Game";
+    const auto archive = t.path / "Game.nup";
+    bool native = true;
+    SECTION("Switch 2 edition") {
+        Put(root / "exefs/main.npdm", BootNpdm(edition_id, true));
+    }
+    SECTION("Switch 1 dump") {
+        native = false;
+        Put(root / "exefs/main.npdm", BootNpdm(legacy_id, false));
+    }
+    Put(root / "exefs/main", "main");
+    Put(root / "romfs/file", "romfs");
+    FileSys::NACP control;
+    control.raw.save_data_owner_id = legacy_id;
+    const auto bytes = control.GetRawBytes();
+    Put(root / "control/Acd_1/control.nacp",
+        std::string_view{reinterpret_cast<const char*>(bytes.data()), bytes.size()});
+    Put(root / "control/Acd_1/icon_AmericanEnglish.dat", "native icon");
+    REQUIRE(FileSys::Nup::PackDump(root, archive) == FileSys::Nup::PackResult::Success);
+
+    Core::System system;
+    FileSys::ManualContentProvider manual;
+    FileSys::ManualContentProvider installed;
+    FileSys::ManualContentProvider sd;
+    auto& content = system.GetContentProviderUnion();
+    content.SetSlot(FileSys::ContentProviderUnionSlot::FrontendManual, &manual);
+    content.SetSlot(FileSys::ContentProviderUnionSlot::UserNAND, &installed);
+    content.SetSlot(FileSys::ContentProviderUnionSlot::SDMC, &sd);
+    const auto registered = std::make_shared<FileSys::VectorVfsFile>();
+    installed.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
+                       legacy_id, registered);
+    installed.AddEntry(FileSys::TitleType::SystemProgram, FileSys::ContentRecordType::Program,
+                       system_id, registered);
+    manual.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
+                    system_id, registered);
+    manual.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
+                    0x0100000000001000ULL, registered);
+    CHECK(manual.HasEntry(system_id, FileSys::ContentRecordType::Program));
+    CHECK(manual.HasEntry(0x0100000000001000ULL, FileSys::ContentRecordType::Program));
+    installed.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
+                       legacy_id + 1, registered);
+    installed.AddEntry(FileSys::TitleType::Update, FileSys::ContentRecordType::Program,
+                       FileSys::GetUpdateTitleID(legacy_id), registered);
+    installed.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Control,
+                       TitleId, registered);
+    sd.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
+                legacy_id, registered);
+
+    FileSys::RealVfsFilesystem vfs;
+    const auto file = vfs.OpenFile(archive.string(), FileSys::OpenMode::Read);
+    REQUIRE(file);
+    const auto loader = Loader::GetLoader(system, file);
+    REQUIRE(loader);
+    manual.RegisterApplicationFile(*loader, file);
+    CHECK(content.ListApplicationIds() ==
+          (native ? std::vector<u64>{legacy_id, edition_id} : std::vector<u64>{legacy_id}));
+    CHECK(content.GetApplicationProgram(legacy_id).slot == FileSys::ContentProviderUnionSlot::UserNAND);
+    CHECK(content.GetApplicationProgram(legacy_id).file == registered);
+    CHECK_FALSE(content.HasEntry(edition_id, FileSys::ContentRecordType::Program));
+
+    const auto selection = content.GetApplicationProgram(edition_id);
+    CHECK(selection.loader_backed == native);
+    if (!native) {
+        CHECK_FALSE(selection.file);
+        return;
+    }
+
+    CHECK(selection.slot == FileSys::ContentProviderUnionSlot::FrontendManual);
+    REQUIRE(selection.file == file);
+    auto selected = Loader::GetLoader(system, selection.file, edition_id);
+    REQUIRE(selected);
+    CHECK(selected->GetFileType() == Loader::FileType::NUP);
+    FileSys::ProgramMetadata metadata;
+    REQUIRE(selected->ReadProgramMetadata(metadata) == Loader::ResultStatus::Success);
+    CHECK(metadata.IsSwitch2());
+    CHECK(metadata.GetTitleID() == edition_id);
+    const auto menu_control = FileSys::PatchManager::GetApplicationControlMetadata(system, edition_id);
+    REQUIRE(menu_control.first);
+    CHECK(menu_control.first->GetTitleId() == legacy_id);
+    REQUIRE(menu_control.second);
+    CHECK(Read(menu_control.second) == "native icon");
+
+    sd.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
+                edition_id, registered);
+    const auto installed_selection = content.GetApplicationProgram(edition_id);
+    CHECK_FALSE(installed_selection.loader_backed);
+    CHECK(installed_selection.slot == FileSys::ContentProviderUnionSlot::SDMC);
+    CHECK(installed_selection.file == registered);
+
+    FileSys::ManualContentProvider previous;
+    manual.SwapEntries(previous);
+    CHECK_FALSE(manual.GetApplicationFile(edition_id));
+    manual.SwapEntries(previous);
+    CHECK(manual.GetApplicationFile(edition_id) == file);
+    manual.ClearAllEntries();
+    CHECK(content.ListApplicationIds() == std::vector<u64>{legacy_id});
+    sd.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Meta,
+                edition_id, registered);
+    CHECK((content.ListApplicationIds() == std::vector<u64>{legacy_id, edition_id}));
+}
+
+TEST_CASE("Home Menu uses every byte of each icon request title ID", "[home-menu]") {
+    constexpr std::array<u64, 2> ids{0x0400D4201C6EA000ULL, 0x01007EF00011E000ULL};
+    const auto bytes = std::span{reinterpret_cast<const u8*>(ids.data()), sizeof(ids)};
+    CHECK((Service::NS::DecodeApplicationIds(bytes) == std::vector<u64>{ids[0], ids[1]}));
+}
+
+TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "[home-menu][nup]") {
+    using namespace Service::AM;
+    ScopedSystemTestContext environment;
+    TempDir t;
+    using Common::FS::EdenPath;
+    const auto cache_dir = t.path / "cache";
+    const auto missing_cache = t.path / "missing-cache";
+    REQUIRE(fs::create_directory(cache_dir));
+    const auto previous_cache =
+        Common::FS::ExchangeEdenPathMapping(EdenPath::CacheDir, missing_cache);
+    SCOPE_EXIT { Common::FS::ExchangeEdenPathMapping(EdenPath::CacheDir, previous_cache); };
+    {
+        const auto missing_mapping =
+            Common::FS::ExchangeEdenPathMapping(EdenPath::CacheDir, cache_dir);
+        SCOPE_EXIT { Common::FS::ExchangeEdenPathMapping(EdenPath::CacheDir, missing_mapping); };
+        CHECK(Common::FS::GetEdenPath(EdenPath::CacheDir) == cache_dir);
+    }
+    CHECK(Common::FS::GetEdenPath(EdenPath::CacheDir) == missing_cache);
+    CHECK_FALSE(fs::exists(missing_cache));
+    Common::FS::SetEdenPath(EdenPath::CacheDir, cache_dir);
+    CHECK(Core::LaunchTimestampCache::GetLaunchCount(TitleId) == 0);
+
+    const bool previous_switch2 = Settings::CurrentProgramIsSwitch2();
+    const u64 previous_counter = Common::g_wall_clock.GetGuestCNTFRQ();
+    Settings::SetCurrentProgramIsSwitch2(true);
+    Common::g_wall_clock.SetGuestCNTFRQ(Common::WallClock::Switch2CNTFRQ);
+    SCOPE_EXIT {
+        Settings::SetCurrentProgramIsSwitch2(previous_switch2);
+        Common::g_wall_clock.SetGuestCNTFRQ(previous_counter);
+    };
+    constexpr u64 qlaunch_id = 0x0400000000001000ULL;
+    constexpr u64 child_id = 0x0400000000001003ULL;
+    constexpr u64 legacy_id = 0x0100ABCD00018000ULL;
+    constexpr u64 addon_id = TitleId + 0x1001;
+    std::string nso(0x10C, '\0');
+    nso.replace(0, 4, "NSO0");
+    for (u32 segment = 0; segment < 3; ++segment) {
+        SetLe(nso, 0x10 + segment * 0x10, 0x100 + segment * 4, 4);
+        SetLe(nso, 0x14 + segment * 0x10, segment * 0x1000, 4);
+        SetLe(nso, 0x18 + segment * 0x10, 4, 4);
+    }
+    SetLe(nso, 0x100, 0x14000000, 4);
+    const auto write_program = [&](const fs::path& path, u64 id, bool native,
+                                   u32 stack = 0x4000) {
+        auto npdm = BootNpdm(id, native);
+        SetLe(npdm, 0xC, 7, 1);
+        SetLe(npdm, 0xE, 44, 1);
+        SetLe(npdm, 0x1C, stack, 4);
+        const auto shift = native ? 0x100 : 0;
+        SetLe(npdm, 0x43C + shift, 8, 4);
+        SetLe(npdm, 0x460 + shift, 0x30043F7, 4);
+        SetLe(npdm, 0x464 + shift, (64U << 16) | 0x7FFF, 4);
+        Put(path / "exefs/main.npdm", npdm);
+        Put(path / "exefs/main", nso);
+        Put(path / "romfs/file", "romfs");
+    };
+    const auto write_control = [](const fs::path& path, bool locked, u64 dlc,
+                                  std::string_view version) {
+        FileSys::NACP control;
+        control.raw.user_account_switch_lock = locked;
+        control.raw.dlc_base_title_id = dlc;
+        std::copy(version.begin(), version.end(), control.raw.version_string.begin());
+        const auto bytes = control.GetRawBytes();
+        Put(path, std::string_view{reinterpret_cast<const char*>(bytes.data()), bytes.size()});
+    };
+    const auto game = t.path / "Game";
+    const auto archive = t.path / "Game.nup";
+    write_program(game / "base", TitleId, true);
+    write_program(game / "updates/65536", TitleId, true);
+    write_control(game / "base/control/Acd_1/control.nacp", true, TitleId + 0x1000, "1.0.0");
+    write_control(game / "updates/65536/control/Acd_1/control.nacp", true, TitleId + 0x1000,
+                  "2.0.0");
+    Put(game / "base/control/Acd_1/icon_AmericanEnglish.dat", "nup-icon");
+    Put(game / "dlc/0400ABCD00011001/0/romfs/addon", "addon");
+    REQUIRE(FileSys::Nup::PackDump(game, archive) == FileSys::Nup::PackResult::Success);
+    write_program(t.path / "Home", qlaunch_id, true);
+    write_program(t.path / "Child", child_id, true);
+    write_program(t.path / "Legacy", legacy_id, false);
+    constexpr u64 failed_id = TitleId + 0x4000;
+    write_program(t.path / "Failed", failed_id, true, 0xFFFFF000);
+    constexpr u64 loose_id = TitleId + 0x2000;
+    write_program(t.path / "Loose", loose_id, true);
+    write_control(t.path / "Loose/control/Acd_1/control.nacp", false, 0, "3.0.0");
+    Put(t.path / "Loose/control/Acd_1/icon_AmericanEnglish.dat", "loose-icon");
+
+    FileSys::RealVfsFilesystem vfs;
+    Core::System system;
+    system.Initialize();
+    auto& kernel = system.Kernel();
+    Kernel::KThread bootstrap{kernel};
+    REQUIRE(Kernel::KThread::InitializeDummyThread(system, &bootstrap, nullptr).IsSuccess());
+    kernel.SetCurrentEmuThread(&bootstrap);
+    kernel.Initialize();
+    SCOPE_EXIT {
+        system.CoreTiming().ClearPendingEvents();
+        kernel.Shutdown();
+        kernel.SetCurrentEmuThread(nullptr);
+        kernel.UnregisterKernelObject(&bootstrap);
+    };
+    FileSys::ManualContentProvider manual;
+    FileSys::ManualContentProvider installed;
+    system.RegisterContentProvider(FileSys::ContentProviderUnionSlot::FrontendManual, &manual);
+    system.RegisterContentProvider(FileSys::ContentProviderUnionSlot::UserNAND, &installed);
+    const auto open = [&](const fs::path& path) {
+        return vfs.OpenFile(path.string(), FileSys::OpenMode::Read);
+    };
+    const auto create = [&](const FileSys::VirtualFile& file, u64 id,
+                            std::optional<FileSys::ContentProviderUnionSlot> slot = std::nullopt) {
+        std::vector<u8> raw;
+        std::unique_ptr<Loader::AppLoader> loader;
+        Loader::ResultStatus result{};
+        return CreateApplicationProcess(raw, loader, result, system, file, id, 0, slot);
+    };
+
+    const auto finish_guest_threads = [&](Service::Process& process) {
+        std::list<Kernel::KScopedAutoObject<Kernel::KThread>> threads;
+        {
+            auto& owner = *process.GetHandle();
+            Kernel::KScopedLightLock lock{owner.GetListLock()};
+            for (auto& thread : owner.GetThreadList()) {
+                if (thread.GetState() != Kernel::ThreadState::Terminated) {
+                    threads.emplace_back(kernel, &thread);
+                }
+            }
+        }
+        for (auto& thread : threads) {
+            thread->SetState(kernel, Kernel::ThreadState::Terminated);
+            thread->DoWorkerTaskImpl(kernel);
+            process.GetHandle()->DecrementRunningThreadCount(kernel);
+        }
+    };
+
+    const FrontendAppletParameters home_params{.program_id = qlaunch_id, .applet_id = AppletId::QLaunch,
+                                              .applet_type = AppletType::LibraryApplet};
+    CHECK_FALSE(home_params.IsGameLaunch());
+    const FrontendAppletParameters game_params{.applet_type = AppletType::Application};
+    CHECK(game_params.IsGameLaunch());
+
+    const auto mixed_game_path = t.path / "Loose/exefs" / archive.filename();
+    REQUIRE(fs::copy_file(archive, mixed_game_path));
+    const auto host_file = Core::GetGameFileFromPath(system.GetFilesystem(), mixed_game_path.string());
+    REQUIRE(host_file);
+    CHECK(Loader::IdentifyFile(host_file) == Loader::FileType::NUP);
+    auto loader = Loader::GetLoader(system, host_file);
+    REQUIRE(loader);
+    manual.RegisterApplicationFile(*loader, host_file);
+    const auto source = system.GetContentProviderUnion().GetApplicationProgram(TitleId);
+    REQUIRE(source.file == host_file);
+    CHECK(source.loader_backed);
+
+    const auto loose = open(t.path / "Home/exefs/main");
+    REQUIRE(loose);
+    auto loose_loader = Loader::GetLoader(system, loose);
+    REQUIRE(loose_loader);
+    REQUIRE(loose_loader->GetFileType() == Loader::FileType::DeconstructedRomDirectory);
+    FileSys::ProgramMetadata metadata;
+    REQUIRE(loose_loader->ReadProgramMetadata(metadata) == Loader::ResultStatus::Success);
+    CHECK(metadata.IsSwitch2());
+    auto home_process = create(loose, qlaunch_id);
+    REQUIRE(home_process);
+    REQUIRE(home_process->Run());
+    auto home_applet = std::make_shared<Applet>(system, std::move(home_process), false);
+    const auto& home = home_applet->process;
+    SCOPE_EXIT { finish_guest_threads(*home); };
+    {
+        WindowSystem overlay_window{system};
+        auto pending_process = create(open(t.path / "Loose/exefs/main"), loose_id);
+        REQUIRE(pending_process);
+        auto pending_overlay_case = std::make_shared<Applet>(system, std::move(pending_process), true);
+        pending_overlay_case->applet_id = AppletId::Application;
+        home_applet->applet_id = AppletId::OverlayDisplay;
+        kernel.SetApplicationProcess(pending_overlay_case->process->GetHandle());
+        overlay_window.TrackApplet(home_applet, false);
+        REQUIRE(kernel.ApplicationProcess() == pending_overlay_case->process->GetHandle());
+
+        overlay_window.TrackApplet(pending_overlay_case, true, true);
+        REQUIRE(kernel.ApplicationProcess() == pending_overlay_case->process->GetHandle());
+        REQUIRE(overlay_window.CancelPendingApplication(*pending_overlay_case));
+        CHECK_FALSE(pending_overlay_case->process->IsInitialized());
+        CHECK(kernel.ApplicationProcess() == home_applet->process->GetHandle());
+        CHECK(overlay_window.GetOverlayDisplayApplet() == home_applet);
+    }
+    home_applet->applet_id = AppletId::QLaunch;
+    home_applet->program_id = qlaunch_id;
+    WindowSystem window{system};
+    window.TrackApplet(home_applet, false);
+
+    const auto positive_loose = open(t.path / "Loose/exefs/main");
+    auto positive_loader = Loader::GetLoader(system, positive_loose);
+    REQUIRE(positive_loader);
+    manual.RegisterApplicationFile(*positive_loader, positive_loose);
+    CHECK(system.GetContentProviderUnion().GetApplicationProgram(loose_id).file == positive_loose);
+
+    {
+        auto& owner = *home->GetHandle();
+        Kernel::KThread client{kernel};
+        Kernel::KAutoObject::Create(&client);
+        REQUIRE(Kernel::KThread::InitializeDummyThread(system, &client, &owner).IsSuccess());
+        kernel.SetCurrentEmuThread(&client);
+        SCOPE_EXIT {
+            kernel.SetCurrentEmuThread(&bootstrap);
+            owner.UnregisterThread(kernel, &client);
+            owner.Close(kernel);
+            kernel.UnregisterKernelObject(&client);
+        };
+        Kernel::KProcessAddress heap{};
+        REQUIRE(owner.GetPageTable().SetHeapSize(&heap, 0x200000).IsSuccess());
+        Kernel::Handle transfer{};
+        REQUIRE(Kernel::Svc::CreateTransferMemory64(system, &transfer, GetInteger(heap), 0x1000,
+                                                   Kernel::Svc::MemoryPermission::ReadWrite)
+                    .IsSuccess());
+        SCOPE_EXIT { owner.GetHandleTable().Remove(kernel, transfer); };
+
+        std::array<u64, 3> ids{TitleId, loose_id, child_id};
+        auto& memory = owner.GetMemory();
+        const auto ids_addr = heap + 0x1000;
+        memory.WriteBlock(ids_addr, ids.data(), sizeof(ids));
+
+        Service::ServerManager server{system};
+        auto manager = std::make_shared<Service::SessionRequestManager>(kernel, server);
+        std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
+        IPC::CommandHeader header{};
+        header.type.Assign(IPC::CommandType::Request);
+        header.enable_handle_descriptor.Assign(1);
+        header.num_buf_a_descriptors.Assign(1);
+        header.data_size.Assign(6);
+        IPC::HandleDescriptorHeader handles{};
+        handles.num_handles_to_copy.Assign(1);
+        IPC::BufferDescriptorABW buffer{};
+        buffer.address_bits_0_31 = static_cast<u32>(GetInteger(ids_addr));
+        buffer.address_bits_32_35.Assign(static_cast<u32>(GetInteger(ids_addr) >> 32) & 0xF);
+        buffer.address_bits_36_38.Assign(static_cast<u32>(GetInteger(ids_addr) >> 36) & 0x7);
+        buffer.size_bits_0_31 = sizeof(ids);
+        std::memcpy(words.data(), &header, sizeof(header));
+        std::memcpy(words.data() + 2, &handles, sizeof(handles));
+        words[3] = transfer;
+        std::memcpy(words.data() + 4, &buffer, sizeof(buffer));
+        words[8] = Common::MakeMagic('S', 'F', 'C', 'I');
+        words[10] = 10;
+        Service::HLERequestContext request{kernel, memory, nullptr, &client};
+        request.SetSessionRequestManager(manager);
+        REQUIRE(request.PopulateFromIncomingCommandBuffer(words.data()).IsSuccess());
+        manager->ConvertToDomain();
+        Service::NS::IReadOnlyApplicationControlDataInterface control_data{system};
+        control_data.InvokeRequest(request);
+
+        std::array<u64, 4> sizes{};
+        memory.ReadBlock(heap, sizes.data(), sizeof(sizes));
+        CHECK((sizes == std::array<u64, 4>{3, 8, 10, 0}));
+        std::array<char, 18> icons{};
+        memory.ReadBlock(heap + sizeof(sizes), icons.data(), icons.size());
+        CHECK(std::string_view(icons.data(), icons.size()) == "nup-iconloose-icon");
+    }
+
+    const auto call_accessor = [&](Service::ServiceFrameworkBase& accessor, u32 command,
+                                   std::string* display = nullptr, u64 first_arg = 0,
+                                   u64 second_arg = 0,
+                                   std::shared_ptr<IApplicationAccessor>* created = nullptr) {
+        Kernel::KThread client{kernel};
+        Kernel::KAutoObject::Create(&client);
+        auto& owner = *home->GetHandle();
+        REQUIRE(Kernel::KThread::InitializeDummyThread(system, &client, &owner).IsSuccess());
+        SCOPE_EXIT {
+            owner.UnregisterThread(kernel, &client);
+            owner.Close(kernel);
+            kernel.UnregisterKernelObject(&client);
+        };
+        Service::ServerManager server{system};
+        auto manager = std::make_shared<Service::SessionRequestManager>(kernel, server);
+        std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
+        IPC::CommandHeader header{};
+        header.type.Assign(IPC::CommandType::Request);
+        header.data_size.Assign(10);
+        std::memcpy(words.data(), &header, sizeof(header));
+        words[4] = Common::MakeMagic('S', 'F', 'C', 'I');
+        words[6] = command;
+        std::memcpy(words.data() + 8, &first_arg, sizeof(first_arg));
+        std::memcpy(words.data() + 10, &second_arg, sizeof(second_arg));
+        auto* caller = &client;
+        if (created) {
+            for (auto& thread : owner.GetThreadList()) {
+                if (thread.IsUserThread()) {
+                    caller = &thread;
+                    break;
+                }
+            }
+            REQUIRE(caller != &client);
+        }
+        Service::HLERequestContext request{kernel, owner.GetMemory(), nullptr, caller};
+        request.SetSessionRequestManager(manager);
+        REQUIRE(request.PopulateFromIncomingCommandBuffer(words.data()).IsSuccess());
+        if (created) {
+            manager->ConvertToDomain();
+        }
+        accessor.InvokeRequest(request);
+        if (created && request.CommandBuffer()[6] == ResultSuccess.raw) {
+            REQUIRE(request.WriteToOutgoingCommandBuffer().IsSuccess());
+            REQUIRE(manager->DomainHandlerCount() == 2);
+            *created = request.GetDomainHandler<IApplicationAccessor>(1);
+            REQUIRE(*created);
+        }
+        if (display && request.CommandBuffer()[6] == ResultSuccess.raw) {
+            const auto* value = reinterpret_cast<const char*>(request.CommandBuffer() + 8);
+            *display = std::string(value);
+        }
+        return u32(request.CommandBuffer()[6]);
+    };
+
+    const auto add_installed_control = [&](u64 id, std::string_view version) {
+        FileSys::NACP nacp;
+        nacp.raw.user_account_switch_lock = true;
+        std::copy(version.begin(), version.end(), nacp.raw.version_string.begin());
+        auto directory = std::make_shared<FileSys::VectorVfsDirectory>(
+            std::vector<FileSys::VirtualFile>{std::make_shared<FileSys::VectorVfsFile>(
+                nacp.GetRawBytes(), "control.nacp")});
+        const auto romfs = FileSys::CreateRomFS(directory)->ReadAllBytes();
+
+        FileSys::NcaHeader header{};
+        header.magic = FileSys::NcaHeader::MagicDecrypted;
+        header.content_type = FileSys::NcaHeader::ContentType::Control;
+        header.program_id = id;
+        header.sdk_addon_version = 0x000C0000;
+        header.fs_info[0].start_sector = 6;
+        header.fs_info[0].end_sector = 6 + static_cast<u32>((0x1000 + romfs.size() + 0x1FF) / 0x200);
+        FileSys::NcaFsHeader fs{};
+        fs.version = 2;
+        fs.fs_type = FileSys::NcaFsHeader::FsType::RomFs;
+        fs.hash_type = FileSys::NcaFsHeader::HashType::HierarchicalSha256Hash;
+        fs.encryption_type = FileSys::NcaFsHeader::EncryptionType::None;
+        auto& sha = fs.hash_data.hierarchical_sha256_data;
+        sha.hash_block_size = 0x1000;
+        sha.hash_layer_count = 2;
+        sha.hash_layer_region[0].size = 0x20;
+        sha.hash_layer_region[1].offset = 0x1000;
+        sha.hash_layer_region[1].size = romfs.size();
+        std::vector<u8> nca(std::size_t{header.fs_info[0].end_sector} * 0x200);
+        std::memcpy(nca.data(), &header, sizeof(header));
+        std::memcpy(nca.data() + sizeof(header), &fs, sizeof(fs));
+        std::memcpy(nca.data() + 0x1C00, romfs.data(), romfs.size());
+        installed.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Control,
+                           id, std::make_shared<FileSys::VectorVfsFile>(std::move(nca), "control.nca"));
+    };
+
+    add_installed_control(loose_id, "9.0.0");
+    auto loose_process = create(positive_loose, loose_id);
+    REQUIRE(loose_process);
+    auto loose_applet = std::make_shared<Applet>(system, std::move(loose_process), true);
+    IApplicationFunctions loose_functions{system, loose_applet};
+    std::string display;
+    REQUIRE(call_accessor(loose_functions, 23, &display) == ResultSuccess.raw);
+    CHECK(display == "9.0.0");
+    const auto loose_raw = system.GetProcessControlData(loose_applet->aruid.pid);
+    REQUIRE(loose_raw);
+    CHECK(loose_raw->GetVersionString() == "3.0.0");
+
+    IApplicationCreator creator{system, window};
+    const auto create_accessor = [&](u64 id, u32 expected = ResultSuccess.raw) {
+        std::shared_ptr<IApplicationAccessor> result;
+        CHECK(call_accessor(creator, 0, nullptr, id, 0, &result) == expected);
+        return result;
+    };
+    const auto failed_file = open(t.path / "Failed/exefs/main");
+    installed.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
+                       failed_id, failed_file);
+    auto failed_accessor = create_accessor(failed_id);
+    REQUIRE(failed_accessor);
+    const auto failed = window.GetMainApplet();
+    REQUIRE(failed);
+    CHECK(call_accessor(*failed_accessor, 10) != ResultSuccess.raw);
+    CHECK_FALSE(window.GetMainApplet());
+    CHECK_FALSE(failed->process->IsInitialized());
+    CHECK(system.GetProgramIdForProcessId(failed->aruid.pid) == 0);
+    CHECK(call_accessor(*failed_accessor, 30) != ResultSuccess.raw);
+    {
+        Kernel::KScopedSchedulerLock lock{kernel};
+        CHECK(failed->state_changed_event.GetHandle()->IsSignaled(kernel));
+    }
+
+    auto& fs_controller = system.GetFileSystemController();
+    std::vector<std::shared_ptr<IApplicationAccessor>> cancelled_accessors;
+    std::vector<u64> cancelled_pids;
+    for (u32 command : {20, 25}) {
+        auto pending = create_accessor(TitleId);
+        REQUIRE(pending);
+        const auto pending_applet = window.GetMainApplet();
+        REQUIRE(pending_applet);
+        CHECK_FALSE(create_accessor(failed_id, Kernel::ResultBusy.raw));
+        CHECK(window.GetMainApplet() == pending_applet);
+        const u64 pending_pid = pending_applet->aruid.pid;
+        CHECK(call_accessor(*pending, command) == ResultSuccess.raw);
+        CHECK_FALSE(window.GetMainApplet());
+        CHECK_FALSE(pending_applet->process->IsInitialized());
+        CHECK(system.GetProgramIdForProcessId(pending_pid) == 0);
+        CHECK_FALSE(window.GetByAppletResourceUserId(pending_pid));
+        CHECK(call_accessor(*pending, 30) == ResultSuccess.raw);
+        {
+            Kernel::KScopedSchedulerLock lock{kernel};
+            CHECK(pending_applet->state_changed_event.GetHandle()->IsSignaled(kernel));
+        }
+        CHECK(fs_controller.ListProcessBootContent(
+                  pending_pid, FileSys::ContentRecordType::Data).empty());
+        CHECK_FALSE(system.GetProcessControlData(pending_pid));
+        CHECK(call_accessor(*pending, 10) != ResultSuccess.raw);
+        cancelled_pids.push_back(pending_pid);
+        cancelled_accessors.push_back(std::move(pending));
+    }
+
+    AppletMessage message{};
+    while (home_applet->lifecycle_manager.PopMessage(kernel, &message)) {}
+
+    auto access = create_accessor(TitleId);
+    REQUIRE(access);
+    auto& accessor = *access;
+    const auto applet = window.GetMainApplet();
+    REQUIRE(applet);
+    REQUIRE(call_accessor(accessor, 10) == ResultSuccess.raw);
+    for (std::size_t i = 0; i < cancelled_accessors.size(); ++i) {
+        CHECK(system.GetProgramIdForProcessId(cancelled_pids[i]) == 0);
+        CHECK(call_accessor(*cancelled_accessors[i], 101) != ResultSuccess.raw);
+    }
+    CHECK(fs::is_regular_file(cache_dir / "launched.json"));
+    CHECK(Core::LaunchTimestampCache::GetLaunchCount(TitleId) == 3);
+    const auto other_cache = t.path / "other-cache";
+    REQUIRE(fs::create_directory(other_cache));
+    Common::FS::SetEdenPath(Common::FS::EdenPath::CacheDir, other_cache);
+    CHECK(Core::LaunchTimestampCache::GetLaunchCount(TitleId) == 0);
+    CHECK_FALSE(fs::exists(other_cache / "launched.json"));
+    Common::FS::SetEdenPath(Common::FS::EdenPath::CacheDir, cache_dir);
+    CHECK(Core::LaunchTimestampCache::GetLaunchCount(TitleId) == 3);
+    CHECK(call_accessor(accessor, 10) != ResultSuccess.raw);
+    CHECK(window.GetMainApplet() == applet);
+    const auto& application = applet->process;
+    SCOPE_EXIT { finish_guest_threads(*application); };
+    const u64 pid = application->GetProcessId();
+
+
+    CHECK(application->GetDisplayVersion() == "2.0.0");
+    IApplicationFunctions application_functions{system, applet};
+    REQUIRE(call_accessor(application_functions, 23, &display) == ResultSuccess.raw);
+    CHECK(display == "2.0.0");
+    const auto control = system.GetProcessControlData(pid);
+    REQUIRE(control);
+    CHECK(control->GetUserAccountSwitchLock());
+    CHECK(control->GetDLCBaseTitleId() == TitleId + 0x1000);
+    CHECK(control->GetVersionString() == "1.0.0");
+    const auto menu_control = FileSys::PatchManager::GetApplicationControlMetadata(system, TitleId);
+    REQUIRE(menu_control.first);
+    CHECK(menu_control.first->GetVersionString() == "1.0.0");
+
+    auto& filesystem = system.GetFileSystemController();
+    constexpr u64 sibling_id = TitleId + 1;
+    const auto sibling = vfs.OpenDirectory((game / "base/romfs").string());
+    REQUIRE(sibling);
+    const auto addon_dir = vfs.OpenDirectory((game / "dlc/0400ABCD00011001/0/romfs").string());
+    REQUIRE(addon_dir);
+    REQUIRE(filesystem.SetProcessBootContent(
+        pid, {{addon_id, FileSys::ContentRecordType::Data, addon_dir},
+              {sibling_id, FileSys::ContentRecordType::Program, sibling}}).IsSuccess());
+    auto child = create(open(t.path / "Child/exefs/main"), child_id);
+    REQUIRE(child);
+    REQUIRE(child->Run());
+    SCOPE_EXIT { finish_guest_threads(*child); };
+    const auto child_control = system.GetProcessControlData(child->GetProcessId());
+    CHECK_FALSE(child_control);
+    std::vector<u8> placeholder;
+    REQUIRE(system.GetARPManager().GetProcessControlProperty(
+        &placeholder, child_id, child->GetProcessId()).IsSuccess());
+    CHECK(placeholder.size() == sizeof(FileSys::RawNACP));
+
+    const auto account_lock = [&](Kernel::KProcess& owner) {
+        Kernel::KThread client{kernel};
+        Kernel::KAutoObject::Create(&client);
+        REQUIRE(Kernel::KThread::InitializeDummyThread(system, &client, &owner).IsSuccess());
+        SCOPE_EXIT {
+            owner.UnregisterThread(kernel, &client);
+            owner.Close(kernel);
+            kernel.UnregisterKernelObject(&client);
+        };
+        Service::ServerManager server{system};
+        auto manager = std::make_shared<Service::SessionRequestManager>(kernel, server);
+        std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
+        IPC::CommandHeader header{};
+        header.type.Assign(IPC::CommandType::Request);
+        header.data_size.Assign(6);
+        std::memcpy(words.data(), &header, sizeof(header));
+        words[4] = Common::MakeMagic('S', 'F', 'C', 'I');
+        words[6] = 150;
+        Service::HLERequestContext request{kernel, owner.GetMemory(), nullptr, &client};
+        request.SetSessionRequestManager(manager);
+        REQUIRE(request.PopulateFromIncomingCommandBuffer(words.data()).IsSuccess());
+        Service::Account::Module::Interface account{nullptr, nullptr, system, "acc:test"};
+        account.IsUserAccountSwitchLocked(request);
+        CHECK(request.CommandBuffer()[6] == ResultSuccess.raw);
+        return request.CommandBuffer()[8] != 0;
+    };
+    CHECK(account_lock(*application->GetHandle()));
+    CHECK_FALSE(account_lock(*child->GetHandle()));
+    add_installed_control(child_id, "4.0.0");
+    CHECK(account_lock(*child->GetHandle()));
+    Service::AOC::IAddOnContentManager aoc{system};
+    u64 dlc_base{};
+    REQUIRE(aoc.GetAddOnContentBaseId(&dlc_base, {pid}).IsSuccess());
+    CHECK(dlc_base == TitleId + 0x1000);
+    REQUIRE(aoc.GetAddOnContentBaseId(&dlc_base, {child->GetProcessId()}).IsSuccess());
+    CHECK(dlc_base == FileSys::GetAOCBaseTitleID(child_id));
+    u32 count{};
+    REQUIRE(aoc.CountAddOnContent(&count, {pid}).IsSuccess());
+    CHECK(count == 1);
+    REQUIRE(aoc.CountAddOnContent(&count, {child->GetProcessId()}).IsSuccess());
+    CHECK(count == 0);
+
+    CHECK(filesystem.ListProcessBootContent(pid, FileSys::ContentRecordType::Data) ==
+          std::vector<u64>{addon_id});
+    CHECK(filesystem.ListProcessBootContent(child->GetProcessId(),
+                                            FileSys::ContentRecordType::Data).empty());
+    Service::FileSystem::ProgramId fs_title{};
+    std::shared_ptr<Service::FileSystem::SaveDataController> save;
+    std::shared_ptr<Service::FileSystem::RomFsController> romfs;
+    REQUIRE(filesystem.OpenProcess(&fs_title, &save, &romfs, pid).IsSuccess());
+    CHECK(romfs->OpenPatchedRomFSWithProgramIndex(TitleId, 1, FileSys::ContentRecordType::Program));
+    CHECK_FALSE(create(source.file, TitleId, source.slot));
+    CHECK(system.GetProcessControlData(pid));
+    std::optional<std::size_t> dispatched_index;
+    system.RegisterExecuteProgramCallback([&](std::size_t index) { dispatched_index = index; });
+    const auto restart_command = static_cast<u64>(ProgramSpecifyKind::RestartProgram);
+    const auto execute_command = static_cast<u64>(ProgramSpecifyKind::ExecuteProgram);
+    system.GetUserChannel() = {{0x42}};
+    CHECK(call_accessor(application_functions, 120, nullptr, execute_command, 2) != ResultSuccess.raw);
+    CHECK(call_accessor(application_functions, 120, nullptr, restart_command) != ResultSuccess.raw);
+    CHECK(call_accessor(application_functions, 12, nullptr, TitleId) != ResultSuccess.raw);
+    CHECK_FALSE(dispatched_index);
+    const std::vector<std::vector<u8>> original_channel{{0x42}};
+    CHECK(system.GetUserChannel() == original_channel);
+    CHECK(application->IsRunning());
+    CHECK(home->IsRunning());
+
+    finish_guest_threads(*application);
+    REQUIRE(call_accessor(accessor, 25) == ResultSuccess.raw);
+    REQUIRE(application->IsTerminated());
+    window.Update();
+    bool application_exited = false;
+    while (home_applet->lifecycle_manager.PopMessage(kernel, &message)) {
+        application_exited |= message == AppletMessage::ApplicationExited;
+    }
+    CHECK(application_exited);
+    CHECK_FALSE(system.GetProcessControlData(pid));
+    CHECK(filesystem.OpenProcess(&fs_title, &save, &romfs, pid).IsError());
+    CHECK_FALSE(romfs->OpenPatchedRomFSWithProgramIndex(
+        TitleId, 1, FileSys::ContentRecordType::Program));
+    CHECK(filesystem.ListProcessBootContent(pid, FileSys::ContentRecordType::Data).empty());
+    REQUIRE(home->IsRunning());
+    auto successor_access = create_accessor(TitleId);
+    REQUIRE(successor_access);
+    auto& successor_accessor = *successor_access;
+    const auto successor = window.GetMainApplet();
+    REQUIRE(successor);
+    CHECK(successor->aruid.pid != pid);
+    REQUIRE(call_accessor(successor_accessor, 10) == ResultSuccess.raw);
+    SCOPE_EXIT { finish_guest_threads(*successor->process); };
+    CHECK(call_accessor(accessor, 101) != ResultSuccess.raw);
+    CHECK(call_accessor(accessor, 10) != ResultSuccess.raw);
+    CHECK(call_accessor(accessor, 25) == ResultSuccess.raw);
+    CHECK(successor->process->IsRunning());
+    Service::Glue::ARP_R arp_reader{system, system.GetARPManager()};
+    Service::Glue::ARP_W arp_writer{system, system.GetARPManager()};
+    CHECK(call_accessor(arp_reader, 0, nullptr, pid) != ResultSuccess.raw);
+    CHECK(call_accessor(arp_reader, 2, nullptr, pid) != ResultSuccess.raw);
+    CHECK(call_accessor(arp_writer, 1, nullptr, pid) != ResultSuccess.raw);
+    CHECK(call_accessor(arp_reader, 0, nullptr, successor->aruid.pid) == ResultSuccess.raw);
+    CHECK(filesystem.ListProcessBootContent(successor->aruid.pid,
+                                            FileSys::ContentRecordType::Program).empty());
+    CHECK(filesystem.ListProcessBootContent(successor->aruid.pid,
+                                            FileSys::ContentRecordType::Data) ==
+          std::vector<u64>{addon_id});
+
+    const auto legacy_file = open(t.path / "Legacy/exefs/main");
+    REQUIRE(legacy_file);
+    installed.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
+                       legacy_id, legacy_file);
+    const auto legacy_source = system.GetContentProviderUnion().GetApplicationProgram(legacy_id);
+    CHECK_FALSE(legacy_source.loader_backed);
+    finish_guest_threads(*successor->process);
+    window.Update();
+    auto legacy_access = create_accessor(legacy_id);
+    REQUIRE(legacy_access);
+    const auto legacy_applet = window.GetMainApplet();
+    REQUIRE(legacy_applet);
+    REQUIRE(call_accessor(*legacy_access, 10) == ResultSuccess.raw);
+    const auto& legacy = legacy_applet->process;
+    SCOPE_EXIT { finish_guest_threads(*legacy); };
+    Service::Glue::ApplicationLaunchProperty launch{};
+    REQUIRE(system.GetARPManager().GetLaunchProperty(&launch, legacy_id).IsSuccess());
+    CHECK(launch.base_game_storage_id == FileSys::StorageId::NandUser);
+    CHECK_FALSE(account_lock(*legacy->GetHandle()));
+
+    IApplicationFunctions legacy_functions{system, legacy_applet};
+    CHECK(call_accessor(legacy_functions, 120, nullptr, restart_command) != ResultSuccess.raw);
+    CHECK_FALSE(dispatched_index);
+    finish_guest_threads(*legacy);
+    window.Update();
+    REQUIRE(home->IsRunning());
+
+    loose_applet->process->Finalize();
+    auto native_loose_access = create_accessor(loose_id);
+    REQUIRE(native_loose_access);
+    const auto native_loose = window.GetMainApplet();
+    REQUIRE(native_loose);
+    IApplicationFunctions native_loose_functions{system, native_loose};
+    CHECK(call_accessor(native_loose_functions, 120, nullptr, restart_command) != ResultSuccess.raw);
+    CHECK_FALSE(dispatched_index);
+    CHECK(call_accessor(native_loose_functions, 120, nullptr, execute_command, 2) != ResultSuccess.raw);
+    CHECK(call_accessor(*native_loose_access, 25) == ResultSuccess.raw);
+    CHECK(filesystem.ListProcessBootContent(legacy->GetProcessId(),
+                                            FileSys::ContentRecordType::Data).empty());
+    REQUIRE(call_accessor(loose_functions, 120, nullptr, execute_command, 2) == ResultSuccess.raw);
+    REQUIRE(dispatched_index);
+    CHECK(*dispatched_index == 2);
+    system.RegisterExecuteProgramCallback({});
 }

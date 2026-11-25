@@ -364,6 +364,13 @@ void SetEdenPath(EdenPath eden_path, const fs::path& new_path) {
     }
 }
 
+fs::path ExchangeEdenPathMapping(EdenPath eden_path, const fs::path& new_path) {
+    auto& instance = PathManagerImpl::GetInstance();
+    auto previous = instance.GetEdenPathImpl(eden_path);
+    instance.SetEdenPathImpl(eden_path, new_path);
+    return previous;
+}
+
 void CreateEdenPaths() {
     PathManagerImpl::GetInstance().CreateEdenPaths();
 }

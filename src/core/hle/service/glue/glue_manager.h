@@ -8,6 +8,7 @@
 
 #include <map>
 #include <vector>
+#include <mutex>
 #include "common/common_types.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/hle/result.h"
@@ -45,18 +46,24 @@ public:
     // Adds a new entry to the internal database with the provided parameters, returning
     // ResultProcessIdNotRegistered if attempting to re-register a title ID without an intermediate
     // Unregister step, and ResultInvalidProcessId if the title ID is 0.
-    Result Register(u64 title_id, ApplicationLaunchProperty launch, std::vector<u8> control);
+    Result Register(u64 title_id, ApplicationLaunchProperty launch, std::vector<u8> control, u64 owner_pid = 0, bool has_control = true);
 
     // Removes the registration for the provided title ID from the database, returning
     // ResultProcessIdNotRegistered if it doesn't exist in the database and ResultInvalidProcessId
     // if the title ID is 0.
     Result Unregister(u64 title_id);
+    Result UnregisterProcess(u64 title_id, u64 owner_pid);
+    Result GetProcessLaunchProperty(ApplicationLaunchProperty* launch, u64 title_id,
+                                    u64 owner_pid) const;
+    Result GetProcessControlProperty(std::vector<u8>* control, u64 title_id, u64 owner_pid,
+                                     bool require_actual_control = false) const;
 
     // Removes all entries from the database, always succeeds. Should only be used when resetting
     // system state.
     void ResetAll();
 
 private:
+    mutable std::mutex entries_mutex;
     struct MapEntry;
     std::map<u64, MapEntry> entries;
 };

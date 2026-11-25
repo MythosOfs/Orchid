@@ -68,22 +68,13 @@ VirtualFile RomFSFactory::OpenPatchedRomFS(u64 title_id, ContentRecordType type)
     return patch_manager.PatchRomFS(nca.get(), nca->GetRomFS(), type);
 }
 
-namespace {
-// One global set, replaced on every boot; only one title runs at a time. Directories are kept
-// and built into a RomFS on first use: building walks every file, and most titles never open
-// their sibling programs.
-std::mutex boot_content_mutex;
-std::vector<BootContent> boot_content;
-std::map<std::pair<u64, ContentRecordType>, VirtualFile> boot_content_romfs;
-} // namespace
-
-void SetBootContent(std::vector<BootContent> entries) {
+void RomFSFactory::SetBootContent(std::vector<BootContent> entries) {
     std::scoped_lock lk{boot_content_mutex};
     boot_content = std::move(entries);
     boot_content_romfs.clear();
 }
 
-std::vector<u64> ListBootContent(ContentRecordType type) {
+std::vector<u64> RomFSFactory::ListBootContent(ContentRecordType type) const {
     std::scoped_lock lk{boot_content_mutex};
     std::vector<u64> ids;
     for (const auto& entry : boot_content) {
@@ -94,7 +85,7 @@ std::vector<u64> ListBootContent(ContentRecordType type) {
     return ids;
 }
 
-VirtualFile OpenBootContent(u64 title_id, ContentRecordType type) {
+VirtualFile RomFSFactory::OpenBootContent(u64 title_id, ContentRecordType type) const {
     std::scoped_lock lk{boot_content_mutex};
     if (const auto it = boot_content_romfs.find({title_id, type}); it != boot_content_romfs.end()) {
         return it->second;

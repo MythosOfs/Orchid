@@ -515,7 +515,7 @@ std::string GetShortcutPath(ShortcutTarget target) {
 }
 
 void CreateHomeMenuShortcut(ShortcutTarget target) {
-    constexpr u64 QLaunchId = static_cast<u64>(Service::AM::AppletProgramId::QLaunch);
+    using Service::AM::AppletProgramId;
     auto bis_system = QtCommon::system->GetFileSystemController().GetSystemNANDContents();
     if (!bis_system) {
         QtCommon::Frontend::Warning(tr("No firmware available"),
@@ -523,18 +523,22 @@ void CreateHomeMenuShortcut(ShortcutTarget target) {
         return;
     }
 
-    auto qlaunch_nca = bis_system->GetEntry(QLaunchId, FileSys::ContentRecordType::Program);
+    auto program_id = AppletProgramId::QLaunchNx2;
+    auto qlaunch_nca = bis_system->GetEntry(u64(program_id), FileSys::ContentRecordType::Program);
+    if (!qlaunch_nca) {
+        program_id = AppletProgramId::QLaunch;
+        qlaunch_nca = bis_system->GetEntry(u64(program_id), FileSys::ContentRecordType::Program);
+    }
     if (!qlaunch_nca) {
         QtCommon::Frontend::Warning(tr("Home Menu Applet"),
                                     tr("Home Menu is not available. Please reinstall firmware."));
         return;
     }
 
-    auto qlaunch_applet_nca = bis_system->GetEntry(QLaunchId, FileSys::ContentRecordType::Program);
-    const auto game_path = qlaunch_applet_nca->GetFullPath();
+    const auto game_path = qlaunch_nca->GetFullPath();
 
     // TODO(crueter): Make this use the Eden icon
-    CreateShortcut(game_path, QLaunchId, "Switch Home Menu", target, "-qlaunch", false);
+    CreateShortcut(game_path, u64(program_id), "Switch Home Menu", target, "--home-menu", false);
 }
 
 bool SaveIconToFile(const std::filesystem::path& icon_path, const QImage& image) {

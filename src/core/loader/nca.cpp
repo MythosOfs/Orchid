@@ -131,10 +131,12 @@ AppLoader_NCA::LoadResult AppLoader_NCA::Load(Kernel::KProcess& process, Core::S
     }
 
     // Register the process in the file system controller
-    system.GetFileSystemController().RegisterProcess(
-        process.GetProcessId(), GetProgramId(),
-        std::make_shared<FileSys::RomFSFactory>(*this, system.GetContentProvider(),
-                                                system.GetFileSystemController()));
+    auto& fs = system.GetFileSystemController();
+    if (fs.RegisterProcess(process.GetProcessId(), GetProgramId(),
+            std::make_shared<FileSys::RomFSFactory>(*this, system.GetContentProvider(), fs))
+            .IsError()) {
+        return {ResultStatus::ErrorNotInitialized, {}};
+    }
 
     is_loaded = true;
     return load_result;

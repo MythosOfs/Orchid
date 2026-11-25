@@ -6,12 +6,17 @@
 
 #pragma once
 
+#include <span>
+#include <vector>
+
 #include "core/hle/service/cmif_types.h"
 #include "core/hle/service/service.h"
 #include "core/hle/service/ns/language.h"
 #include "core/hle/service/ns/ns_types.h"
 
 namespace Service::NS {
+
+std::vector<u64> DecodeApplicationIds(std::span<const u8> bytes);
 
 class IReadOnlyApplicationControlDataInterface final
     : public ServiceFramework<IReadOnlyApplicationControlDataInterface> {

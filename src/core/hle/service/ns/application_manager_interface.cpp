@@ -569,28 +569,18 @@ Result IApplicationManagerInterface::ListApplicationRecord(
 
     LOG_DEBUG(Service_NS, "called");
     const auto& cache = system.GetContentProviderUnion();
-    const auto installed_games = cache.ListEntriesFilterOrigin(
-        std::nullopt, FileSys::TitleType::Application, FileSys::ContentRecordType::Program);
+    const auto application_ids = cache.ListApplicationIds();
 
     std::vector<ApplicationRecord> records;
-    records.reserve(installed_games.size());
+    records.reserve(application_ids.size());
 
-    for (const auto& [slot, game] : installed_games) {
-         if (game.title_id == 0 || game.title_id < 0x0100000000001FFFull) {
-             continue;
-         }
-         if ((game.title_id & 0xFFF) != 0) {
-             continue; // skip sub-programs (e.g., 001)
-         }
-
-         ApplicationRecord record{};
-         record.application_id = game.title_id;
-         record.last_event = ApplicationEvent::Installed;
-         record.attributes = 0;
-         record.last_updated = Core::LaunchTimestampCache::GetLaunchTimestamp(game.title_id);
-
-         records.push_back(record);
-     }
+    for (const u64 application_id : application_ids) {
+        ApplicationRecord record{};
+        record.application_id = application_id;
+        record.last_event = ApplicationEvent::Installed;
+        record.last_updated = Core::LaunchTimestampCache::GetLaunchTimestamp(application_id);
+        records.push_back(record);
+    }
 
      std::sort(records.begin(), records.end(), [](const ApplicationRecord& lhs, const ApplicationRecord& rhs) {
          if (lhs.last_updated == rhs.last_updated) {

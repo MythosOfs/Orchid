@@ -4,6 +4,8 @@
 #pragma once
 
 #include <memory>
+#include <map>
+#include <mutex>
 #include <utility>
 #include <vector>
 
@@ -38,17 +40,12 @@ enum class StorageId : u8 {
 // Content of the booted title that has no NCA in the content provider (loose dumps, NUP
 // containers). Program entries are the other programs of a multi-program application, keyed by
 // the title ID of their program index (Switch 2 Editions run index 1 and read index 0 through
-// OpenDataStorageWithProgramIndex). Data entries are add-on content, listed by aoc:u. Every
-// loader that boots a title replaces the whole set; RomFS images are built on first open.
+// OpenDataStorageWithProgramIndex). Data entries are add-on content, listed by aoc:u.
 struct BootContent {
     u64 title_id{};
     ContentRecordType type{};
     VirtualDir romfs;
 };
-void SetBootContent(std::vector<BootContent> entries);
-[[nodiscard]] std::vector<u64> ListBootContent(ContentRecordType type);
-/// The registered RomFS for a title ID and type, built on first use, or nullptr.
-[[nodiscard]] VirtualFile OpenBootContent(u64 title_id, ContentRecordType type);
 
 /// File system interface to the RomFS archive
 class RomFSFactory {
@@ -56,6 +53,10 @@ public:
     explicit RomFSFactory(Loader::AppLoader& app_loader, ContentProvider& provider,
                           Service::FileSystem::FileSystemController& controller);
     ~RomFSFactory();
+
+    void SetBootContent(std::vector<BootContent> entries);
+    [[nodiscard]] std::vector<u64> ListBootContent(ContentRecordType type) const;
+    [[nodiscard]] VirtualFile OpenBootContent(u64 title_id, ContentRecordType type) const;
 
     void SetPackedUpdate(VirtualFile packed_update_raw);
     [[nodiscard]] VirtualFile OpenCurrentProcess(u64 current_process_title_id) const;
@@ -69,6 +70,9 @@ public:
 private:
     VirtualFile file;
     VirtualFile packed_update_raw;
+    mutable std::mutex boot_content_mutex;
+    std::vector<BootContent> boot_content;
+    mutable std::map<std::pair<u64, ContentRecordType>, VirtualFile> boot_content_romfs;
 
     VirtualFile base;
 

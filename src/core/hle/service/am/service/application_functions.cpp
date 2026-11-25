@@ -37,7 +37,7 @@ namespace Service::AM {
 
 namespace {
 
-FileSys::PatchManager::Metadata GetApplicationMetadata(Core::System& system, u64 program_id) {
+FileSys::PatchManager::Metadata GetInstalledApplicationMetadata(Core::System& system, u64 program_id) {
     auto metadata = FileSys::PatchManager::GetMetadataFromBaseOrUpdate(system, program_id);
     if (metadata.first != nullptr) {
         return metadata;
@@ -52,6 +52,13 @@ FileSys::PatchManager::Metadata GetApplicationMetadata(Core::System& system, u64
               "no metadata for program_id={:016X}, falling back to application_id={:016X}",
               program_id, application_id);
     return FileSys::PatchManager::GetMetadataFromBaseOrUpdate(system, application_id);
+}
+
+FileSys::PatchManager::Metadata GetApplicationMetadata(Core::System& system, u64 program_id) {
+    if (system.GetContentProviderUnion().GetApplicationProgram(program_id).loader_backed) {
+        return FileSys::PatchManager::GetApplicationControlMetadata(system, program_id);
+    }
+    return GetInstalledApplicationMetadata(system, program_id);
 }
 
 } // Anonymous namespace
@@ -247,28 +254,23 @@ Result IApplicationFunctions::SetTerminateResult(Result terminate_result) {
     R_SUCCEED();
 }
 
-// A loose ExeFS/RomFS dump has no installed control data: its loader's (a control.nacp next to the
-// dump, else the RomFS's version tag). Only for the program it loaded, not for library applets.
-bool IApplicationFunctions::LooseDumpDisplayVersion(std::string& version) {
-    auto& loader = system.GetAppLoader();
-    u64 program_id{};
-    if (loader.ReadProgramId(program_id) != Loader::ResultStatus::Success ||
-        FileSys::GetBaseTitleID(program_id) != FileSys::GetBaseTitleID(m_applet->program_id) ||
-        loader.ReadDisplayVersion(version) != Loader::ResultStatus::Success || version.empty()) {
-        return false;
-    }
-    LOG_INFO(Service_AM, "Display version {} from the dump's files", version);
-    return true;
-}
-
 Result IApplicationFunctions::GetDisplayVersion(Out<DisplayVersion> out_display_version) {
     LOG_DEBUG(Service_AM, "called");
 
-    const auto res = GetApplicationMetadata(system, m_applet->program_id);
-    std::string version;
-    if (res.first != nullptr) {
-        version = res.first->GetVersionString();
-    } else if (!LooseDumpDisplayVersion(version)) {
+    std::string version = m_applet->process->GetDisplayVersion();
+    if (m_applet->process->PrefersInstalledDisplayVersion()) {
+        const auto installed = GetInstalledApplicationMetadata(system, m_applet->program_id);
+        if (installed.first) {
+            version = installed.first->GetVersionString();
+        }
+    }
+    if (version.empty()) {
+        if (const auto metadata = GetApplicationMetadata(system, m_applet->program_id);
+            metadata.first) {
+            version = metadata.first->GetVersionString();
+        }
+    }
+    if (version.empty()) {
         version = "1.0.0";
     }
     std::memcpy(out_display_version->string.data(), version.data(),
@@ -495,6 +497,8 @@ Result IApplicationFunctions::ExecuteProgram(ProgramSpecifyKind kind, u64 value)
     ASSERT(kind == ProgramSpecifyKind::ExecuteProgram ||
            kind == ProgramSpecifyKind::RestartProgram);
 
+    R_UNLESS(!m_applet->launched_from_native_home_menu, ResultUnknown);
+
     // Copy user channel ownership into the system so that it will be preserved
     system.GetUserChannel() = m_applet->user_channel_launch_parameter;
     system.ExecuteProgram(value);
@@ -505,6 +509,7 @@ Result IApplicationFunctions::ExecuteProgram(ProgramSpecifyKind kind, u64 value)
 Result IApplicationFunctions::CreateApplicationAndRequestToStart(u64 application_id) {
     LOG_INFO(Service_AM, "called, application_id={:016X} current_program_id={:016X}", application_id, m_applet->program_id);
 
+    R_UNLESS(!m_applet->launched_from_native_home_menu, ResultUnknown);
     if (application_id == 0 ||
         FileSys::GetBaseTitleID(application_id) == FileSys::GetBaseTitleID(m_applet->program_id)) {
         const auto program_index = application_id == 0

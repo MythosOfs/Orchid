@@ -339,6 +339,8 @@ void SetAppDirectory(const std::string& app_directory);
  * @param new_path New filesystem path
  */
 void SetEdenPath(EdenPath eden_path, const std::filesystem::path& new_path);
+std::filesystem::path ExchangeEdenPathMapping(EdenPath eden_path,
+                                              const std::filesystem::path& new_path);
 
 /**
  * Creates all necessary Eden paths in the filesystem.

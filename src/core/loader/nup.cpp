@@ -281,8 +281,6 @@ AppLoader::LoadResult AppLoader_NUP::Load(Kernel::KProcess& process, Core::Syste
         return result;
     }
 
-    // The secondary ExeFS loader resets loose content. Publish the NUP entries only
-    // after it succeeds, before the guest can enumerate or open add-on content.
     // Switch 2 edition programs can retain their Switch 1 application's DLC IDs.
     const u64 addon_application_id = nacp_file && nacp_file->GetDLCBaseTitleId() != 0
                                          ? FileSys::GetBaseTitleID(nacp_file->GetDLCBaseTitleId())
@@ -296,12 +294,14 @@ AppLoader::LoadResult AppLoader_NUP::Load(Kernel::KProcess& process, Core::Syste
     for (auto& [id, romfs] : nup->GetSiblingProgramRomFS()) {
         boot_content.push_back({id, FileSys::ContentRecordType::Program, std::move(romfs)});
     }
-    FileSys::SetBootContent(std::move(boot_content));
 
-    system.GetFileSystemController().RegisterProcess(
-        process.GetProcessId(), base_title_id,
-        std::make_shared<FileSys::RomFSFactory>(*this, system.GetContentProvider(),
-                                                system.GetFileSystemController()));
+    auto& fs = system.GetFileSystemController();
+    if (fs.RegisterProcess(process.GetProcessId(), base_title_id,
+            std::make_shared<FileSys::RomFSFactory>(*this, system.GetContentProvider(), fs))
+            .IsError() ||
+        fs.SetProcessBootContent(process.GetProcessId(), std::move(boot_content)).IsError()) {
+        return {ResultStatus::ErrorNotInitialized, {}};
+    }
 
     is_loaded = true;
     return result;

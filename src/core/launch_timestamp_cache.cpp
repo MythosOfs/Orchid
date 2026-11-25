@@ -27,7 +27,7 @@ using CountMap = ::Common::unordered_map<u64, u64>;
 std::mutex g_mutex;
 CacheMap g_cache;
 CountMap g_counts;
-bool g_loaded = false;
+std::filesystem::path g_loaded_path;
 
 std::filesystem::path GetCachePath() {
     return Common::FS::GetEdenPath(Common::FS::EdenPath::CacheDir) / "launched.json";
@@ -56,13 +56,13 @@ bool WriteStringToFile(const std::filesystem::path& path, const std::string& dat
 }
 
 void Load() {
-    if (g_loaded) {
+    const auto path = GetCachePath();
+    if (g_loaded_path == path) {
         return;
     }
-
-    g_loaded = true;
-
-    const auto path = GetCachePath();
+    g_loaded_path = path;
+    g_cache.clear();
+    g_counts.clear();
     if (!std::filesystem::exists(path)) {
         return;
     }

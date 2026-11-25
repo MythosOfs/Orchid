@@ -116,6 +116,7 @@ public:
     [[nodiscard]] Metadata ParseControlNCA(const NCA& nca) const;
 
     /// @brief Gets NACP metadata (accounting for any patches or updates)
+    static Metadata GetApplicationControlMetadata(Core::System& system, u64 application_id);
     [[nodiscard]] static PatchManager::Metadata GetMetadataFromBaseOrUpdate(Core::System& system, u64 application_id) noexcept;
 
     [[nodiscard]] std::vector<std::string> GetDisabledAddons() const;

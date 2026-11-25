@@ -102,6 +102,7 @@ enum class AppletId : u32 {
 
 enum class AppletProgramId : u64 {
     QLaunch = 0x0100000000001000ull,
+    QLaunchNx2 = 0x0400000000001000ull,
     Auth = 0x0100000000001001ull,
     Cabinet = 0x0100000000001002ull,
     Controller = 0x0100000000001003ull,

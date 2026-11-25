@@ -42,3 +42,39 @@ The general channel's event and service context are created the first time a gam
 
 - A refused submit in `PresentManager::DiscardFrame` leaves the frame's `present_done` fence unsignaled and the next use of the frame waits on it for good. The frame gets a fresh signaled fence. `VK_ERROR_DEVICE_LOST` at present or while waiting for a frame's fence calls `Device::ReportLoss`.
 - `Sampler::Emplace` catches a refused `vkCreateSampler` (too many objects, out of host or device memory) and borrows the handle of a variant of the same sampler with identical filters, anisotropy, compare, reduction and border behaviour, or the runtime's first sampler if that is compatible. A custom-border variant only borrows from a variant with the same swizzle. Nothing compatible: rethrow. The borrowed handle lives as long as the runtime, because samplers are never erased from the texture cache's slot vector.
+
+## Home Menu application ownership
+
+Home Menu records combine registered application programs with launchable host files. Host paths
+stay outside the installed-content API, and firmware IDs from either platform stay out of game
+records. Native firmware applet startup uses the applet boot context for frontend prompts and
+recents.
+
+The RomFS factory registered for a process also owns its embedded add-on and sibling content.
+Loading a guest child applet cannot replace the application's content. The applet exit path
+drops the filesystem registration and releases ARP only for the PID that registered it.
+The process keeps the selected loader's display version separately from raw NACP.
+
+A guest-created application holds the window slot while waiting for Start. The event observer
+starts watching it only after the first successful Start. A failed first Start retires its
+registrations and removes the slot. Repeat Start leaves a running application in place. The exit
+path retires registrations before sending ApplicationExited to qlaunch. The ARP PID interface
+and application accessor check the registering PID even if a successor has the same title ID.
+Raw ARP control still supports the zero-filled reply for loaders without NACP. Owner-specific
+account policy distinguishes that placeholder from an actual NACP so installed control can apply.
+
+The creator uses the registered provider slot and title ID for installed content and retains the
+loader-backed VFS source for host content. The creator reserves the application slot before loading
+and returns busy while another creator or application owns it. RequestExit and Terminate remove a
+pending application under the same lock as Start. Pre-start rollback switches the active kernel
+application away before releasing the never-started process and its HID registration. An accessor
+retains the applet completion event and result after that process is released. The launch timestamp
+cache reloads when the profile cache path changes.
+
+A native Home Menu owns the frontend session while its guest application owns a separate process.
+The frontend's index-only transition uses its last application path, which can belong to a prior
+direct launch. It can also fall back to the qlaunch path. The native Home Menu creator marks its
+applications so their in-game restart and same-title program transition requests return an error
+before touching the frontend or transferring the user channel. Frontend Restart is disabled during
+native qlaunch. The Home Menu can create the title again after exit. Ordinary frontend launches and
+legacy Home Menu sessions retain the existing transition behavior.

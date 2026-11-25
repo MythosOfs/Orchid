@@ -14,12 +14,14 @@
 namespace Service::AM {
 
 HidRegistration::HidRegistration(Core::System& system, Process& process) : m_process(process) {
-    m_hid_server = system.ServiceManager().GetService<HID::IHidServer>("hid", true);
+    if (system.HasServiceManager()) {
+        m_hid_server = system.ServiceManager().GetService<HID::IHidServer>("hid", true);
+    }
     this->RegisterCurrentProcess();
 }
 
 void HidRegistration::RegisterCurrentProcess() {
-    if (m_process.IsInitialized()) {
+    if (m_hid_server && m_process.IsInitialized()) {
         m_hid_server->GetResourceManager()->RegisterAppletResourceUserId(m_process.GetProcessId(),
                                                                          true);
         m_hid_server->GetResourceManager()->SetAruidValidForVibration(m_process.GetProcessId(),
@@ -28,7 +30,11 @@ void HidRegistration::RegisterCurrentProcess() {
 }
 
 HidRegistration::~HidRegistration() {
-    if (m_process.IsInitialized()) {
+    UnregisterCurrentProcess();
+}
+
+void HidRegistration::UnregisterCurrentProcess() {
+    if (m_hid_server && m_process.IsInitialized()) {
         m_hid_server->GetResourceManager()->SetAruidValidForVibration(m_process.GetProcessId(),
                                                                       false);
         m_hid_server->GetResourceManager()->UnregisterAppletResourceUserId(
@@ -37,7 +43,7 @@ HidRegistration::~HidRegistration() {
 }
 
 void HidRegistration::EnableAppletToGetInput(bool enable_pad, bool enable_touch) {
-    if (!m_process.IsInitialized())
+    if (!m_hid_server || !m_process.IsInitialized())
         return;
 
     const auto resource_manager = m_hid_server->GetResourceManager();

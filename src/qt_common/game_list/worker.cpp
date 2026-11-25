@@ -23,6 +23,7 @@
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/file_sys/card_image.h"
+#include "core/file_sys/common_funcs.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/fs_filesystem.h"
@@ -447,12 +448,15 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::vector<std::fi
         const auto res2 = loader->ReadProgramId(program_id);
 
         if (target == ScanTarget::FillManualContentProvider) {
-            if (res2 == Loader::ResultStatus::Success && file_type == Loader::FileType::NCA) {
-                provider->AddEntry(FileSys::TitleType::Application,
-                                   FileSys::GetCRTypeFromNCAType(FileSys::NCA{file}.GetType()),
-                                   program_id, file);
-            } else if (file_type == Loader::FileType::NX) {
-                static_cast<Loader::AppLoader_NX&>(*loader).RegisterContent(*provider);
+            if (file_type == Loader::FileType::NCA) {
+                provider->RegisterApplicationNca(*loader, file);
+            } else if (file_type == Loader::FileType::NX || file_type == Loader::FileType::NUP) {
+                if (file_type == Loader::FileType::NX) {
+                    static_cast<Loader::AppLoader_NX&>(*loader).RegisterContent(*provider);
+                }
+                provider->RegisterApplicationFile(*loader, file);
+            } else if (file_type == Loader::FileType::DeconstructedRomDirectory) {
+                provider->RegisterApplicationFile(*loader, file);
             } else if (Settings::values.ext_content_from_game_dirs.GetValue() &&
                        (file_type == Loader::FileType::XCI ||
                         file_type == Loader::FileType::XCZ ||
@@ -535,11 +539,6 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::vector<std::fi
     for (const auto& path : files) {
         if (stop_requested) {
             break;
-        }
-        // Loose executables cannot contribute NCA content to the manual provider.
-        if (target == ScanTarget::FillManualContentProvider &&
-            IsExtractedNCAMain(Common::FS::PathToUTF8String(path))) {
-            continue;
         }
         process_candidate(path);
     }

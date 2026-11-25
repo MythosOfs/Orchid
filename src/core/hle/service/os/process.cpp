@@ -9,6 +9,9 @@
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/svc_types.h"
 #include "core/hle/service/os/process.h"
+#include "core/core.h"
+#include "core/hle/service/filesystem/filesystem.h"
+#include "core/hle/service/glue/glue_manager.h"
 #include "core/loader/loader.h"
 
 namespace Service {
@@ -32,6 +35,7 @@ bool Process::Initialize(Loader::AppLoader& loader, Loader::ResultStatus& out_lo
 
     // Ensure loading was successful.
     if (load_result != Loader::ResultStatus::Success) {
+        m_system.GetFileSystemController().UnregisterProcess(process->GetProcessId());
         return false;
     }
 
@@ -48,6 +52,18 @@ bool Process::Initialize(Loader::AppLoader& loader, Loader::ResultStatus& out_lo
     // Take ownership of the process object.
     m_process = process;
     m_process->Open(m_system.Kernel());
+    m_loose_exefs = loader.GetFileType() == Loader::FileType::DeconstructedRomDirectory;
+    switch (loader.GetFileType()) {
+    case Loader::FileType::NUP:
+    case Loader::FileType::NX:
+    case Loader::FileType::DeconstructedRomDirectory:
+        if (loader.ReadDisplayVersion(m_display_version) != Loader::ResultStatus::Success) {
+            m_display_version.clear();
+        }
+        break;
+    default:
+        break;
+    }
 
     // We succeeded.
     return true;
@@ -59,6 +75,7 @@ void Process::Finalize() {
 
     // Close the process.
     if (m_process) {
+        this->RetireRegistrations();
         m_process->Close(m_system.Kernel());
         // TODO: remove this, kernel already tracks this
         m_system.Kernel().RemoveProcess(m_process);
@@ -69,6 +86,14 @@ void Process::Finalize() {
     m_main_thread_priority = 0;
     m_main_thread_stack_size = 0;
     m_process_started = false;
+    m_display_version.clear();
+}
+
+void Process::RetireRegistrations() {
+    if (m_process) {
+        m_system.GetFileSystemController().UnregisterProcess(GetProcessId());
+        m_system.GetARPManager().UnregisterProcess(GetProgramId(), GetProcessId());
+    }
 }
 
 bool Process::Run() {
@@ -79,7 +104,10 @@ bool Process::Run() {
 
     // Start.
     if (m_process) {
-        m_process->Run(m_system.Kernel(), m_main_thread_priority, m_main_thread_stack_size);
+        if (m_process->Run(m_system.Kernel(), m_main_thread_priority, m_main_thread_stack_size)
+                .IsError()) {
+            return false;
+        }
     }
 
     // Mark as started.

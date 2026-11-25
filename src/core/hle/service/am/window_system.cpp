@@ -58,7 +58,7 @@ void WindowSystem::Update() {
     this->NotifyApplicationChangedIfNeeded();
 }
 
-void WindowSystem::TrackApplet(std::shared_ptr<Applet> applet, bool is_application) {
+void WindowSystem::TrackApplet(std::shared_ptr<Applet> applet, bool is_application, bool defer_start) {
     {
         std::scoped_lock lk{m_lock};
 
@@ -74,11 +74,73 @@ void WindowSystem::TrackApplet(std::shared_ptr<Applet> applet, bool is_applicati
 
         this->UpdateCurrentApplicationLocked();
 
-        m_event_observer->TrackAppletProcess(*applet);
+        if (!defer_start && m_event_observer) {
+            m_event_observer->TrackAppletProcess(*applet);
+        }
         m_applets.emplace(applet->aruid.pid, std::move(applet));
     }
 
     this->NotifyApplicationChangedIfNeeded();
+}
+
+bool WindowSystem::HasNativeHomeMenu() {
+    std::scoped_lock lock{m_lock};
+    return m_home_menu && m_home_menu->program_id == static_cast<u64>(AppletProgramId::QLaunchNx2);
+}
+
+bool WindowSystem::ReserveApplicationSlot() {
+    std::scoped_lock lock{m_lock};
+    if (m_application || m_application_slot_reserved) {
+        return false;
+    }
+    m_application_slot_reserved = true;
+    return true;
+}
+
+void WindowSystem::ReleaseApplicationSlotReservation() {
+    std::scoped_lock lock{m_lock};
+    m_application_slot_reserved = false;
+}
+
+bool WindowSystem::CancelPendingApplication(Applet& applet) {
+    {
+        std::scoped_lock lock{m_lock};
+        if (m_application != &applet) {
+            return false;
+        }
+        {
+            std::scoped_lock applet_lock{applet.lock};
+            if (applet.process->HasStarted()) {
+                return false;
+            }
+            applet.OnProcessTerminatedLocked();
+        }
+        PruneTerminatedAppletsLocked();
+    }
+    NotifyApplicationChangedIfNeeded();
+    return true;
+}
+
+Result WindowSystem::StartApplication(Applet& applet) {
+    {
+        std::scoped_lock lock{m_lock};
+        R_UNLESS(m_application == &applet, ResultUnknown);
+        {
+            std::scoped_lock applet_lock{applet.lock};
+            R_UNLESS(!applet.is_completed && !applet.process->HasStarted(), ResultUnknown);
+            if (applet.process->Run()) {
+                if (m_event_observer) {
+                    m_event_observer->TrackAppletProcess(applet);
+                }
+                R_SUCCEED();
+            }
+            applet.terminate_result = ResultUnknown;
+            applet.OnProcessTerminatedLocked();
+        }
+        PruneTerminatedAppletsLocked();
+    }
+    NotifyApplicationChangedIfNeeded();
+    R_THROW(ResultUnknown);
 }
 
 void WindowSystem::UpdateCurrentApplicationLocked() {
@@ -154,13 +216,17 @@ void WindowSystem::RequestHomeMenuToGetForeground() {
     m_event_observer->RequestUpdate();
 }
 
-void WindowSystem::RequestApplicationToGetForeground() {
+bool WindowSystem::RequestApplicationToGetForeground(const Applet* expected) {
     {
         std::scoped_lock lk{m_lock};
+        if (expected && m_application != expected) {
+            return false;
+        }
         m_foreground_requested_applet = m_application;
     }
 
-    m_event_observer->RequestUpdate();
+    RequestUpdate();
+    return true;
 }
 
 void WindowSystem::RequestLockHomeMenuIntoForeground() {
@@ -283,11 +349,12 @@ void WindowSystem::OnHomeButtonPressed(ButtonPressDuration type) {
 
 void WindowSystem::PruneTerminatedAppletsLocked() {
     for (auto it = m_applets.begin(); it != m_applets.end(); /* ... */) {
-        const auto& [aruid, applet] = *it;
+        const auto aruid = it->first;
+        const auto applet = it->second;
 
         std::scoped_lock lk{applet->lock};
 
-        if (!applet->process->IsTerminated()) {
+        if (!applet->is_completed && !applet->process->IsTerminated()) {
             // Not terminated.
             it = std::next(it);
             continue;
@@ -354,15 +421,15 @@ void WindowSystem::PruneTerminatedAppletsLocked() {
             m_foreground_requested_applet = m_application;
         }
 
+        if (!applet->is_completed) {
+            applet->OnProcessTerminatedLocked();
+        }
+
         // If this was the application, we should try to switch to the home menu.
-        if (applet.get() == m_application) {
+        const bool application_exited = applet.get() == m_application;
+        if (application_exited) {
             m_application = nullptr;
             m_foreground_requested_applet = m_home_menu;
-
-            // If we have a home menu, send it the application exited message.
-            if (m_home_menu) {
-                m_home_menu->lifecycle_manager.PushUnorderedMessage(m_system.Kernel(), AppletMessage::ApplicationExited);
-            }
         }
 
         if (applet.get() == m_overlay_display) {
@@ -371,11 +438,21 @@ void WindowSystem::PruneTerminatedAppletsLocked() {
 
         this->UpdateCurrentApplicationLocked();
 
-        // Finalize applet.
-        applet->OnProcessTerminatedLocked();
+        if (!applet->process->HasStarted()) {
+            if (const auto* process = applet->process->GetHandle();
+                process && m_system.Kernel().ApplicationProcess() == process) {
+                m_system.Kernel().SetApplicationProcess(
+                    m_overlay_display ? m_overlay_display->process->GetHandle() : nullptr);
+            }
+            applet->hid_registration.UnregisterCurrentProcess();
+            applet->process->Finalize();
+        }
+        if (application_exited && m_home_menu) {
+            m_home_menu->lifecycle_manager.PushUnorderedMessage(
+                m_system.Kernel(), AppletMessage::ApplicationExited);
+        }
 
-        // Request update to ensure quiescence.
-        m_event_observer->RequestUpdate();
+        RequestUpdate();
 
         // Unlink and advance.
         it = m_applets.erase(it);

@@ -70,7 +70,7 @@ void ARP_R::GetApplicationLaunchProperty(HLERequestContext& ctx) {
     }
 
     ApplicationLaunchProperty launch_property{};
-    const auto res = manager.GetLaunchProperty(&launch_property, *title_id);
+    const auto res = manager.GetProcessLaunchProperty(&launch_property, *title_id, process_id);
 
     if (res != ResultSuccess) {
         LOG_ERROR(Service_ARP, "Failed to get launch property!");
@@ -120,7 +120,7 @@ void ARP_R::GetApplicationControlProperty(HLERequestContext& ctx) {
     }
 
     std::vector<u8> nacp_data;
-    const auto res = manager.GetControlProperty(&nacp_data, *title_id);
+    const auto res = manager.GetProcessControlProperty(&nacp_data, *title_id, process_id);
 
     if (res != ResultSuccess) {
         LOG_ERROR(Service_ARP, "Failed to get control property!");
@@ -269,7 +269,7 @@ void ARP_W::AcquireRegistrar(HLERequestContext& ctx) {
                 return Glue::ResultProcessIdNotRegistered;
             }
 
-            return manager.Register(*res, launch, std::move(control));
+            return manager.Register(*res, launch, std::move(control), process_id);
         });
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
@@ -300,7 +300,7 @@ void ARP_W::UnregisterApplicationInstance(HLERequestContext& ctx) {
     }
 
     IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(manager.Unregister(*title_id));
+    rb.Push(manager.UnregisterProcess(*title_id, process_id));
 }
 
 } // namespace Service::Glue

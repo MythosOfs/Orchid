@@ -60,12 +60,14 @@ IApplicationAccessor::~IApplicationAccessor() = default;
 
 Result IApplicationAccessor::Start() {
     LOG_INFO(Service_AM, "called");
-    m_applet->process->Run();
-    R_SUCCEED();
+    R_RETURN(m_window_system.StartApplication(*m_applet));
 }
 
 Result IApplicationAccessor::RequestExit() {
     LOG_INFO(Service_AM, "called");
+    if (m_window_system.CancelPendingApplication(*m_applet)) {
+        R_SUCCEED();
+    }
 
     std::scoped_lock lk{m_applet->lock};
     if (m_applet->exit_locked) {
@@ -80,7 +82,9 @@ Result IApplicationAccessor::RequestExit() {
 
 Result IApplicationAccessor::Terminate() {
     LOG_INFO(Service_AM, "called");
-    m_applet->process->Terminate();
+    if (!m_window_system.CancelPendingApplication(*m_applet)) {
+        m_applet->process->Terminate();
+    }
     R_SUCCEED();
 }
 
@@ -115,7 +119,8 @@ Result IApplicationAccessor::GetApplicationControlProperty(
     LOG_INFO(Service_AM, "called");
 
     std::vector<u8> nacp;
-    R_TRY(system.GetARPManager().GetControlProperty(&nacp, m_applet->program_id));
+    R_TRY(system.GetARPManager().GetProcessControlProperty(
+        &nacp, m_applet->program_id, m_applet->aruid.pid));
 
     std::memcpy(out_control_property.data(), nacp.data(),
                 (std::min)(out_control_property.size(), nacp.size()));
@@ -138,7 +143,7 @@ Result IApplicationAccessor::GetCurrentLibraryApplet(
 
 Result IApplicationAccessor::RequestForApplicationToGetForeground() {
     LOG_INFO(Service_AM, "called");
-    m_window_system.RequestApplicationToGetForeground();
+    R_UNLESS(m_window_system.RequestApplicationToGetForeground(m_applet.get()), ResultUnknown);
     R_SUCCEED();
 }
 

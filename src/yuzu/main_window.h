@@ -557,6 +557,7 @@ private:
 
     // Whether emulation is currently running in yuzu.
     bool emulation_running = false;
+    bool native_home_menu_running = false;
     /// The modern theme replaced the application palette; undone when switching back.
     bool modern_palette_set = false;
     // The crash log is this run's once a game has booted, else the previous run's.

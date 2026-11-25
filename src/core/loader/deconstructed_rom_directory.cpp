@@ -614,7 +614,8 @@ const FileSys::VirtualFile& AppLoader_DeconstructedRomDirectory::LooseRomFS() {
 }
 
 FileType AppLoader_DeconstructedRomDirectory::IdentifyType(const FileSys::VirtualFile& dir_file) {
-    if (FileSys::IsDirectoryExeFS(dir_file->GetContainingDirectory())) {
+    const auto directory = dir_file->GetContainingDirectory();
+    if (directory && FileSys::IsDirectoryExeFS(directory)) {
         return FileType::DeconstructedRomDirectory;
     }
 
@@ -661,7 +662,6 @@ AppLoader_DeconstructedRomDirectory::LoadResult AppLoader_DeconstructedRomDirect
             boot_content.push_back({id, FileSys::ContentRecordType::Program, std::move(program)});
         }
     }
-    FileSys::SetBootContent(std::move(boot_content));
 
     if (override_update) {
         const FileSys::PatchManager patch_manager(
@@ -781,10 +781,13 @@ AppLoader_DeconstructedRomDirectory::LoadResult AppLoader_DeconstructedRomDirect
 
     if (standalone) {
         // Without this, fsp-srv SetCurrentProcess fails with ResultTargetNotFound.
-        system.GetFileSystemController().RegisterProcess(
-            process.GetProcessId(), metadata.GetTitleID(),
-            std::make_shared<FileSys::RomFSFactory>(*this, system.GetContentProvider(),
-                                                    system.GetFileSystemController()));
+        auto& fs = system.GetFileSystemController();
+        if (fs.RegisterProcess(process.GetProcessId(), metadata.GetTitleID(),
+                std::make_shared<FileSys::RomFSFactory>(*this, system.GetContentProvider(), fs))
+                .IsError() ||
+            fs.SetProcessBootContent(process.GetProcessId(), std::move(boot_content)).IsError()) {
+            return {ResultStatus::ErrorNotInitialized, {}};
+        }
     }
 
     is_loaded = true;
@@ -811,7 +814,8 @@ ResultStatus AppLoader_DeconstructedRomDirectory::ReadIcon(std::vector<u8>& out_
 }
 
 ResultStatus AppLoader_DeconstructedRomDirectory::ReadProgramMetadata(FileSys::ProgramMetadata& out) {
-    const auto npdm = dir != nullptr ? dir->GetFile("main.npdm") : nullptr;
+    const auto exefs = dir ? dir : (file ? file->GetContainingDirectory() : nullptr);
+    const auto npdm = exefs ? exefs->GetFile("main.npdm") : nullptr;
     if (npdm == nullptr) {
         return ResultStatus::ErrorMissingNPDM;
     }

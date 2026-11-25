@@ -24,6 +24,8 @@
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/service/filesystem/filesystem.h"
+#include "core/hle/service/filesystem/romfs_controller.h"
 #include "core/loader/loader.h"
 #include "core/loader/nx.h"
 #include "tests/core/system_test_context.h"
@@ -319,10 +321,16 @@ TEST_CASE("NX: an extracted add-on is listed as add-on content after Load", "[co
 
     // As the AoC service lists add-ons and the FS service opens their data.
     constexpr u64 AddOnId = ApplicationId + 0x1001;
-    SCOPE_EXIT { FileSys::SetBootContent({}); };
-    REQUIRE(FileSys::ListBootContent(FileSys::ContentRecordType::Data) ==
+    auto& fs = system.GetFileSystemController();
+    SCOPE_EXIT { fs.UnregisterProcess(process.GetProcessId()); };
+    REQUIRE(fs.ListProcessBootContent(process.GetProcessId(), FileSys::ContentRecordType::Data) ==
             std::vector<u64>{AddOnId});
-    const auto data = FileSys::OpenBootContent(AddOnId, FileSys::ContentRecordType::Data);
+    Service::FileSystem::ProgramId program_id{};
+    std::shared_ptr<Service::FileSystem::SaveDataController> save;
+    std::shared_ptr<Service::FileSystem::RomFsController> romfs_controller;
+    REQUIRE(fs.OpenProcess(&program_id, &save, &romfs_controller, process.GetProcessId()).IsSuccess());
+    const auto data = romfs_controller->OpenRomFS(AddOnId, FileSys::StorageId::None,
+                                                  FileSys::ContentRecordType::Data);
     REQUIRE(data != nullptr);
     const auto romfs = FileSys::ExtractRomFS(data);
     REQUIRE(romfs != nullptr);

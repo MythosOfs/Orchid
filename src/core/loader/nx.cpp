@@ -820,10 +820,12 @@ AppLoader::LoadResult AppLoader_NX::Load(Kernel::KProcess& process, Core::System
         return result;
     }
     if (impl->tree) {
-        system.GetFileSystemController().RegisterProcess(
-            process.GetProcessId(), impl->program_id,
-            std::make_shared<FileSys::RomFSFactory>(*this, system.GetContentProvider(),
-                                                    system.GetFileSystemController()));
+        auto& fs = system.GetFileSystemController();
+        if (fs.RegisterProcess(process.GetProcessId(), impl->program_id,
+                std::make_shared<FileSys::RomFSFactory>(*this, system.GetContentProvider(), fs))
+                .IsError()) {
+            return {ResultStatus::ErrorNotInitialized, {}};
+        }
     }
     std::vector<FileSys::BootContent> entries;
     if (!FileSys::IsAddonDisabled(impl->program_id, "DLC")) {
@@ -842,7 +844,11 @@ AppLoader::LoadResult AppLoader_NX::Load(Kernel::KProcess& process, Core::System
             entries.push_back({*title_id, FileSys::ContentRecordType::Data, romfs});
         }
     }
-    FileSys::SetBootContent(std::move(entries));
+    if (!entries.empty() && system.GetFileSystemController()
+                                .SetProcessBootContent(process.GetProcessId(), std::move(entries))
+                                .IsError()) {
+        return {ResultStatus::ErrorNotInitialized, {}};
+    }
     is_loaded = true;
     return result;
 }

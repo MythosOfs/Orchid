@@ -30,6 +30,14 @@
 
 namespace Service::NS {
 
+std::vector<u64> DecodeApplicationIds(std::span<const u8> bytes) {
+    std::vector<u64> ids(bytes.size() / sizeof(u64));
+    if (!ids.empty()) {
+        std::memcpy(ids.data(), bytes.data(), ids.size() * sizeof(u64));
+    }
+    return ids;
+}
+
 namespace {
 
 void JPGToMemory(void* context, void* data, int size) {
@@ -157,8 +165,7 @@ Result IReadOnlyApplicationControlDataInterface::GetApplicationControlData(
     LOG_INFO(Service_NS, "called with control_source={}, application_id={:016X}",
              application_control_source, application_id);
 
-    const FileSys::PatchManager pm{application_id, system.GetFileSystemController(), system.GetContentProvider()};
-    const auto control = pm.GetControlMetadata();
+    const auto control = FileSys::PatchManager::GetApplicationControlMetadata(system, application_id);
     const auto size = out_buffer.size();
 
     const auto icon_size = control.second ? control.second->GetSize() : 0;
@@ -239,9 +246,7 @@ Result IReadOnlyApplicationControlDataInterface::GetApplicationControlData2(
     LOG_INFO(Service_NS, "called with control_source={}, flags=({:02X},{:02X}), application_id={:016X}",
              application_control_source, flag1, flag2, application_id);
 
-    const FileSys::PatchManager pm{application_id, system.GetFileSystemController(),
-                                   system.GetContentProvider()};
-    const auto control = pm.GetControlMetadata();
+    const auto control = FileSys::PatchManager::GetApplicationControlMetadata(system, application_id);
     const auto size = out_buffer.size();
 
     const auto nacp_size = sizeof(FileSys::RawNACP);
@@ -299,41 +304,36 @@ Result IReadOnlyApplicationControlDataInterface::GetApplicationControlData2(
 }
 
 void IReadOnlyApplicationControlDataInterface::ListApplicationIcon(HLERequestContext& ctx) {
-    LOG_WARNING(Service_NS, "(stubbed)");
-    const auto app_ids_buffer = ctx.ReadBuffer();
-    const u64 app_count = app_ids_buffer.size() / sizeof(u64);
+    const auto application_ids = DecodeApplicationIds(ctx.ReadBuffer());
+    const u64 app_count = application_ids.size();
     auto t_mem_obj = ctx.GetObjectFromHandle<Kernel::KTransferMemory>(ctx.GetCopyHandle(0));
     auto* t_mem = t_mem_obj.GetPointerUnsafe();
     size_t out_length = 0;
-    if (t_mem != nullptr && t_mem->GetOwner() != nullptr && app_count > 0) {
-        auto& memory = t_mem->GetOwner()->GetMemory();
-        const auto t_mem_address = t_mem->GetSourceAddress();
-        // u64 - app count
-        memory.WriteBlock(t_mem_address + out_length, &app_count, sizeof(u64));
-        out_length += sizeof(u64);
-        ASSERT(out_length <= t_mem->GetSize());
-        // [list of u64] - size of icons
-        for (size_t i = 0; i < app_count; ++i) {
-            const u64 app_id = app_ids_buffer[i];
-            const FileSys::PatchManager pm{app_id, system.GetFileSystemController(), system.GetContentProvider()};
-            if (const auto control = pm.GetControlMetadata(); control.second) {
-                u64 full_size = control.second->GetSize();
-                memory.WriteBlock(t_mem_address + out_length, &full_size, sizeof(u64));
+    if (t_mem && t_mem->GetOwner() && app_count > 0) {
+        const size_t header_size = sizeof(u64) * (application_ids.size() + 1);
+        if (header_size <= t_mem->GetSize()) {
+            std::vector<std::vector<u8>> icons(application_ids.size());
+            std::vector<u64> sizes(application_ids.size());
+            size_t total_size = header_size;
+            for (size_t i = 0; i < application_ids.size(); ++i) {
+                const auto control = FileSys::PatchManager::GetApplicationControlMetadata(
+                    system, application_ids[i]);
+                if (control.second && control.second->GetSize() <= t_mem->GetSize() - total_size) {
+                    icons[i] = control.second->ReadAllBytes();
+                    sizes[i] = icons[i].size();
+                    total_size += icons[i].size();
+                }
             }
-            out_length += sizeof(u64);
-            ASSERT(out_length <= t_mem->GetSize());
-        }
-        // [list of raw icon data]
-        for (size_t i = 0; i < app_count; ++i) {
-            const u64 app_id = app_ids_buffer[i];
-            const FileSys::PatchManager pm{app_id, system.GetFileSystemController(), system.GetContentProvider()};
-            if (const auto control = pm.GetControlMetadata(); control.second) {
-                if (auto const full_size = control.second->GetSize(); full_size > 0) {
-                    std::vector<u8> full_icon_data(full_size);
-                    control.second->Read(full_icon_data.data(), full_size, 0);
-                    memory.WriteBlock(t_mem_address + out_length, full_icon_data.data(), full_size);
-                    out_length += full_size;
-                    ASSERT(out_length <= t_mem->GetSize());
+
+            auto& memory = t_mem->GetOwner()->GetMemory();
+            const auto address = t_mem->GetSourceAddress();
+            memory.WriteBlock(address, &app_count, sizeof(app_count));
+            memory.WriteBlock(address + sizeof(app_count), sizes.data(), sizes.size() * sizeof(u64));
+            out_length = header_size;
+            for (const auto& icon : icons) {
+                if (!icon.empty()) {
+                    memory.WriteBlock(address + out_length, icon.data(), icon.size());
+                    out_length += icon.size();
                 }
             }
         }
@@ -346,13 +346,8 @@ void IReadOnlyApplicationControlDataInterface::ListApplicationIcon(HLERequestCon
 }
 
 void IReadOnlyApplicationControlDataInterface::ListApplicationTitle(HLERequestContext& ctx) {
-    const auto app_ids_buffer = ctx.ReadBuffer();
-    const size_t app_count = app_ids_buffer.size() / sizeof(u64);
-
-    std::vector<u64> application_ids(app_count);
-    if (app_count > 0) {
-        std::memcpy(application_ids.data(), app_ids_buffer.data(), app_count * sizeof(u64));
-    }
+    const auto application_ids = DecodeApplicationIds(ctx.ReadBuffer());
+    const auto app_count = application_ids.size();
 
     auto t_mem_obj = ctx.GetObjectFromHandle<Kernel::KTransferMemory>(ctx.GetCopyHandle(0));
     auto* t_mem = t_mem_obj.GetPointerUnsafe();
@@ -364,9 +359,7 @@ void IReadOnlyApplicationControlDataInterface::ListApplicationTitle(HLERequestCo
         const auto t_mem_address = t_mem->GetSourceAddress();
         for (size_t i = 0; i < app_count; ++i) {
             const u64 app_id = application_ids[i];
-            const FileSys::PatchManager pm{app_id, system.GetFileSystemController(),
-                                           system.GetContentProvider()};
-            const auto control = pm.GetControlMetadata();
+            const auto control = FileSys::PatchManager::GetApplicationControlMetadata(system, app_id);
             FileSys::LanguageEntry entry{};
             if (control.first != nullptr) {
                 entry = control.first->GetLanguageEntry();
@@ -386,9 +379,7 @@ Result IReadOnlyApplicationControlDataInterface::GetApplicationControlData3(OutB
     LOG_INFO(Service_NS, "called with control_source={}, flags=({:02X},{:02X}), application_id={:016X}",
              application_control_source, flag1, flag2, application_id);
 
-    const FileSys::PatchManager pm{application_id, system.GetFileSystemController(),
-                                   system.GetContentProvider()};
-    const auto control = pm.GetControlMetadata();
+    const auto control = FileSys::PatchManager::GetApplicationControlMetadata(system, application_id);
     const auto size = out_buffer.size();
 
     const auto nacp_size = sizeof(FileSys::RawNACP);

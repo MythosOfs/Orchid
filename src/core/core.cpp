@@ -30,7 +30,9 @@
 #include "core/file_sys/fs_filesystem.h"
 #include "core/loader/loose_directory.h"
 #include "core/file_sys/patch_manager.h"
+#include "core/file_sys/control_metadata.h"
 #include "core/file_sys/program_metadata.h"
+#include "core/file_sys/vfs/vfs_vector.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/romfs_factory.h"
 #include "core/file_sys/savedata_factory.h"
@@ -902,6 +904,17 @@ u64 System::ResolveCallerProgramId(u64 process_id) const {
     return fallback;
 }
 
+std::unique_ptr<FileSys::NACP> System::GetProcessControlData(u64 process_id) const {
+    const u64 title_id = GetProgramIdForProcessId(process_id);
+    std::vector<u8> bytes;
+    if (impl->arp_manager.GetProcessControlProperty(&bytes, title_id, process_id, true).IsError() ||
+        bytes.size() != sizeof(FileSys::RawNACP)) {
+        return nullptr;
+    }
+    return std::make_unique<FileSys::NACP>(
+        std::make_shared<FileSys::VectorVfsFile>(std::move(bytes)));
+}
+
 Loader::ResultStatus System::GetGameName(std::string& out) const {
     return impl->GetGameName(out);
 }
@@ -1028,6 +1041,10 @@ void System::SetApplicationProcessBuildID(const CurrentBuildProcessID& id) {
 
 const System::CurrentBuildProcessID& System::GetApplicationProcessBuildID() const {
     return impl->build_id;
+}
+
+bool System::HasServiceManager() const {
+    return impl->service_manager != nullptr;
 }
 
 Service::SM::ServiceManager& System::ServiceManager() {

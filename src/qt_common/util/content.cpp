@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "core/file_sys/card_image.h"
+#include "core/file_sys/common_funcs.h"
 #include "qt_common/util/content.h"
 #include "qt_common/util/game.h"
 
@@ -564,10 +565,8 @@ void configureFilesystemProvider(const std::string& filepath) {
 
     u64 program_id = 0;
     const auto res2 = loader->ReadProgramId(program_id);
-    if (res2 == Loader::ResultStatus::Success && file_type == Loader::FileType::NCA) {
-        QtCommon::provider->AddEntry(FileSys::TitleType::Application,
-                                     FileSys::GetCRTypeFromNCAType(FileSys::NCA{file}.GetType()),
-                                     program_id, file);
+    if (file_type == Loader::FileType::NCA) {
+        QtCommon::provider->RegisterApplicationNca(*loader, file);
     } else if (res2 == Loader::ResultStatus::Success &&
                (file_type == Loader::FileType::XCI || file_type == Loader::FileType::NSP)) {
         const auto nsp = file_type == Loader::FileType::NSP
@@ -575,6 +574,10 @@ void configureFilesystemProvider(const std::string& filepath) {
                              : FileSys::XCI{file}.GetSecurePartitionNSP();
         for (const auto& title : nsp->GetNCAs()) {
             for (const auto& entry : title.second) {
+                if (entry.first.first == FileSys::TitleType::Application &&
+                    FileSys::IsFirmwareProgramId(title.first)) {
+                    continue;
+                }
                 QtCommon::provider->AddEntry(entry.first.first, entry.first.second, title.first,
                                              entry.second->GetBaseFile());
             }

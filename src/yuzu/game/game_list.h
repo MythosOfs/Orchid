@@ -109,6 +109,7 @@ public slots:
     void RefreshExternalContent();
     void UpdateIconSizes();
     void OnPopulate();
+    bool IsPopulating() const { return m_populating; }
 
 signals:
     void BootGame(const QString& game_path, StartGameType type);

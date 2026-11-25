@@ -2303,6 +2303,7 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     const auto loose_raw = system.GetProcessControlData(loose_applet->aruid.pid);
     REQUIRE(loose_raw);
     CHECK(loose_raw->GetVersionString() == "3.0.0");
+    loose_applet->process->Finalize();
 
     {
         FileSys::NACP nacp;
@@ -2593,7 +2594,6 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     window.Update();
     REQUIRE(home->IsRunning());
 
-    loose_applet->process->Finalize();
     auto native_loose_access = create_accessor(loose_id);
     REQUIRE(native_loose_access);
     const auto native_loose = window.GetMainApplet();

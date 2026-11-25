@@ -48,6 +48,13 @@ global serial and requested-vs-actual mode before SSBO resolution, and an
 envelope — missing begin/end proves truncation, a repeated begin proves replay, serials must
 span 0..N-1 gapless, and the end count must equal the configure lines present.
 
+The size rule the resolver actually selected is persisted on `Binding.size_rule`, so a
+storage-binding cache hit keeps the cold-miss classification instead of re-inferring it from
+the declared word and aligned size (which disagree under fallback caps). The multi-range host
+record reports the Vulkan destination offset (zero) in `host_offset` and keeps the
+first-segment host offset as `source_offset`. The GL capability log caps the emitted range at
+u32 like the native resolver.
+
 ## Consequences
 
 - Graphics resolution on a native channel can no longer throw through the reject path; a rejected

@@ -36,11 +36,13 @@ public:
 };
 
 inline void ReturnNx2StubInterface(Core::System& system, HLERequestContext& ctx,
-                                   std::string_view owner) {
+                                   std::string_view owner, bool log_warning = true) {
     const char* name =
         INx2StubInterface::InternName(fmt::format("{}{}::{}", Nx2StubPrefix, owner, ctx.GetCommand()));
-    LOG_WARNING(Service, "(STUBBED) Switch 2 {}::{} -> stub interface {}", owner, ctx.GetCommand(),
-                name);
+    if (log_warning) {
+        LOG_WARNING(Service, "(STUBBED) Switch 2 {}::{} -> stub interface {}", owner,
+                    ctx.GetCommand(), name);
+    }
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(ResultSuccess);
     rb.PushIpcInterface<INx2StubInterface>(ctx, system, name);

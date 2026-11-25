@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 
 #include <catch2/catch_test_macros.hpp>
@@ -27,8 +28,10 @@
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/service/hle_ipc.h"
+#include "core/hle/service/nx2_stub_interface.h"
 #include "core/hle/service/server_manager.h"
 #include "core/hle/service/service.h"
+#include "core/memory.h"
 #include "tests/core/system_test_context.h"
 
 namespace {
@@ -37,6 +40,22 @@ namespace {
 class EmptyService final : public Service::ServiceFramework<EmptyService> {
 public:
     EmptyService(Core::System& system_, const char* name) : ServiceFramework{system_, name} {}
+};
+
+class StubReplyService final : public Service::ServiceFramework<StubReplyService> {
+public:
+    explicit StubReplyService(Core::System& system_) : ServiceFramework{system_, "test:stub-reply"} {
+        RegisterHandlers({
+            {11, &StubReplyService::StubReplyInterface, "GetInterface"},
+            {12, &StubReplyService::GetDirectInterface, "GetDirectInterface"},
+        });
+        RegisterHandlersTipc({{11, &StubReplyService::StubReplyZeroed, "GetData"}});
+    }
+
+private:
+    void GetDirectInterface(Service::HLERequestContext& ctx) {
+        Service::ReturnNx2StubInterface(system, ctx, GetServiceName());
+    }
 };
 
 size_t Count(const std::string& text, const std::string& needle) {
@@ -174,6 +193,64 @@ TEST_CASE("Unknown commands: auto stub replies every time and logs once", "[.][s
         const auto text = logged();
         CHECK(Count(text, "Unknown / unimplemented function '1234(<unknown>)': port='test:autostub'") ==
               1);
+    }
+
+    SECTION("registered stub warnings are once per transport and replies stay intact") {
+        Settings::values.use_auto_stub.SetValue(true);
+        auto service = std::make_shared<StubReplyService>(system);
+        manager->SetSessionHandler(Service::SessionRequestHandlerPtr{service});
+
+        for (int i = 0; i < 3; ++i) {
+            std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
+            words[0] = 11 + 16;
+            Service::HLERequestContext request{kernel, process.GetMemory(), nullptr, &client};
+            request.SetSessionRequestManager(manager);
+            REQUIRE(request.PopulateFromIncomingCommandBuffer(words.data()).IsSuccess());
+            service->InvokeRequestTipc(request);
+            CHECK((request.CommandBuffer()[1] & 0x3ff) == 33);
+            CHECK(request.CommandBuffer()[2] == ResultSuccess.raw);
+        }
+
+        manager->ConvertToDomain();
+        process.GetMemory().SetCurrentPageTable(process);
+        for (u32 object_id = 2; object_id <= 5; ++object_id) {
+            const bool direct = object_id == 5;
+            std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
+            IPC::CommandHeader header{};
+            header.type.Assign(IPC::CommandType::Request);
+            header.data_size.Assign(12);
+            std::memcpy(words.data(), &header, sizeof(header));
+            IPC::DomainMessageHeader domain_header{};
+            domain_header.command.Assign(IPC::DomainMessageHeader::CommandType::SendMessage);
+            domain_header.size.Assign(16);
+            domain_header.object_id = 1;
+            std::memcpy(words.data() + 4, &domain_header, sizeof(domain_header));
+            words[8] = Common::MakeMagic('S', 'F', 'C', 'I');
+            words[10] = direct ? 12 : 11;
+
+            Service::HLERequestContext request{kernel, process.GetMemory(), nullptr, &client};
+            request.SetSessionRequestManager(manager);
+            REQUIRE(request.PopulateFromIncomingCommandBuffer(words.data()).IsSuccess());
+            service->InvokeRequest(request);
+            REQUIRE(request.WriteToOutgoingCommandBuffer().IsSuccess());
+            const auto* reply = request.CommandBuffer();
+            CHECK((reply[1] & 0x3ff) == 15);
+            CHECK(reply[4] == 1);
+            CHECK(reply[8] == Common::MakeMagic('S', 'F', 'C', 'O'));
+            CHECK(reply[10] == ResultSuccess.raw);
+            CHECK(reply[12] == object_id);
+            REQUIRE(manager->DomainHandlerCount() == object_id);
+            const auto child = manager->DomainHandler(object_id - 1).lock();
+            REQUIRE(child);
+            CHECK(std::string_view{child->diag_service_name} ==
+                  (direct ? "nx2:test:stub-reply::12" : "nx2:test:stub-reply::11"));
+        }
+
+        const auto text = logged();
+        CHECK(Count(text, "(STUBBED) CMIF test:stub-reply::11 (GetInterface)") == 1);
+        CHECK(Count(text, "(STUBBED) TIPC test:stub-reply::11 (GetData)") == 1);
+        CHECK(Count(text, "Switch 2 test:stub-reply::11 -> stub interface") == 0);
+        CHECK(Count(text, "Switch 2 test:stub-reply::12 -> stub interface") == 1);
     }
 
     SECTION("no auto stub, debug asserts off") {

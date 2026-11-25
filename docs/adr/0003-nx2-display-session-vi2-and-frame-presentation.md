@@ -23,7 +23,7 @@ Identified:
 - gsv 305(u64) OpenViSession: replies this session (handle word 3).
 - 1 -> u32 notification count (< 0x400), then 11(u32 min(count, 0x3ff)) -> the notification event; 3 -> u32 native event count (< 8), then 31(index) per slot. The handles of 11 and 32 go to os::AttachReadableHandleToSystemEvent, so both are readable event handles; 31's handle is kept in the client's table. 32 carries one copy handle (the client's readable handle) and a u32 index.
 - 5 -> u32 timestamp recorder count (< 8), then 51(u32 min(count, 7)) ReserveTimestampRecorders; the client marks the indices above as used (CreateTimestampRecorder, 0x568e40).
-- 53(B buffer, u32 recorder, u64 checkpoint bits, u64 max 8): reply u64 bytes written (the client divides by 8) and a byte at word 5, 1 = still pending; the client polls every 100000 ticks or more and indexes the timestamps by popcount order. Matches `GetRecordedTimestamps`.
+- 53(B buffer, u32 recorder, u64 checkpoint bits, u64 requested max (8 in the observed client)): reply u64 bytes written (the client divides by 8) and a byte at word 5, 1 = still pending; the client polls every 100000 ticks or more and indexes the timestamps by popcount order. Matches `GetRecordedTimestamps`.
 - 111(3 x u64) SetEndpointLayer / 112(2 x u64) ClearEndpointLayer: an endpoint's front layer, from CreateLayer and DestroyLayer (0x566754, 0x566870).
 - 251(u64 layer, u64 endpoint token) AttachLayerToEndpoint / 252(u64 layer) DetachLayerFromEndpoint.
 - 301(3 x u64) SetDisplayRefreshRateCapability (0x567a64): rate 1 = 60 Hz, 2 = 120 Hz, 0x8000... = any.
@@ -46,9 +46,10 @@ timestamp is latched. [PR #208](https://github.com/MythosOfs/Orchid/pull/208)
 Orbitals supplies compatibility evidence. Without usable timestamp entries
 `ListFrameHistory` never advanced the frame-shown state and Unreal blocked waiting for
 its render fence. Orchid writes the current guest clock tick into each returned slot
-and reports pending 0, so it supplies equal query-time values for checkpoints in the
-same reply. Orchid bounds the count by the mask population, B buffer space and 8,
-matching the observed client request maximum. Confidence in that as hardware timing is low. The console's checkpoint
+and supplies equal query-time values for checkpoints in the same reply. Orchid ignores
+the requested maximum and caps the count at 8, further bounded by the mask population
+and B buffer space. Orchid zeroes the whole reply word from which the client reads the
+pending byte. Confidence in the hardware timing is low. The console's checkpoint
 meanings, tick origin, readiness transitions and treatment of partially completed
 masks remain open. A console trace should capture the recorder, mask, byte count,
 pending byte and output values before and after present, with a known guest clock and
@@ -95,7 +96,7 @@ One entry per former code comment, by file, named after the code it described.
 - `void GetBufferMaxResolution(HLERequestContext& ctx)`: The highest buffer resolution mode of the "default" display. Fire Emblem: Fortune's Weave picks its output from it: 1 -> 1280x720, 2 -> 1920x1080, 4 and 8 -> 2560x1440; 0 (the auto stub's reply), 3 and 5 fall back to 720p. Docked reports 4, handheld 2 (the screen is 1080p); EDEN_VI2_MAX_RESOLUTION_MODE=<n> overrides. Hyrule Warriors: Age of Imprisonment takes only 1 or 2 and terminates with 0x1472 otherwise.
 - `constexpr u64 DefaultDisplay = 0x00746c7561666564ULL`: "default"
 - `void GetTimestampRecorderCount(HLERequestContext& ctx)`: Must be < 8; nn::vi::detail::LayerHistory creates 7 timestamp recorders per layer.
-- `void GetRecordedTimestamps(HLERequestContext& ctx)`: 53(u32 recorder, u64 checkpoint bits, u64 max count; B: u64 timestamps): one system tick per set checkpoint bit, ascending; reply u64 bytes written, u32 still pending. Read from the SDK's GetRecordedTimestamp, which polls this until pending is 0. nn::vi::ListFrameHistory reports a frame as shown only once it has a timestamp, and Unreal Engine games (Orbitals) wait for a shown frame before the next one: the zeroed auto stub stalled them after 8 frames, and the game thread aborted after its render fence timeout.
+- `void GetRecordedTimestamps(HLERequestContext& ctx)`: 53(u32 recorder, u64 checkpoint bits, u64 max count; B: u64 timestamps): one system tick per set checkpoint bit, ascending; reply u64 bytes written and one zeroed word, from which the client reads the pending byte. Read from the SDK's GetRecordedTimestamp, which polls this until pending is 0. nn::vi::ListFrameHistory reports a frame as shown only once it has a timestamp, and Unreal Engine games (Orbitals) wait for a shown frame before the next one: the zeroed auto stub stalled them after 8 frames, and the game thread aborted after its render fence timeout.
 - `void GetNotificationEvent(HLERequestContext& ctx)`: 11: the notification event the SDK's render thread waits on while it tears a client down. One event per session, signalled as bitmaps fill (201/202, 101/102); a fresh, never signalled event per call left that thread blocked forever after 202.
 - `void GetNotifications(HLERequestContext& ctx)`: 21(W: 32 u32 notification counts): hand them over and clear.
 - `void OpenDisplay(HLERequestContext& ctx)`: 101(u64 display "default", u32 flags): remember which notification index this display owns.

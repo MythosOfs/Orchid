@@ -133,7 +133,7 @@ void ServiceFrameworkBase::StubReplyInterface(HLERequestContext& ctx) {
     if (!StubAllowed(ctx, "success with a placeholder interface")) {
         return;
     }
-    ReturnNx2StubInterface(system, ctx, service_name);
+    ReturnNx2StubInterface(system, ctx, service_name, false);
 }
 
 void ServiceFrameworkBase::RegisterHandlersBase(const FunctionInfoBase* functions, std::size_t n) {
@@ -164,8 +164,12 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(HLERequestContext& ctx,
     if (auto_stub) {
         static std::mutex reported_mutex;
         static std::set<std::tuple<std::string, bool, u32>> reported;
-        std::scoped_lock lk{reported_mutex};
-        if (!reported.emplace(service_name, ctx.IsTipc(), ctx.GetCommand()).second) {
+        bool first_report;
+        {
+            std::scoped_lock lock{reported_mutex};
+            first_report = reported.insert({service_name, ctx.IsTipc(), ctx.GetCommand()}).second;
+        }
+        if (!first_report) {
             IPC::ResponseBuilder rb{ctx, 2 + StubZeroedWords};
             rb.Push(ResultSuccess);
             PushStubZeroes(rb);

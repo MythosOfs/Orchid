@@ -3257,6 +3257,13 @@ private:
         desc[9] = 1;
         desc[11] = static_cast<u32>(layout.size);
         WarnCompatibilityReply(ctx, "returns unverified native-image block height and pitch fields");
+        if (Nx2ImageTrace()) {
+            LOG_INFO(Service,
+                     "nx2:gsv {} handle={} {}x{} size={:#x} gpu={:#x} block_height_log2={} "
+                     "pitch_bytes={} pitch_gobs={}",
+                     ctx.GetCommand(), handle, layout.width, layout.height, layout.size, gpu_address,
+                     desc[4], layout.pitch, desc[5]);
+        }
         IPC::ResponseBuilder rb{ctx, static_cast<u32>(2 + words.size())};
         rb.PushRaw<u32>(ResultSuccess.raw);
         for (const u32 w : words) {

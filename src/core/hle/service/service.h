@@ -92,10 +92,11 @@ protected:
     void StubReplyZeroed(HLERequestContext& ctx);
     void StubReplyEvent(HLERequestContext& ctx);
     void StubReplyInterface(HLERequestContext& ctx);
+    void WarnCompatibilityReply(HLERequestContext& ctx, std::string_view reply);
 
 private:
     /// False (after reporting the command as unimplemented) for callers the stubs don't serve.
-    bool StubAllowed(HLERequestContext& ctx);
+    bool StubAllowed(HLERequestContext& ctx, std::string_view reply);
 
     /// Event handed out by StubReplyEvent, created on first use.
     Kernel::KEvent* stub_event{};

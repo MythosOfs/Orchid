@@ -199,11 +199,12 @@ private:
     }
 
     void ReplySuccess(HLERequestContext& ctx) {
+        WarnCompatibilityReply(ctx, "success without reserving slots");
         TipcReplyWords(ctx, {});
     }
 
     void GetCount(HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) nx2:syncpt TIPC 1, returning 32");
+        WarnCompatibilityReply(ctx, "reports a provisional limit of 32 event slots");
         TipcReplyWords(ctx, {32});
     }
 
@@ -218,7 +219,6 @@ private:
 
     void GetSlotEvent(HLERequestContext& ctx) {
         const u32 slot = ctx.CommandBuffer()[2];
-        LOG_WARNING(Service, "(STUBBED) nx2:syncpt TIPC 22 slot={:#x}, returning an event", slot);
         auto*& event = m_events[slot];
         if (event == nullptr) {
             event = m_context.CreateEvent(fmt::format("nx2:syncpt:Slot{:x}", slot));
@@ -1245,36 +1245,27 @@ public:
 
 private:
     void OpenCamera(HLERequestContext& ctx) {
-        IPC::RequestParser rp{ctx};
-        const auto name = rp.PopRaw<std::array<char, 16>>();
-        LOG_WARNING(Service, "(STUBBED) nx2:camera 3 name={}, returning camera id 0",
-                    std::string_view{name.data(), strnlen(name.data(), name.size())});
+        WarnCompatibilityReply(ctx, "success with camera id 0 without an accessory backend");
         IPC::ResponseBuilder rb{ctx, 4};
         rb.Push(ResultSuccess);
         rb.Push<u64>(0);
     }
 
     void GetCameraEvent(HLERequestContext& ctx) {
-        IPC::RequestParser rp{ctx};
-        LOG_WARNING(Service, "(STUBBED) nx2:camera 21 id={}, returning an event", rp.Pop<u64>());
+        WarnCompatibilityReply(ctx, "success with an event that never signals");
         IPC::ResponseBuilder rb{ctx, 2, 1};
         rb.Push(ResultSuccess);
         rb.PushCopyObjects(ctx, m_event->GetReadableEvent());
     }
 
     void CheckImagePreference(HLERequestContext& ctx) {
-        if (!m_logged_29) {
-            m_logged_29 = true;
-            LOG_WARNING(Service, "(STUBBED) nx2:camera 29 [8]={:#x}, returning success",
-                        ctx.CommandBuffer()[8]);
-        }
+        WarnCompatibilityReply(ctx, "success without validating the image preference");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
 
     KernelHelpers::ServiceContext m_context;
     Kernel::KEvent* m_event;
-    bool m_logged_29 = false;
 };
 
 class INx2Vi2Session final : public ServiceFramework<INx2Vi2Session> {
@@ -1359,6 +1350,7 @@ private:
     }
 
     void ReplySuccess(HLERequestContext& ctx) {
+        WarnCompatibilityReply(ctx, "success without applying the requested state");
         TipcReplyWords(ctx, {});
     }
 
@@ -1917,7 +1909,7 @@ private:
     }
 
     void ReturnOne(HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) nx2:vi2 TIPC {}, returning 1", ctx.GetCommand());
+        WarnCompatibilityReply(ctx, "reports a provisional count of 1");
         TipcReplyWords(ctx, {1});
     }
 
@@ -1945,7 +1937,7 @@ private:
     }
 
     void GetTimestampRecorderCount(HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) nx2:vi2 TIPC 5, returning 7");
+        WarnCompatibilityReply(ctx, "reports a provisional limit of 7 timestamp recorders");
         TipcReplyWords(ctx, {7});
     }
 
@@ -1959,6 +1951,7 @@ private:
         std::array<u64, 8> stamps{};
         std::fill_n(stamps.begin(), count, system.CoreTiming().GetClockTicks());
         if (count != 0) {
+            WarnCompatibilityReply(ctx, "returns query-time ticks for all checkpoints");
             ctx.WriteBuffer(stamps.data(), count * sizeof(u64));
         }
         const u64 bytes = count * sizeof(u64);
@@ -2901,6 +2894,7 @@ private:
     }
 
     void GetSessionFlag(HLERequestContext& ctx) {
+        WarnCompatibilityReply(ctx, "returns an unverified session flag value of 0");
         TipcReplyWords(ctx, {0});
     }
 
@@ -2947,9 +2941,7 @@ private:
     }
 
     void Stub(HLERequestContext& ctx) {
-        const auto* cmd_buf = ctx.CommandBuffer();
-        LOG_WARNING(Service, "(STUBBED) nx2:gsv TIPC {} [2]={:#x} [3]={:#x} [4]={:#x} [5]={:#x}",
-                    ctx.GetCommand(), cmd_buf[2], cmd_buf[3], cmd_buf[4], cmd_buf[5]);
+        WarnCompatibilityReply(ctx, "result-only success without implementing the command");
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ResultSuccess);
     }
@@ -2965,7 +2957,7 @@ private:
     }
 
     void OpenCameraSession(HLERequestContext& ctx) {
-        LOG_WARNING(Service, "(STUBBED) nx2:gsv TIPC 602, returning a nx2:camera session");
+        WarnCompatibilityReply(ctx, "opens a camera session without an accessory backend");
         ReturnRawSession(system, ctx, std::make_shared<INx2CameraSession>(system));
     }
 
@@ -2994,8 +2986,8 @@ private:
         const size_t data = TipcDataOffset(cmd_buf);
         const u32 version_requested = cmd_buf[data];
         const u32 max_syncpoints = std::min<u32>(cmd_buf[data + 1], (0x1000 - 0x40) / 8);
-        LOG_WARNING(Service, "(STUBBED) nx2:gsv TIPC 204, version={} max_syncpoints={:#x}",
-                    version_requested, max_syncpoints);
+        LOG_DEBUG(Service, "nx2:gsv TIPC 204, version={} max_syncpoints={:#x}",
+                  version_requested, max_syncpoints);
 
         auto rw = ctx.GetObjectFromHandle<Kernel::KTransferMemory>(ctx.GetCopyHandle(0));
         auto ro = ctx.GetObjectFromHandle<Kernel::KTransferMemory>(ctx.GetCopyHandle(1));
@@ -3006,6 +2998,7 @@ private:
             m_syncpt_count = max_syncpoints;
             auto& memory = *m_syncpt_memory;
             memory.Write32(m_syncpt_ro + 0x00, 1);
+            WarnCompatibilityReply(ctx, "writes an unverified syncpoint page word at +4 as 0");
             memory.Write32(m_syncpt_ro + 0x04, 0);
             memory.Write32(m_syncpt_ro + 0x08, max_syncpoints);
             memory.Write32(m_syncpt_ro + 0x0c, SyncptValuesOffset);
@@ -3263,9 +3256,7 @@ private:
         desc[8] = 1;
         desc[9] = 1;
         desc[11] = static_cast<u32>(layout.size);
-        LOG_WARNING(Service, "(STUBBED) nx2:gsv {} handle={} {}x{} size={:#x} gpu={:#x}",
-                    ctx.GetCommand(), handle, layout.width, layout.height, layout.size,
-                    gpu_address);
+        WarnCompatibilityReply(ctx, "returns unverified native-image block height and pitch fields");
         IPC::ResponseBuilder rb{ctx, static_cast<u32>(2 + words.size())};
         rb.PushRaw<u32>(ResultSuccess.raw);
         for (const u32 w : words) {

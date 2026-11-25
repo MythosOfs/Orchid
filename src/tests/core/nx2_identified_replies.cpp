@@ -28,6 +28,7 @@ namespace {
 struct TipcReply {
     u32 data_words;
     u32 result;
+    std::vector<u32> payload;
 };
 
 }
@@ -49,6 +50,22 @@ TEST_CASE("nx2 TSG ioctls the SDK issues succeed, others stay unsupported", "[nx
     CHECK(ioctl(0xc018540b, 0x18) == Service::Nvidia::NvResult::Success);
     CHECK(ioctl(0xc0045403, 4) == Service::Nvidia::NvResult::NotImplemented);
     CHECK(ioctl(0xc0085408, 8) == Service::Nvidia::NvResult::NotImplemented);
+}
+
+TEST_CASE("nx2 stub ioctl echoes the main input and clears unused output", "[nx2_replies]") {
+    Core::System system;
+    Service::Nvidia::Devices::nx2_stub_device device{system, "/dev/nx2-test"};
+    Service::Nvidia::Ioctl command{};
+    command.raw = 0xc0045403;
+    const std::array<u8, 3> input{1, 2, 3};
+    std::array<u8, 5> output{0xff, 0xff, 0xff, 0xff, 0xff};
+    std::array<u8, 2> inline_output{0xff, 0xff};
+    const std::array<u8, 5> expected{1, 2, 3, 0, 0};
+    CHECK(device.Ioctl3(1, command, input, output, inline_output) ==
+          Service::Nvidia::NvResult::Success);
+    CHECK(output == expected);
+    const std::array<u8, 2> expected_inline{};
+    CHECK(inline_output == expected_inline);
 }
 
 TEST_CASE("nx2 commands identified as result-only reply with the result word alone",
@@ -94,7 +111,10 @@ TEST_CASE("nx2 commands identified as result-only reply with the result word alo
         REQUIRE(request.PopulateFromIncomingCommandBuffer(words.data()).IsSuccess());
         service.InvokeRequestTipc(request);
         const u32* reply = request.CommandBuffer();
-        return TipcReply{reply[1] & 0x3ff, reply[2]};
+        const u32 data_words = reply[1] & 0x3ff;
+        REQUIRE(data_words >= 1);
+        REQUIRE(data_words <= IPC::COMMAND_BUFFER_LENGTH - 2);
+        return TipcReply{data_words, reply[2], {reply + 3, reply + 2 + data_words}};
     };
     const auto check_result_only = [&](Service::ServiceFrameworkBase& service, u32 command,
                                        std::vector<u32> data) {
@@ -119,4 +139,15 @@ TEST_CASE("nx2 commands identified as result-only reply with the result word alo
     Service::INx2GraphicsSystemSession gsv{system};
     check_result_only(gsv, 603, {});
     check_result_only(gsv, 1003, {});
+
+    const auto flag = invoke(gsv, 126, {0x12345678});
+    CHECK(flag.result == 0);
+    CHECK(flag.payload == std::vector<u32>{0});
+
+    for (const u32 command : {113U, 999U, 999U}) {
+        INFO("command " << command);
+        const auto reply = invoke(gsv, command, {0x12345678, 0xcafebeef});
+        CHECK(reply.result == 0);
+        CHECK(reply.payload == std::vector<u32>(32, 0));
+    }
 }

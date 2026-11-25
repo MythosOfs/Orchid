@@ -75,19 +75,29 @@ void PushStubZeroes(IPC::ResponseBuilder& rb) {
 
 } // namespace
 
-bool ServiceFrameworkBase::StubAllowed(HLERequestContext& ctx) {
+void ServiceFrameworkBase::WarnCompatibilityReply(HLERequestContext& ctx, std::string_view reply) {
+    static std::mutex mutex;
+    static std::set<std::tuple<std::string, bool, u32>> logged;
+    {
+        std::scoped_lock lock{mutex};
+        if (!logged.insert({service_name, ctx.IsTipc(), ctx.GetCommand()}).second) {
+            return;
+        }
+    }
+    const auto& table = ctx.IsTipc() ? handlers_tipc : handlers;
+    const auto it = table.find(ctx.GetCommand());
+    LOG_WARNING(Service, "(STUBBED) {} {}::{} ({}): {}", ctx.IsTipc() ? "TIPC" : "CMIF",
+                service_name, ctx.GetCommand(), it == table.end() ? "unknown" : it->second.name,
+                reply);
+}
+
+bool ServiceFrameworkBase::StubAllowed(HLERequestContext& ctx, std::string_view reply) {
     static const bool env_auto_stub = std::getenv("EDEN_NX2_AUTO_STUB") != nullptr;
     const auto* const caller = ctx.GetThread().GetOwnerProcess();
     if (Settings::values.use_auto_stub || env_auto_stub ||
         std::string_view{service_name}.starts_with(Nx2StubPrefix) ||
         (caller != nullptr && caller->IsSwitch2())) {
-        // Logged once per command: these are still unimplemented.
-        static std::mutex mutex;
-        static std::set<std::pair<std::string_view, u32>> logged;
-        std::scoped_lock lk{mutex};
-        if (logged.emplace(service_name, ctx.GetCommand()).second) {
-            LOG_WARNING(Service, "(STUBBED) {}::{} (placeholder reply)", service_name, ctx.GetCommand());
-        }
+        WarnCompatibilityReply(ctx, reply);
         return true;
     }
     const auto& table = ctx.IsTipc() ? handlers_tipc : handlers;
@@ -97,7 +107,7 @@ bool ServiceFrameworkBase::StubAllowed(HLERequestContext& ctx) {
 }
 
 void ServiceFrameworkBase::StubReplyZeroed(HLERequestContext& ctx) {
-    if (!StubAllowed(ctx)) {
+    if (!StubAllowed(ctx, "success with 32 zero data words")) {
         return;
     }
     IPC::ResponseBuilder rb{ctx, 2 + StubZeroedWords};
@@ -106,7 +116,7 @@ void ServiceFrameworkBase::StubReplyZeroed(HLERequestContext& ctx) {
 }
 
 void ServiceFrameworkBase::StubReplyEvent(HLERequestContext& ctx) {
-    if (!StubAllowed(ctx)) {
+    if (!StubAllowed(ctx, "success with an unsignalled event and 32 zero data words")) {
         return;
     }
     if (!stub_event) {
@@ -120,7 +130,7 @@ void ServiceFrameworkBase::StubReplyEvent(HLERequestContext& ctx) {
 }
 
 void ServiceFrameworkBase::StubReplyInterface(HLERequestContext& ctx) {
-    if (!StubAllowed(ctx)) {
+    if (!StubAllowed(ctx, "success with a placeholder interface")) {
         return;
     }
     ReturnNx2StubInterface(system, ctx, service_name);
@@ -153,9 +163,9 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(HLERequestContext& ctx,
     // (~47 calls a second), and every report wrote a Critical line, which flushes the log file.
     if (auto_stub) {
         static std::mutex reported_mutex;
-        static std::set<std::pair<std::string, u32>> reported;
+        static std::set<std::tuple<std::string, bool, u32>> reported;
         std::scoped_lock lk{reported_mutex};
-        if (!reported.emplace(service_name, ctx.GetCommand()).second) {
+        if (!reported.emplace(service_name, ctx.IsTipc(), ctx.GetCommand()).second) {
             IPC::ResponseBuilder rb{ctx, 2 + StubZeroedWords};
             rb.Push(ResultSuccess);
             PushStubZeroes(rb);
@@ -179,8 +189,9 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(HLERequestContext& ctx,
         UNIMPLEMENTED_MSG("Unknown / unimplemented {}", fmt::to_string(buf));
         return;
     }
-    LOG_CRITICAL(Service, "Unknown / unimplemented {}", fmt::to_string(buf));
-    LOG_WARNING(Service, "Using auto stub fallback (repeats of this command are not logged)");
+    LOG_WARNING(Service,
+                "(STUBBED) {} auto stub: Unknown / unimplemented {}; success with {} zero data words",
+                ctx.IsTipc() ? "TIPC" : "CMIF", fmt::to_string(buf), StubZeroedWords);
     IPC::ResponseBuilder rb{ctx, 2 + StubZeroedWords};
     rb.Push(ResultSuccess);
     PushStubZeroes(rb);

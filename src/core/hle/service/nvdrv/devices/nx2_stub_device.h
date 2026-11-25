@@ -41,8 +41,9 @@ inline NvResult Nx2UnknownIoctl(const char* device, Ioctl command, std::span<con
                                 std::span<u8> output) {
     if (Nx2LogStubbedIoctl(device, command.raw)) {
         LOG_WARNING(Service_NVDRV,
-                    "(STUBBED) Switch 2 {} ioctl={:08X} group={:01X} command={:02X} in={:#x}",
-                    device, command.raw, command.group, command.cmd, input.size());
+                    "(STUBBED) Switch 2 {} ioctl={:08X} in={:#x} out={:#x}: "
+                    "success with input echoed and remaining output zeroed",
+                    device, command.raw, input.size(), output.size());
     }
     std::fill(output.begin(), output.end(), u8{0});
     std::copy_n(input.begin(), std::min(input.size(), output.size()), output.begin());
@@ -517,11 +518,6 @@ public:
 private:
     NvResult Stub(DeviceFD fd, Ioctl command, std::span<const u8> input, std::span<u8> output,
                   std::span<u8> inline_output) {
-        if (Nx2LogStubbedIoctl(name, command.raw)) {
-            LOG_WARNING(Service_NVDRV,
-                        "(STUBBED) {} fd={} ioctl={:08X} group={:01X} command={:02X} in={:#x}",
-                        name, fd, command.raw, command.group, command.cmd, input.size());
-        }
         std::fill(output.begin(), output.end(), u8{0});
         std::copy_n(input.begin(), std::min(input.size(), output.size()), output.begin());
         std::fill(inline_output.begin(), inline_output.end(), u8{0});
@@ -540,8 +536,18 @@ private:
             }
             if (command.raw != 0xc0045401 && command.raw != 0xc0045402 &&
                 command.raw != 0xc0045408 && command.raw != 0xc018540b) {
+                if (Nx2LogStubbedIoctl(name, command.raw)) {
+                    LOG_WARNING(Service_NVDRV, "(STUBBED) {} fd={} ioctl={:08X}: unsupported",
+                                name, fd, command.raw);
+                }
                 return NvResult::NotImplemented;
             }
+        }
+        if (Nx2LogStubbedIoctl(name, command.raw)) {
+            LOG_WARNING(Service_NVDRV,
+                        "(STUBBED) {} fd={} ioctl={:08X} in={:#x} out={:#x} inline_out={:#x}: "
+                        "success with input echoed and remaining output zeroed",
+                        name, fd, command.raw, input.size(), output.size(), inline_output.size());
         }
         return NvResult::Success;
     }

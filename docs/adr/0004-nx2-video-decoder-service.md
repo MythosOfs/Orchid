@@ -14,6 +14,27 @@ Decode with FFmpeg on a thread per session (`Nx2VideoDecoder`), fill output imag
 
 Fence and EOS semantics are tuned per title; Donkey Kong Bananza still needs its own branch (#190).
 
+## Bananza restart evidence (#190)
+
+On 2026-11-25 the guarded diagnostic (`a8e0232f9c`, run
+`20261125-180725-fcfbf5ef`) reached the mining tunnel and completed ten EOS
+events with successful restarts. The same diagnostic with the two EOS
+policy changes from `359f0d5c05` (run `20261125-181044-f6914bd0`) aborted
+with 2162-0001 after its first EOS.
+
+The experimental run successfully acquired both synthetic EOS outputs
+before Flush, which began with an empty output queue. After restart,
+command 213 returned the first picture at fence 182. The decoder
+published the second picture and signalled fence 183 before the abort.
+The guest issued no second 213. Both runs requested fence 183 through
+Syncpt 201 with mode 0x300. The trace leaves open the guest-observed wait
+result, the counter value it actually read, and the guest check that
+led to the abort.
+
+Keep the Bananza exception and leave #190 open. These runs establish
+that the experimental policy still fails and leave the general EOS
+contract unresolved.
+
 ## Decision log
 
 One entry per former code comment, by file, named after the code it described.

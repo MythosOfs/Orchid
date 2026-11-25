@@ -66,6 +66,8 @@ void EventObserver::TrackAppletProcess(Applet& applet) {
         return;
     }
 
+    applet.has_process_observer = true;
+
     // Allocate new holder.
     auto* holder = new ProcessHolder(applet, *applet.process);
     holder->SetUserData(static_cast<uintptr_t>(UserDataTag::AppletProcess));
@@ -138,6 +140,7 @@ void EventObserver::OnProcessEvent(ProcessHolder* holder) {
         if (process.IsTerminated()) {
             // Destroy the holder.
             this->DestroyAppletProcessHolderLocked(holder);
+            applet.has_process_observer = false;
         } else {
             // Reset signaled state.
             process.ResetSignal();

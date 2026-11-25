@@ -37,7 +37,8 @@ std::unique_ptr<Process> CreateApplicationProcess(
     std::vector<u8>& out_control, std::unique_ptr<Loader::AppLoader>& out_loader,
     Loader::ResultStatus& out_load_result, Core::System& system, FileSys::VirtualFile file,
     u64 program_id, u64 program_index,
-    std::optional<FileSys::ContentProviderUnionSlot> base_slot = std::nullopt);
+    std::optional<FileSys::ContentProviderUnionSlot> base_slot = std::nullopt,
+    bool use_discovered_content = false);
 
 bool ReinitializeProcess(Core::System& system, Process& process, u64 program_id);
 

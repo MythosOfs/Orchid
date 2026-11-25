@@ -53,12 +53,17 @@ recents.
 The RomFS factory registered for a process also owns its embedded add-on and sibling content.
 Loading a guest child applet cannot replace the application's content. The applet exit path
 drops the filesystem registration and releases ARP only for the PID that registered it.
-The process keeps the selected loader's display version separately from raw NACP.
+The process keeps the selected loader's display version separately from raw NACP. Installed
+control metadata takes priority over that snapshot when AM supplies the display version.
+Packed NX launches from the Home Menu use the extras published by game-list discovery.
+Direct loads still publish packed extras when the frontend has not scanned the source.
 
 A guest-created application holds the window slot while waiting for Start. The event observer
 starts watching it only after the first successful Start. A failed first Start retires its
 registrations and removes the slot. Repeat Start leaves a running application in place. The exit
-path retires registrations before sending ApplicationExited to qlaunch. The ARP PID interface
+path waits for the event observer to release its process holder, switches away from the
+exiting application, and releases FS, ARP, HID and the process before sending ApplicationExited
+to qlaunch. The old accessor still reports its completion event and result. The ARP PID interface
 and application accessor check the registering PID even if a successor has the same title ID.
 Raw ARP control still supports the zero-filled reply for loaders without NACP. Owner-specific
 account policy distinguishes that placeholder from an actual NACP so installed control can apply.

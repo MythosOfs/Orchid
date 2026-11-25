@@ -7,6 +7,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <thread>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -39,6 +40,7 @@
 #include "core/file_sys/vfs/vfs_real.h"
 #include "core/file_sys/vfs/vfs_vector.h"
 #include "core/loader/nup.h"
+#include "core/loader/nx.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/svc.h"
@@ -48,6 +50,7 @@
 #include "core/hle/service/aoc/addon_content_manager.h"
 #include "core/hle/service/am/applet_manager.h"
 #include "core/hle/service/am/applet.h"
+#include "core/hle/service/am/event_observer.h"
 #include "core/hle/service/am/window_system.h"
 #include "core/hle/service/am/service/application_accessor.h"
 #include "core/hle/service/am/service/application_creator.h"
@@ -2017,6 +2020,9 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     };
 
     const auto finish_guest_threads = [&](Service::Process& process) {
+        if (!process.IsInitialized()) {
+            return;
+        }
         std::list<Kernel::KScopedAutoObject<Kernel::KThread>> threads;
         {
             auto& owner = *process.GetHandle();
@@ -2257,6 +2263,34 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     REQUIRE(loose_raw);
     CHECK(loose_raw->GetVersionString() == "3.0.0");
 
+    {
+        FileSys::NACP nacp;
+        constexpr std::string_view version = "5.4.3";
+        std::copy(version.begin(), version.end(), nacp.raw.version_string.begin());
+        const auto raw = nacp.GetRawBytes();
+        constexpr std::size_t image_size = 0x3000;
+        constexpr std::size_t asset_size = 0x38;
+        std::string nro(image_size + asset_size, '\0');
+        nro.replace(0x10, 4, "NRO0");
+        SetLe(nro, 0x18, image_size, 4);
+        for (u32 segment = 0; segment < 3; ++segment) {
+            SetLe(nro, 0x20 + 8 * segment, 0x1000 * segment, 4);
+            SetLe(nro, 0x24 + 8 * segment, 0x1000, 4);
+        }
+        nro.replace(image_size, 4, "ASET");
+        SetLe(nro, image_size + 0x18, asset_size, 8);
+        SetLe(nro, image_size + 0x20, raw.size(), 8);
+        nro.append(reinterpret_cast<const char*>(raw.data()), raw.size());
+        auto file = std::make_shared<FileSys::VectorVfsFile>(
+            std::vector<u8>(nro.begin(), nro.end()), "Direct.nro");
+        auto process = create(file, 0);
+        REQUIRE(process);
+        auto direct = std::make_shared<Applet>(system, std::move(process), true);
+        IApplicationFunctions direct_functions{system, direct};
+        REQUIRE(call_accessor(direct_functions, 23, &display) == ResultSuccess.raw);
+        CHECK(display == version);
+    }
+
     IApplicationCreator creator{system, window};
     const auto create_accessor = [&](u64 id, u32 expected = ResultSuccess.raw) {
         std::shared_ptr<IApplicationAccessor> result;
@@ -2342,6 +2376,11 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     IApplicationFunctions application_functions{system, applet};
     REQUIRE(call_accessor(application_functions, 23, &display) == ResultSuccess.raw);
     CHECK(display == "2.0.0");
+    add_installed_control(TitleId, "8.0.0");
+    REQUIRE(call_accessor(application_functions, 23, &display) == ResultSuccess.raw);
+    CHECK(display == "8.0.0");
+    CHECK(application->GetDisplayVersion() == "2.0.0");
+    installed.ClearAllEntries();
     const auto control = system.GetProcessControlData(pid);
     REQUIRE(control);
     CHECK(control->GetUserAccountSwitchLock());
@@ -2447,6 +2486,10 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
         application_exited |= message == AppletMessage::ApplicationExited;
     }
     CHECK(application_exited);
+    CHECK_FALSE(application->IsInitialized());
+    CHECK(kernel.GetProcessByProcessId(pid).GetPointerUnsafe() == nullptr);
+    CHECK(call_accessor(accessor, 30) == ResultSuccess.raw);
+    CHECK(kernel.ApplicationProcess() == home->GetHandle());
     CHECK_FALSE(system.GetProcessControlData(pid));
     CHECK(filesystem.OpenProcess(&fs_title, &save, &romfs, pid).IsError());
     CHECK_FALSE(romfs->OpenPatchedRomFSWithProgramIndex(
@@ -2483,8 +2526,12 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
                        legacy_id, legacy_file);
     const auto legacy_source = system.GetContentProviderUnion().GetApplicationProgram(legacy_id);
     CHECK_FALSE(legacy_source.loader_backed);
+    const u64 successor_pid = successor->aruid.pid;
     finish_guest_threads(*successor->process);
     window.Update();
+    CHECK_FALSE(successor->process->IsInitialized());
+    CHECK(kernel.GetProcessByProcessId(successor_pid).GetPointerUnsafe() == nullptr);
+    CHECK(call_accessor(successor_accessor, 30) == ResultSuccess.raw);
     auto legacy_access = create_accessor(legacy_id);
     REQUIRE(legacy_access);
     const auto legacy_applet = window.GetMainApplet();
@@ -2520,4 +2567,62 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     REQUIRE(dispatched_index);
     CHECK(*dispatched_index == 2);
     system.RegisterExecuteProgramCallback({});
+
+    {
+        constexpr u64 packed_id = 0x0400abcd00050000ULL;
+        const auto packed = open(fs::path{ORCHID_NX_FIXTURE_DIR} / "home_menu_native_extras.nx");
+        REQUIRE(packed);
+        auto nx = Loader::GetLoader(system, packed);
+        REQUIRE(nx);
+        REQUIRE(nx->GetFileType() == Loader::FileType::NX);
+        static_cast<Loader::AppLoader_NX&>(*nx).RegisterContent(manual);
+        manual.RegisterApplicationFile(*nx, packed);
+        const auto update_id = FileSys::GetUpdateTitleID(packed_id);
+        const auto discovered = manual.GetEntryRaw(update_id, FileSys::ContentRecordType::Meta);
+        REQUIRE(discovered);
+        const auto packed_accessor = create_accessor(packed_id);
+        REQUIRE(packed_accessor);
+        const auto packed_applet = window.GetMainApplet();
+        REQUIRE(packed_applet);
+        CHECK(packed_applet->process->GetProgramId() == packed_id);
+        CHECK(manual.GetEntryRaw(update_id, FileSys::ContentRecordType::Meta) == discovered);
+        REQUIRE(call_accessor(*packed_accessor, 10) == ResultSuccess.raw);
+        CHECK(home->IsRunning());
+        finish_guest_threads(*packed_applet->process);
+        REQUIRE(call_accessor(*packed_accessor, 25) == ResultSuccess.raw);
+        window.Update();
+        CHECK_FALSE(packed_applet->process->IsInitialized());
+    }
+
+    {
+        EventObserver observer{system, window};
+        for (int attempt = 0; attempt < 2; ++attempt) {
+            auto observed_accessor = create_accessor(TitleId);
+            REQUIRE(observed_accessor);
+            const auto observed = window.GetMainApplet();
+            REQUIRE(observed);
+            const u64 observed_pid = observed->aruid.pid;
+            REQUIRE(call_accessor(*observed_accessor, 10) == ResultSuccess.raw);
+            IApplicationFunctions observed_functions{system, observed};
+            constexpr Result completed_result{ErrorModule::AM, 37};
+            REQUIRE(call_accessor(observed_functions, 22, nullptr, completed_result.raw) ==
+                    ResultSuccess.raw);
+            finish_guest_threads(*observed->process);
+            REQUIRE(call_accessor(*observed_accessor, 25) == ResultSuccess.raw);
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+            while (window.GetMainApplet() == observed &&
+                   std::chrono::steady_clock::now() < deadline) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            REQUIRE(window.GetMainApplet() == nullptr);
+            CHECK(kernel.ApplicationProcess() == home->GetHandle());
+            CHECK_FALSE(observed->process->IsInitialized());
+            CHECK(kernel.GetProcessByProcessId(observed_pid).GetPointerUnsafe() == nullptr);
+            {
+                Kernel::KScopedSchedulerLock lock{kernel};
+                CHECK(observed->state_changed_event.GetHandle()->IsSignaled(kernel));
+            }
+            CHECK(call_accessor(*observed_accessor, 30) == completed_result.raw);
+        }
+    }
 }

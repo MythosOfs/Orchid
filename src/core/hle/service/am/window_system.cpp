@@ -354,7 +354,8 @@ void WindowSystem::PruneTerminatedAppletsLocked() {
 
         std::scoped_lock lk{applet->lock};
 
-        if (!applet->is_completed && !applet->process->IsTerminated()) {
+        if (applet->has_process_observer ||
+            (!applet->is_completed && !applet->process->IsTerminated())) {
             // Not terminated.
             it = std::next(it);
             continue;
@@ -421,10 +422,6 @@ void WindowSystem::PruneTerminatedAppletsLocked() {
             m_foreground_requested_applet = m_application;
         }
 
-        if (!applet->is_completed) {
-            applet->OnProcessTerminatedLocked();
-        }
-
         // If this was the application, we should try to switch to the home menu.
         const bool application_exited = applet.get() == m_application;
         if (application_exited) {
@@ -438,7 +435,7 @@ void WindowSystem::PruneTerminatedAppletsLocked() {
 
         this->UpdateCurrentApplicationLocked();
 
-        if (!applet->process->HasStarted()) {
+        if (application_exited || !applet->process->HasStarted()) {
             if (const auto* process = applet->process->GetHandle();
                 process && m_system.Kernel().ApplicationProcess() == process) {
                 m_system.Kernel().SetApplicationProcess(
@@ -447,6 +444,10 @@ void WindowSystem::PruneTerminatedAppletsLocked() {
             applet->hid_registration.UnregisterCurrentProcess();
             applet->process->Finalize();
         }
+        if (!applet->is_completed) {
+            applet->OnProcessTerminatedLocked();
+        }
+
         if (application_exited && m_home_menu) {
             m_home_menu->lifecycle_manager.PushUnorderedMessage(
                 m_system.Kernel(), AppletMessage::ApplicationExited);

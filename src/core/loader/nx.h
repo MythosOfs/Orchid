@@ -52,11 +52,13 @@ public:
 
     /// Adds the update and add-on NCAs of a native archive to a content provider, so the
     /// patch manager finds them as it does for a base NSP with separate update files.
+    void UseDiscoveredContent() { publish_native_extras = false; }
     void RegisterContent(FileSys::ManualContentProvider& provider) const;
 
 private:
     struct Impl;
     std::unique_ptr<Impl> impl;
+    bool publish_native_extras = true;
 };
 
 } // namespace Loader

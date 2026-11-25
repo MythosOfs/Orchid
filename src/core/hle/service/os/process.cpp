@@ -52,17 +52,8 @@ bool Process::Initialize(Loader::AppLoader& loader, Loader::ResultStatus& out_lo
     // Take ownership of the process object.
     m_process = process;
     m_process->Open(m_system.Kernel());
-    m_loose_exefs = loader.GetFileType() == Loader::FileType::DeconstructedRomDirectory;
-    switch (loader.GetFileType()) {
-    case Loader::FileType::NUP:
-    case Loader::FileType::NX:
-    case Loader::FileType::DeconstructedRomDirectory:
-        if (loader.ReadDisplayVersion(m_display_version) != Loader::ResultStatus::Success) {
-            m_display_version.clear();
-        }
-        break;
-    default:
-        break;
+    if (loader.ReadDisplayVersion(m_display_version) != Loader::ResultStatus::Success) {
+        m_display_version.clear();
     }
 
     // We succeeded.

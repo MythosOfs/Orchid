@@ -83,6 +83,7 @@ Result IApplicationAccessor::RequestExit() {
 Result IApplicationAccessor::Terminate() {
     LOG_INFO(Service_AM, "called");
     if (!m_window_system.CancelPendingApplication(*m_applet)) {
+        std::scoped_lock lk{m_applet->lock};
         m_applet->process->Terminate();
     }
     R_SUCCEED();

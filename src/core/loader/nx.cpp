@@ -810,7 +810,7 @@ AppLoader::LoadResult AppLoader_NX::Load(Kernel::KProcess& process, Core::System
     }
     // The frontend owns this provider; the game list fills it the same way.
     if (const auto* slot = system.GetContentProviderUnion().GetSlotProvider(
-            FileSys::ContentProviderUnionSlot::FrontendManual)) {
+            FileSys::ContentProviderUnionSlot::FrontendManual); publish_native_extras && slot) {
         RegisterContent(*const_cast<FileSys::ManualContentProvider*>(
             static_cast<const FileSys::ManualContentProvider*>(slot)));
     }

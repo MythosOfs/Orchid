@@ -257,21 +257,16 @@ Result IApplicationFunctions::SetTerminateResult(Result terminate_result) {
 Result IApplicationFunctions::GetDisplayVersion(Out<DisplayVersion> out_display_version) {
     LOG_DEBUG(Service_AM, "called");
 
-    std::string version = m_applet->process->GetDisplayVersion();
-    if (m_applet->process->PrefersInstalledDisplayVersion()) {
-        const auto installed = GetInstalledApplicationMetadata(system, m_applet->program_id);
-        if (installed.first) {
-            version = installed.first->GetVersionString();
+    const auto installed = GetInstalledApplicationMetadata(system, m_applet->program_id);
+    std::string version;
+    if (installed.first) {
+        version = installed.first->GetVersionString();
+    } else {
+        std::scoped_lock lk{m_applet->lock};
+        version = m_applet->process->GetDisplayVersion();
+        if (version.empty()) {
+            version = "1.0.0";
         }
-    }
-    if (version.empty()) {
-        if (const auto metadata = GetApplicationMetadata(system, m_applet->program_id);
-            metadata.first) {
-            version = metadata.first->GetVersionString();
-        }
-    }
-    if (version.empty()) {
-        version = "1.0.0";
     }
     std::memcpy(out_display_version->string.data(), version.data(),
                 (std::min)(version.size(), out_display_version->string.size()));

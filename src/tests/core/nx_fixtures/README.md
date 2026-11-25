@@ -95,3 +95,11 @@ SHA-256 in upstream `fixture_index.json`. The expected result is upstream's.
 | damaged_both_slots.nx | reject | no valid header slot |
 | corrupted_block_payload.nx | reject_full_verify | RAW block differs from the original integrity digest |
 | corrupted_orphan_block.nx | reject_full_verify | unreferenced physical block differs from its integrity digest |
+
+## `home_menu_native_extras.nx`
+
+SHA-256 `0b95de9226e5b28f7410ab68f4b0e74495f5a28077f12557728c06c1de41a0d6`. A synthetic Switch 2
+title (`0400ABCD00050000`) with a flat base snapshot containing a native NPDM and an NSO loop.
+The update snapshot depends on the base and contains only a plaintext metadata NCA for
+`0400ABCD00050800`, version 65536. This exercises the packed NX loader's native extra publication
+without encrypted content or console keys.

@@ -15,6 +15,7 @@
 #include "core/hle/service/glue/glue_manager.h"
 #include "core/hle/service/os/process.h"
 #include "core/loader/loader.h"
+#include "core/loader/nx.h"
 
 namespace Service::AM {
 
@@ -42,12 +43,16 @@ namespace {
 
 [[nodiscard]] inline std::unique_ptr<Process> CreateProcessImpl(
     std::unique_ptr<Loader::AppLoader>& out_loader, Loader::ResultStatus& out_load_result,
-    Core::System& system, FileSys::VirtualFile file, u64 program_id, u64 program_index) {
+    Core::System& system, FileSys::VirtualFile file, u64 program_id, u64 program_index,
+    bool use_discovered_content = false) {
     // Get the appropriate loader to parse this NCA.
     out_loader = Loader::GetLoader(system, file, program_id, program_index);
     // Ensure we have a loader which can parse the NCA.
     out_load_result = Loader::ResultStatus::ErrorNotInitialized;
     if (out_loader) {
+        if (use_discovered_content && out_loader->GetFileType() == Loader::FileType::NX) {
+            static_cast<Loader::AppLoader_NX&>(*out_loader).UseDiscoveredContent();
+        }
         // Try to load the process.
         auto process = std::make_unique<Process>(system);
         if (process->Initialize(*out_loader, out_load_result)) {
@@ -91,9 +96,10 @@ std::unique_ptr<Process> CreateProcess(Core::System& system, u64 program_id, u8 
 std::unique_ptr<Process> CreateApplicationProcess(
     std::vector<u8>& out_control, std::unique_ptr<Loader::AppLoader>& out_loader,
     Loader::ResultStatus& out_load_result, Core::System& system, FileSys::VirtualFile file,
-    u64 program_id, u64 program_index, std::optional<FileSys::ContentProviderUnionSlot> base_slot) {
+    u64 program_id, u64 program_index, std::optional<FileSys::ContentProviderUnionSlot> base_slot,
+    bool use_discovered_content) {
     if (auto process = CreateProcessImpl(out_loader, out_load_result, system, file, program_id,
-                                         program_index);
+                                         program_index, use_discovered_content);
         process) {
         FileSys::NACP nacp;
         const bool has_control = out_loader->ReadControlData(nacp) == Loader::ResultStatus::Success;

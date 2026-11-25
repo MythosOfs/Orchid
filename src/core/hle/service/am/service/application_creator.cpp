@@ -39,7 +39,7 @@ Result CreateGuestApplication(SharedPointer<IApplicationAccessor>* out_applicati
     std::unique_ptr<Loader::AppLoader> loader;
     Loader::ResultStatus result{};
     auto process = CreateApplicationProcess(control, loader, result, system, source.file,
-                                            program_id, 0, source.slot);
+                                            program_id, 0, source.slot, true);
     if (!process) {
         LOG_WARNING(Service_AM, "Loading application {:016X} failed with loader result {}",
                     program_id, static_cast<u16>(result));

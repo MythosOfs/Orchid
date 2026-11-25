@@ -269,10 +269,10 @@ public:
         }
     }
     void NoteDlssTraceSsboHost(u32 ssbo_index, bool bound, u8 host_path, u32 host_offset,
-                               u64 host_span, u32 host_segments) {
+                               u64 host_span, u32 host_segments, u32 source_offset) {
         if (dlss_trace) {
             dlss_trace->NoteSsboHost(ssbo_index, bound, host_path, host_offset, host_span,
-                                     host_segments);
+                                     host_segments, source_offset);
         }
     }
 

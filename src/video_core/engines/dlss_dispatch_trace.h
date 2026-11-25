@@ -33,6 +33,7 @@ public:
         u32 host_offset{};
         u64 host_span{};
         u32 host_segments{};
+        u32 source_offset{};
     };
 
     enum class Outcome : u8 {
@@ -143,7 +144,7 @@ public:
     }
 
     void NoteSsboHost(u32 ssbo_index, bool bound, u8 host_path, u32 host_offset, u64 host_span,
-                      u32 host_segments) {
+                      u32 host_segments, u32 source_offset) {
         if (!Enabled() || !has_pending || !capturing || Emitted()) {
             return;
         }
@@ -155,6 +156,7 @@ public:
                 record.host_offset = host_offset;
                 record.host_span = host_span;
                 record.host_segments = host_segments;
+                record.source_offset = source_offset;
                 return;
             }
         }
@@ -230,7 +232,7 @@ private:
                 const SsboRecord& ssbo = entry.ssbos[i];
                 LOG_INFO(HW_GPU,
                          "DLSS chain trace:   ssbo[{}] cbuf{}+{:#x} mode={} rule={} declared={:#x} "
-                         "next={} logical={:#x} chosen={:#x} path={} host={:#x}+{:#x}/{} bound={}",
+                         "next={} logical={:#x} chosen={:#x} path={} host={:#x}+{:#x}/{} src={:#x} bound={}",
                          ssbo.ssbo_index, ssbo.cbuf_index, ssbo.cbuf_offset,
                          ssbo.dlss_dispatch ? "dlss"
                          : ssbo.native_compute ? "native"
@@ -239,7 +241,8 @@ private:
                          ssbo.next_word ? fmt::format("{:#x}", *ssbo.next_word)
                                         : std::string{"unavailable"},
                          ssbo.logical_range, ssbo.chosen_size, HostPathName(ssbo.host_path),
-                         ssbo.host_offset, ssbo.host_span, ssbo.host_segments, ssbo.bound);
+                         ssbo.host_offset, ssbo.host_span, ssbo.host_segments,
+                         ssbo.source_offset, ssbo.bound);
             }
             if (entry.ssbo_overflow) {
                 LOG_INFO(HW_GPU, "DLSS chain trace:   {} further SSBOs not recorded",

@@ -8,6 +8,7 @@
 #include <atomic>
 #include <bit>
 #include <cstdlib>
+#include <limits>
 #include <mutex>
 #include <numeric>
 #include <unordered_map>
@@ -117,7 +118,8 @@ void ComputePipeline::Configure() {
         LOG_INFO(Render_OpenGL,
                  "compute SSBO configure={} runtime={} requested={} actual={} range={:#x}", serial,
                  runtime_id, use_storage_buffers, buffer_cache.runtime.UseStorageBuffers(),
-                 buffer_cache.runtime.GetMaxStorageBufferRange());
+                 std::min<u64>(buffer_cache.runtime.GetMaxStorageBufferRange(),
+                               u64{std::numeric_limits<u32>::max()}));
     }
     buffer_cache.SetComputeUniformBufferState(info.constant_buffer_mask, &uniform_buffer_sizes);
     buffer_cache.UnbindComputeStorageBuffers();

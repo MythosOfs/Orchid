@@ -828,7 +828,8 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         CHECK(record.host_path == 2);
         CHECK(record.host_segments == 2);
         CHECK(record.host_span == 0x2000);
-        CHECK(record.host_offset == 0x1000);
+        CHECK(record.host_offset == 0);
+        CHECK(record.source_offset == 0x1000);
         REQUIRE(runtime.multi_range_binds.size() == 1);
         REQUIRE(runtime.multi_range_sources.size() == 2);
         CHECK(std::get<1>(runtime.multi_range_sources[0]) == 0x1000);
@@ -883,7 +884,10 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         CHECK(record.host_span != 0);
         REQUIRE(runtime.multi_range_binds.size() == 1);
         REQUIRE(runtime.storage_binds.size() == 1);
-        CHECK_FALSE(cache->Obtain(device + 0x40000, 0x100)->sparse);
+        const auto* const bound_buffer = cache->Obtain(device + 0x40000, 0x100);
+        REQUIRE(bound_buffer);
+        CHECK_FALSE(bound_buffer->sparse);
+        CHECK_FALSE(bound_buffer->marked.empty());
     }
 
     SECTION("the trace reports a null path for an enabled but unbound storage slot") {
@@ -1041,6 +1045,10 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         const auto* const resolved = cache->Obtain(device + 0x90000, 0x100);
         REQUIRE(resolved);
         CHECK_FALSE(resolved->sparse);
+        CHECK_FALSE(resolved->marked.empty());
+        const auto* const resolved2 = cache->Obtain(device + 0x40000, 0x100);
+        REQUIRE(resolved2);
+        CHECK_FALSE(resolved2->marked.empty());
     }
 
     SECTION("a host compute bind without a compute engine does no trace work") {
@@ -1061,11 +1069,12 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         cache->SetAddressSpace(address_space);
         cache->EnableChannelState();
         kepler.DlssTrace().SetTestEnabled(true);
-        constexpr GPUVAddr desc = 0x700000, target = 0x800000;
+        constexpr GPUVAddr desc = 0x700000, t1 = 0x810000;
         address_space.Map(desc, device + 0x58000, 0x1000, Tegra::PTEKind::PITCH, false);
-        address_space.Map(target, device + 0x80000, 0x8000, Tegra::PTEKind::PITCH, false);
-        address_space.Write<u64>(desc, target);
-        address_space.Write<u64>(desc + 8, 0xffffffff);
+        address_space.Map(t1, device + 0x40000, 0x40, Tegra::PTEKind::Z16, false);
+        address_space.Map(t1 + 0x40, device + 0x40040, 0x200, Tegra::PTEKind::PITCH, false);
+        address_space.Write<u64>(desc, t1 + 0x40);
+        address_space.Write<u64>(desc + 8, 520);
         qmd[20] = 1;
         qmd[32] = u32(desc);
         qmd[33] = (u32(desc >> 32) & 0xff) | (((0x1000 >> 4) & 0x1fff) << 19);
@@ -1085,8 +1094,18 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         const auto& entries = sequences.front().entries;
         REQUIRE(entries.size() == 3);
         REQUIRE(entries[2].ssbo_count == 2);
-        CHECK(entries[2].ssbos[0].size_rule == 2);
-        CHECK(entries[2].ssbos[1].size_rule == 2);
+        const auto& cold = entries[2].ssbos[0];
+        CHECK(cold.bound);
+        CHECK(cold.size_rule == 2);
+        CHECK(cold.declared_word == 520);
+        CHECK(cold.logical_range == 0x240);
+        CHECK(cold.chosen_size == 0x240);
+        const auto& warm = entries[2].ssbos[1];
+        CHECK(warm.bound);
+        CHECK(warm.size_rule == 2);
+        CHECK(warm.declared_word == 520);
+        CHECK(warm.logical_range == 0x240);
+        CHECK(warm.chosen_size == 0x240);
     }
 
     SECTION("one overlap scan per cache miss regardless of the reject policy") {

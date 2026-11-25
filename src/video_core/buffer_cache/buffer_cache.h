@@ -741,10 +741,10 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
         }
         const bool is_dlss = kepler_compute->IsDlssDispatch();
         const u8 size_rule =
-            record.size_rule != 0
-                ? record.size_rule
-                : (is_dlss ? u8{1}
-                           : (record.declared_word.value_or(0) > bound.size ? u8{2} : u8{0}));
+            record.size_rule != 0     ? record.size_rule
+            : bound.size_rule != 0    ? bound.size_rule
+            : is_dlss                 ? u8{1}
+            : record.declared_word.value_or(0) > bound.size ? u8{2} : u8{0};
         kepler_compute->NoteDlssTraceSsbo({static_cast<u32>(ssbo_index), cbuf_index, cbuf_offset,
                                            record.declared_word.value_or(0), next_word,
                                            bound.physical_size ? bound.physical_size : bound.size,
@@ -1775,17 +1775,14 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
                 trace->binding_state = diag::BindingState::MultiRange;
             if (capturing) {
                 u64 host_span = 0;
-                u32 host_offset = 0;
                 for (u32 segment = 0; segment < binding.segment_count; ++segment) {
-                    const MultiRangeSegment& seg =
-                        compute_segments[binding.segment_first + segment];
-                    if (segment == 0) {
-                        host_offset = slot_buffers[seg.buffer_id].Offset(seg.device_addr);
-                    }
-                    host_span += seg.size;
+                    host_span += compute_segments[binding.segment_first + segment].size;
                 }
-                kepler_compute->NoteDlssTraceSsboHost(index, true, 2, host_offset, host_span,
-                                                      binding.segment_count);
+                const MultiRangeSegment& first = compute_segments[binding.segment_first];
+                const u32 source_offset =
+                    slot_buffers[first.buffer_id].Offset(first.device_addr);
+                kepler_compute->NoteDlssTraceSsboHost(index, true, 2, 0, host_span,
+                                                      binding.segment_count, source_offset);
             }
             return;
         }
@@ -1804,7 +1801,7 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
             const bool bound = binding.buffer_id != NULL_BUFFER_ID && size != 0;
             kepler_compute->NoteDlssTraceSsboHost(index, bound, bound ? u8{1} : u8{0},
                                                   bound ? offset : 0, bound ? size : 0,
-                                                  bound ? 1 : 0);
+                                                  bound ? 1 : 0, bound ? offset : 0);
         }
 
         if (is_written) {
@@ -2437,7 +2434,6 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr dev
     static constexpr int STREAM_LEAP_THRESHOLD = 16;
     boost::container::small_vector<BufferId, 16> overlap_ids;
     boost::container::small_vector<std::pair<u64, BufferId>, 4> stale_pages;
-    u64 pages_scanned = 0;
     DAddr begin = device_addr;
     DAddr end = device_addr + wanted_size;
     int stream_score = 0;
@@ -2466,13 +2462,11 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr dev
             .stale_pages = std::move(stale_pages),
             .begin = begin,
             .end = end,
-            .pages_scanned = pages_scanned,
             .has_stream_leap = has_stream_leap,
         };
     }
     for (; device_addr >> CACHING_PAGEBITS < Common::DivCeil(end, CACHING_PAGESIZE);
          device_addr += CACHING_PAGESIZE) {
-        ++pages_scanned;
         if constexpr (requires { runtime.overlap_pages_scanned; }) {
             ++runtime.overlap_pages_scanned;
         }
@@ -2527,7 +2521,6 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr dev
         .stale_pages = std::move(stale_pages),
         .begin = begin,
         .end = end,
-        .pages_scanned = pages_scanned,
         .has_stream_leap = has_stream_leap,
     };
 }
@@ -3221,6 +3214,7 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
         .buffer_id = BufferId{},
         .physical_size = physical_size,
         .native_compute = native_compute,
+        .size_rule = static_cast<u8>(size_rule),
     };
     return binding;
 }

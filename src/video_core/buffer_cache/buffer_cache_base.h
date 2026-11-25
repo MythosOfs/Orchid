@@ -109,6 +109,7 @@ struct Binding {
     u32 segment_count{};
     // Native compute binds reject unrepresentable host spans instead of wrapping silently.
     bool native_compute{};
+    u8 size_rule{};
 };
 
 struct MultiRangeSegment {
@@ -243,7 +244,6 @@ class BufferCache : public VideoCommon::ChannelSetupCaches<BufferCacheChannelInf
         boost::container::small_vector<std::pair<u64, BufferId>, 4> stale_pages;
         DAddr begin;
         DAddr end;
-        u64 pages_scanned{};
         bool has_stream_leap = false;
     };
 

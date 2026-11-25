@@ -230,8 +230,14 @@ const ShaderInfo* ShaderCache::ComputeShader() {
         LOG_ERROR(HW_GPU, "Invalid GPU address for shader {:#016x}", shader_addr);
         return nullptr;
     }
-    if (const ShaderInfo* const shader = TryGet(*cpu_shader_addr)) {
+    const auto note_native_key = [this](const ShaderInfo* shader) -> const ShaderInfo* {
+        if (shader->lowered_native && shader->lowered_native->native_program_key) {
+            kepler_compute->NoteComputeProgram(*shader->lowered_native->native_program_key);
+        }
         return shader;
+    };
+    if (const ShaderInfo* const shader = TryGet(*cpu_shader_addr)) {
+        return note_native_key(shader);
     }
     try {
         RecheckRejection(*cpu_shader_addr);
@@ -244,7 +250,7 @@ const ShaderInfo* ShaderCache::ComputeShader() {
         info_hitch.SourceBytes(env.SourceSizeBytes());
         const auto* result = MakeShaderInfo(env, *cpu_shader_addr);
         info_hitch.Finish("ok");
-        return result;
+        return note_native_key(result);
     } catch (const Shader::Exception&) {
         RememberRejection(*cpu_shader_addr, shader_addr);
         throw;

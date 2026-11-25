@@ -34,8 +34,8 @@ namespace VideoCommon {
 /// A native (Switch 2) program after capture and lowering to Maxwell code. The shader cache keeps
 /// it so the environments built for the program's pipelines don't capture and lower it again.
 struct LoweredNativeCode {
-    // Populated only for an opt-in diagnostic; never part of a shader/cache key.
-    std::optional<u64> diagnostic_native_key;
+    // The source program's NativeProgramKey for compute programs; never part of a shader/cache key.
+    std::optional<u64> native_program_key;
     /// Shader header, lowered instructions with Maxwell scheduling words, then the native
     /// address map (what the environment's `code` used to be filled with).
     std::vector<u64> code;

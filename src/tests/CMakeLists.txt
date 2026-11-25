@@ -149,6 +149,7 @@ add_executable(tests
     video_core/ampere_i2f64.cpp
     video_core/ampere_uniform_fset.cpp
     video_core/compute_storage_buffers.cpp
+    video_core/dlss_dispatch_chain.cpp
     video_core/storage_binding_cache.cpp
     video_core/approximate_gpu_writes.cpp
     video_core/padded_width.cpp

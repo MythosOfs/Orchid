@@ -884,7 +884,7 @@ ComputePipeline* PipelineCache::CurrentComputePipeline(std::optional<u64>& diagn
         return nullptr;
     }
     if (shader->lowered_native)
-        diagnostic_key = shader->lowered_native->diagnostic_native_key;
+        diagnostic_key = shader->lowered_native->native_program_key;
     const auto& qmd{kepler_compute->launch_description};
     const ComputePipelineCacheKey key{
         .unique_hash = shader->unique_hash,
@@ -1824,11 +1824,11 @@ std::unique_ptr<ComputePipeline> PipelineCache::CreateComputePipeline(
     namespace diag = VideoCommon::ComputeBindingDiagnostic;
     std::optional<diag::Record> trace;
     std::optional<diag::Scope> trace_scope;
-    if (shader->lowered_native && diag::Matches(shader->lowered_native->diagnostic_native_key) &&
+    if (shader->lowered_native && diag::Matches(shader->lowered_native->native_program_key) &&
         diag::compile_limit.Claim()) {
         trace.emplace();
         trace->phase = diag::Phase::Compile;
-        trace->native_key = *shader->lowered_native->diagnostic_native_key;
+        trace->native_key = *shader->lowered_native->native_program_key;
         trace->shader_hash = key.unique_hash;
         trace->serial = diag::sequence.fetch_add(1, std::memory_order_relaxed);
         trace->program = program_base + qmd.program_start;

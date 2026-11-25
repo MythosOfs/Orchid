@@ -721,7 +721,7 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
     const GPUVAddr ssbo_addr = cbufs[cbuf_index].Address() + cbuf_offset;
     channel_state->compute_storage_buffers[ssbo_index] =
         StorageBufferBinding(ssbo_addr, cbuf_index, is_written,
-                             kepler_compute->IsNativeMode(), matching && !trace->duplicate_descriptor);
+                             kepler_compute->IsDlssDispatch(), matching && !trace->duplicate_descriptor);
 }
 
 template <class P>

@@ -742,8 +742,8 @@ std::shared_ptr<const LoweredNativeCode> GenericEnvironment::LowerNativeCode(u32
             words[1], words[2], words[3]);
     }
     auto result = std::make_shared<LoweredNativeCode>();
-    if (native_header_size == 0 && ComputeBindingDiagnostic::Selector()) {
-        result->diagnostic_native_key = Shader::Ampere::NativeProgramKey(native);
+    if (native_header_size == 0) {
+        result->native_program_key = Shader::Ampere::NativeProgramKey(native);
     }
     result->texture_bound = lowered.required_texture_buffer;
     result->surface_bound = lowered.required_surface_buffer;

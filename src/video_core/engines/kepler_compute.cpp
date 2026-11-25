@@ -556,9 +556,13 @@ bool KeplerCompute::DispatchNativeCompute(const NativeQmdScheduler::Descriptor& 
     if (!launch_description.block_dim_x || !launch_description.block_dim_y || !launch_description.block_dim_z)
         return false;
     dlss_dispatch_chain.NoteDispatch();
-    dlss_trace.BeginDispatch();
+    if (DlssTraceEnabled()) {
+        DlssTrace().BeginDispatch();
+    }
     const auto finish = [this](bool result) {
-        dlss_trace.EndDispatch();
+        if (dlss_trace) {
+            dlss_trace->EndDispatch(result);
+        }
         return result;
     };
     try {

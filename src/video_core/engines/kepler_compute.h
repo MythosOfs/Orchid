@@ -247,12 +247,31 @@ public:
     bool IsDlssDispatch() const { return native_mode && dlss_dispatch_chain.active; }
     void NoteComputeProgram(u64 native_key, bool cache_hit = false) {
         dlss_dispatch_chain.NoteProgram(native_key);
-        dlss_trace.NoteProgram(native_key, cache_hit);
+        if (dlss_trace) {
+            dlss_trace->NoteProgram(native_key, cache_hit);
+        }
     }
-    bool DlssTraceEnabled() const { return dlss_trace.Enabled(); }
-    DlssDispatchTrace& DlssTrace() { return dlss_trace; }
+    bool DlssTraceEnabled() const {
+        return dlss_trace ? dlss_trace->Enabled() : DlssDispatchTrace::DefaultOptIn();
+    }
+    bool DlssTraceCapturing() const {
+        return dlss_trace && dlss_trace->Capturing();
+    }
+    DlssDispatchTrace& DlssTrace() {
+        if (!dlss_trace) {
+            dlss_trace.emplace();
+        }
+        return *dlss_trace;
+    }
     void NoteDlssTraceSsbo(DlssDispatchTrace::SsboRecord record) {
-        dlss_trace.NoteSsbo(record);
+        if (dlss_trace) {
+            dlss_trace->NoteSsbo(record);
+        }
+    }
+    void NoteDlssTraceSsboHost(u32 ssbo_index, bool bound, u64 host_span, u32 host_segments) {
+        if (dlss_trace) {
+            dlss_trace->NoteSsboHost(ssbo_index, bound, host_span, host_segments);
+        }
     }
 
     /// GPU thread split with macros on its front half (gpu_split.h, EDEN_NX2_SPLIT=2), called by
@@ -289,7 +308,7 @@ private:
     GPUVAddr dlss_motion_color{};
     std::array<f32, 2> dlss_jitter{};
     DlssDispatchChain dlss_dispatch_chain;
-    DlssDispatchTrace dlss_trace;
+    std::optional<DlssDispatchTrace> dlss_trace;
     bool ProcessNativeMethod(Core::System& system, u32 method, u32 argument, bool is_last_call);
     NativeQmdScheduler native_qmd;
     std::array<u32, 0xc00>* native_data_ram{};

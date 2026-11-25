@@ -10,18 +10,31 @@
 
 namespace VideoCommon {
 
+enum class StorageBufferSizeRule : u8 {
+    Declared,
+    BarePointer,
+    FallbackCap,
+};
+
 // A bare pointer's following word is another parameter, not a size.
-[[nodiscard]] constexpr u32 StorageBufferSizeLimit(u64 kind_extent, u64 next_word,
-                                                   bool bare_pointer) {
+[[nodiscard]] constexpr std::pair<u32, StorageBufferSizeRule> StorageBufferSizeWithRule(
+    u64 kind_extent, u64 next_word, bool bare_pointer) {
     constexpr u32 mib = 1024 * 1024;
     if (bare_pointer) {
-        return static_cast<u32>((std::min)(kind_extent, u64{8U * mib}));
+        return {static_cast<u32>((std::min)(kind_extent, u64{8U * mib})),
+                StorageBufferSizeRule::BarePointer};
     }
     const u32 packed_size = static_cast<u32>(next_word);
     if ((next_word >> 32) == 0 && packed_size != 0 && packed_size <= kind_extent) {
-        return packed_size;
+        return {packed_size, StorageBufferSizeRule::Declared};
     }
-    return static_cast<u32>((std::min)(kind_extent, u64{8U * mib}));
+    return {static_cast<u32>((std::min)(kind_extent, u64{8U * mib})),
+            StorageBufferSizeRule::FallbackCap};
+}
+
+[[nodiscard]] constexpr u32 StorageBufferSizeLimit(u64 kind_extent, u64 next_word,
+                                                   bool bare_pointer) {
+    return StorageBufferSizeWithRule(kind_extent, next_word, bare_pointer).first;
 }
 
 // The mapping API splits on both physical discontinuities and unmapped holes. Adjacent

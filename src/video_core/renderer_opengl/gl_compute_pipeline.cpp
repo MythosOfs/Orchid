@@ -8,7 +8,9 @@
 #include <atomic>
 #include <bit>
 #include <cstdlib>
+#include <mutex>
 #include <numeric>
+#include <unordered_set>
 #include "common/cityhash.h"
 #include "common/logging.h"
 #include "common/settings.h"
@@ -90,9 +92,19 @@ void ComputePipeline::Configure() {
     static const bool trace_mode = std::getenv("EDEN_NX2_TRACE_GL_SSBO") != nullptr;
     if (trace_mode) {
         static std::atomic<u64> configure_serial{};
+        static std::mutex runtime_mutex;
+        static std::unordered_set<const void*> runtime_seen;
+        const void* const runtime_id = static_cast<const void*>(&buffer_cache.runtime);
+        {
+            const std::scoped_lock lock{runtime_mutex};
+            if (runtime_seen.insert(runtime_id).second) {
+                LOG_INFO(Render_OpenGL, "compute SSBO runtime={} block_size={:#x}", runtime_id,
+                         buffer_cache.runtime.DeviceMaxStorageBufferBlockSize());
+            }
+        }
         LOG_INFO(Render_OpenGL,
-                 "compute SSBO configure={} requested={} actual={} range={:#x}",
-                 configure_serial.fetch_add(1), use_storage_buffers,
+                 "compute SSBO configure={} runtime={} requested={} actual={} range={:#x}",
+                 configure_serial.fetch_add(1), runtime_id, use_storage_buffers,
                  buffer_cache.runtime.UseStorageBuffers(),
                  buffer_cache.runtime.GetMaxStorageBufferRange());
     }

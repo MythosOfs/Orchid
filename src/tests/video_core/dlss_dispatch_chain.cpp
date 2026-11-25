@@ -137,48 +137,66 @@ TEST_CASE("DLSS dispatch trace captures prepass through the first ordinary dispa
 
     trace.BeginDispatch();
     trace.NoteProgram(other, false);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     CHECK(trace.Entries().empty());
     CHECK_FALSE(trace.Capturing());
 
     trace.BeginDispatch();
     trace.NoteProgram(fortunes_weave_prepass, false);
     trace.NoteSsbo(ssbo(0));
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
     trace.NoteProgram(other, true);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
     trace.NoteProgram(fortunes_weave_output, false);
     trace.NoteSsbo(ssbo(1));
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     CHECK(trace.Capturing());
     CHECK_FALSE(trace.Emitted());
     trace.BeginDispatch();
     trace.NoteProgram(other, true);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
 
-    REQUIRE(trace.Emitted());
-    REQUIRE(trace.Entries().size() == 5);
-    CHECK(trace.Entries()[0].native_key == fortunes_weave_prepass);
-    CHECK(trace.Entries()[0].ssbo_count == 1);
-    CHECK(trace.Entries()[0].ssbos[0].declared_word == 0x1000);
-    CHECK(trace.Entries()[1].native_key == other);
-    CHECK(*trace.Entries()[1].cache_warm);
-    CHECK(trace.Entries()[2].native_key == 0);
-    CHECK_FALSE(trace.Entries()[2].cache_warm.has_value());
-    CHECK(trace.Entries()[3].native_key == fortunes_weave_output);
-    CHECK(trace.Entries()[3].ssbos[0].dlss_dispatch == false);
-    CHECK(trace.Entries()[3].ssbos[0].chosen_size == 0x4000);
-    CHECK(trace.Entries()[4].native_key == other);
-    CHECK(trace.Entries()[4].Ordinary());
+    REQUIRE(trace.Sequences().size() == 1);
+    CHECK_FALSE(trace.Emitted());
+    const auto& first = trace.Sequences().front().entries;
+    REQUIRE(first.size() == 5);
+    CHECK(first[0].native_key == fortunes_weave_prepass);
+    CHECK(first[0].ssbo_count == 1);
+    CHECK(first[0].ssbos[0].declared_word == 0x1000);
+    CHECK(first[1].native_key == other);
+    CHECK(*first[1].cache_warm);
+    CHECK(first[2].native_key == 0);
+    CHECK(first[2].outcome == Tegra::Engines::DlssDispatchTrace::Outcome::Keyless);
+    CHECK_FALSE(first[2].cache_warm.has_value());
+    CHECK(first[3].native_key == fortunes_weave_output);
+    CHECK(first[3].ssbos[0].dlss_dispatch == false);
+    CHECK(first[3].ssbos[0].chosen_size == 0x4000);
+    CHECK(first[4].native_key == other);
+    CHECK(first[4].Ordinary());
+    CHECK(first[4].outcome == Tegra::Engines::DlssDispatchTrace::Outcome::Succeeded);
 
     trace.BeginDispatch();
-    trace.NoteProgram(fortunes_weave_prepass, false);
-    trace.EndDispatch();
-    CHECK(trace.Entries().size() == 5);
+    trace.NoteProgram(fortunes_weave_prepass, true);
+    trace.EndDispatch(true);
+    CHECK(trace.Capturing());
+    trace.BeginDispatch();
+    trace.NoteProgram(fortunes_weave_output, true);
+    trace.EndDispatch(true);
+    trace.BeginDispatch();
+    trace.EndDispatch(false);
+
+    const auto& sequences = trace.Sequences();
+    REQUIRE(sequences.size() == 2);
+    CHECK(trace.Emitted());
+    const auto& second = sequences.back().entries;
+    REQUIRE(second.size() == 3);
+    CHECK(second[0].native_key == fortunes_weave_prepass);
+    CHECK(second[0].cache_warm == true);
+    CHECK(second[2].outcome == Tegra::Engines::DlssDispatchTrace::Outcome::Rejected);
 }
 
 TEST_CASE("DLSS dispatch trace restarts on a repeat prepass and ignores a lone output",
@@ -188,36 +206,37 @@ TEST_CASE("DLSS dispatch trace restarts on a repeat prepass and ignores a lone o
 
     trace.BeginDispatch();
     trace.NoteProgram(fortunes_weave_output, false);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
     trace.NoteProgram(other, false);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     CHECK_FALSE(trace.Capturing());
     CHECK(trace.Entries().empty());
     CHECK_FALSE(trace.Emitted());
 
     trace.BeginDispatch();
     trace.NoteProgram(star_fox_prepass, false);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
     trace.NoteProgram(other, true);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
     trace.NoteProgram(fortunes_weave_prepass, true);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
     trace.NoteProgram(fortunes_weave_output, false);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
     trace.NoteProgram(other, false);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
 
-    REQUIRE(trace.Emitted());
-    REQUIRE(trace.Entries().size() == 3);
-    CHECK(trace.Entries()[0].native_key == fortunes_weave_prepass);
-    CHECK(*trace.Entries()[0].cache_warm);
-    CHECK(trace.Entries()[1].native_key == fortunes_weave_output);
-    CHECK(trace.Entries()[2].native_key == other);
+    REQUIRE(trace.Sequences().size() == 1);
+    const auto& entries = trace.Sequences().front().entries;
+    REQUIRE(entries.size() == 3);
+    CHECK(entries[0].native_key == fortunes_weave_prepass);
+    CHECK(*entries[0].cache_warm);
+    CHECK(entries[1].native_key == fortunes_weave_output);
+    CHECK(entries[2].native_key == other);
 }
 
 TEST_CASE("DLSS dispatch trace emits a truncated capture past the chain bound",
@@ -226,14 +245,17 @@ TEST_CASE("DLSS dispatch trace emits a truncated capture past the chain bound",
     trace.SetTestEnabled(true);
     trace.BeginDispatch();
     trace.NoteProgram(star_fox_prepass, false);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     for (u32 i = 0; i < Tegra::Engines::DlssDispatchChain::max_dispatches + 4; ++i) {
         trace.BeginDispatch();
-        trace.EndDispatch();
+        trace.EndDispatch(true);
     }
     REQUIRE(trace.Truncated());
-    REQUIRE(trace.Emitted());
-    CHECK(trace.Entries().size() == Tegra::Engines::DlssDispatchChain::max_dispatches + 2);
+    REQUIRE(trace.Sequences().size() == 1);
+    CHECK_FALSE(trace.Emitted());
+    CHECK(trace.Sequences().front().entries.size() ==
+          Tegra::Engines::DlssDispatchChain::max_dispatches + 2);
+    CHECK(trace.Sequences().front().truncated);
 }
 
 TEST_CASE("DLSS dispatch trace counts SSBOs past the supported maximum",
@@ -246,14 +268,14 @@ TEST_CASE("DLSS dispatch trace counts SSBOs past the supported maximum",
     for (u32 i = 0; i < Shader::Info::MAX_SSBOS + 3; ++i) {
         trace.NoteSsbo(Ssbo{.ssbo_index = i});
     }
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
     trace.NoteProgram(fortunes_weave_output, false);
-    trace.EndDispatch();
+    trace.EndDispatch(true);
     trace.BeginDispatch();
-    trace.EndDispatch();
-    REQUIRE(trace.Emitted());
-    const auto& entry = trace.Entries().front();
+    trace.EndDispatch(true);
+    REQUIRE(trace.Sequences().size() == 1);
+    const auto& entry = trace.Sequences().front().entries.front();
     CHECK(entry.ssbo_count == Shader::Info::MAX_SSBOS);
     CHECK(entry.ssbo_overflow == 3);
 }

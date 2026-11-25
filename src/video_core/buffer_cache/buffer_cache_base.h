@@ -107,12 +107,15 @@ struct Binding {
     u32 physical_size{};
     u32 segment_first{};
     u32 segment_count{};
+    // Native compute binds reject unrepresentable host spans instead of wrapping silently.
+    bool native_compute{};
 };
 
 struct MultiRangeSegment {
     BufferId buffer_id;
     DAddr device_addr{};
     u32 size{};
+    bool native_compute{};
 };
 
 struct TextureBufferBinding : Binding {
@@ -235,8 +238,12 @@ class BufferCache : public VideoCommon::ChannelSetupCaches<BufferCacheChannelInf
 
     struct OverlapResult {
         boost::container::small_vector<BufferId, 16> ids;
+        // Stale page-table entries cleared during the scan, kept so a rejected allocation can
+        // restore them together with the picks it made.
+        boost::container::small_vector<std::pair<u64, BufferId>, 4> stale_pages;
         DAddr begin;
         DAddr end;
+        u64 pages_scanned{};
         bool has_stream_leap = false;
     };
 
@@ -496,6 +503,10 @@ public:
         recent[next++ % recent.size()] = {device_addr, size, removals};
     }
 
+    /// Page-table slots ResolveOverlaps walked, cumulative: one scan per cache miss, so a miss
+    /// over K mapped pages adds K (the removed probe pass doubled it).
+    u64 overlap_pages_scanned{};
+
 protected:
     [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
                                                bool is_written, bool native_compute = false,
@@ -604,17 +615,19 @@ private:
     /// while collecting, asks for new copies.
     void Nx2NoteListWrite(BufferId buffer_id, DAddr device_addr, u64 size);
 
-    [[nodiscard]] BufferId FindBuffer(DAddr device_addr, u32 size, bool sparse_compatible);
+    /// native_reject threads the caller's policy: native compute storage resolution throws on
+    /// unrepresentable host spans; every graphics caller passes false and keeps the silent wrap.
+    [[nodiscard]] BufferId FindBuffer(DAddr device_addr, u32 size, bool sparse_compatible,
+                                      bool native_reject = false);
 
     void SynchronizeBufferWrites(Buffer& buffer);
 
-    [[nodiscard]] OverlapResult ResolveOverlaps(DAddr device_addr, u32 wanted_size,
-                                                bool mutate = true);
+    [[nodiscard]] OverlapResult ResolveOverlaps(DAddr device_addr, u32 wanted_size);
 
     void JoinOverlap(BufferId new_buffer_id, BufferId overlap_id, bool accumulate_stream_score);
 
     [[nodiscard]] BufferId CreateBuffer(DAddr device_addr, u32 wanted_size,
-                                        bool sparse_compatible);
+                                        bool sparse_compatible, bool native_reject = false);
 
     void Register(BufferId buffer_id);
 

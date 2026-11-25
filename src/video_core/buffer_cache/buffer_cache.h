@@ -720,11 +720,11 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
 
     const auto& cbufs = launch_desc.const_buffer_config;
     const GPUVAddr ssbo_addr = cbufs[cbuf_index].Address() + cbuf_offset;
-    const bool dlss_trace = kepler_compute->DlssTraceEnabled();
-    diag::Record chain_record;
+    const bool capturing = kepler_compute->DlssTraceCapturing();
+    std::optional<diag::Record> chain_record;
     std::optional<diag::Scope> chain_scope;
-    if (dlss_trace && !matching) {
-        chain_scope.emplace(chain_record);
+    if (capturing && !matching) {
+        chain_scope.emplace(chain_record.emplace());
     }
     channel_state->compute_storage_buffers[ssbo_index] =
         StorageBufferBinding(ssbo_addr, cbuf_index, is_written, kepler_compute->IsNativeMode(),
@@ -732,19 +732,25 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
                              chain_scope.has_value() ||
                                  (matching && !trace->duplicate_descriptor),
                              chain_scope.has_value());
-    if (dlss_trace) {
-        const auto& record = chain_scope ? chain_record : *trace;
+    if (capturing) {
+        const auto& record = chain_scope ? *chain_record : *trace;
         const Binding& bound = channel_state->compute_storage_buffers[ssbo_index];
         std::optional<u64> next_word;
         if (gpu_memory->IsFullyMappedRange(ssbo_addr + 8, sizeof(u64))) {
             next_word = gpu_memory->Read<u64>(ssbo_addr + 8);
         }
+        const bool is_dlss = kepler_compute->IsDlssDispatch();
+        const u8 size_rule =
+            record.size_rule != 0
+                ? record.size_rule
+                : (is_dlss ? u8{1}
+                           : (record.declared_word.value_or(0) > bound.size ? u8{2} : u8{0}));
         kepler_compute->NoteDlssTraceSsbo({static_cast<u32>(ssbo_index), cbuf_index, cbuf_offset,
                                            record.declared_word.value_or(0), next_word,
                                            bound.physical_size ? bound.physical_size : bound.size,
                                            bound.buffer_id != NULL_BUFFER_ID,
-                                           kepler_compute->IsNativeMode(),
-                                           kepler_compute->IsDlssDispatch()});
+                                           kepler_compute->IsNativeMode(), is_dlss, size_rule,
+                                           record.logical_size.value_or(bound.size)});
     }
 }
 
@@ -1516,8 +1522,8 @@ void BufferCache<P>::ResolveMultiRangeStorage(Binding& binding, bool is_written,
         const u32 first = static_cast<u32>(pool.size());
         const bool prefer_sparse = runtime.PrefersSparseSources();
         for (const VirtualSegment& segment : segments) {
-            const BufferId buffer_id =
-                FindBuffer(segment.device_addr, segment.size, prefer_sparse);
+            const BufferId buffer_id = FindBuffer(segment.device_addr, segment.size, prefer_sparse,
+                                                  binding.native_compute);
             if (!buffer_id) {
                 pool.resize(first);
                 return;
@@ -1526,6 +1532,7 @@ void BufferCache<P>::ResolveMultiRangeStorage(Binding& binding, bool is_written,
                 .buffer_id = buffer_id,
                 .device_addr = segment.device_addr,
                 .size = segment.size,
+                .native_compute = binding.native_compute,
             });
         }
         binding.segment_first = first;
@@ -1594,7 +1601,8 @@ void BufferCache<P>::RefreshMultiRangeSegments(std::span<MultiRangeSegment> pool
             bool all_live = true;
             for (MultiRangeSegment& segment : pool) {
                 if (!segment.buffer_id) {
-                    segment.buffer_id = FindBuffer(segment.device_addr, segment.size, prefer_sparse);
+                    segment.buffer_id = FindBuffer(segment.device_addr, segment.size, prefer_sparse,
+                                                   segment.native_compute);
                     all_live = false;
                 }
             }
@@ -1768,7 +1776,8 @@ void BufferCache<P>::BindHostComputeStorageBuffers() {
         }
         const u32 size = binding.physical_size ? binding.physical_size : binding.size;
         if (!binding.buffer_id && size != 0) {
-            binding.buffer_id = FindBuffer(binding.device_addr, size, false);
+            binding.buffer_id =
+                FindBuffer(binding.device_addr, size, false, binding.native_compute);
         }
         Buffer& buffer = slot_buffers[binding.buffer_id];
         TouchBuffer(buffer, binding.buffer_id);
@@ -1871,8 +1880,9 @@ void BufferCache<P>::RefreshMultiRangeSegments(std::vector<MultiRangeSegment>& p
             bool resolved = false;
             for (MultiRangeSegment& segment : pool) {
                 if (!segment.buffer_id) {
-                    segment.buffer_id = FindBuffer(segment.device_addr, segment.size,
-                                                   runtime.PrefersSparseSources());
+                    segment.buffer_id =
+                        FindBuffer(segment.device_addr, segment.size,
+                                   runtime.PrefersSparseSources(), segment.native_compute);
                     resolved = true;
                 }
             }
@@ -2118,10 +2128,20 @@ void BufferCache<P>::UpdateComputeStorageBuffers() {
         // Resolve buffer
         Binding& binding = channel_state->compute_storage_buffers[index];
         const u32 physical_size = binding.physical_size ? binding.physical_size : binding.size;
-        binding.buffer_id = FindBuffer(binding.device_addr, physical_size, false);
+        binding.buffer_id =
+            FindBuffer(binding.device_addr, physical_size, false, binding.native_compute);
         const bool is_written =
             ((channel_state->written_compute_storage_buffers >> index) & 1) != 0;
         ResolveMultiRangeStorage(binding, is_written, compute_segments);
+        if (kepler_compute && kepler_compute->DlssTraceCapturing()) {
+            u64 host_span = 0;
+            for (u32 segment = 0; segment < binding.segment_count; ++segment) {
+                host_span += compute_segments[binding.segment_first + segment].size;
+            }
+            kepler_compute->NoteDlssTraceSsboHost(index, binding.buffer_id != NULL_BUFFER_ID,
+                                                  host_span ? host_span : binding.physical_size,
+                                                  binding.segment_count);
+        }
     });
 }
 
@@ -2361,7 +2381,8 @@ void BufferCache<P>::Nx2NoteListHostWrite(DAddr device_addr, u64 size) {
 }
 
 template <class P>
-BufferId BufferCache<P>::FindBuffer(DAddr device_addr, u32 size, bool sparse_compatible) {
+BufferId BufferCache<P>::FindBuffer(DAddr device_addr, u32 size, bool sparse_compatible,
+                                    bool native_reject) {
     const u64 page = device_addr >> CACHING_PAGEBITS;
     if (device_addr == 0 || page >= page_table.size()) {
         return NULL_BUFFER_ID;
@@ -2385,7 +2406,7 @@ BufferId BufferCache<P>::FindBuffer(DAddr device_addr, u32 size, bool sparse_com
             }
         }
     }
-    return CreateBuffer(device_addr, size, sparse_compatible);
+    return CreateBuffer(device_addr, size, sparse_compatible, native_reject);
 }
 
 template <class P>
@@ -2400,10 +2421,11 @@ void BufferCache<P>::SynchronizeBufferWrites(Buffer& buffer) {
 
 template <class P>
 typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr device_addr,
-                                                                       u32 wanted_size,
-                                                                       bool mutate) {
+                                                                       u32 wanted_size) {
     static constexpr int STREAM_LEAP_THRESHOLD = 16;
     boost::container::small_vector<BufferId, 16> overlap_ids;
+    boost::container::small_vector<std::pair<u64, BufferId>, 4> stale_pages;
+    u64 pages_scanned = 0;
     DAddr begin = device_addr;
     DAddr end = device_addr + wanted_size;
     int stream_score = 0;
@@ -2429,13 +2451,17 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr dev
     if (begin == 0) {
         return OverlapResult{
             .ids = std::move(overlap_ids),
+            .stale_pages = std::move(stale_pages),
             .begin = begin,
             .end = end,
+            .pages_scanned = pages_scanned,
             .has_stream_leap = has_stream_leap,
         };
     }
     for (; device_addr >> CACHING_PAGEBITS < Common::DivCeil(end, CACHING_PAGESIZE);
          device_addr += CACHING_PAGESIZE) {
+        ++pages_scanned;
+        ++overlap_pages_scanned;
         const BufferId overlap_id = page_table[device_addr >> CACHING_PAGEBITS];
         if (!overlap_id) {
             continue;
@@ -2443,25 +2469,22 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr dev
         if (!slot_buffers.contains(overlap_id)) [[unlikely]] {
             // A deleted buffer is still in the page table. Joining it would delete whichever
             // buffer reuses the slot next, possibly the one being created here.
-            if (mutate) {
-                static u32 stale_logs = 0;
-                if (stale_logs < 16) {
-                    ++stale_logs;
-                    LOG_ERROR(HW_GPU, "Stale buffer page: device_addr={:#x} buffer_id={}",
-                              device_addr, overlap_id.index);
-                }
-                page_table[device_addr >> CACHING_PAGEBITS] = BufferId{};
+            static u32 stale_logs = 0;
+            if (stale_logs < 16) {
+                ++stale_logs;
+                LOG_ERROR(HW_GPU, "Stale buffer page: device_addr={:#x} buffer_id={}", device_addr,
+                          overlap_id.index);
             }
+            stale_pages.emplace_back(device_addr, overlap_id);
+            page_table[device_addr >> CACHING_PAGEBITS] = BufferId{};
             continue;
         }
         Buffer& overlap = slot_buffers[overlap_id];
-        if (std::find(overlap_ids.begin(), overlap_ids.end(), overlap_id) != overlap_ids.end()) {
+        if (overlap.IsPicked()) {
             continue;
         }
+        overlap.Pick();
         overlap_ids.push_back(overlap_id);
-        if (mutate) {
-            overlap.Pick();
-        }
         const DAddr overlap_device_addr = overlap.CpuAddr();
         const bool expands_left = overlap_device_addr < begin;
         if (expands_left) {
@@ -2487,8 +2510,10 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr dev
     }
     return OverlapResult{
         .ids = std::move(overlap_ids),
+        .stale_pages = std::move(stale_pages),
         .begin = begin,
         .end = end,
+        .pages_scanned = pages_scanned,
         .has_stream_leap = has_stream_leap,
     };
 }
@@ -2519,28 +2544,29 @@ void BufferCache<P>::JoinOverlap(BufferId new_buffer_id, BufferId overlap_id,
 
 template <class P>
 BufferId BufferCache<P>::CreateBuffer(DAddr device_addr, u32 wanted_size,
-                                      bool sparse_compatible) {
+                                      bool sparse_compatible, bool native_reject) {
     const DAddr device_addr_end = Common::AlignUp(device_addr + u64{wanted_size}, CACHING_PAGESIZE);
     device_addr = Common::AlignDown(device_addr, CACHING_PAGESIZE);
-    if (kepler_compute && kepler_compute->IsNativeMode()) {
-        const u64 proposed = device_addr_end - device_addr;
-        if (proposed > std::numeric_limits<u32>::max()) {
-            throw Shader::RuntimeError{"native compute allocation span {:#x} is not u32",
-                                       proposed};
+    if (native_reject && device_addr_end - device_addr > std::numeric_limits<u32>::max()) {
+        throw Shader::RuntimeError{"native compute allocation span {:#x} is not u32",
+                                   device_addr_end - device_addr};
+    }
+    wanted_size = static_cast<u32>(device_addr_end - device_addr);
+    const OverlapResult overlap = ResolveOverlaps(device_addr, wanted_size);
+    const u64 merged_span = overlap.end - overlap.begin;
+    if (native_reject && merged_span > std::numeric_limits<u32>::max()) {
+        for (const BufferId overlap_id : overlap.ids) {
+            slot_buffers[overlap_id].Unpick();
         }
-        const OverlapResult probe =
-            ResolveOverlaps(device_addr, static_cast<u32>(proposed), false);
-        const u64 merged_span = probe.end - probe.begin;
-        if (merged_span > std::numeric_limits<u32>::max()) {
-            throw Shader::RuntimeError{"native compute merged buffer span {:#x} is not u32",
-                                       merged_span};
+        for (const auto& [page_addr, stale_id] : overlap.stale_pages) {
+            page_table[page_addr >> CACHING_PAGEBITS] = stale_id;
         }
+        throw Shader::RuntimeError{"native compute merged buffer span {:#x} is not u32",
+                                   merged_span};
     }
     // The synchronized-range tables hold Buffer pointers and ids that this may move or reuse.
     nx2_synced_ranges.fill({});
     nx2_synced_vertex_buffers.fill({});
-    wanted_size = static_cast<u32>(device_addr_end - device_addr);
-    const OverlapResult overlap = ResolveOverlaps(device_addr, wanted_size);
     const u32 size = static_cast<u32>(overlap.end - overlap.begin);
     const BufferId new_buffer_id =
         slot_buffers.insert(runtime, overlap.begin, size, sparse_compatible);
@@ -3106,7 +3132,10 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
     const u64 memory_layout_size =
         native_compute ? layout_size : static_cast<u32>(layout_size);
     // Only a DLSS dispatch's pointer is bare; other bindings read a declared size word.
-    const u32 limit = StorageBufferSizeLimit(memory_layout_size, descriptor[1], dlss_dispatch);
+    const auto [limit, size_rule] =
+        StorageBufferSizeWithRule(memory_layout_size, descriptor[1], dlss_dispatch);
+    if (trace)
+        trace->size_rule = static_cast<u8>(size_rule);
 
     // Alignment only applies to the offset of the buffer
     const u32 alignment = runtime.GetStorageBufferAlignment();
@@ -3177,6 +3206,7 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
         .size = binding_size,
         .buffer_id = BufferId{},
         .physical_size = physical_size,
+        .native_compute = native_compute,
     };
     return binding;
 }

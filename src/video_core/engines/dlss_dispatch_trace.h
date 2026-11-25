@@ -27,12 +27,23 @@ public:
         bool bound{};
         bool native_compute{};
         bool dlss_dispatch{};
+        u8 size_rule{};
+        u32 logical_range{};
+        u64 host_span{};
+        u32 host_segments{};
+    };
+
+    enum class Outcome : u8 {
+        Succeeded,
+        Rejected,
+        Keyless,
     };
 
     struct Entry {
         u64 serial{};
         u64 native_key{};
         std::optional<bool> cache_warm;
+        Outcome outcome{Outcome::Succeeded};
         std::array<SsboRecord, Shader::Info::MAX_SSBOS> ssbos;
         u32 ssbo_count{};
         u32 ssbo_overflow{};
@@ -43,11 +54,19 @@ public:
         }
     };
 
+    struct Sequence {
+        u32 index{};
+        bool truncated{};
+        std::deque<Entry> entries;
+    };
+
     bool Enabled() const {
-        return test_enabled.value_or([] {
-            static const bool enabled = std::getenv("EDEN_NX2_TRACE_DLSS_CHAIN") != nullptr;
-            return enabled;
-        }());
+        return test_enabled.value_or(DefaultOptIn());
+    }
+
+    static bool DefaultOptIn() {
+        static const bool enabled = std::getenv("EDEN_NX2_TRACE_DLSS_CHAIN") != nullptr;
+        return enabled;
     }
 
     void SetTestEnabled(bool enabled) {
@@ -55,7 +74,7 @@ public:
     }
 
     void BeginDispatch() {
-        if (!Enabled() || emitted) {
+        if (!Enabled() || Emitted()) {
             has_pending = false;
             return;
         }
@@ -66,13 +85,18 @@ public:
         }
     }
 
-    void EndDispatch() {
-        if (!Enabled() || !has_pending || emitted) {
+    void EndDispatch(bool succeeded) {
+        if (!Enabled() || !has_pending || Emitted()) {
             return;
         }
         has_pending = false;
         if (!capturing) {
             return;
+        }
+        if (!succeeded) {
+            pending.outcome = Outcome::Rejected;
+        } else if (pending.Ordinary() && pending.native_key == 0) {
+            pending.outcome = Outcome::Keyless;
         }
         if (!truncated) {
             entries.push_back(pending);
@@ -83,7 +107,7 @@ public:
     }
 
     void NoteProgram(u64 native_key, bool cache_hit) {
-        if (!Enabled() || !has_pending || emitted) {
+        if (!Enabled() || !has_pending || Emitted()) {
             return;
         }
         pending.native_key = native_key;
@@ -92,6 +116,7 @@ public:
             native_key == DlssDispatchChain::star_fox_prepass_key) {
             capturing = true;
             output_seen = false;
+            truncated = false;
             entries.clear();
             pending.is_prepass = true;
         }
@@ -105,7 +130,7 @@ public:
     }
 
     void NoteSsbo(SsboRecord record) {
-        if (!Enabled() || !has_pending || emitted) {
+        if (!Enabled() || !has_pending || !capturing || Emitted()) {
             return;
         }
         if (pending.ssbo_count < pending.ssbos.size()) {
@@ -115,11 +140,26 @@ public:
         }
     }
 
+    void NoteSsboHost(u32 ssbo_index, bool bound, u64 host_span, u32 host_segments) {
+        if (!Enabled() || !has_pending || !capturing || Emitted()) {
+            return;
+        }
+        for (u32 i = pending.ssbo_count; i > 0; --i) {
+            SsboRecord& record = pending.ssbos[i - 1];
+            if (record.ssbo_index == ssbo_index) {
+                record.bound = bound;
+                record.host_span = host_span;
+                record.host_segments = host_segments;
+                return;
+            }
+        }
+    }
+
     [[nodiscard]] bool Capturing() const {
-        return capturing;
+        return Enabled() && capturing && !Emitted();
     }
     [[nodiscard]] bool Emitted() const {
-        return emitted;
+        return sequences.size() >= max_sequences;
     }
     [[nodiscard]] bool Truncated() const {
         return truncated;
@@ -127,47 +167,82 @@ public:
     [[nodiscard]] const std::deque<Entry>& Entries() const {
         return entries;
     }
+    [[nodiscard]] const std::deque<Sequence>& Sequences() const {
+        return sequences;
+    }
 
 private:
+    static const char* OutcomeName(Outcome outcome) {
+        switch (outcome) {
+        case Outcome::Succeeded:
+            return "success";
+        case Outcome::Rejected:
+            return "rejected";
+        case Outcome::Keyless:
+            return "keyless";
+        }
+        return "unknown";
+    }
+
+    static const char* SizeRuleName(u8 rule) {
+        switch (rule) {
+        case 0:
+            return "declared";
+        case 1:
+            return "bare";
+        default:
+            return "cap";
+        }
+    }
+
     void Emit() {
-        emitted = true;
         capturing = false;
-        LOG_INFO(HW_GPU, "DLSS chain trace: captured {} dispatches truncated={}", entries.size(),
-                 truncated);
-        for (const Entry& entry : entries) {
-            LOG_INFO(HW_GPU, "DLSS chain trace: dispatch #{} key={:#016x} cache={}",
+        sequences.push_back(Sequence{
+            .index = static_cast<u32>(sequences.size()),
+            .truncated = truncated,
+            .entries = entries,
+        });
+        const Sequence& sequence = sequences.back();
+        LOG_INFO(HW_GPU, "DLSS chain trace: sequence #{} captured {} dispatches truncated={}",
+                 sequence.index, sequence.entries.size(), sequence.truncated);
+        for (const Entry& entry : sequence.entries) {
+            LOG_INFO(HW_GPU, "DLSS chain trace: dispatch #{} key={:#016x} cache={} outcome={}",
                      entry.serial, entry.native_key,
-                     entry.cache_warm ? (*entry.cache_warm ? "warm" : "cold") : "none");
+                     entry.cache_warm ? (*entry.cache_warm ? "warm" : "cold") : "none",
+                     OutcomeName(entry.outcome));
             for (u32 i = 0; i < entry.ssbo_count; ++i) {
                 const SsboRecord& ssbo = entry.ssbos[i];
                 LOG_INFO(HW_GPU,
-                         "DLSS chain trace:   ssbo[{}] cbuf{}+{:#x} mode={} declared={:#x} "
-                         "next={} chosen={:#x} bound={}",
+                         "DLSS chain trace:   ssbo[{}] cbuf{}+{:#x} mode={} rule={} declared={:#x} "
+                         "next={} logical={:#x} chosen={:#x} host={:#x}/{} bound={}",
                          ssbo.ssbo_index, ssbo.cbuf_index, ssbo.cbuf_offset,
                          ssbo.dlss_dispatch ? "dlss"
                          : ssbo.native_compute ? "native"
                                                : "graphics",
-                         ssbo.declared_word,
+                         SizeRuleName(ssbo.size_rule), ssbo.declared_word,
                          ssbo.next_word ? fmt::format("{:#x}", *ssbo.next_word)
                                         : std::string{"unavailable"},
-                         ssbo.chosen_size, ssbo.bound);
+                         ssbo.logical_range, ssbo.chosen_size, ssbo.host_span,
+                         ssbo.host_segments, ssbo.bound);
             }
             if (entry.ssbo_overflow) {
                 LOG_INFO(HW_GPU, "DLSS chain trace:   {} further SSBOs not recorded",
                          entry.ssbo_overflow);
             }
         }
+        entries.clear();
     }
 
     static constexpr size_t max_entries = DlssDispatchChain::max_dispatches + 2;
+    static constexpr size_t max_sequences = 2;
     Entry pending{};
     bool has_pending{};
     std::deque<Entry> entries;
+    std::deque<Sequence> sequences;
     u64 next_serial = 1;
     bool capturing{};
     bool output_seen{};
     bool truncated{};
-    bool emitted{};
     std::optional<bool> test_enabled;
 };
 

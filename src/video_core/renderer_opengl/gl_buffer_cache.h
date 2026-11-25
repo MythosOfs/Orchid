@@ -217,6 +217,10 @@ public:
                                    : u64{std::numeric_limits<GLsizei>::max()};
     }
 
+    u64 DeviceMaxStorageBufferBlockSize() const {
+        return device.GetMaxStorageBufferBlockSize();
+    }
+
 private:
     static constexpr std::array PABO_LUT{
         GL_VERTEX_PROGRAM_PARAMETER_BUFFER_NV,          GL_TESS_CONTROL_PROGRAM_PARAMETER_BUFFER_NV,

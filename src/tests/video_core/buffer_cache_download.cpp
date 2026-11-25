@@ -221,12 +221,15 @@ TEST_CASE("BufferCache: storage bindings follow device remaps and guest descript
     address_space.Map(target, device, 2 * page, Tegra::PTEKind::PITCH, big_pages);
     address_space.Write<u64>(descriptor, target);
     address_space.Write<u64>(descriptor + 8, 128);
-    const auto native = [&] { return cache->StorageBufferBinding(descriptor, 0, true, true); };
+    const auto dlss = [&] { return cache->StorageBufferBinding(descriptor, 0, true, true, true); };
+    const auto native = [&] { return cache->StorageBufferBinding(descriptor, 0, true, true, false); };
     const auto graphics = [&] { return cache->StorageBufferBinding(descriptor, 0, true); };
     CHECK(graphics().size == 128);
     address_space.Write<u64>(descriptor + 8, 512);
     CHECK(graphics().size == 512);
-    const auto initial = native();
+    CHECK(native().size == 512);
+    CHECK(native().physical_size == 512);
+    const auto initial = dlss();
     REQUIRE(initial.device_addr == device);
     REQUIRE(initial.size == 2 * page);
     REQUIRE(initial.physical_size == 2 * page);
@@ -238,7 +241,7 @@ TEST_CASE("BufferCache: storage bindings follow device remaps and guest descript
     std::optional<VideoCommon::Binding> during_remap;
     rasterizer.on_mapping_change = [&] {
         CHECK_FALSE(address_space.StableMappingGeneration().has_value());
-        during_remap = native();
+        during_remap = dlss();
     };
     address_space.Map(target, new_device, page, Tegra::PTEKind::PITCH, big_pages);
     const auto next_generation = address_space.StableMappingGeneration();
@@ -248,10 +251,13 @@ TEST_CASE("BufferCache: storage bindings follow device remaps and guest descript
     CHECK(during_remap->device_addr == new_device);
     CHECK(during_remap->size == 2 * page);
     CHECK(during_remap->physical_size == page);
-    const auto after = native();
+    const auto after = dlss();
     CHECK(after.device_addr == new_device);
     CHECK(after.size == 2 * page);
     CHECK(after.physical_size == page);
+    address_space.Write<u64>(descriptor + 8, 2 * page);
+    CHECK(native().size == 2 * page);
+    CHECK(native().physical_size == page);
 }
 
 TEST_CASE("BufferCache: readback spanning separate buffers", "[video_core][buffer_cache]") {

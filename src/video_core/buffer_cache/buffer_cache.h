@@ -720,8 +720,9 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
     const auto& cbufs = launch_desc.const_buffer_config;
     const GPUVAddr ssbo_addr = cbufs[cbuf_index].Address() + cbuf_offset;
     channel_state->compute_storage_buffers[ssbo_index] =
-        StorageBufferBinding(ssbo_addr, cbuf_index, is_written,
-                             kepler_compute->IsDlssDispatch(), matching && !trace->duplicate_descriptor);
+        StorageBufferBinding(ssbo_addr, cbuf_index, is_written, kepler_compute->IsNativeMode(),
+                             kepler_compute->IsDlssDispatch(),
+                             matching && !trace->duplicate_descriptor);
 }
 
 template <class P>
@@ -2995,10 +2996,10 @@ void BufferCache<P>::DeleteBuffer(BufferId buffer_id, bool do_not_mark) {
 template <class P>
 Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
                                              bool is_written, bool native_compute,
-                                             bool diagnostic_target) const {
+                                             bool dlss_dispatch, bool diagnostic_target) const {
     namespace diag = ComputeBindingDiagnostic;
     auto* const trace = diagnostic_target ? diag::current : nullptr;
-    const auto descriptor = ReadStorageBufferDescriptor(*gpu_memory, ssbo_addr, native_compute);
+    const auto descriptor = ReadStorageBufferDescriptor(*gpu_memory, ssbo_addr, dlss_dispatch);
     const GPUVAddr gpu_addr = descriptor[0];
     if (trace)
         trace->pointer = gpu_addr;
@@ -3013,7 +3014,7 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
     const auto generation = gpu_memory->StableMappingGeneration();
     if (trace || !generation) {
         return ResolveStorageBufferBinding(descriptor, cbuf_index, is_written, native_compute,
-                                           trace);
+                                           dlss_dispatch, trace);
     }
     const StorageBindingKey key{
         .address_space = gpu_memory->GetID(),
@@ -3027,8 +3028,8 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
     if (const Binding* const cached = storage_bindings.Find(key)) {
         return *cached;
     }
-    const Binding binding =
-        ResolveStorageBufferBinding(descriptor, cbuf_index, is_written, native_compute, nullptr);
+    const Binding binding = ResolveStorageBufferBinding(descriptor, cbuf_index, is_written,
+                                                        native_compute, dlss_dispatch, nullptr);
     storage_bindings.Insert(key, binding);
     return binding;
 }
@@ -3036,7 +3037,7 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
 template <class P>
 Binding BufferCache<P>::ResolveStorageBufferBinding(
     const std::array<u64, 2>& descriptor, u32 cbuf_index, bool is_written, bool native_compute,
-    ComputeBindingDiagnostic::Record* trace) const {
+    bool dlss_dispatch, ComputeBindingDiagnostic::Record* trace) const {
     namespace diag = ComputeBindingDiagnostic;
     const GPUVAddr gpu_addr = descriptor[0];
 
@@ -3048,9 +3049,9 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
         // conversion, since a kind range can be 4 GiB or larger.
         const u64 memory_layout_size =
             native_compute ? layout_size : static_cast<u32>(layout_size);
-        // Native compute pointers are bare; the next word is another shader parameter.
+        // Only a DLSS dispatch's pointer is bare; other bindings read a declared size word.
         const u64 next_qword = descriptor[1];
-        const u32 limit = StorageBufferSizeLimit(memory_layout_size, next_qword, native_compute);
+        const u32 limit = StorageBufferSizeLimit(memory_layout_size, next_qword, dlss_dispatch);
         if (native_compute && limit != 0) {
             const auto ranges = gpu_memory->GetSubmappedRange(gpu_addr, limit);
             return StorageBufferMappedPrefix(gpu_addr, limit, ranges);

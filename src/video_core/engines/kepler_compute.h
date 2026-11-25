@@ -244,6 +244,7 @@ public:
 
     bool IsNativeMode() const { return native_mode; }
     bool IsDlssDispatch() const { return native_mode && dlss_dispatch_chain.active; }
+    void NoteComputeDispatch() { dlss_dispatch_chain.NoteDispatch(); }
     void NoteComputeProgram(u64 native_key) { dlss_dispatch_chain.NoteProgram(native_key); }
 
     /// GPU thread split with macros on its front half (gpu_split.h, EDEN_NX2_SPLIT=2), called by

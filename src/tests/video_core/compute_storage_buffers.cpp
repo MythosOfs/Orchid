@@ -10,15 +10,17 @@
 #include "video_core/buffer_cache/buffer_cache_base.h"
 #include "video_core/buffer_cache/storage_buffer_size.h"
 
-TEST_CASE("Native compute pointers use their mapped extent, not the next parameter",
+TEST_CASE("Bare DLSS pointers size from the mapping; descriptors use their declared size",
           "[video_core][compute_storage]") {
     constexpr u32 mib = 1024 * 1024;
     using VideoCommon::StorageBufferSizeLimit;
-    // The following value can be a texture handle, as in Fortune's Weave.
+    // A bare pointer's next word is another parameter, not a size, even a small plausible one.
     CHECK(StorageBufferSizeLimit(4 * mib, 0x10a, true) == 4 * mib);
     CHECK(StorageBufferSizeLimit(16 * mib, 0x10a, true) == 8 * mib);
-    // NVN and graphics descriptors still use their explicit valid size.
-    CHECK(StorageBufferSizeLimit(4 * mib, 0x10a, false) == 0x10aU);
+    // Descriptor bindings (graphics and non-DLSS native dispatches) declare their size in it.
+    CHECK(StorageBufferSizeLimit(16 * mib, 0x10a, false) == 0x10aU);
+    CHECK(StorageBufferSizeLimit(16 * mib, 12 * mib, false) == 12 * mib);
+    CHECK(StorageBufferSizeLimit(4 * mib, 12 * mib, false) == 4 * mib);
     CHECK(StorageBufferSizeLimit(4 * mib, 0, false) == 4 * mib);
     CHECK(StorageBufferSizeLimit(4 * mib, 0x10000010aULL, false) == 4 * mib);
     // Cap before narrowing: a kind range of 4 GiB must not wrap to zero.

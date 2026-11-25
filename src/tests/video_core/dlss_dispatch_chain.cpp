@@ -16,16 +16,21 @@ TEST_CASE("DLSS dispatch chain spans an evaluation's prepass through output pass
           "[video_core][compute_storage]") {
     Tegra::Engines::DlssDispatchChain chain;
     CHECK_FALSE(chain.active);
+    chain.NoteDispatch();
     chain.NoteProgram(other);
     CHECK_FALSE(chain.active);
+    chain.NoteDispatch();
     chain.NoteProgram(fortunes_weave_prepass);
     CHECK(chain.active);
+    chain.NoteDispatch();
     chain.NoteProgram(other);
+    chain.NoteDispatch();
     chain.NoteProgram(star_fox_output);
     CHECK(chain.active);
+    chain.NoteDispatch();
     chain.NoteProgram(fortunes_weave_output);
     CHECK(chain.active);
-    chain.NoteProgram(other);
+    chain.NoteDispatch();
     CHECK_FALSE(chain.active);
     chain.NoteProgram(other);
     CHECK_FALSE(chain.active);
@@ -33,18 +38,20 @@ TEST_CASE("DLSS dispatch chain spans an evaluation's prepass through output pass
 
 TEST_CASE("DLSS dispatch chain restarts on the next prepass", "[video_core][compute_storage]") {
     Tegra::Engines::DlssDispatchChain chain;
+    chain.NoteDispatch();
     chain.NoteProgram(star_fox_prepass);
     CHECK(chain.active);
-    chain.NoteProgram(fortunes_weave_output);
-    CHECK(chain.active);
+    chain.NoteDispatch();
     chain.NoteProgram(star_fox_output);
+    CHECK(chain.active);
+    chain.NoteDispatch();
+    CHECK_FALSE(chain.active);
+    chain.NoteDispatch();
     chain.NoteProgram(fortunes_weave_prepass);
     CHECK(chain.active);
-    chain.NoteProgram(star_fox_output);
-    CHECK(chain.active);
-    chain.NoteProgram(fortunes_weave_output);
+    chain.NoteDispatch();
     chain.NoteProgram(other);
-    CHECK_FALSE(chain.active);
+    CHECK(chain.active);
 }
 
 TEST_CASE("DLSS dispatch chain ends a bounded run with no output pass",
@@ -52,26 +59,65 @@ TEST_CASE("DLSS dispatch chain ends a bounded run with no output pass",
     Tegra::Engines::DlssDispatchChain chain;
     chain.NoteProgram(fortunes_weave_prepass);
     for (u32 index = 0; index < 64; ++index) {
-        chain.NoteProgram(other);
+        chain.NoteDispatch();
         CHECK(chain.active);
     }
-    chain.NoteProgram(other);
+    chain.NoteDispatch();
     CHECK_FALSE(chain.active);
-    chain.NoteProgram(other);
+    chain.NoteDispatch();
     CHECK_FALSE(chain.active);
 }
 
 TEST_CASE("DLSS dispatch chain re-arms on another game's prepass",
           "[video_core][compute_storage]") {
     Tegra::Engines::DlssDispatchChain chain;
+    chain.NoteDispatch();
     chain.NoteProgram(fortunes_weave_prepass);
+    chain.NoteDispatch();
     chain.NoteProgram(other);
+    chain.NoteDispatch();
     chain.NoteProgram(star_fox_prepass);
     CHECK(chain.active);
+    chain.NoteDispatch();
     chain.NoteProgram(fortunes_weave_output);
     CHECK(chain.active);
+    chain.NoteDispatch();
     chain.NoteProgram(star_fox_output);
     CHECK(chain.active);
+    chain.NoteDispatch();
+    CHECK_FALSE(chain.active);
+}
+
+TEST_CASE("DLSS dispatch chain ends at the next dispatch without a keyed program",
+          "[video_core][compute_storage]") {
+    Tegra::Engines::DlssDispatchChain chain;
+    chain.NoteProgram(fortunes_weave_prepass);
+    chain.NoteDispatch();
+    chain.NoteProgram(fortunes_weave_output);
+    CHECK(chain.active);
+    chain.NoteDispatch();
+    CHECK_FALSE(chain.active);
+    chain.NoteDispatch();
+    CHECK_FALSE(chain.active);
+}
+
+TEST_CASE("DLSS dispatch chain counts repeated programs as their own dispatches",
+          "[video_core][compute_storage]") {
+    Tegra::Engines::DlssDispatchChain chain;
+    chain.NoteProgram(fortunes_weave_prepass);
+    chain.NoteDispatch();
     chain.NoteProgram(other);
+    chain.NoteDispatch();
+    chain.NoteProgram(other);
+    CHECK(chain.active);
+    chain.NoteDispatch();
+    chain.NoteProgram(fortunes_weave_prepass);
+    CHECK(chain.active);
+    chain.NoteDispatch();
+    chain.NoteProgram(other);
+    chain.NoteDispatch();
+    chain.NoteProgram(fortunes_weave_output);
+    CHECK(chain.active);
+    chain.NoteDispatch();
     CHECK_FALSE(chain.active);
 }

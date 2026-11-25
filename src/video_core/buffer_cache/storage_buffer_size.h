@@ -9,11 +9,11 @@
 
 namespace VideoCommon {
 
-// Native compute pointers have no following size word.
+// A bare pointer's following word is another parameter, not a size.
 [[nodiscard]] constexpr u32 StorageBufferSizeLimit(u64 kind_extent, u64 next_word,
-                                                   bool native_compute) {
+                                                   bool bare_pointer) {
     constexpr u32 mib = 1024 * 1024;
-    if (native_compute) {
+    if (bare_pointer) {
         return static_cast<u32>((std::min)(kind_extent, u64{8U * mib}));
     }
     const u32 packed_size = static_cast<u32>(next_word);

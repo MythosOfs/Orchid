@@ -9,10 +9,17 @@ namespace Tegra::Engines {
 
 class DlssDispatchChain {
 public:
-    void NoteProgram(u64 native_key) {
+    void NoteDispatch() {
         if (finished) {
             *this = {};
+            return;
         }
+        if (active && ++dispatches > max_dispatches) {
+            *this = {};
+        }
+    }
+
+    void NoteProgram(u64 native_key) {
         if (native_key == fortunes_weave_prepass_key || native_key == star_fox_prepass_key) {
             active = true;
             finished = false;
@@ -21,14 +28,9 @@ public:
                                                                   : star_fox_output_key;
             return;
         }
-        if (!active) {
-            return;
+        if (active) {
+            finished = native_key == output_key;
         }
-        if (++dispatches > max_dispatches) {
-            *this = {};
-            return;
-        }
-        finished = native_key == output_key;
     }
 
     bool active{};

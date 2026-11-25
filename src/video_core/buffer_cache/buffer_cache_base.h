@@ -499,6 +499,7 @@ public:
 protected:
     [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
                                                bool is_written, bool native_compute = false,
+                                               bool dlss_dispatch = false,
                                                bool diagnostic_target = false) const;
 
 private:
@@ -649,7 +650,7 @@ private:
 
     [[nodiscard]] Binding ResolveStorageBufferBinding(const std::array<u64, 2>& descriptor,
                                                       u32 cbuf_index, bool is_written,
-                                                      bool native_compute,
+                                                      bool native_compute, bool dlss_dispatch,
                                                       ComputeBindingDiagnostic::Record* trace) const;
 
     [[nodiscard]] TextureBufferBinding GetTextureBufferBinding(GPUVAddr gpu_addr, u32 size,

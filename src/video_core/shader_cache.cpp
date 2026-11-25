@@ -231,6 +231,7 @@ const ShaderInfo* ShaderCache::ComputeShader() {
         return nullptr;
     }
     const auto note_native_key = [this](const ShaderInfo* shader) -> const ShaderInfo* {
+        kepler_compute->NoteComputeDispatch();
         if (shader->lowered_native && shader->lowered_native->native_program_key) {
             kepler_compute->NoteComputeProgram(*shader->lowered_native->native_program_key);
         }

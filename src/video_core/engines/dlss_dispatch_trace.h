@@ -11,6 +11,7 @@
 #include "common/common_types.h"
 #include "common/logging.h"
 #include "shader_recompiler/shader_info.h"
+#include "video_core/buffer_cache/storage_buffer_size.h"
 #include "video_core/engines/dlss_dispatch_chain.h"
 
 namespace Tegra::Engines {
@@ -27,7 +28,8 @@ public:
         bool bound{};
         bool native_compute{};
         bool dlss_dispatch{};
-        u8 size_rule{};
+        VideoCommon::StorageBufferSizeRule size_rule{
+            VideoCommon::StorageBufferSizeRule::NotDetermined};
         u32 logical_range{};
         u8 host_path{};
         u32 host_offset{};
@@ -191,14 +193,16 @@ private:
         return "unknown";
     }
 
-    static const char* SizeRuleName(u8 rule) {
+    static const char* SizeRuleName(VideoCommon::StorageBufferSizeRule rule) {
         switch (rule) {
-        case 0:
+        case VideoCommon::StorageBufferSizeRule::Declared:
             return "declared";
-        case 1:
+        case VideoCommon::StorageBufferSizeRule::BarePointer:
             return "bare";
-        default:
+        case VideoCommon::StorageBufferSizeRule::FallbackCap:
             return "cap";
+        default:
+            return "none";
         }
     }
 

@@ -740,16 +740,12 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
             next_word = gpu_memory->Read<u64>(ssbo_addr + 8);
         }
         const bool is_dlss = kepler_compute->IsDlssDispatch();
-        const u8 size_rule =
-            record.size_rule != 0     ? record.size_rule
-            : bound.size_rule != 0    ? bound.size_rule
-            : is_dlss                 ? u8{1}
-            : record.declared_word.value_or(0) > bound.size ? u8{2} : u8{0};
         kepler_compute->NoteDlssTraceSsbo({static_cast<u32>(ssbo_index), cbuf_index, cbuf_offset,
                                            record.declared_word.value_or(0), next_word,
                                            bound.physical_size ? bound.physical_size : bound.size,
                                            bound.buffer_id != NULL_BUFFER_ID,
-                                           kepler_compute->IsNativeMode(), is_dlss, size_rule,
+                                           kepler_compute->IsNativeMode(), is_dlss,
+                                           bound.size_rule,
                                            record.logical_size.value_or(bound.size)});
     }
 }
@@ -3142,7 +3138,7 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
     const auto [limit, size_rule] =
         StorageBufferSizeWithRule(memory_layout_size, descriptor[1], dlss_dispatch);
     if (trace)
-        trace->size_rule = static_cast<u8>(size_rule);
+        trace->size_rule = size_rule;
 
     // Alignment only applies to the offset of the buffer
     const u32 alignment = runtime.GetStorageBufferAlignment();
@@ -3214,7 +3210,7 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
         .buffer_id = BufferId{},
         .physical_size = physical_size,
         .native_compute = native_compute,
-        .size_rule = static_cast<u8>(size_rule),
+        .size_rule = size_rule,
     };
     return binding;
 }

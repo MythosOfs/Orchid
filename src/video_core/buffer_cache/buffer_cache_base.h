@@ -41,6 +41,7 @@
 #include "video_core/buffer_cache/buffer_base.h"
 #include "video_core/buffer_cache/sparse_uniform_upload.h"
 #include "video_core/buffer_cache/storage_binding_cache.h"
+#include "video_core/buffer_cache/storage_buffer_size.h"
 #include "video_core/buffer_cache/virtual_range_cache.h"
 #include "video_core/control/channel_state_cache.h"
 #include "video_core/compute_binding_diagnostic.h"
@@ -109,7 +110,7 @@ struct Binding {
     u32 segment_count{};
     // Native compute binds reject unrepresentable host spans instead of wrapping silently.
     bool native_compute{};
-    u8 size_rule{};
+    StorageBufferSizeRule size_rule{StorageBufferSizeRule::NotDetermined};
 };
 
 struct MultiRangeSegment {
@@ -275,6 +276,10 @@ public:
     void EndCachedWrites();
 
     bool OnCPUWrite(DAddr device_addr, u64 size);
+
+    const Buffer& BoundBufferById(BufferId buffer_id) const {
+        return slot_buffers[buffer_id];
+    }
 
     void DownloadMemory(DAddr device_addr, u64 size);
 

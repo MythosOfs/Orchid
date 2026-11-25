@@ -10,6 +10,7 @@
 #include <string_view>
 
 #include "common/common_types.h"
+#include "video_core/buffer_cache/storage_buffer_size.h"
 
 namespace VideoCommon::ComputeBindingDiagnostic {
 
@@ -88,7 +89,7 @@ struct Record {
     std::optional<u64> pointer;
     std::optional<u64> declared_word;
     std::optional<u64> layout_size;
-    u8 size_rule{};
+    StorageBufferSizeRule size_rule{StorageBufferSizeRule::NotDetermined};
     std::optional<u32> selected_size, alignment, logical_size, physical_size;
     std::optional<u64> aligned_gpu, device_address, descriptor_offset;
     std::optional<u32> descriptor_range, descriptor_binding, cache_buffer_id;

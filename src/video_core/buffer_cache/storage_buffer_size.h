@@ -11,6 +11,7 @@
 namespace VideoCommon {
 
 enum class StorageBufferSizeRule : u8 {
+    NotDetermined,
     Declared,
     BarePointer,
     FallbackCap,

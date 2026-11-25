@@ -33,6 +33,8 @@
 #include "video_core/renderer_null/null_rasterizer.h"
 
 namespace {
+using VideoCommon::StorageBufferSizeRule;
+
 struct FixtureRuntime;
 struct FixtureBuffer : VideoCommon::BufferBase {
     std::vector<u8> bytes;
@@ -637,7 +639,7 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         REQUIRE(record.next_word.has_value());
         CHECK(*record.next_word == 0x1234);
         CHECK(record.chosen_size == 0x8000);
-        CHECK(record.size_rule == 1);
+        CHECK(record.size_rule == StorageBufferSizeRule::BarePointer);
         CHECK(record.bound);
         CHECK(record.native_compute);
         CHECK(record.dlss_dispatch);
@@ -821,7 +823,7 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         REQUIRE(entries[2].ssbo_count == 1);
         const auto& record = entries[2].ssbos[0];
         CHECK(record.ssbo_index == 0);
-        CHECK(record.size_rule == 0);
+        CHECK(record.size_rule == StorageBufferSizeRule::Declared);
         CHECK(record.logical_range == 0x2000);
         CHECK(record.chosen_size == 0x1000);
         CHECK(record.bound);
@@ -866,8 +868,9 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         rasterizer.on_dispatch = [&] {
             cache->BindComputeStorageBuffer(0, 0, 0, true);
             cache->UpdateComputeBuffers();
-            cache->Channel().compute_storage_buffers[0].buffer_id =
-                VideoCommon::BufferId{};
+            auto& channel = cache->Channel();
+            channel.compute_storage_buffers[0].physical_size = 0;
+            channel.compute_storage_buffers[0].buffer_id = VideoCommon::BufferId{};
             cache->BindHostComputeBuffers();
         };
         launch();
@@ -881,13 +884,16 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         CHECK(record.bound);
         CHECK(record.host_path == 1);
         CHECK(record.host_segments == 1);
-        CHECK(record.host_span != 0);
+        CHECK(record.host_span == 0x2000);
         REQUIRE(runtime.multi_range_binds.size() == 1);
         REQUIRE(runtime.storage_binds.size() == 1);
-        const auto* const bound_buffer = cache->Obtain(device + 0x40000, 0x100);
-        REQUIRE(bound_buffer);
-        CHECK_FALSE(bound_buffer->sparse);
-        CHECK_FALSE(bound_buffer->marked.empty());
+        const auto& slot = cache->Channel().compute_storage_buffers[0];
+        const auto& bound_buffer = cache->BoundBufferById(slot.buffer_id);
+        CHECK_FALSE(bound_buffer.sparse);
+        REQUIRE_FALSE(bound_buffer.marked.empty());
+        CHECK(bound_buffer.marked.back() ==
+              std::pair<u64, u64>{bound_buffer.Offset(slot.device_addr),
+                                  slot.physical_size ? slot.physical_size : slot.size});
     }
 
     SECTION("the trace reports a null path for an enabled but unbound storage slot") {
@@ -1042,13 +1048,20 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         CHECK_FALSE(std::get<3>(runtime.storage_binds[0]));
         CHECK(std::get<3>(runtime.storage_binds[1]));
         CHECK(std::get<2>(runtime.storage_binds[1]) == 5);
-        const auto* const resolved = cache->Obtain(device + 0x90000, 0x100);
-        REQUIRE(resolved);
-        CHECK_FALSE(resolved->sparse);
-        CHECK_FALSE(resolved->marked.empty());
-        const auto* const resolved2 = cache->Obtain(device + 0x40000, 0x100);
-        REQUIRE(resolved2);
-        CHECK_FALSE(resolved2->marked.empty());
+        const auto& channel = cache->Channel();
+        const auto& slot0 = channel.compute_storage_buffers[0];
+        const auto& buf0 = cache->BoundBufferById(slot0.buffer_id);
+        CHECK_FALSE(buf0.sparse);
+        REQUIRE_FALSE(buf0.marked.empty());
+        CHECK(buf0.marked.back() ==
+              std::pair<u64, u64>{buf0.Offset(slot0.device_addr),
+                                  slot0.physical_size ? slot0.physical_size : slot0.size});
+        const auto& slot1 = channel.compute_storage_buffers[1];
+        const auto& buf1 = cache->BoundBufferById(slot1.buffer_id);
+        REQUIRE_FALSE(buf1.marked.empty());
+        CHECK(buf1.marked.back() ==
+              std::pair<u64, u64>{buf1.Offset(slot1.device_addr),
+                                  slot1.physical_size ? slot1.physical_size : slot1.size});
     }
 
     SECTION("a host compute bind without a compute engine does no trace work") {
@@ -1096,16 +1109,145 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         REQUIRE(entries[2].ssbo_count == 2);
         const auto& cold = entries[2].ssbos[0];
         CHECK(cold.bound);
-        CHECK(cold.size_rule == 2);
+        CHECK(cold.size_rule == StorageBufferSizeRule::FallbackCap);
         CHECK(cold.declared_word == 520);
         CHECK(cold.logical_range == 0x240);
         CHECK(cold.chosen_size == 0x240);
         const auto& warm = entries[2].ssbos[1];
         CHECK(warm.bound);
-        CHECK(warm.size_rule == 2);
+        CHECK(warm.size_rule == StorageBufferSizeRule::FallbackCap);
         CHECK(warm.declared_word == 520);
         CHECK(warm.logical_range == 0x240);
         CHECK(warm.chosen_size == 0x240);
+    }
+
+    SECTION("the trace keeps the declared rule after the mapped prefix shrinks") {
+        FixtureRuntime runtime;
+        auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+        cache->SetKeplerCompute(&kepler);
+        cache->SetAddressSpace(address_space);
+        cache->EnableChannelState();
+        kepler.DlssTrace().SetTestEnabled(true);
+        constexpr GPUVAddr desc = 0x700000, t1 = 0x810000;
+        address_space.Map(desc, device + 0x58000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Map(t1, device + 0x40000, 0x2000, Tegra::PTEKind::PITCH, false);
+        address_space.Write<u64>(desc, t1);
+        address_space.Write<u64>(desc + 8, 0x2000);
+        qmd[20] = 1;
+        qmd[32] = u32(desc);
+        qmd[33] = (u32(desc >> 32) & 0xff) | (((0x1000 >> 4) & 0x1fff) << 19);
+        const auto bind = [&] { cache->BindComputeStorageBuffer(0, 0, 0, true); };
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x4cbf6eff32525aecULL); };
+        launch();
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x14b4222bbe23abeeULL); };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            bind();
+            bind();
+            rasterizer.on_mapping_change = [&] { bind(); };
+            address_space.Map(t1, device + 0x70000, 0x1000, Tegra::PTEKind::PITCH, false);
+            rasterizer.on_mapping_change = nullptr;
+        };
+        launch();
+
+        const auto& sequences = kepler.DlssTrace().Sequences();
+        REQUIRE(sequences.size() == 1);
+        const auto& entries = sequences.front().entries;
+        REQUIRE(entries.size() == 3);
+        REQUIRE(entries[2].ssbo_count == 3);
+        const auto& contiguous = entries[2].ssbos[0];
+        CHECK(contiguous.bound);
+        CHECK(contiguous.size_rule == StorageBufferSizeRule::Declared);
+        CHECK(contiguous.logical_range == 0x2000);
+        CHECK(contiguous.chosen_size == 0x2000);
+        const auto& cached = entries[2].ssbos[1];
+        CHECK(cached.bound);
+        CHECK(cached.size_rule == StorageBufferSizeRule::Declared);
+        CHECK(cached.declared_word == 0x2000);
+        CHECK(cached.logical_range == 0x2000);
+        CHECK(cached.chosen_size == 0x2000);
+        const auto& shrunk = entries[2].ssbos[2];
+        CHECK(shrunk.bound);
+        CHECK(shrunk.size_rule == StorageBufferSizeRule::Declared);
+        CHECK(shrunk.declared_word == 0x2000);
+        CHECK(shrunk.logical_range == 0x2000);
+        CHECK(shrunk.chosen_size == 0x1000);
+    }
+
+    SECTION("a null SSBO inside a DLSS chain reports the none rule") {
+        FixtureRuntime runtime;
+        auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+        cache->SetKeplerCompute(&kepler);
+        cache->SetAddressSpace(address_space);
+        cache->EnableChannelState();
+        kepler.DlssTrace().SetTestEnabled(true);
+        constexpr GPUVAddr desc = 0x700000;
+        address_space.Map(desc, device + 0x58000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Write<u64>(desc, 0);
+        address_space.Write<u64>(desc + 8, 0x1000);
+        qmd[20] = 1;
+        qmd[32] = u32(desc);
+        qmd[33] = (u32(desc >> 32) & 0xff) | (((0x1000 >> 4) & 0x1fff) << 19);
+        rasterizer.on_dispatch = [&] {
+            kepler.NoteComputeProgram(
+                Tegra::Engines::DlssDispatchChain::fortunes_weave_prepass_key, false);
+        };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            kepler.NoteComputeProgram(
+                Tegra::Engines::DlssDispatchChain::fortunes_weave_output_key, false);
+        };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            cache->BindComputeStorageBuffer(0, 0, 0, true);
+        };
+        launch();
+
+        const auto& sequences = kepler.DlssTrace().Sequences();
+        REQUIRE(sequences.size() == 1);
+        const auto& entries = sequences.front().entries;
+        REQUIRE(entries.size() == 3);
+        REQUIRE(entries[2].ssbo_count == 1);
+        const auto& record = entries[2].ssbos[0];
+        CHECK_FALSE(record.bound);
+        CHECK(record.size_rule == StorageBufferSizeRule::NotDetermined);
+        CHECK(record.logical_range == 0);
+    }
+
+    SECTION("a declared word beyond the mapped extent reports the capped rule") {
+        FixtureRuntime runtime;
+        auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+        cache->SetKeplerCompute(&kepler);
+        cache->SetAddressSpace(address_space);
+        cache->EnableChannelState();
+        kepler.DlssTrace().SetTestEnabled(true);
+        constexpr GPUVAddr desc = 0x700000, t1 = 0x810000;
+        address_space.Map(desc, device + 0x58000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Map(t1, device + 0x40000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Write<u64>(desc, t1);
+        address_space.Write<u64>(desc + 8, 0x2000);
+        qmd[20] = 1;
+        qmd[32] = u32(desc);
+        qmd[33] = (u32(desc >> 32) & 0xff) | (((0x1000 >> 4) & 0x1fff) << 19);
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x4cbf6eff32525aecULL); };
+        launch();
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x14b4222bbe23abeeULL); };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            cache->BindComputeStorageBuffer(0, 0, 0, true);
+        };
+        launch();
+
+        const auto& sequences = kepler.DlssTrace().Sequences();
+        REQUIRE(sequences.size() == 1);
+        const auto& entries = sequences.front().entries;
+        REQUIRE(entries.size() == 3);
+        REQUIRE(entries[2].ssbo_count == 1);
+        const auto& record = entries[2].ssbos[0];
+        CHECK(record.bound);
+        CHECK(record.size_rule == StorageBufferSizeRule::FallbackCap);
+        CHECK(record.declared_word == 0x2000);
+        CHECK(record.logical_range == 0x1000);
     }
 
     SECTION("one overlap scan per cache miss regardless of the reject policy") {

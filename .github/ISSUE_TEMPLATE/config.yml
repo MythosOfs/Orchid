@@ -1,1 +1,11 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Feature idea
+    url: https://github.com/MythosOfs/Orchid/discussions/categories/ideas
+    about: Suggest a feature or improvement for Orchid.
+  - name: Game request
+    url: https://github.com/MythosOfs/Orchid/discussions/categories/game-requests
+    about: Request support or compatibility improvements for a game.
+  - name: Question / help
+    url: https://github.com/MythosOfs/Orchid/discussions/categories/q-a
+    about: Ask a question or get help with Orchid.

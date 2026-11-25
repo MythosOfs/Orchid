@@ -1,0 +1,39 @@
+body:
+  - type: input
+    id: game-title
+    attributes:
+      label: Game title
+    validations:
+      required: true
+  - type: input
+    id: title-id-version
+    attributes:
+      label: Title ID or game version
+      description: Provide the Title ID, the game version, or both if known.
+  - type: dropdown
+    id: game-edition
+    attributes:
+      label: Game edition
+      options:
+        - Switch 2 exclusive
+        - Switch 2 Edition
+        - Switch 1
+    validations:
+      required: true
+  - type: dropdown
+    id: orchid-status
+    attributes:
+      label: Current status in Orchid
+      options:
+        - Does not boot
+        - Crashes
+        - Graphics issues
+        - Other issue
+        - Untested
+    validations:
+      required: true
+  - type: textarea
+    id: log-screenshot
+    attributes:
+      label: Issue details, log, or screenshot
+      description: If you selected Other issue, briefly describe what happened, such as an audio or performance problem. Attach a screenshot or a log if available. See [how to find Orchid logs](https://github.com/MythosOfs/Orchid/blob/main/docs/user/HowToAccessLogs.md).

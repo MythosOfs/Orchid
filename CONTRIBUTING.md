@@ -3,9 +3,17 @@
 Orchid has lots of different ways that you can contribute to its efforts, even without knowing how to write code:
 
 - Join our [Discord](https://discord.gg/jCCZ58VExk) community
-- Submit [bug reports or feature requests](https://github.com/MythosOfs/Orchid/issues)
+- Submit [reproducible bug reports](https://github.com/MythosOfs/Orchid/issues)
 - Improve documentation or share reproducible testing results
 - Contribute to our [translation efforts](./dist/languages/README.md)
+
+## Community discussions
+
+Suggest features in [Ideas](https://github.com/MythosOfs/Orchid/discussions/categories/ideas) and
+request game support in [Game requests](https://github.com/MythosOfs/Orchid/discussions/categories/game-requests).
+Upvote an existing discussion to show support and save comments for new information.
+The maintainer (@MythosOfs) decides which proposals go on the roadmap or become tracked issues.
+Switch 2 exclusives get priority.
 
 ## Code Contributions
 
@@ -26,7 +34,7 @@ Orchid is free, open-source, copyleft software, licensed under the terms of the 
 
 ### Where do I start?
 
-Anywhere you like! If you are facing an issue and want to fix it, go ahead. For new features, you are heavily encouraged to open a [feature request](https://github.com/MythosOfs/Orchid/issues) first, discussing the motivations, potential implementation, and user flow of your desired feature.
+Anywhere you like! If you are facing an issue and want to fix it, go ahead. Before starting a new feature, discuss the motivation, possible implementation, and user flow in [Ideas](https://github.com/MythosOfs/Orchid/discussions/categories/ideas).
 
 Search the [open issues](https://github.com/MythosOfs/Orchid/issues) and [pull requests](https://github.com/MythosOfs/Orchid/pulls) before starting to avoid duplicating work. For larger features/refactors, you should first express your interest in the issue to ensure another developer isn't already working on it.
 

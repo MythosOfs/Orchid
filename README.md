@@ -60,6 +60,16 @@ These are the project's target games; inclusion here does not mean a game is alr
 playable or free of issues. See [Performance and compatibility](#performance-and-compatibility)
 for the currently reported results and their test conditions.
 
+## Community discussions
+
+Use [Ideas](https://github.com/MythosOfs/Orchid/discussions/categories/ideas) for feature suggestions,
+[Game requests](https://github.com/MythosOfs/Orchid/discussions/categories/game-requests) for game
+support requests, and [Q&A](https://github.com/MythosOfs/Orchid/discussions/categories/q-a) for help.
+Upvote an existing discussion to show support and save comments for new information.
+
+The maintainer (@MythosOfs) decides which proposals go on the roadmap or become tracked issues.
+Switch 2 exclusives get priority. Report reproducible bugs in [Issues](https://github.com/MythosOfs/Orchid/issues).
+
 ## Branches and builds
 
 | Branch | Channel | Release name |

@@ -323,6 +323,12 @@ TEST_CASE("BufferCache: storage bindings follow device remaps and guest descript
     CHECK(big_binding.size == big_limit);
     CHECK(big_binding.physical_size == big_limit);
     CHECK(cache->StorageBufferBinding(big_descriptor, 0, true).size == big_limit);
+    address_space.Write<u64>(big_descriptor + 8, big_extent);
+    const auto gfx_big = cache->StorageBufferBinding(big_descriptor, 0, true);
+    CHECK(gfx_big.size == big_extent);
+    CHECK(gfx_big.physical_size == 0);
+    CHECK(cache->StorageBufferBinding(big_descriptor, 0, false).size == big_extent);
+    address_space.Write<u64>(big_descriptor + 8, big_limit);
 
     constexpr GPUVAddr glasm_descriptor = 0xa00000, glasm_target = 0xb00000;
     constexpr u64 glasm_extent = 2ULL * 1024 * 1024 * 1024;

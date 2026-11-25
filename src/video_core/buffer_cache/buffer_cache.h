@@ -3076,7 +3076,9 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
         trace->alignment = alignment;
         trace->aligned_gpu = aligned_gpu_addr;
     }
-    const u32 aligned_size = StorageBufferAlignedSize(aligned_offset, size, max_range);
+    const u32 aligned_size =
+        native_compute ? StorageBufferAlignedSize(aligned_offset, size, max_range)
+                       : static_cast<u32>(aligned_offset) + size;
 
     const std::optional<DAddr> aligned_device_addr = gpu_memory->GpuToCpuAddress(aligned_gpu_addr);
     if (!aligned_device_addr || size == 0) {
@@ -3098,11 +3100,9 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
     // The end address used for size calculation does not need to be aligned
     const DAddr cpu_end = Common::AlignUp(*device_addr + size, Core::DEVICE_PAGESIZE);
 
-    u64 binding_span = cpu_end - *aligned_device_addr;
-    if (is_written || native_compute) {
-        binding_span = aligned_size;
-    }
-    const u32 binding_size = static_cast<u32>((std::min)(binding_span, max_range));
+    const u32 binding_size = (is_written || native_compute)
+        ? aligned_size
+        : static_cast<u32>(cpu_end - *aligned_device_addr);
     // Keep a safe fallback if multi-range storage cannot be used (including non-sparse writes).
     // Starting from the aligned address also checks that the alignment prefix is contiguous.
     const u32 physical_size = native_compute

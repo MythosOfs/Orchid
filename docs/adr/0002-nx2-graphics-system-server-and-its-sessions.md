@@ -31,8 +31,37 @@ Open, with what is known:
 - syncpt 1's count (32 here): the client only bounds it; the console's value is unknown.
 - 204 RO page u32 at +4 ("base id"): copied into the client's state (+0 of the context at 0xece948+8); no reader found in either SDK and counter ids don't use it. 0 is written.
 - camera context CMIF 3, 21 and 29 (see `INx2CameraSession`; Welcome Tour and Mario Kart World, no scope title) and their results without the camera accessory: not read again. CMIF 4, 22, 24, 25 and 28 (Star Fox only, auto-stubbed): the client is nn::camera::UserInterface's CMIF proxy in Star Fox's `subsdk3`; its 21 request builders were found, the mapping from command id to method and reply layout was not finished.
-- 426/428 block height and pitch: no scope title sends 426, 428 or 1211.
+- No 426/428/1211 calls were observed in the earlier scope-title gate. Mario Kart World exercises these commands, as recorded below.
 - gsv 5, 101, 113, 120-125, 131, 133, 187, 211-215, 303, 424, 425, 436, 461-468, 493, 613, 614, 802, 803, 813, 814, 1011, 1012, 1091, 1112, 1113, 1203, 1602, 1603 and nx2:gpu 23, 24, 25, 34, 51, 8001-8004: no scope title sent them in the harness runs up to 2026-11-18, so they were not read.
+
+## Follow-up evidence for #187 and #188
+
+The registered compatibility replies identify service, transport, command and substituted
+behavior once per key in an emulator process. The generic auto stub also logs its first
+request per key and retains the request dump and optional unimplemented-function report.
+NVDRV identifies the device and raw ioctl, with buffer lengths for echoed/zeroed success,
+using its existing first-eight / every-4096th rate limit. These diagnostics preserve the
+guest replies. The original #187 goal remains open. The command lists above, gsv 126's
+flag, the VI2 list in ADR 0003, and auto-stubbed camera commands still need client or console
+evidence. A named result-only operation can still omit state changes, as with syncpt 21.
+
+| Field or operation | Evidence and confidence |
+| --- | --- |
+| gsv 204 RO page +4, u32 | High confidence the client copies that word. PR #208 found it in the Mario Tennis Fever 327680 and Star Fox 131072 clients, with no reader identified. Counter conversion in the same client inverts the id directly. That supports the current counter indexing, but leaves the word's meaning and hardware value unknown. The original bring-up wrote zero, so Orchid retains zero as a compatibility value. [PR #208](https://github.com/MythosOfs/Orchid/pull/208), [bring-up commit](https://github.com/MythosOfs/Orchid/commit/63f61e109f2d303b62f8b908dbacadc13b79408f) |
+| syncpt 1, slot count | High confidence the client expects a u32 less than 0x400, then bounds its reservation request. Low confidence that 32 is the hardware count. Orchid retains 32. [PR #208](https://github.com/MythosOfs/Orchid/pull/208) |
+| gsv 426/428 descriptor +0x10, block height | Low confidence in the descriptor formula. Orchid returns a log2 height in rows from its native-image layout calculation, which can use preference +0x10. Decoder block-linear images use the decoder GOB height exponent plus 3. Public DRM documents a separate NVIDIA encoding whose exponent is in GOBs. It corroborates the general layout model and shows why the units need checking. Neither it nor the fork confirms the console's reply encoding. [Linux v6.12 NVIDIA block-linear modifier](https://github.com/torvalds/linux/blob/adc218676eef25575469234709c2d87185ca223a/include/uapi/drm/drm_fourcc.h#L785-L805) |
+| gsv 426/428 descriptor +0x14, pitch | Low confidence in the descriptor's units and source. Orchid returns the computed byte pitch divided by 64, so the result is in 64-byte units. The fork corroborates Mario Kart World's use of native handles to build camera image pools. Its change supplies the backing range and gives no console value for pitch. [Lichii native image pool commit](https://github.com/zortos293/Lichii/commit/8a4804532ba882a3b4e4bf7860dd6b045985d84b) |
+| Camera CMIF 3 | High confidence in the 16-byte name and u64 id on success from Welcome Tour and Mario Kart World client code. The caller accepts 2452-0006. The no-accessory console result and id value remain unknown. Orchid preserves success and id 0. [Camera client layouts](https://github.com/MythosOfs/Orchid/issues/188) |
+| Camera CMIF 21 | High confidence in the readable event handle on success from the client attaching it to a system event. The no-accessory result and signal behavior remain unknown. Orchid returns success and a never-signalled event. [Camera client layouts](https://github.com/MythosOfs/Orchid/issues/188) |
+| Camera CMIF 29 | High confidence in the result-only reply shape. The client accepts 2452-0003, 2452-0006 and 2452-0007 in addition to success. Which conditions select those results is unconfirmed. Orchid preserves success. Nintendo's accessory documentation confirms the requirement for compatible USB hardware for video, and gives no service result codes. [Camera client layouts](https://github.com/MythosOfs/Orchid/issues/188), [Nintendo camera accessory](https://www.nintendo.com/us/gaming-systems/switch-2/accessories/camera/) |
+| Camera CMIF 4, 22, 24, 25, 28 | High confidence in the command ids and CMIF transport. Each appears in both saved Star Fox PR #208 A/B logs. The caller in version 131072 is the camera interface proxy in `subsdk3`. Method mapping, output fields and no-accessory values remain unknown. The auto stub still returns 32 zero data words and success. [PR #208](https://github.com/MythosOfs/Orchid/pull/208) |
+
+Local Mario Kart World run `20261121-172405-cc54b0cb` reached the first Grand Prix race.
+In `eden_log.txt`, five 1211 allocations each created three 384x216 images, and the
+client called both 428 and 426 for all 15 handles. The replies and logged size of
+0x60000 describe Orchid's layout. This is evidence of the call path and client tolerance.
+Hardware captures with differing dimensions or layouts are still needed to determine
+the console field values.
 
 ## Decision log
 
@@ -101,7 +130,7 @@ One entry per former code comment, by file, named after the code it described.
 - `void CreateNativeImage(HLERequestContext& ctx)`: 429(preference[16], u32 count, u32 memory id): result, u32 native image id.
 - `in CreateNativeImage()`: nn::gs::sdk::CalculateNativeImageHandle(pool, i) is pool + i, so keep those free.
 - `void CalculateChatImagePoolSize(HLERequestContext& ctx)`: Pool size of a feature's images (1291 here; 391, 691, 891 and 1691 for the other feature groups, which share the server template). nn::chat::gsv::CalculateRequiredBufferMemory: 1291(preference[16], u32 count), the request of 1510, replies result, u64 size, u64 alignment. Auto-stubbed, the size became 0x1000 and the camera pool (1211) got memory for none of its images.
-- `void QueryNativeImage(HLERequestContext& ctx)` (open work: #188): 428(u32 native image handle) nn::gpu::sdk::QueryNativeImage and 426(u32 handle, u32, u32 address space, u8 permission) nn::gpu::sdk::MapNativeImage, used by NVN for images another server created (GameChat's camera pool from 1211). Reply words 3-4 the GPU address of the image (426 only; GPU == CPU address, see Nx2NativeObjects::Memory), 5-6 its last-inclusive mapping address, 7-38 a GpuOunceUserImageDescriptor and 39 the flags. The SDK requires descriptor byte 0x00 == 1, byte 0x20 == 1 and a non-zero size at 0x2c (offset at 0x28); NVN reads (width - 1) | (height - 1) << 16 at 0x08 and the layout kind at 0x24 (1 takes RGBA formats 0x25/0x37/0x38, 2 the 0x99-0x9c formats). Block height and pitch come from the 429 preference words (0x10, 0x14).
+- `void QueryNativeImage(HLERequestContext& ctx)` (open work: #188): 428(u32 native image handle) nn::gpu::sdk::QueryNativeImage and 426(u32 handle, u32, u32 address space, u8 permission) nn::gpu::sdk::MapNativeImage, used by NVN for images another server created (GameChat's camera pool from 1211). Reply words 3-4 the GPU address of the image (426 only; GPU == CPU address, see Nx2NativeObjects::Memory), 5-6 its last-inclusive mapping address, 7-38 a GpuOunceUserImageDescriptor and 39 the flags. The SDK requires descriptor byte 0x00 == 1, byte 0x20 == 1 and a non-zero size at 0x2c (offset at 0x28); NVN reads (width - 1) | (height - 1) << 16 at 0x08 and the layout kind at 0x24 (1 takes RGBA formats 0x25/0x37/0x38, 2 the 0x99-0x9c formats). For block height and pitch Orchid uses the layout calculation described in the follow-up evidence above.
 - `void ConfigureWindowImagePool(HLERequestContext& ctx)`: 315(u32 image, u32 count) / 314(u32 image): add/remove a window alias image pool.
 - `in OpenViSession()`: Used by nn::vi2::sdk::Initialize; takes one u64, returns a session (handle at word 3, result at word 4).
 - `in OpenGpuSession()`: Used by nn::gpu::sdk::BootWithRemoteMemory; takes one u64, returns a session (handle at word 3, result at word 4) that the GPU SDK keeps.

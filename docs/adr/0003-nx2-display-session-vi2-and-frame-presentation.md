@@ -34,6 +34,26 @@ Open, with what is known:
 - 352(u64 layer, 3 x f32) / 353(u64): set / clear the layer's HDR adjustable bezier (setter 0x5653a0 keeps the three floats), result only. Only Mario Kart World sends them; left unchanged.
 - 113(2 x u64): result only, no caller found; 13, 108, 230-232, 302, 354-359: not read (no scope title sends them).
 
+## Timestamp semantics follow-up for #188
+
+The Mario Tennis Fever 327680 SDK client establishes high confidence in the VI2 53
+wire shape: the recorder, checkpoint mask and maximum count are inputs, the B buffer
+contains u64 entries indexed by the ordinal of each set bit, and the reply carries a
+u64 byte count and a pending byte. Pending 1 causes the caller to poll. The client
+reading this shape cannot establish the point in the compositor pipeline when each
+timestamp is latched. [PR #208](https://github.com/MythosOfs/Orchid/pull/208)
+
+Orbitals supplies compatibility evidence. Without usable timestamp entries
+`ListFrameHistory` never advanced the frame-shown state and Unreal blocked waiting for
+its render fence. Orchid writes the current guest clock tick into each returned slot
+and reports pending 0, so it supplies equal query-time values for checkpoints in the
+same reply. Orchid bounds the count by the mask population, B buffer space and 8,
+matching the observed client request maximum. Confidence in that as hardware timing is low. The console's checkpoint
+meanings, tick origin, readiness transitions and treatment of partially completed
+masks remain open. A console trace should capture the recorder, mask, byte count,
+pending byte and output values before and after present, with a known guest clock and
+multiple checkpoint bits set. [Orbitals implementation history](https://github.com/zortos293/Lichii/commit/4cde64ae06451a1e196afd55841b41eea486d74e)
+
 ## Decision log
 
 One entry per former code comment, by file, named after the code it described.

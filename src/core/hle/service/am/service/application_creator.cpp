@@ -49,6 +49,7 @@ Result CreateGuestApplication(SharedPointer<IApplicationAccessor>* out_applicati
              program_id, Loader::GetFileTypeString(loader->GetFileType()), process->GetProgramId());
 
     const auto applet = std::make_shared<Applet>(system, std::move(process), true);
+    applet->owned_by_application_creator = true;
     applet->launched_from_native_home_menu = window_system.HasNativeHomeMenu();
     applet->program_id = program_id;
     applet->applet_id = AppletId::Application;
@@ -107,6 +108,7 @@ Result IApplicationCreator::CreateSystemApplication(
     R_UNLESS(process != nullptr, ResultUnknown);
 
     const auto applet = std::make_shared<Applet>(system, std::move(process), true);
+    applet->owned_by_application_creator = true;
     applet->launched_from_native_home_menu = m_window_system.HasNativeHomeMenu();
     applet->program_id = application_id;
     applet->applet_id = AppletId::Starter;

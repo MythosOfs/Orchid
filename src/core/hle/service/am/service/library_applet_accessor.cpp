@@ -115,7 +115,10 @@ Result ILibraryAppletAccessor::PresetLibraryAppletGpuTimeSliceZero() {
 
 Result ILibraryAppletAccessor::Start() {
     LOG_DEBUG(Service_AM, "called");
-    m_applet->process->Run();
+    {
+        std::scoped_lock lk{m_applet->lock};
+        m_applet->process->Run();
+    }
     FrontendExecute();
     R_SUCCEED();
 }
@@ -132,7 +135,10 @@ Result ILibraryAppletAccessor::RequestExit() {
 
 Result ILibraryAppletAccessor::Terminate() {
     LOG_DEBUG(Service_AM, "called");
-    m_applet->process->Terminate();
+    {
+        std::scoped_lock lk{m_applet->lock};
+        m_applet->process->Terminate();
+    }
     FrontendRequestExit();
     R_SUCCEED();
 }

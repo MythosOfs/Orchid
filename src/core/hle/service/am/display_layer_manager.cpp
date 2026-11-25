@@ -59,6 +59,10 @@ void DisplayLayerManager::Finalize() {
         m_manager_display_service->DestroySharedLayerSession(m_process);
     }
 
+    m_managed_display_layers.clear();
+    m_managed_display_recording_layers.clear();
+    m_buffer_sharing_enabled = false;
+    m_process = nullptr;
     m_manager_display_service = nullptr;
     m_display_service = nullptr;
 }

@@ -75,12 +75,14 @@ Result IDisplayController::TakeScreenShotOfOwnLayer(bool unknown0, s32 fbshare_l
 Result IDisplayController::ClearCaptureBuffer(bool unknown0, s32 fbshare_layer_index, u32 color) {
     LOG_DEBUG(Service_AM, "called, unknown0={} fbshare_layer_index={} color={:#x}", unknown0,
               fbshare_layer_index, color);
+    std::scoped_lock lk{applet->lock};
     R_RETURN(applet->display_layer_manager.ClearAppletCaptureBuffer(fbshare_layer_index, color));
 }
 
 Result IDisplayController::AcquireLastForegroundCaptureSharedBuffer(
     Out<bool> out_was_written, Out<s32> out_fbshare_layer_index) {
     LOG_DEBUG(Service_AM, "called");
+    std::scoped_lock lk{applet->lock};
     R_RETURN(applet->display_layer_manager.WriteAppletCaptureBuffer(
         out_was_written, out_fbshare_layer_index, VI::CaptureKind::LastForeground));
 }
@@ -93,6 +95,7 @@ Result IDisplayController::ReleaseLastForegroundCaptureSharedBuffer() {
 Result IDisplayController::AcquireCallerAppletCaptureSharedBuffer(
     Out<bool> out_was_written, Out<s32> out_fbshare_layer_index) {
     LOG_DEBUG(Service_AM, "called");
+    std::scoped_lock lk{applet->lock};
     R_RETURN(applet->display_layer_manager.WriteAppletCaptureBuffer(
         out_was_written, out_fbshare_layer_index, VI::CaptureKind::CallerApplet));
 }
@@ -105,6 +108,7 @@ Result IDisplayController::ReleaseCallerAppletCaptureSharedBuffer() {
 Result IDisplayController::AcquireLastApplicationCaptureSharedBuffer(
     Out<bool> out_was_written, Out<s32> out_fbshare_layer_index) {
     LOG_DEBUG(Service_AM, "called");
+    std::scoped_lock lk{applet->lock};
     R_RETURN(applet->display_layer_manager.WriteAppletCaptureBuffer(
         out_was_written, out_fbshare_layer_index, VI::CaptureKind::LastApplication));
 }

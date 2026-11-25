@@ -21,12 +21,17 @@ namespace Service::AM {
 WindowSystem::WindowSystem(Core::System& system) : m_system(system) {}
 
 WindowSystem::~WindowSystem() {
-    m_system.GetAppletManager().SetWindowSystem(nullptr);
+    if (m_attached_to_frontend) {
+        m_system.GetAppletManager().SetWindowSystem(nullptr);
+    }
 }
 
-void WindowSystem::SetEventObserver(EventObserver* observer) {
+void WindowSystem::SetEventObserver(EventObserver* observer, bool attach_frontend) {
     m_event_observer = observer;
-    m_system.GetAppletManager().SetWindowSystem(this);
+    if (attach_frontend) {
+        m_attached_to_frontend = true;
+        m_system.GetAppletManager().SetWindowSystem(this);
+    }
 }
 
 void WindowSystem::RequestUpdate() {
@@ -435,12 +440,17 @@ void WindowSystem::PruneTerminatedAppletsLocked() {
 
         this->UpdateCurrentApplicationLocked();
 
-        if (application_exited || !applet->process->HasStarted()) {
+        if (application_exited && !applet->owned_by_application_creator) {
+            m_exited_frontend_application = applet;
+        }
+        if (applet->owned_by_application_creator &&
+            (application_exited || !applet->process->HasStarted())) {
             if (const auto* process = applet->process->GetHandle();
                 process && m_system.Kernel().ApplicationProcess() == process) {
                 m_system.Kernel().SetApplicationProcess(
                     m_overlay_display ? m_overlay_display->process->GetHandle() : nullptr);
             }
+            applet->display_layer_manager.Finalize();
             applet->hid_registration.UnregisterCurrentProcess();
             applet->process->Finalize();
         }

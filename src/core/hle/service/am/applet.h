@@ -53,6 +53,7 @@ struct Applet {
     AppletType type{};
     ProgramId program_id{};
     bool launched_from_native_home_menu{};
+    bool owned_by_application_creator{};
     bool has_process_observer{};
     LibraryAppletMode library_applet_mode{};
     s32 previous_program_index{-1};

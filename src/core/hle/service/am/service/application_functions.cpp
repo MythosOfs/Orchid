@@ -591,6 +591,7 @@ Result IApplicationFunctions::GetHealthWarningDisappearedSystemEvent(
 Result IApplicationFunctions::GetOperationModeRefreshEvent(
     OutCopyHandle<Kernel::KReadableEvent> out_event) {
     LOG_DEBUG(Service_AM, "called");
+    std::scoped_lock lk{m_applet->lock};
     const auto* process = m_applet->process ? m_applet->process->GetHandle() : nullptr;
     if (process != nullptr && process->IsSwitch2()) {
         *out_event = m_applet->lifecycle_manager.GetOperationModeRefreshEvent().GetHandle();

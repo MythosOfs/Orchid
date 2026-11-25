@@ -24,7 +24,10 @@ class WindowSystem;
 
 class EventObserver {
 public:
-    explicit EventObserver(Core::System& system, WindowSystem& window_system);
+    enum class Attachment { Frontend, ObservedAppletsOnly };
+
+    explicit EventObserver(Core::System& system, WindowSystem& window_system,
+                           Attachment attachment = Attachment::Frontend);
     ~EventObserver();
 
     void TrackAppletProcess(Applet& applet);

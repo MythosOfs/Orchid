@@ -62,8 +62,12 @@ A guest-created application holds the window slot while waiting for Start. The e
 starts watching it only after the first successful Start. A failed first Start retires its
 registrations and removes the slot. Repeat Start leaves a running application in place. The exit
 path waits for the event observer to release its process holder, switches away from the
-exiting application, and releases FS, ARP, HID and the process before sending ApplicationExited
-to qlaunch. The old accessor still reports its completion event and result. The ARP PID interface
+exiting AM-created application, and releases display layers, FS, ARP, HID and the process before
+sending ApplicationExited
+to qlaunch. The old accessor still reports its completion event and result. The frontend-created
+application stays owned through AM shutdown, after the cheat timing consumer has stopped. The
+kernel retains its frontend application reference for fastmem cleanup. The CPU lifecycle fixture
+attaches an observer to its existing applets without waiting for the frontend bootstrap. The ARP PID interface
 and application accessor check the registering PID even if a successor has the same title ID.
 Raw ARP control still supports the zero-filled reply for loaders without NACP. Owner-specific
 account policy distinguishes that placeholder from an actual NACP so installed control can apply.

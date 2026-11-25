@@ -96,8 +96,10 @@ ISelfController::ISelfController(Core::System& system_, std::shared_ptr<Applet> 
     RegisterHandlers(functions);
 
     std::scoped_lock lk{m_applet->lock};
-    m_applet->display_layer_manager.Initialize(system, m_process, m_applet->applet_id,
-                                               m_applet->library_applet_mode);
+    if (!m_applet->is_completed) {
+        m_applet->display_layer_manager.Initialize(system, m_process, m_applet->applet_id,
+                                                   m_applet->library_applet_mode);
+    }
 }
 
 void ISelfController::GetNx2GraphicsSystemSession(HLERequestContext& ctx) {
@@ -114,6 +116,7 @@ ISelfController::~ISelfController() {
 Result ISelfController::Exit() {
     LOG_DEBUG(Service_AM, "called");
 
+    std::scoped_lock lk{m_applet->lock};
     m_applet->process->Terminate();
 
     R_SUCCEED();

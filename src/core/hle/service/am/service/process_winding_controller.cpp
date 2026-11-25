@@ -130,7 +130,10 @@ Result IProcessWindingController::WindAndDoReserved() {
         LOG_WARNING(Service_AM, "called without a reserved applet to start");
     }
 
-    m_applet->process->Terminate();
+    {
+        std::scoped_lock lk{m_applet->lock};
+        m_applet->process->Terminate();
+    }
 
     R_SUCCEED();
 }

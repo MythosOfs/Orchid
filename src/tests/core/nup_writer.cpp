@@ -40,6 +40,7 @@
 #include "core/file_sys/vfs/vfs_real.h"
 #include "core/file_sys/vfs/vfs_vector.h"
 #include "core/loader/nup.h"
+#include "core/memory/cheat_engine.h"
 #include "core/loader/nx.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_thread.h"
@@ -2046,6 +2047,42 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     const FrontendAppletParameters game_params{.applet_type = AppletType::Application};
     CHECK(game_params.IsGameLaunch());
 
+    {
+        WindowSystem direct_window{system};
+        system.RegisterExitCallback([] {});
+        auto direct_process = create(open(t.path / "Legacy/exefs/main"), legacy_id);
+        REQUIRE(direct_process);
+        auto direct = std::make_shared<Applet>(system, std::move(direct_process), true);
+        direct->applet_id = AppletId::Application;
+        auto* const handle = direct->process->GetHandle();
+        const auto pid = handle->GetProcessId();
+        const auto entry = GetInteger(handle->GetEntryPoint());
+        direct_window.TrackApplet(direct, true);
+        REQUIRE(direct->process->Run());
+
+        Core::Memory::CheatProcessMetadata metadata{};
+        metadata.process_id = pid;
+        metadata.main_nso_extents = {.base = entry, .size = sizeof(u32)};
+        Core::Memory::StandardVmCallbacks tick_consumer{system, metadata};
+        u32 instruction{};
+        tick_consumer.MemoryReadUnsafe(entry, &instruction, sizeof(instruction));
+        REQUIRE(instruction == 0x14000000);
+
+        finish_guest_threads(*direct->process);
+        std::weak_ptr<Applet> retained = direct;
+        direct.reset();
+        direct_window.Update();
+        REQUIRE(direct_window.GetMainApplet() == nullptr);
+        REQUIRE_FALSE(retained.expired());
+        REQUIRE(kernel.ApplicationProcess() == handle);
+        REQUIRE(kernel.GetProcessByProcessId(pid).GetPointerUnsafe() == handle);
+        instruction = 0;
+        tick_consumer.MemoryReadUnsafe(entry, &instruction, sizeof(instruction));
+        CHECK(instruction == 0x14000000);
+    }
+    kernel.SetApplicationProcess(nullptr);
+    system.RegisterExitCallback({});
+
     const auto mixed_game_path = t.path / "Loose/exefs" / archive.filename();
     REQUIRE(fs::copy_file(archive, mixed_game_path));
     const auto host_file = Core::GetGameFileFromPath(system.GetFilesystem(), mixed_game_path.string());
@@ -2078,6 +2115,7 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
         REQUIRE(pending_process);
         auto pending_overlay_case = std::make_shared<Applet>(system, std::move(pending_process), true);
         pending_overlay_case->applet_id = AppletId::Application;
+        pending_overlay_case->owned_by_application_creator = true;
         home_applet->applet_id = AppletId::OverlayDisplay;
         kernel.SetApplicationProcess(pending_overlay_case->process->GetHandle());
         overlay_window.TrackApplet(home_applet, false);
@@ -2538,6 +2576,8 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     REQUIRE(legacy_applet);
     REQUIRE(call_accessor(*legacy_access, 10) == ResultSuccess.raw);
     const auto& legacy = legacy_applet->process;
+    const u64 legacy_pid = legacy->GetProcessId();
+    REQUIRE(legacy_pid != 0);
     SCOPE_EXIT { finish_guest_threads(*legacy); };
     Service::Glue::ApplicationLaunchProperty launch{};
     REQUIRE(system.GetARPManager().GetLaunchProperty(&launch, legacy_id).IsSuccess());
@@ -2561,7 +2601,7 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     CHECK_FALSE(dispatched_index);
     CHECK(call_accessor(native_loose_functions, 120, nullptr, execute_command, 2) != ResultSuccess.raw);
     CHECK(call_accessor(*native_loose_access, 25) == ResultSuccess.raw);
-    CHECK(filesystem.ListProcessBootContent(legacy->GetProcessId(),
+    CHECK(filesystem.ListProcessBootContent(legacy_pid,
                                             FileSys::ContentRecordType::Data).empty());
     REQUIRE(call_accessor(loose_functions, 120, nullptr, execute_command, 2) == ResultSuccess.raw);
     REQUIRE(dispatched_index);
@@ -2595,7 +2635,7 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     }
 
     {
-        EventObserver observer{system, window};
+        EventObserver observer{system, window, EventObserver::Attachment::ObservedAppletsOnly};
         for (int attempt = 0; attempt < 2; ++attempt) {
             auto observed_accessor = create_accessor(TitleId);
             REQUIRE(observed_accessor);

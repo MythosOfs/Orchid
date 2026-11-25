@@ -36,7 +36,7 @@ public:
     ~WindowSystem();
 
 public:
-    void SetEventObserver(EventObserver* event_observer);
+    void SetEventObserver(EventObserver* event_observer, bool attach_frontend);
     void Update();
     void RequestUpdate();
 
@@ -85,6 +85,7 @@ private:
 
     // Event observer.
     EventObserver* m_event_observer{};
+    bool m_attached_to_frontend{};
 
     // Lock.
     std::mutex m_lock{};
@@ -96,6 +97,7 @@ private:
     // Foreground roots.
     Applet* m_home_menu{};
     Applet* m_application{};
+    std::shared_ptr<Applet> m_exited_frontend_application;
     bool m_application_slot_reserved{};
     Applet* m_overlay_display{};
 

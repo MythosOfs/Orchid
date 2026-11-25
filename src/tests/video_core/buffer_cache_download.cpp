@@ -272,6 +272,15 @@ TEST_CASE("BufferCache: storage bindings follow device remaps and guest descript
     CHECK(native().size == 2 * page);
     CHECK(native().physical_size == page);
 
+    VideoCommon::ComputeBindingDiagnostic::Record diag_rec;
+    {
+        VideoCommon::ComputeBindingDiagnostic::Scope diag_scope{diag_rec};
+        CHECK(cache->StorageBufferBinding(descriptor, 0, true, true, false, true).size ==
+              2 * page);
+    }
+    CHECK(diag_rec.layout_size == 2 * page);
+    CHECK(diag_rec.selected_size == 2 * page);
+
     const auto native_ro = [&] {
         return cache->StorageBufferBinding(descriptor, 0, false, true, false);
     };
@@ -307,11 +316,27 @@ TEST_CASE("BufferCache: storage bindings follow device remaps and guest descript
     address_space.Write<u64>(big_descriptor, big_target);
     address_space.Write<u64>(big_descriptor + 8, big_extent);
     runtime.storage_buffer_range = big_limit;
+    CHECK_THROWS_AS(cache->StorageBufferBinding(big_descriptor, 0, true, true, false),
+                    Shader::RuntimeError);
+    address_space.Write<u64>(big_descriptor + 8, big_limit);
     const auto big_binding = cache->StorageBufferBinding(big_descriptor, 0, true, true, false);
     CHECK(big_binding.size == big_limit);
     CHECK(big_binding.physical_size == big_limit);
-    const auto big_ro = cache->StorageBufferBinding(big_descriptor, 0, false, true, false);
-    CHECK(big_ro.size == big_limit);
+    CHECK(cache->StorageBufferBinding(big_descriptor, 0, true).size == big_limit);
+
+    constexpr GPUVAddr glasm_descriptor = 0xa00000, glasm_target = 0xb00000;
+    constexpr u64 glasm_extent = 2ULL * 1024 * 1024 * 1024;
+    constexpr u64 glasm_limit = std::numeric_limits<s32>::max();
+    address_space.Map(glasm_descriptor, device + 0x59000, page, Tegra::PTEKind::PITCH, big_pages);
+    address_space.Map(glasm_target, device + 0x200000, glasm_extent, Tegra::PTEKind::PITCH,
+                      big_pages);
+    address_space.Write<u64>(glasm_descriptor, glasm_target);
+    address_space.Write<u64>(glasm_descriptor + 8, glasm_extent);
+    runtime.storage_buffer_range = glasm_limit;
+    CHECK_THROWS_AS(cache->StorageBufferBinding(glasm_descriptor, 0, true, true, false),
+                    Shader::RuntimeError);
+    address_space.Write<u64>(glasm_descriptor + 8, glasm_limit);
+    CHECK(cache->StorageBufferBinding(glasm_descriptor, 0, true, true, false).size == glasm_limit);
 }
 
 TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
@@ -383,6 +408,32 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         CHECK(kepler.IsDlssDispatch());
         launch();
         CHECK_FALSE(kepler.IsDlssDispatch());
+    }
+
+    SECTION("an oversized native binding rejects the launch before any enqueue") {
+        FixtureRuntime runtime;
+        runtime.storage_buffer_range = 128 * 1024 * 1024;
+        auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+        cache->SetAddressSpace(address_space);
+        constexpr GPUVAddr big_descriptor = 0x700000, big_target = 0x800000;
+        address_space.Map(big_descriptor, device + 0x58000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Map(big_target, device + 0x80000, 256 * 1024 * 1024, Tegra::PTEKind::PITCH,
+                          false);
+        address_space.Write<u64>(big_descriptor, big_target);
+        address_space.Write<u64>(big_descriptor + 8, 256 * 1024 * 1024);
+        bool rejected = false, enqueued = false;
+        rasterizer.on_dispatch = [&] {
+            try {
+                const auto binding =
+                    cache->StorageBufferBinding(big_descriptor, 0, true, true, false);
+                enqueued = binding.buffer_id != VideoCommon::NULL_BUFFER_ID;
+            } catch (const Shader::RuntimeError&) {
+                rejected = true;
+            }
+        };
+        launch();
+        CHECK(rejected);
+        CHECK_FALSE(enqueued);
     }
 
     SECTION("launches without a shader program still count toward the bound") {

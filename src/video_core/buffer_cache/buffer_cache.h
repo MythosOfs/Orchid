@@ -17,6 +17,7 @@
 #include "common/hitch_diagnostic.h"
 #include "common/range_sets.inc"
 #include "common/unmapped_read_diagnostic.h"
+#include "shader_recompiler/exception.h"
 #include "video_core/buffer_cache/approximate_gpu_writes.h"
 #include "video_core/buffer_cache/buffer_cache_base.h"
 #include "video_core/buffer_cache/storage_buffer_descriptor.h"
@@ -3041,38 +3042,41 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
     namespace diag = ComputeBindingDiagnostic;
     const GPUVAddr gpu_addr = descriptor[0];
 
-    const auto size = [&]() -> u32 {
-        const u64 layout_size = gpu_memory->GetMemoryLayoutSize(gpu_addr);
-        if (trace)
-            trace->layout_size = layout_size;
-        // Keep the existing NVN/graphics behaviour; bare pointers must be capped before
-        // conversion, since a kind range can be 4 GiB or larger.
-        const u64 memory_layout_size =
-            native_compute ? layout_size : static_cast<u32>(layout_size);
-        // Only a DLSS dispatch's pointer is bare; other bindings read a declared size word.
-        const u64 next_qword = descriptor[1];
-        const u32 limit = StorageBufferSizeLimit(memory_layout_size, next_qword, dlss_dispatch);
+    const u64 layout_size = gpu_memory->GetMemoryLayoutSize(gpu_addr);
+    if (trace)
+        trace->layout_size = layout_size;
+    // Keep the existing NVN/graphics behaviour; bare pointers must be capped before
+    // conversion, since a kind range can be 4 GiB or larger.
+    const u64 memory_layout_size =
+        native_compute ? layout_size : static_cast<u32>(layout_size);
+    // Only a DLSS dispatch's pointer is bare; other bindings read a declared size word.
+    const u32 limit = StorageBufferSizeLimit(memory_layout_size, descriptor[1], dlss_dispatch);
+
+    // Alignment only applies to the offset of the buffer
+    const u32 alignment = runtime.GetStorageBufferAlignment();
+    const GPUVAddr aligned_gpu_addr = Common::AlignDown(gpu_addr, alignment);
+    const u64 aligned_offset = gpu_addr - aligned_gpu_addr;
+    u64 max_range = std::numeric_limits<u32>::max();
+    if constexpr (requires { runtime.GetMaxStorageBufferRange(); }) {
+        max_range = static_cast<u64>(runtime.GetMaxStorageBufferRange());
+    }
+    if (native_compute && aligned_offset + u64{limit} > max_range) {
+        throw Shader::RuntimeError{"native compute storage range {:#x} exceeds backend limit {:#x}",
+                                   aligned_offset + u64{limit}, max_range};
+    }
+    const u32 size = [&]() -> u32 {
         if (native_compute && limit != 0) {
             const auto ranges = gpu_memory->GetSubmappedRange(gpu_addr, limit);
             return StorageBufferMappedPrefix(gpu_addr, limit, ranges);
         }
         return limit;
     }();
-
-    // Alignment only applies to the offset of the buffer
-    const u32 alignment = runtime.GetStorageBufferAlignment();
-    const GPUVAddr aligned_gpu_addr = Common::AlignDown(gpu_addr, alignment);
     if (trace) {
         trace->selected_size = size;
         trace->alignment = alignment;
         trace->aligned_gpu = aligned_gpu_addr;
     }
-    u64 max_range = std::numeric_limits<u32>::max();
-    if constexpr (requires { runtime.GetMaxStorageBufferRange(); }) {
-        max_range = static_cast<u64>(runtime.GetMaxStorageBufferRange());
-    }
-    const u32 aligned_size =
-        StorageBufferAlignedSize(gpu_addr - aligned_gpu_addr, size, max_range);
+    const u32 aligned_size = StorageBufferAlignedSize(aligned_offset, size, max_range);
 
     const std::optional<DAddr> aligned_device_addr = gpu_memory->GpuToCpuAddress(aligned_gpu_addr);
     if (!aligned_device_addr || size == 0) {

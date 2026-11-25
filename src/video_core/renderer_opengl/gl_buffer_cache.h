@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <limits>
 #include <span>
 #include "common/container/unordered_map.h"
 
@@ -205,6 +206,11 @@ public:
 
     u32 GetStorageBufferAlignment() const {
         return static_cast<u32>(device.GetShaderStorageBufferAlignment());
+    }
+
+    u64 GetMaxStorageBufferRange() const {
+        return use_storage_buffers ? u64{std::numeric_limits<u32>::max()}
+                                   : u64{std::numeric_limits<GLsizei>::max()};
     }
 
 private:

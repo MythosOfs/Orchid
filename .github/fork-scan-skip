@@ -7653,3 +7653,5 @@ b1394ee49 zortos293/Eglantine: Adjusts Lichii's per-title Age of Imprisonment re
 8e9db463b SokolskyNikita/Lichii: Duplicate of 37089d9be on oot26-on-mac branch (skip unchanged native uniform bank re-uploads).
 a5ec91989 SokolskyNikita/Lichii: Merge of HyperCed macOS/Hypervisor PR #1970; macOS-only except an unverified Vulkan buffer upload-reorder barrier change with no red test or measured gain.
 945202e4b QuincyForbes/Lichii: Large Ocarina of Time dynamic texture handle array rewrite; OoT is outside Orchid's target game scope and Orchid's BuildHandleNode path differs.
+df46b3775 zortos293/Eglantine: NVN graphics slot declared sizes already honored; Orchid's graphics SSBO path always reads the 16-byte descriptor and StorageBufferSizeLimit uses packed_size up to the kind extent (native bare-pointer sizing applies only to compute).
+894f2c119 Djihads80/Eglantine: Alternate of df46b37751 (same batch, take one); skipped for the same reason, graphics descriptors already honor the declared size word.

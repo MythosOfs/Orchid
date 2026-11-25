@@ -2133,6 +2133,11 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
     WindowSystem window{system};
     window.TrackApplet(home_applet, false);
 
+    std::optional<std::jthread> ipc_server_thread;
+    Service::ServerManager ipc_server{system};
+    ipc_server_thread.emplace(
+        kernel.RunOnHostCoreProcess("home-menu-test", [&] { ipc_server.LoopProcess(); }));
+
     const auto positive_loose = open(t.path / "Loose/exefs/main");
     auto positive_loader = Loader::GetLoader(system, positive_loose);
     REQUIRE(positive_loader);
@@ -2164,8 +2169,7 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
         const auto ids_addr = heap + 0x1000;
         memory.WriteBlock(ids_addr, ids.data(), sizeof(ids));
 
-        Service::ServerManager server{system};
-        auto manager = std::make_shared<Service::SessionRequestManager>(kernel, server);
+        auto manager = std::make_shared<Service::SessionRequestManager>(kernel, ipc_server);
         std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
         IPC::CommandHeader header{};
         header.type.Assign(IPC::CommandType::Request);
@@ -2213,8 +2217,7 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
             owner.Close(kernel);
             kernel.UnregisterKernelObject(&client);
         };
-        Service::ServerManager server{system};
-        auto manager = std::make_shared<Service::SessionRequestManager>(kernel, server);
+        auto manager = std::make_shared<Service::SessionRequestManager>(kernel, ipc_server);
         std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
         IPC::CommandHeader header{};
         header.type.Assign(IPC::CommandType::Request);
@@ -2457,8 +2460,7 @@ TEST_CASE("Home Menu launch ownership survives child and same-title relaunch", "
             owner.Close(kernel);
             kernel.UnregisterKernelObject(&client);
         };
-        Service::ServerManager server{system};
-        auto manager = std::make_shared<Service::SessionRequestManager>(kernel, server);
+        auto manager = std::make_shared<Service::SessionRequestManager>(kernel, ipc_server);
         std::array<u32_le, IPC::COMMAND_BUFFER_LENGTH> words{};
         IPC::CommandHeader header{};
         header.type.Assign(IPC::CommandType::Request);

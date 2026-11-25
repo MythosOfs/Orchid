@@ -556,6 +556,11 @@ bool KeplerCompute::DispatchNativeCompute(const NativeQmdScheduler::Descriptor& 
     if (!launch_description.block_dim_x || !launch_description.block_dim_y || !launch_description.block_dim_z)
         return false;
     dlss_dispatch_chain.NoteDispatch();
+    dlss_trace.BeginDispatch();
+    const auto finish = [this](bool result) {
+        dlss_trace.EndDispatch();
+        return result;
+    };
     try {
         rasterizer->DispatchCompute();
     } catch (const Shader::Exception& error) {
@@ -572,12 +577,12 @@ bool KeplerCompute::DispatchNativeCompute(const NativeQmdScheduler::Descriptor& 
         if (what.find("matrix multiply") != std::string_view::npos) {
             DescribeNativeResources(qmd);
             // The console runs this on tensor cores; stand in with a plain upscale of its input.
-            return UpscaleInsteadOfNativeProgram();
+            return finish(UpscaleInsteadOfNativeProgram());
         }
         RememberDlssMotionVectors();
-        return false;
+        return finish(false);
     }
-    return true;
+    return finish(true);
 }
 
 // Logs the images a rejected program's handles (constant bank 0, bytes 0x80-0x11c) point to, so a

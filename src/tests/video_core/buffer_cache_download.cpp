@@ -24,6 +24,7 @@
 #include "shader_recompiler/exception.h"
 #include "video_core/buffer_cache/buffer_cache.h"
 #include "video_core/buffer_cache/memory_tracker_base.h"
+#include "video_core/control/channel_state.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/gpu.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
@@ -176,6 +177,22 @@ struct NativeFixtureCache : VideoCommon::BufferCache<FixtureParams> {
     void SetAddressSpace(Tegra::MemoryManager& memory) {
         gpu_memory = &memory;
     }
+    void SetKeplerCompute(Tegra::Engines::KeplerCompute* kepler) {
+        kepler_compute = kepler;
+    }
+    void EnableChannelState() {
+        channel.emplace(0);
+        channel_info.emplace(*channel);
+        channel_state = &*channel_info;
+    }
+    FixtureBuffer* Obtain(u64 device_addr, u32 size) {
+        return ObtainCPUBuffer(device_addr, size,
+                               VideoCommon::ObtainBufferSynchronize::NoSynchronize,
+                               VideoCommon::ObtainBufferOperation::DoNothing)
+            .first;
+    }
+    std::optional<Tegra::Control::ChannelState> channel;
+    std::optional<VideoCommon::BufferCacheChannelInfo> channel_info;
 };
 
 struct BindingRasterizer : Null::RasterizerNull {
@@ -458,6 +475,35 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         launch();
         CHECK(rejected);
         CHECK_FALSE(enqueued);
+    }
+
+    SECTION("unrepresentable native buffer allocations reject before mutating the cache") {
+        FixtureRuntime runtime;
+        auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+        cache->SetKeplerCompute(&kepler);
+        cache->EnableChannelState();
+        constexpr u64 base = 0x80000000;
+        CHECK_THROWS_AS(cache->Obtain(base + 0x1000, std::numeric_limits<u32>::max()),
+                        Shader::RuntimeError);
+        FixtureBuffer* const small = cache->Obtain(base, 0x1000);
+        REQUIRE(small);
+        const u64 small_addr = small->CpuAddr();
+        CHECK(cache->Obtain(base + 0x80000000, 0x80000000));
+        CHECK(cache->Obtain(base + 0x100000000, 0x80000000));
+        CHECK_THROWS_AS(cache->Obtain(base + 0xc0000000, 0x80000000), Shader::RuntimeError);
+        CHECK(cache->Obtain(base + 0x100, 0x100)->CpuAddr() == small_addr);
+        CHECK(cache->Obtain(base + 0x80000100, 0x100));
+        CHECK(cache->Obtain(base + 0x2000, 0x1000));
+        const size_t copies_before = runtime.copied.size();
+        CHECK(cache->Obtain(base + 0x8000, 0x10000));
+        CHECK(runtime.copied.size() > copies_before);
+    }
+
+    SECTION("unrepresentable native buffer allocations stay silent for graphics callers") {
+        FixtureRuntime runtime;
+        auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+        constexpr u64 base = 0x80000000;
+        CHECK(cache->Obtain(base + 0x1000, std::numeric_limits<u32>::max()));
     }
 
     SECTION("launches without a shader program still count toward the bound") {

@@ -720,10 +720,25 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
 
     const auto& cbufs = launch_desc.const_buffer_config;
     const GPUVAddr ssbo_addr = cbufs[cbuf_index].Address() + cbuf_offset;
+    const bool dlss_trace = kepler_compute->DlssTraceEnabled();
+    diag::Record chain_record;
+    std::optional<diag::Scope> chain_scope;
+    if (dlss_trace && !matching) {
+        chain_scope.emplace(chain_record);
+    }
     channel_state->compute_storage_buffers[ssbo_index] =
         StorageBufferBinding(ssbo_addr, cbuf_index, is_written, kepler_compute->IsNativeMode(),
                              kepler_compute->IsDlssDispatch(),
-                             matching && !trace->duplicate_descriptor);
+                             chain_scope.has_value() ||
+                                 (matching && !trace->duplicate_descriptor));
+    if (dlss_trace) {
+        const auto& record = chain_scope ? chain_record : *trace;
+        kepler_compute->NoteDlssTraceSsbo({static_cast<u32>(ssbo_index), cbuf_index, cbuf_offset,
+                                           record.declared_word.value_or(0),
+                                           record.selected_size.value_or(0),
+                                           kepler_compute->IsNativeMode(),
+                                           kepler_compute->IsDlssDispatch()});
+    }
 }
 
 template <class P>
@@ -2378,7 +2393,8 @@ void BufferCache<P>::SynchronizeBufferWrites(Buffer& buffer) {
 
 template <class P>
 typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr device_addr,
-                                                                       u32 wanted_size) {
+                                                                       u32 wanted_size,
+                                                                       bool mutate) {
     static constexpr int STREAM_LEAP_THRESHOLD = 16;
     boost::container::small_vector<BufferId, 16> overlap_ids;
     DAddr begin = device_addr;
@@ -2420,21 +2436,25 @@ typename BufferCache<P>::OverlapResult BufferCache<P>::ResolveOverlaps(DAddr dev
         if (!slot_buffers.contains(overlap_id)) [[unlikely]] {
             // A deleted buffer is still in the page table. Joining it would delete whichever
             // buffer reuses the slot next, possibly the one being created here.
-            static u32 stale_logs = 0;
-            if (stale_logs < 16) {
-                ++stale_logs;
-                LOG_ERROR(HW_GPU, "Stale buffer page: device_addr={:#x} buffer_id={}",
-                          device_addr, overlap_id.index);
+            if (mutate) {
+                static u32 stale_logs = 0;
+                if (stale_logs < 16) {
+                    ++stale_logs;
+                    LOG_ERROR(HW_GPU, "Stale buffer page: device_addr={:#x} buffer_id={}",
+                              device_addr, overlap_id.index);
+                }
+                page_table[device_addr >> CACHING_PAGEBITS] = BufferId{};
             }
-            page_table[device_addr >> CACHING_PAGEBITS] = BufferId{};
             continue;
         }
         Buffer& overlap = slot_buffers[overlap_id];
-        if (overlap.IsPicked()) {
+        if (std::find(overlap_ids.begin(), overlap_ids.end(), overlap_id) != overlap_ids.end()) {
             continue;
         }
         overlap_ids.push_back(overlap_id);
-        overlap.Pick();
+        if (mutate) {
+            overlap.Pick();
+        }
         const DAddr overlap_device_addr = overlap.CpuAddr();
         const bool expands_left = overlap_device_addr < begin;
         if (expands_left) {
@@ -2493,11 +2513,25 @@ void BufferCache<P>::JoinOverlap(BufferId new_buffer_id, BufferId overlap_id,
 template <class P>
 BufferId BufferCache<P>::CreateBuffer(DAddr device_addr, u32 wanted_size,
                                       bool sparse_compatible) {
+    const DAddr device_addr_end = Common::AlignUp(device_addr + u64{wanted_size}, CACHING_PAGESIZE);
+    device_addr = Common::AlignDown(device_addr, CACHING_PAGESIZE);
+    if (kepler_compute && kepler_compute->IsNativeMode()) {
+        const u64 proposed = device_addr_end - device_addr;
+        if (proposed > std::numeric_limits<u32>::max()) {
+            throw Shader::RuntimeError{"native compute allocation span {:#x} is not u32",
+                                       proposed};
+        }
+        const OverlapResult probe =
+            ResolveOverlaps(device_addr, static_cast<u32>(proposed), false);
+        const u64 merged_span = probe.end - probe.begin;
+        if (merged_span > std::numeric_limits<u32>::max()) {
+            throw Shader::RuntimeError{"native compute merged buffer span {:#x} is not u32",
+                                       merged_span};
+        }
+    }
     // The synchronized-range tables hold Buffer pointers and ids that this may move or reuse.
     nx2_synced_ranges.fill({});
     nx2_synced_vertex_buffers.fill({});
-    DAddr device_addr_end = Common::AlignUp(device_addr + wanted_size, CACHING_PAGESIZE);
-    device_addr = Common::AlignDown(device_addr, CACHING_PAGESIZE);
     wanted_size = static_cast<u32>(device_addr_end - device_addr);
     const OverlapResult overlap = ResolveOverlaps(device_addr, wanted_size);
     const u32 size = static_cast<u32>(overlap.end - overlap.begin);
@@ -3002,8 +3036,10 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
     auto* const trace = diagnostic_target ? diag::current : nullptr;
     const auto descriptor = ReadStorageBufferDescriptor(*gpu_memory, ssbo_addr, dlss_dispatch);
     const GPUVAddr gpu_addr = descriptor[0];
-    if (trace)
+    if (trace) {
         trace->pointer = gpu_addr;
+        trace->declared_word = descriptor[1];
+    }
 
     if (gpu_addr == 0) {
         if (trace)

@@ -86,6 +86,7 @@ struct Record {
     std::optional<u64> indirect_holder;
     BindingState binding_state{BindingState::NotObserved};
     std::optional<u64> pointer;
+    std::optional<u64> declared_word;
     std::optional<u64> layout_size;
     std::optional<u32> selected_size, alignment, logical_size, physical_size;
     std::optional<u64> aligned_gpu, device_address, descriptor_offset;

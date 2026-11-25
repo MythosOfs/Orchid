@@ -17,6 +17,7 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "video_core/engines/dlss_dispatch_chain.h"
+#include "video_core/engines/dlss_dispatch_trace.h"
 #include "video_core/engines/engine_interface.h"
 #include "video_core/engines/engine_upload.h"
 #include "video_core/macro.h"
@@ -244,7 +245,14 @@ public:
 
     bool IsNativeMode() const { return native_mode; }
     bool IsDlssDispatch() const { return native_mode && dlss_dispatch_chain.active; }
-    void NoteComputeProgram(u64 native_key) { dlss_dispatch_chain.NoteProgram(native_key); }
+    void NoteComputeProgram(u64 native_key, bool cache_hit = false) {
+        dlss_dispatch_chain.NoteProgram(native_key);
+        dlss_trace.NoteProgram(native_key, cache_hit);
+    }
+    bool DlssTraceEnabled() const { return dlss_trace.Enabled(); }
+    void NoteDlssTraceSsbo(DlssDispatchTrace::SsboRecord record) {
+        dlss_trace.NoteSsbo(record);
+    }
 
     /// GPU thread split with macros on its front half (gpu_split.h, EDEN_NX2_SPLIT=2), called by
     /// the front instead of CallMethod for native compute engines: runs their macros and macro
@@ -280,6 +288,7 @@ private:
     GPUVAddr dlss_motion_color{};
     std::array<f32, 2> dlss_jitter{};
     DlssDispatchChain dlss_dispatch_chain;
+    DlssDispatchTrace dlss_trace;
     bool ProcessNativeMethod(Core::System& system, u32 method, u32 argument, bool is_last_call);
     NativeQmdScheduler native_qmd;
     std::array<u32, 0xc00>* native_data_ram{};

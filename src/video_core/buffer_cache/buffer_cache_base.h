@@ -607,7 +607,8 @@ private:
 
     void SynchronizeBufferWrites(Buffer& buffer);
 
-    [[nodiscard]] OverlapResult ResolveOverlaps(DAddr device_addr, u32 wanted_size);
+    [[nodiscard]] OverlapResult ResolveOverlaps(DAddr device_addr, u32 wanted_size,
+                                                bool mutate = true);
 
     void JoinOverlap(BufferId new_buffer_id, BufferId overlap_id, bool accumulate_stream_score);
 

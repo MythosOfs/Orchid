@@ -8,6 +8,7 @@
 #include <bit>
 #include <numeric>
 #include "common/cityhash.h"
+#include "common/logging.h"
 #include "common/settings.h"
 #include "video_core/renderer_opengl/gl_compute_pipeline.h"
 #include "video_core/renderer_opengl/gl_shader_manager.h"
@@ -84,6 +85,8 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
 
 void ComputePipeline::Configure() {
     buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
+    LOG_DEBUG(Render_OpenGL, "compute SSBO mode={} validation range={:#x}", use_storage_buffers,
+              buffer_cache.runtime.GetMaxStorageBufferRange());
     buffer_cache.SetComputeUniformBufferState(info.constant_buffer_mask, &uniform_buffer_sizes);
     buffer_cache.UnbindComputeStorageBuffers();
     size_t ssbo_index{};

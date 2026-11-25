@@ -653,6 +653,8 @@ private:
                                                       bool native_compute, bool dlss_dispatch,
                                                       ComputeBindingDiagnostic::Record* trace) const;
 
+    [[nodiscard]] u64 MaxStorageBufferRange() const;
+
     [[nodiscard]] TextureBufferBinding GetTextureBufferBinding(GPUVAddr gpu_addr, u32 size,
                                                                PixelFormat format);
 

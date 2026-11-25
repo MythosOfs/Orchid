@@ -20,6 +20,8 @@ struct StorageBindingKey {
     u32 alignment;
     bool is_written;
     bool native_compute;
+    u64 native_limit;
+    bool dlss_dispatch;
 
     bool operator==(const StorageBindingKey&) const = default;
 };

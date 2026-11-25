@@ -55,6 +55,10 @@ public:
         return max_glasm_storage_buffer_blocks;
     }
 
+    u64 GetMaxStorageBufferBlockSize() const {
+        return max_storage_buffer_block_size;
+    }
+
     bool HasWarpIntrinsics() const {
         return has_warp_intrinsics;
     }
@@ -202,6 +206,7 @@ private:
     std::array<u32, Shader::MaxStageTypes> max_uniform_buffers{};
     size_t uniform_buffer_alignment{};
     size_t shader_storage_alignment{};
+    u64 max_storage_buffer_block_size{};
     u32 max_vertex_attributes{};
     u32 max_varyings{};
     u32 max_compute_shared_memory_size{};

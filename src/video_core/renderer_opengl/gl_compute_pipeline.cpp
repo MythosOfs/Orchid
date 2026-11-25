@@ -83,6 +83,7 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
 }
 
 void ComputePipeline::Configure() {
+    buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
     buffer_cache.SetComputeUniformBufferState(info.constant_buffer_mask, &uniform_buffer_sizes);
     buffer_cache.UnbindComputeStorageBuffers();
     size_t ssbo_index{};
@@ -202,7 +203,6 @@ void ComputePipeline::Configure() {
 
     buffer_cache.UpdateComputeBuffers();
 
-    buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
     buffer_cache.runtime.SetImagePointers(textures.data(), images.data());
     buffer_cache.BindHostComputeBuffers();
     if (buffer_cache.any_buffer_uploaded) {

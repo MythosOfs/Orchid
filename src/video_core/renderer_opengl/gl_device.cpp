@@ -199,6 +199,11 @@ Device::Device(Core::Frontend::EmuWindow& emu_window) {
     max_uniform_buffers = BuildMaxUniformBuffers();
     uniform_buffer_alignment = GetInteger<size_t>(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT);
     shader_storage_alignment = GetInteger<size_t>(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT);
+    {
+        GLint64 max_block_size{};
+        glGetInteger64v(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &max_block_size);
+        max_storage_buffer_block_size = static_cast<u64>(max_block_size);
+    }
     max_vertex_attributes = GetInteger<u32>(GL_MAX_VERTEX_ATTRIBS);
     max_varyings = GetInteger<u32>(GL_MAX_VARYING_VECTORS);
     max_compute_shared_memory_size = GetInteger<u32>(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE);

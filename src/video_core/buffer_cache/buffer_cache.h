@@ -3025,6 +3025,10 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
         .alignment = runtime.GetStorageBufferAlignment(),
         .is_written = is_written,
         .native_compute = native_compute,
+        .native_limit = native_compute ? (std::min)(MaxStorageBufferRange(),
+                                                  u64{std::numeric_limits<u32>::max()})
+                                       : u64{0},
+        .dlss_dispatch = dlss_dispatch,
     };
     if (const Binding* const cached = storage_bindings.Find(key)) {
         return *cached;
@@ -3033,6 +3037,14 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
                                                         native_compute, dlss_dispatch, nullptr);
     storage_bindings.Insert(key, binding);
     return binding;
+}
+
+template <class P>
+u64 BufferCache<P>::MaxStorageBufferRange() const {
+    if constexpr (requires { runtime.GetMaxStorageBufferRange(); }) {
+        return static_cast<u64>(runtime.GetMaxStorageBufferRange());
+    }
+    return std::numeric_limits<u32>::max();
 }
 
 template <class P>
@@ -3056,10 +3068,8 @@ Binding BufferCache<P>::ResolveStorageBufferBinding(
     const u32 alignment = runtime.GetStorageBufferAlignment();
     const GPUVAddr aligned_gpu_addr = Common::AlignDown(gpu_addr, alignment);
     const u64 aligned_offset = gpu_addr - aligned_gpu_addr;
-    u64 max_range = std::numeric_limits<u32>::max();
-    if constexpr (requires { runtime.GetMaxStorageBufferRange(); }) {
-        max_range = static_cast<u64>(runtime.GetMaxStorageBufferRange());
-    }
+    const u64 max_range =
+        (std::min)(u64{std::numeric_limits<u32>::max()}, MaxStorageBufferRange());
     if (native_compute && aligned_offset + u64{limit} > max_range) {
         throw Shader::RuntimeError{"native compute storage range {:#x} exceeds backend limit {:#x}",
                                    aligned_offset + u64{limit}, max_range};

@@ -209,7 +209,7 @@ public:
     }
 
     u64 GetMaxStorageBufferRange() const {
-        return use_storage_buffers ? u64{std::numeric_limits<u32>::max()}
+        return use_storage_buffers ? device.GetMaxStorageBufferBlockSize()
                                    : u64{std::numeric_limits<GLsizei>::max()};
     }
 

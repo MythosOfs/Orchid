@@ -343,6 +343,24 @@ TEST_CASE("BufferCache: storage bindings follow device remaps and guest descript
                     Shader::RuntimeError);
     address_space.Write<u64>(glasm_descriptor + 8, glasm_limit);
     CHECK(cache->StorageBufferBinding(glasm_descriptor, 0, true, true, false).size == glasm_limit);
+
+    constexpr u64 mode_extent = 192 * 1024 * 1024;
+    address_space.Write<u64>(big_descriptor + 8, mode_extent);
+    runtime.storage_buffer_range = std::numeric_limits<u32>::max();
+    CHECK(cache->StorageBufferBinding(big_descriptor, 0, true, true, false).size == mode_extent);
+    runtime.storage_buffer_range = big_limit;
+    CHECK_THROWS_AS(cache->StorageBufferBinding(big_descriptor, 0, true, true, false),
+                    Shader::RuntimeError);
+    runtime.storage_buffer_range = std::numeric_limits<u32>::max();
+    CHECK(cache->StorageBufferBinding(big_descriptor, 0, true, true, false).size == mode_extent);
+
+    constexpr u64 small_extent = 96 * 1024 * 1024;
+    address_space.Write<u64>(big_descriptor + 8, small_extent);
+    runtime.storage_buffer_range = big_limit;
+    CHECK(cache->StorageBufferBinding(big_descriptor, 0, true, true, false).size == small_extent);
+    runtime.storage_buffer_range = std::numeric_limits<u32>::max();
+    CHECK(cache->StorageBufferBinding(big_descriptor, 0, true, true, false).size == small_extent);
+    runtime.storage_buffer_range = big_limit;
 }
 
 TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",

@@ -120,6 +120,10 @@ restart and program switching are currently unavailable for these launches.
 | Kirby and the Forgotten Land – Nintendo Switch 2 Edition + Star-Crossed World | 60 | Playable; reported 100 % completion on v0.12.0 (Windows, Vulkan, NVIDIA) |
 | Kirby Air Riders |DO NOT PLAY MOST LIKELY CRASHES YOUR PC 30 SECONDS IN A RACE|
 
+### Known issues
+
+- Native compute storage and DLSS dispatch tracing are validated on CPU tests and diagnostics only so far. No NVIDIA GLASM same-runtime mixed test or delayed-setter control has run on real hardware, and a full DLSS dispatch sequence was not demonstrated in the tested real-game scenes: Fortune's Weave showed only output evidence and Star Fox never produced the expected program keys in the tested run. On AMD radeonsi, only the normal GLSL SSBO configuration is observed (3774 configure records; gameplay stopped on a memory assertion). The OpenGL mode checker passed its CPU fixtures and a negative control, and Mario Tennis Fever rendered visibly correct models and arena at 1x in the A/B run on the pre-rebase build. Real DLSS behavior in games is not yet confirmed.
+
 ## Showcase
 
 Community-reported playthrough highlights on current releases.
@@ -235,6 +239,14 @@ source and author in its message.
   [atmanli/Lichii](https://github.com/atmanli/Lichii) (Luke Evanson),
   [gamehhh7/Lichii](https://github.com/gamehhh7/Lichii) (SmileyTatsu) and
   [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (zortos293).
+- Fork scan of 2026-11-21, native compute storage binding safeguards and the opt-in DLSS
+  dispatch trace; each commit names its source:
+  [zortos293/Eglantine](https://github.com/zortos293/Eglantine) (Zortos, bindless handle words
+  read from the host-aligned storage base [e0a04ce8bb](https://github.com/zortos293/Eglantine/commit/e0a04ce8bbeb33408679d8bc3e3e7b44c5b34c14),
+  tracker rules and pass fingerprints b9d6b4a71e and 2c1314aa04),
+  [gamehhh7/Lichii](https://github.com/gamehhh7/Lichii) (SmileyTatsu,
+  [1dda300da0](https://github.com/gamehhh7/Lichii/commit/1dda300da0), derived from rdenno's
+  8820bb79aa relanded upstream), Duck912 (skipped-dispatch launch bound 85001681e0).
 - Fork scan of 2026-11-21, texture lifetime and guest memory fixes (unregistering and writing back
   images through their own GPU address space, scratch allocation recovery, sparse segments that
   no longer translate, clear coverage, targets padded to whole GOBs, guest memory span checks,

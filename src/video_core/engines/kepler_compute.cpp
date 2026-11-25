@@ -555,6 +555,7 @@ bool KeplerCompute::DispatchNativeCompute(const NativeQmdScheduler::Descriptor& 
     }
     if (!launch_description.block_dim_x || !launch_description.block_dim_y || !launch_description.block_dim_z)
         return false;
+    dlss_dispatch_chain.NoteDispatch();
     try {
         rasterizer->DispatchCompute();
     } catch (const Shader::Exception& error) {

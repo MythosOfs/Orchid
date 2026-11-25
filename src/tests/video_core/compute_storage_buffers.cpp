@@ -48,6 +48,20 @@ TEST_CASE("Native storage mapped prefix joins adjacent virtual segments and stop
     CHECK(StorageBufferMappedPrefix(base + 0x80, 0x10c0, unaligned) == 0x10c0U);
 }
 
+TEST_CASE("Aligned storage ranges stay representable and inside the backend limit",
+          "[video_core][compute_storage]") {
+    using VideoCommon::StorageBufferAlignedSize;
+    constexpr u64 mib128 = 128ULL * 1024 * 1024;
+    constexpr u64 u32_max = std::numeric_limits<u32>::max();
+    CHECK(StorageBufferAlignedSize(0, 256ULL * 1024 * 1024, mib128) == mib128);
+    CHECK(StorageBufferAlignedSize(8, 0xfffffff8ULL, mib128) == mib128);
+    CHECK(StorageBufferAlignedSize(8, 0xfffffff8ULL, u32_max) == u32_max);
+    CHECK(StorageBufferAlignedSize(0xf8, 0xfffffff8ULL, u32_max) == u32_max);
+    CHECK(StorageBufferAlignedSize(0, 512, mib128) == 512U);
+    CHECK(StorageBufferAlignedSize(8, 512, mib128) == 520U);
+    CHECK(StorageBufferAlignedSize(0, 0, mib128) == 0U);
+}
+
 TEST_CASE("Compute storage bindings cover every shader descriptor and mask bit",
           "[video_core][compute_storage]") {
     using State = VideoCommon::BufferCacheChannelInfo;

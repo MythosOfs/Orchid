@@ -8,6 +8,7 @@
 #include <cstring>
 #include <functional>
 #include <future>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <thread>
@@ -20,8 +21,10 @@
 #include "core/hle/kernel/k_page_table.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/memory.h"
+#include "shader_recompiler/exception.h"
 #include "video_core/buffer_cache/buffer_cache.h"
 #include "video_core/buffer_cache/memory_tracker_base.h"
+#include "video_core/engines/kepler_compute.h"
 #include "video_core/gpu.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
 #include "video_core/memory_manager.h"
@@ -56,6 +59,10 @@ struct FixtureRuntime {
     u32 GetStorageBufferAlignment() const {
         return 256;
     }
+    u64 GetMaxStorageBufferRange() const {
+        return storage_buffer_range;
+    }
+    u64 storage_buffer_range{std::numeric_limits<u32>::max()};
     bool out_of_bounds{};
     std::vector<std::pair<u64, u64>> copied;
     struct DeferredStage {
@@ -174,7 +181,13 @@ struct NativeFixtureCache : VideoCommon::BufferCache<FixtureParams> {
 struct BindingRasterizer : Null::RasterizerNull {
     using Null::RasterizerNull::RasterizerNull;
     std::function<void()> on_mapping_change;
+    std::function<void()> on_dispatch;
 
+    void DispatchCompute() override {
+        if (on_dispatch) {
+            on_dispatch();
+        }
+    }
     void ModifyGPUMemory(size_t, GPUVAddr, u64) override {
         if (on_mapping_change) {
             on_mapping_change();
@@ -258,6 +271,132 @@ TEST_CASE("BufferCache: storage bindings follow device remaps and guest descript
     address_space.Write<u64>(descriptor + 8, 2 * page);
     CHECK(native().size == 2 * page);
     CHECK(native().physical_size == page);
+
+    const auto native_ro = [&] {
+        return cache->StorageBufferBinding(descriptor, 0, false, true, false);
+    };
+    address_space.Write<u64>(descriptor + 8, 512);
+    CHECK(native_ro().size == 512);
+    CHECK(cache->StorageBufferBinding(descriptor, 0, false).size == 0x1000U);
+    address_space.Write<u64>(descriptor + 8, 2 * page);
+
+    // Unmap writes entries before kinds: the callback sees an unmapped page with the old extent.
+    std::optional<VideoCommon::Binding> unmapped_dlss, unmapped_native;
+    rasterizer.on_mapping_change = [&] {
+        CHECK_FALSE(address_space.StableMappingGeneration().has_value());
+        unmapped_dlss = dlss();
+        unmapped_native = native();
+    };
+    address_space.Unmap(target + page, page);
+    REQUIRE(unmapped_dlss.has_value());
+    CHECK(unmapped_dlss->size == page);
+    CHECK(unmapped_dlss->physical_size == page);
+    REQUIRE(unmapped_native.has_value());
+    CHECK(unmapped_native->size == page);
+    CHECK(unmapped_native->physical_size == page);
+    rasterizer.on_mapping_change = nullptr;
+    CHECK(dlss().size == page);
+    CHECK(dlss().physical_size == page);
+    CHECK(native().size == page);
+    CHECK(native().physical_size == page);
+
+    constexpr GPUVAddr big_descriptor = 0x700000, big_target = 0x800000;
+    constexpr u64 big_extent = 256 * 1024 * 1024, big_limit = 128 * 1024 * 1024;
+    address_space.Map(big_descriptor, device + 0x58000, page, Tegra::PTEKind::PITCH, big_pages);
+    address_space.Map(big_target, device + 0x80000, big_extent, Tegra::PTEKind::PITCH, big_pages);
+    address_space.Write<u64>(big_descriptor, big_target);
+    address_space.Write<u64>(big_descriptor + 8, big_extent);
+    runtime.storage_buffer_range = big_limit;
+    const auto big_binding = cache->StorageBufferBinding(big_descriptor, 0, true, true, false);
+    CHECK(big_binding.size == big_limit);
+    CHECK(big_binding.physical_size == big_limit);
+    const auto big_ro = cache->StorageBufferBinding(big_descriptor, 0, false, true, false);
+    CHECK(big_ro.size == big_limit);
+}
+
+TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
+          "[video_core][buffer_cache][storage_binding]") {
+    const bool old_multi_core = Settings::values.use_multi_core.GetValue();
+    SCOPE_EXIT { Settings::values.use_multi_core.SetValue(old_multi_core); };
+    Settings::values.use_multi_core.SetValue(false);
+    Core::System system;
+    system.Initialize();
+    Kernel::KProcess process(system.Kernel());
+    SCOPE_EXIT { system.Kernel().UnregisterKernelObject(&process); };
+    auto& cpu = process.GetMemory();
+    auto& table = process.GetPageTable().GetImpl();
+    table.Resize(32, 12);
+    cpu.SetCurrentPageTable(process);
+    constexpr u64 phys = 0x80000, guest = 0x200000, device = 0x100000;
+    constexpr u64 extent = 0x60000;
+    system.DeviceMemory().buffer.ClearBackingRegion(phys, extent, 0);
+    cpu.MapMemoryRegion(table, Common::ProcessAddress{guest}, extent,
+                        Common::PhysicalAddress{Core::DramMemoryMap::Base + phys},
+                        Common::MemoryPermission::ReadWrite, false);
+    Tegra::MaxwellDeviceMemoryManager manager(system.DeviceMemory());
+    manager.Map(device, guest, extent, manager.RegisterProcess(&cpu));
+    Tegra::GPU gpu(system, false, false);
+    BindingRasterizer rasterizer(gpu);
+    Tegra::MemoryManager address_space(system, manager);
+    address_space.BindRasterizer(&rasterizer);
+
+    Tegra::MacroEngine macro{false};
+    Tegra::Engines::KeplerCompute kepler(address_space);
+    kepler.BindRasterizer(&rasterizer);
+    kepler.SetNativeMacroMode(&macro, {});
+    CHECK_FALSE(kepler.IsDlssDispatch());
+
+    constexpr GPUVAddr qmd_address = 0x500000;
+    address_space.Map(qmd_address, device + 0x40000, 0x1000, Tegra::PTEKind::PITCH, false);
+    Tegra::NativeQmdScheduler::Descriptor qmd{};
+    qmd[12] = 1;
+    qmd[13] = 1;
+    qmd[14] = 1;
+    qmd[18] = (1U << 16) | 0x30;
+    qmd[19] = (1U << 16) | 1;
+    kepler.CallMethod(system, 0xad, u32(qmd_address >> 8), true);
+    const auto launch = [&] {
+        address_space.WriteBlockUnsafe(qmd_address, qmd.data(), sizeof(qmd));
+        kepler.CallMethod(system, 0xb0, 3, true);
+    };
+
+    SECTION("the first dispatch after the output pass ends the chain") {
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x4cbf6eff32525aecULL); };
+        launch();
+        CHECK(kepler.IsDlssDispatch());
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x14b4222bbe23abeeULL); };
+        launch();
+        CHECK(kepler.IsDlssDispatch());
+        rasterizer.on_dispatch = nullptr;
+        launch();
+        CHECK_FALSE(kepler.IsDlssDispatch());
+    }
+
+    SECTION("launches whose shader is rejected still count toward the bound") {
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x4cbf6eff32525aecULL); };
+        launch();
+        REQUIRE(kepler.IsDlssDispatch());
+        rasterizer.on_dispatch = [] { throw Shader::RuntimeError{"rejected"}; };
+        for (u32 i = 0; i < 64; ++i) {
+            launch();
+        }
+        CHECK(kepler.IsDlssDispatch());
+        launch();
+        CHECK_FALSE(kepler.IsDlssDispatch());
+    }
+
+    SECTION("launches without a shader program still count toward the bound") {
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x4cbf6eff32525aecULL); };
+        launch();
+        REQUIRE(kepler.IsDlssDispatch());
+        rasterizer.on_dispatch = nullptr;
+        for (u32 i = 0; i < 64; ++i) {
+            launch();
+        }
+        CHECK(kepler.IsDlssDispatch());
+        launch();
+        CHECK_FALSE(kepler.IsDlssDispatch());
+    }
 }
 
 TEST_CASE("BufferCache: readback spanning separate buffers", "[video_core][buffer_cache]") {

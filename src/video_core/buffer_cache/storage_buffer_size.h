@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <span>
 #include <utility>
 #include "common/common_types.h"
@@ -35,6 +36,11 @@ namespace VideoCommon {
         mapped += static_cast<u32>(length);
     }
     return mapped;
+}
+
+[[nodiscard]] constexpr u32 StorageBufferAlignedSize(u64 offset, u64 size, u64 limit) {
+    const u64 cap = (std::min)(limit, u64{std::numeric_limits<u32>::max()});
+    return static_cast<u32>((std::min)(offset + size, cap));
 }
 
 } // namespace VideoCommon

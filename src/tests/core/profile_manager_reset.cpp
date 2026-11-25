@@ -127,6 +127,13 @@ TEST_CASE("Home Menu startup accepts the CLI flag and existing shortcut", "[home
     CHECK(legacy.launch_qlaunch);
     CHECK(legacy.fullscreen);
     CHECK(legacy.filepath.empty());
+
+    char user_flag[] = "-u";
+    char user[] = "0";
+    std::array<char*, 4> subsequent{app, user_flag, user, nullptr};
+    const auto next = Core::ParseLaunchParams(system, 3, subsequent.data(), nullptr);
+    CHECK(next.selected_user == 0);
+    CHECK_FALSE(next.launch_qlaunch);
 }
 
 }

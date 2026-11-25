@@ -49,7 +49,9 @@ LaunchParams ParseLaunchParams(Core::System& system, int argc, char *argv[], wch
         // clang-format on
     };
 
-    optind = 1;
+    constexpr char short_options[] = "d::c:fhg:m:p:u:vi:nsx";
+    optind = 0;
+    getopt_long(1, argv, short_options, long_options, &option_index);
     while (optind < argc) {
         if (std::string_view{argv[optind]} == "-qlaunch") {
             p.launch_qlaunch = true;
@@ -58,7 +60,7 @@ LaunchParams ParseLaunchParams(Core::System& system, int argc, char *argv[], wch
         }
         // -d takes an optional port (-d1234); -i takes the input profile. Both read optarg but
         // were declared without arguments, so optarg was null and they crashed.
-        if (int arg = getopt_long(argc, argv, "d::c:fhg:m:p:u:vi:nsx", long_options, &option_index); arg != -1) {
+        if (int arg = getopt_long(argc, argv, short_options, long_options, &option_index); arg != -1) {
             switch (char(arg)) {
             case 'd':
                 p.override_gdb_port = optarg != nullptr
@@ -164,7 +166,7 @@ LaunchParams ParseLaunchParams(Core::System& system, int argc, char *argv[], wch
                 ++optind;
                 break;
             }
-        } else {
+        } else if (optind < argc) {
             if (strcmp(argv[optind], "-hlaunch") == 0) {
                 p.launch_hlaunch = true;
             } else if (strcmp(argv[optind], "-setup") == 0) {

@@ -1,0 +1,33 @@
+body:
+  - type: checkboxes
+    id: duplicate-search
+    attributes:
+      label: Is there an existing discussion for this?
+      description: Search existing discussions before posting. Upvote an existing idea if it matches yours.
+      options:
+        - label: I have searched for duplicates
+          required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: What should Orchid be able to do?
+      description: Describe the feature or improvement you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: What problem would this solve?
+      description: Explain why the change would be useful.
+    validations:
+      required: true
+  - type: input
+    id: affected-games-platforms
+    attributes:
+      label: Affected games or platforms
+      description: List any games or platforms this idea applies to.
+  - type: textarea
+    id: existing-implementation
+    attributes:
+      label: Existing implementation
+      description: If a fork or another emulator already has this feature, link to it here.

@@ -1,0 +1,36 @@
+body:
+  - type: markdown
+    attributes:
+      value: If you can reproduce a bug, please file a [bug report](https://github.com/MythosOfs/Orchid/issues/new?template=bug_report.yml) with the steps to reproduce it.
+  - type: input
+    id: orchid-version
+    attributes:
+      label: Orchid version
+      description: Enter the release version or commit you are using.
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system
+      description: Include the operating system version or Linux distribution.
+  - type: input
+    id: gpu-driver
+    attributes:
+      label: GPU and driver
+      description: Include the GPU model and driver version.
+  - type: input
+    id: game
+    attributes:
+      label: Game
+      description: Include the game title and version if your question is about a specific game.
+  - type: textarea
+    id: question
+    attributes:
+      label: What would you like help with?
+      description: Describe the question and what you have tried so far.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: Attach a log if available. See [how to find Orchid logs](https://github.com/MythosOfs/Orchid/blob/main/docs/user/HowToAccessLogs.md).

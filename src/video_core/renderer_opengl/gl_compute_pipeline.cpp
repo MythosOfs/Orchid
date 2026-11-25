@@ -6,6 +6,7 @@
 
 #include <cstring>
 #include <bit>
+#include <cstdlib>
 #include <numeric>
 #include "common/cityhash.h"
 #include "common/logging.h"
@@ -85,8 +86,17 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
 
 void ComputePipeline::Configure() {
     buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
-    LOG_DEBUG(Render_OpenGL, "compute SSBO mode={} validation range={:#x}", use_storage_buffers,
-              buffer_cache.runtime.GetMaxStorageBufferRange());
+    static const bool trace_mode = std::getenv("EDEN_NX2_TRACE_GL_SSBO") != nullptr;
+    if (trace_mode) {
+        const bool runtime_mode = buffer_cache.runtime.UseStorageBuffers();
+        const u64 range = buffer_cache.runtime.GetMaxStorageBufferRange();
+        if (runtime_mode != last_traced_mode || range != last_traced_range) {
+            LOG_INFO(Render_OpenGL, "compute SSBO mode={} effective range={:#x}", runtime_mode,
+                     range);
+            last_traced_mode = runtime_mode;
+            last_traced_range = range;
+        }
+    }
     buffer_cache.SetComputeUniformBufferState(info.constant_buffer_mask, &uniform_buffer_sizes);
     buffer_cache.UnbindComputeStorageBuffers();
     size_t ssbo_index{};

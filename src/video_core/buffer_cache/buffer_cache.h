@@ -733,9 +733,17 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
                                  (matching && !trace->duplicate_descriptor));
     if (dlss_trace) {
         const auto& record = chain_scope ? chain_record : *trace;
+        const Binding& bound = channel_state->compute_storage_buffers[ssbo_index];
+        std::optional<u64> next_word;
+        if (const auto* const word = gpu_memory->GetPointer(ssbo_addr + 8)) {
+            u64 value;
+            std::memcpy(&value, word, sizeof(value));
+            next_word = value;
+        }
         kepler_compute->NoteDlssTraceSsbo({static_cast<u32>(ssbo_index), cbuf_index, cbuf_offset,
-                                           record.declared_word.value_or(0),
-                                           record.selected_size.value_or(0),
+                                           record.declared_word.value_or(0), next_word,
+                                           bound.physical_size ? bound.physical_size : bound.size,
+                                           bound.buffer_id != NULL_BUFFER_ID,
                                            kepler_compute->IsNativeMode(),
                                            kepler_compute->IsDlssDispatch()});
     }

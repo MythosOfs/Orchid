@@ -24,6 +24,7 @@
 #include "shader_recompiler/exception.h"
 #include "video_core/buffer_cache/buffer_cache.h"
 #include "video_core/buffer_cache/memory_tracker_base.h"
+#include "video_core/compute_binding_diagnostic.h"
 #include "video_core/control/channel_state.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/gpu.h"
@@ -504,6 +505,60 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
         constexpr u64 base = 0x80000000;
         CHECK(cache->Obtain(base + 0x1000, std::numeric_limits<u32>::max()));
+    }
+
+    SECTION("the DLSS trace records each bound SSBO with its resolved range and raw word") {
+        FixtureRuntime runtime;
+        auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+        cache->SetKeplerCompute(&kepler);
+        cache->SetAddressSpace(address_space);
+        cache->EnableChannelState();
+        kepler.DlssTrace().SetTestEnabled(true);
+        constexpr GPUVAddr desc = 0x700000, target = 0x800000;
+        address_space.Map(desc, device + 0x58000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Map(target, device + 0x80000, 0x8000, Tegra::PTEKind::PITCH, false);
+        address_space.Write<u64>(desc, target);
+        address_space.Write<u64>(desc + 8, 0x1234);
+        qmd[20] = 1;
+        qmd[32] = u32(desc);
+        qmd[33] = (u32(desc >> 32) & 0xff) | (((0x1000 >> 4) & 0x1fff) << 19);
+        const auto bind = [&] { cache->BindComputeStorageBuffer(0, 0, 0, true); };
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x4cbf6eff32525aecULL); };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            bind();
+            kepler.NoteComputeProgram(0x14b4222bbe23abeeULL);
+        };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            namespace diag = VideoCommon::ComputeBindingDiagnostic;
+            diag::Record rec;
+            rec.phase = diag::Phase::Dispatch;
+            diag::Scope scope{rec};
+            kepler.launch_description.const_buffer_enable_mask.Assign(0);
+            cache->BindComputeStorageBuffer(0, 0, 0x50, true);
+            kepler.launch_description.const_buffer_enable_mask.Assign(1);
+            cache->BindComputeStorageBuffer(0, 0, 0x50, true);
+        };
+        launch();
+
+        const auto& entries = kepler.DlssTrace().Entries();
+        REQUIRE(entries.size() == 3);
+        REQUIRE(entries[1].ssbo_count == 1);
+        const auto& record = entries[1].ssbos[0];
+        CHECK(record.ssbo_index == 0);
+        CHECK(record.declared_word == 0);
+        REQUIRE(record.next_word.has_value());
+        CHECK(*record.next_word == 0x1234);
+        CHECK(record.chosen_size == 0x8000);
+        CHECK(record.bound);
+        CHECK(record.native_compute);
+        CHECK(record.dlss_dispatch);
+        CHECK(entries[2].Ordinary());
+        REQUIRE(entries[2].ssbo_count == 1);
+        CHECK(entries[2].ssbos[0].declared_word == 0);
+        CHECK_FALSE(entries[2].ssbos[0].bound);
+        CHECK_FALSE(entries[2].ssbos[0].dlss_dispatch);
     }
 
     SECTION("launches without a shader program still count toward the bound") {

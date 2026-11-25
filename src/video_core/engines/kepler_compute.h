@@ -250,6 +250,7 @@ public:
         dlss_trace.NoteProgram(native_key, cache_hit);
     }
     bool DlssTraceEnabled() const { return dlss_trace.Enabled(); }
+    DlssDispatchTrace& DlssTrace() { return dlss_trace; }
     void NoteDlssTraceSsbo(DlssDispatchTrace::SsboRecord record) {
         dlss_trace.NoteSsbo(record);
     }

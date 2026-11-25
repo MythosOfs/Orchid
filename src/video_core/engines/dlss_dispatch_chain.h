@@ -39,9 +39,9 @@ public:
     static constexpr u64 fortunes_weave_output_key = 0x14b4222bbe23abeeULL;
     static constexpr u64 star_fox_prepass_key = 0xd686ca0b9fad9e6dULL;
     static constexpr u64 star_fox_output_key = 0x7d3764ff101bec27ULL;
+    static constexpr u32 max_dispatches = 64;
 
 private:
-    static constexpr u32 max_dispatches = 64;
 
     bool finished{};
     u64 output_key{};

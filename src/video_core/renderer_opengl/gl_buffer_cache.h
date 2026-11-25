@@ -192,6 +192,10 @@ public:
         use_storage_buffers = use_storage_buffers_;
     }
 
+    [[nodiscard]] bool UseStorageBuffers() const {
+        return use_storage_buffers;
+    }
+
     u64 GetDeviceLocalMemory() const {
         return device_access_memory;
     }

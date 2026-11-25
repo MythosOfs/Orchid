@@ -62,9 +62,11 @@ struct FixtureRuntime {
         return 256;
     }
     u64 GetMaxStorageBufferRange() const {
+        ++range_queries;
         return storage_buffer_range;
     }
     u64 storage_buffer_range{std::numeric_limits<u32>::max()};
+    mutable u64 range_queries{};
     bool out_of_bounds{};
     std::vector<std::pair<u64, u64>> copied;
     struct DeferredStage {
@@ -559,6 +561,85 @@ TEST_CASE("KeplerCompute: DLSS dispatch chain ticks on the native launch path",
         CHECK(entries[2].ssbos[0].declared_word == 0);
         CHECK_FALSE(entries[2].ssbos[0].bound);
         CHECK_FALSE(entries[2].ssbos[0].dlss_dispatch);
+    }
+
+    SECTION("the trace reports a following word only when its guest pages are mapped") {
+        FixtureRuntime runtime;
+        auto cache = std::make_unique<NativeFixtureCache>(manager, runtime);
+        cache->SetKeplerCompute(&kepler);
+        cache->SetAddressSpace(address_space);
+        cache->EnableChannelState();
+        kepler.DlssTrace().SetTestEnabled(true);
+        constexpr GPUVAddr desc = 0x700000, desc2 = 0x900000, target = 0x800000;
+        address_space.Map(desc, device + 0x58000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Map(desc + 0x1000, device + 0x59000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Map(desc2, device + 0x5a000, 0x1000, Tegra::PTEKind::PITCH, false);
+        address_space.Map(target, device + 0x41000, 0x8000, Tegra::PTEKind::PITCH, false);
+        address_space.Write<u64>(desc + 0x50, target);
+        address_space.Write<u64>(desc + 0x58, 0x1357);
+        address_space.Write<u64>(desc + 0xfc0, target);
+        address_space.Write<u64>(desc + 0xfc8, 0x2468);
+        address_space.Write<u64>(desc + 0xff4, target);
+        address_space.Write<u64>(desc + 0xffc, 0xabcd000000001234ULL);
+        address_space.Write<u64>(desc2 + 0xff4, target);
+        qmd[20] = 1;
+        qmd[32] = u32(desc);
+        qmd[33] = (u32(desc >> 32) & 0xff) | (((0x1000 >> 4) & 0x1fff) << 19);
+        rasterizer.on_dispatch = [&] { kepler.NoteComputeProgram(0x4cbf6eff32525aecULL); };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            cache->BindComputeStorageBuffer(0, 0, 0xff4, true);
+            kepler.NoteComputeProgram(0x14b4222bbe23abeeULL);
+        };
+        launch();
+        rasterizer.on_dispatch = [&] {
+            namespace diag = VideoCommon::ComputeBindingDiagnostic;
+            cache->BindComputeStorageBuffer(0, 0, 0xfc0, true);
+            cache->BindComputeStorageBuffer(0, 0, 0xfc0, true);
+            diag::Record rec;
+            rec.phase = diag::Phase::Dispatch;
+            {
+                diag::Scope scope{rec};
+                kepler.launch_description.const_buffer_enable_mask.Assign(0);
+                cache->BindComputeStorageBuffer(2, 0, 0x50, true);
+                kepler.launch_description.const_buffer_enable_mask.Assign(1);
+                cache->BindComputeStorageBuffer(2, 0, 0x50, true);
+            }
+            auto* const saved = diag::current;
+            diag::current = nullptr;
+            cache->BindComputeStorageBuffer(3, 0, 0x50, true);
+            diag::current = saved;
+            kepler.launch_description.const_buffer_config[0].address_low = u32(desc2);
+            kepler.launch_description.const_buffer_config[0].address_high.Assign(u32(desc2 >> 32));
+            cache->BindComputeStorageBuffer(1, 0, 0xff4, true);
+        };
+        launch();
+
+        const auto& entries = kepler.DlssTrace().Entries();
+        REQUIRE(entries.size() == 3);
+        REQUIRE(entries[1].ssbo_count == 1);
+        const auto& crossing = entries[1].ssbos[0];
+        CHECK(crossing.ssbo_index == 0);
+        CHECK(crossing.cbuf_offset == 0xff4);
+        CHECK(crossing.declared_word == 0);
+        CHECK(crossing.dlss_dispatch);
+        REQUIRE(crossing.next_word.has_value());
+        CHECK(*crossing.next_word == 0xabcd000000001234ULL);
+        REQUIRE(entries[2].ssbo_count == 5);
+        CHECK(entries[2].ssbos[0].declared_word == 0x2468);
+        CHECK(entries[2].ssbos[0].next_word == 0x2468);
+        CHECK(entries[2].ssbos[1].declared_word == 0x2468);
+        CHECK(entries[2].ssbos[2].declared_word == 0);
+        CHECK(entries[2].ssbos[2].cbuf_offset == 0x50);
+        CHECK(entries[2].ssbos[3].declared_word == 0x1357);
+        const auto& unmapped = entries[2].ssbos[4];
+        CHECK(unmapped.ssbo_index == 1);
+        CHECK_FALSE(unmapped.next_word.has_value());
+        CHECK(runtime.range_queries == 10);
+        Tegra::Engines::KeplerCompute untraced_kepler(address_space);
+        untraced_kepler.launch_description.const_buffer_enable_mask.Assign(1);
+        cache->SetKeplerCompute(&untraced_kepler);
+        cache->BindComputeStorageBuffer(3, 0, 0x50, true);
     }
 
     SECTION("launches without a shader program still count toward the bound") {

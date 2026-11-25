@@ -4,7 +4,6 @@
 #pragma once
 
 #include <array>
-#include <limits>
 #include <type_traits>
 
 #include "common/common_types.h"
@@ -89,8 +88,6 @@ private:
 
     u64 storage_buffer_alignment{};
     bool use_storage_buffers{};
-    bool last_traced_mode{};
-    u64 last_traced_range{std::numeric_limits<u64>::max()};
     bool writes_global_memory{};
     bool uses_local_memory{};
 

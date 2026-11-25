@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cstring>
+#include <atomic>
 #include <bit>
 #include <cstdlib>
 #include <numeric>
@@ -88,14 +89,12 @@ void ComputePipeline::Configure() {
     buffer_cache.runtime.SetEnableStorageBuffers(use_storage_buffers);
     static const bool trace_mode = std::getenv("EDEN_NX2_TRACE_GL_SSBO") != nullptr;
     if (trace_mode) {
-        const bool runtime_mode = buffer_cache.runtime.UseStorageBuffers();
-        const u64 range = buffer_cache.runtime.GetMaxStorageBufferRange();
-        if (runtime_mode != last_traced_mode || range != last_traced_range) {
-            LOG_INFO(Render_OpenGL, "compute SSBO mode={} effective range={:#x}", runtime_mode,
-                     range);
-            last_traced_mode = runtime_mode;
-            last_traced_range = range;
-        }
+        static std::atomic<u64> configure_serial{};
+        LOG_INFO(Render_OpenGL,
+                 "compute SSBO configure={} requested={} actual={} range={:#x}",
+                 configure_serial.fetch_add(1), use_storage_buffers,
+                 buffer_cache.runtime.UseStorageBuffers(),
+                 buffer_cache.runtime.GetMaxStorageBufferRange());
     }
     buffer_cache.SetComputeUniformBufferState(info.constant_buffer_mask, &uniform_buffer_sizes);
     buffer_cache.UnbindComputeStorageBuffers();

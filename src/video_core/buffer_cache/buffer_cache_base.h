@@ -500,7 +500,8 @@ protected:
     [[nodiscard]] Binding StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
                                                bool is_written, bool native_compute = false,
                                                bool dlss_dispatch = false,
-                                               bool diagnostic_target = false) const;
+                                               bool diagnostic_target = false,
+                                               bool allow_cached = false) const;
 
 private:
     /// Recycle completed readbacks on the GPU owner thread with mutex held.

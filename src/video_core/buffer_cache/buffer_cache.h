@@ -730,15 +730,14 @@ void BufferCache<P>::BindComputeStorageBuffer(size_t ssbo_index, u32 cbuf_index,
         StorageBufferBinding(ssbo_addr, cbuf_index, is_written, kepler_compute->IsNativeMode(),
                              kepler_compute->IsDlssDispatch(),
                              chain_scope.has_value() ||
-                                 (matching && !trace->duplicate_descriptor));
+                                 (matching && !trace->duplicate_descriptor),
+                             chain_scope.has_value());
     if (dlss_trace) {
         const auto& record = chain_scope ? chain_record : *trace;
         const Binding& bound = channel_state->compute_storage_buffers[ssbo_index];
         std::optional<u64> next_word;
-        if (const auto* const word = gpu_memory->GetPointer(ssbo_addr + 8)) {
-            u64 value;
-            std::memcpy(&value, word, sizeof(value));
-            next_word = value;
+        if (gpu_memory->IsFullyMappedRange(ssbo_addr + 8, sizeof(u64))) {
+            next_word = gpu_memory->Read<u64>(ssbo_addr + 8);
         }
         kepler_compute->NoteDlssTraceSsbo({static_cast<u32>(ssbo_index), cbuf_index, cbuf_offset,
                                            record.declared_word.value_or(0), next_word,
@@ -3039,7 +3038,8 @@ void BufferCache<P>::DeleteBuffer(BufferId buffer_id, bool do_not_mark) {
 template <class P>
 Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
                                              bool is_written, bool native_compute,
-                                             bool dlss_dispatch, bool diagnostic_target) const {
+                                             bool dlss_dispatch, bool diagnostic_target,
+                                             bool allow_cached) const {
     namespace diag = ComputeBindingDiagnostic;
     auto* const trace = diagnostic_target ? diag::current : nullptr;
     const auto descriptor = ReadStorageBufferDescriptor(*gpu_memory, ssbo_addr, dlss_dispatch);
@@ -3057,7 +3057,7 @@ Binding BufferCache<P>::StorageBufferBinding(GPUVAddr ssbo_addr, u32 cbuf_index,
     // The device ranges are reusable while the page table is stable. A legacy remap can
     // be inside its rasterizer callback with some pages already changed.
     const auto generation = gpu_memory->StableMappingGeneration();
-    if (trace || !generation) {
+    if ((trace && !allow_cached) || !generation) {
         return ResolveStorageBufferBinding(descriptor, cbuf_index, is_written, native_compute,
                                            dlss_dispatch, trace);
     }

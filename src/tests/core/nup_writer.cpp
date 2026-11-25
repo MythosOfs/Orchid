@@ -1829,6 +1829,8 @@ TEST_CASE("Home Menu selects native NUP programs and preserves registered conten
     content.SetSlot(FileSys::ContentProviderUnionSlot::SDMC, &sd);
     const auto registered = std::make_shared<FileSys::VectorVfsFile>();
     installed.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
+                       0, registered);
+    installed.AddEntry(FileSys::TitleType::Application, FileSys::ContentRecordType::Program,
                        legacy_id, registered);
     installed.AddEntry(FileSys::TitleType::SystemProgram, FileSys::ContentRecordType::Program,
                        system_id, registered);
@@ -1852,6 +1854,22 @@ TEST_CASE("Home Menu selects native NUP programs and preserves registered conten
     REQUIRE(file);
     const auto loader = Loader::GetLoader(system, file);
     REQUIRE(loader);
+    const auto zero_root = t.path / "ZeroId";
+    Put(zero_root / "main", "main");
+    Put(zero_root / "main.npdm", BootNpdm(0, true));
+    const auto zero_file = vfs.OpenFile((zero_root / "main").string(), FileSys::OpenMode::Read);
+    REQUIRE(zero_file);
+    const auto zero_loader = Loader::GetLoader(system, zero_file);
+    REQUIRE(zero_loader);
+    u64 zero_id = 1;
+    REQUIRE(zero_loader->ReadProgramId(zero_id) == Loader::ResultStatus::Success);
+    REQUIRE(zero_id == 0);
+    FileSys::ProgramMetadata zero_metadata;
+    REQUIRE(zero_loader->ReadProgramMetadata(zero_metadata) == Loader::ResultStatus::Success);
+    REQUIRE(zero_metadata.IsSwitch2());
+    manual.RegisterApplicationFile(*zero_loader, zero_file);
+    CHECK_FALSE(manual.GetApplicationFile(0));
+
     manual.RegisterApplicationFile(*loader, file);
     CHECK(content.ListApplicationIds() ==
           (native ? std::vector<u64>{legacy_id, edition_id} : std::vector<u64>{legacy_id}));

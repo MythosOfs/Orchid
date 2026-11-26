@@ -19,6 +19,7 @@
 #include "shader_recompiler/backend/nvn_storage_descriptor.h"
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 #include "shader_recompiler/backend/spirv/emit_spirv_instructions.h"
+#include "shader_recompiler/backend/spirv/mesh_declarations.h"
 #include "shader_recompiler/backend/spirv/spirv_emit_context.h"
 
 namespace Shader::Backend::SPIRV {
@@ -1930,13 +1931,10 @@ void EmitContext::DefineMesh(const IR::Program& program) {
     }
     // Output attribute region: groups of 32 vertices, then groups of 32 primitives, one 32-word
     // line per attribute. The map region keeps one map byte per word.
-    const u32 vertex_lines{static_cast<u32>(mesh_info.vertex_lines.size())};
-    const u32 primitive_lines{static_cast<u32>(mesh_info.primitive_lines.size())};
-    mesh_primitive_base = Common::DivCeil(mesh_info.max_vertices, 32U) * vertex_lines * 32;
-    mesh_attribute_words = (std::max)(
-        mesh_primitive_base + Common::DivCeil(mesh_info.max_primitives, 32U) * primitive_lines * 32,
-        1U);
-    mesh_map_bytes = 4 + 3 * mesh_info.max_primitives;
+    const MeshWorkgroupLayout layout{mesh_info};
+    mesh_primitive_base = static_cast<u32>(layout.primitive_base);
+    mesh_attribute_words = static_cast<u32>(layout.attribute_words);
+    mesh_map_bytes = static_cast<u32>(layout.map_words);
     mesh_shared_u32 = TypePointer(spv::StorageClass::Workgroup, U32[1]);
     mesh_attributes = DefineVariable(*this, TypeArray(U32[1], Const(mesh_attribute_words)),
                                      std::nullopt, spv::StorageClass::Workgroup);
@@ -1964,9 +1962,12 @@ void EmitContext::DefineMesh(const IR::Program& program) {
         return MeshLineTarget{variable, ~0U, false};
     };
     const auto target = [&](u32 line, bool per_primitive) -> MeshLineTarget {
-        const IR::Attribute attribute{line};
-        if (IR::IsGeneric(attribute)) {
-            const u32 index{IR::GenericAttributeIndex(attribute)};
+        const auto output = MeshOutputAttribute(IR::Attribute{line}, per_primitive);
+        if (!output) {
+            return {};
+        }
+        if (IR::IsGeneric(*output)) {
+            const u32 index{IR::GenericAttributeIndex(*output)};
             Id& variable{generics[per_primitive][index]};
             if (!Sirit::ValidId(variable)) {
                 variable = DefineVariable(
@@ -1977,10 +1978,10 @@ void EmitContext::DefineMesh(const IR::Program& program) {
                     Decorate(variable, spv::Decoration::PerPrimitiveEXT);
                 }
             }
-            return {variable, IR::GenericAttributeElement(attribute), true};
+            return {variable, IR::GenericAttributeElement(IR::Attribute{line}), true};
         }
         if (per_primitive) {
-            switch (attribute) {
+            switch (*output) {
             case IR::Attribute::PrimitiveId:
                 return per_primitive_builtin(primitive_id_output, spv::BuiltIn::PrimitiveId);
             case IR::Attribute::Layer:
@@ -1991,17 +1992,14 @@ void EmitContext::DefineMesh(const IR::Program& program) {
                 return {};
             }
         }
-        switch (attribute) {
+        switch (*output) {
         case IR::Attribute::PositionX:
-        case IR::Attribute::PositionY:
-        case IR::Attribute::PositionZ:
-        case IR::Attribute::PositionW:
             if (!Sirit::ValidId(output_position)) {
                 output_position = DefineVariable(*this, TypeArray(F32[4], vertex_count),
                                                  spv::BuiltIn::Position, spv::StorageClass::Output);
             }
             return {output_position,
-                    static_cast<u32>(attribute) - static_cast<u32>(IR::Attribute::PositionX), true};
+                    line - static_cast<u32>(IR::Attribute::PositionX), true};
         case IR::Attribute::PointSize:
             if (!Sirit::ValidId(point_size)) {
                 point_size = DefineVariable(*this, TypeArray(F32[1], vertex_count),

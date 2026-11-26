@@ -6,6 +6,8 @@
 #include <cstring>
 #include <optional>
 #include <span>
+#include <string_view>
+#include <utility>
 
 #include <catch2/catch_test_macros.hpp>
 #include <spirv/unified1/spirv.hpp11>
@@ -15,7 +17,7 @@
 #include "shader_recompiler/frontend/maxwell/structured_control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate_program.h"
 #include "shader_recompiler/host_translate_info.h"
-#include "video_core/renderer_vulkan/task_payload_limit.h"
+#include "video_core/renderer_vulkan/mesh_shader_limits.h"
 
 namespace {
 using Shader::Ampere::Instruction;
@@ -202,11 +204,110 @@ TEST_CASE("Task and mesh programs read back the output stage buffer word they wr
     }
 }
 
-TEST_CASE("Task payload declarations respect the device byte limit", "[shader][task_payload]") {
-    constexpr u32 limit = 16 * 1024;
-    CHECK_FALSE(Vulkan::TaskPayloadExceedsLimit(32, limit));
-    CHECK_FALSE(Vulkan::TaskPayloadExceedsLimit(4096, limit));
-    CHECK(Vulkan::TaskPayloadExceedsLimit(4097, limit));
-    CHECK(Vulkan::TaskPayloadExceedsLimit(6976, limit));
-    CHECK(Vulkan::TaskPayloadExceedsLimit(4096, limit - 1));
+TEST_CASE("Vulkan preflight gates module construction on task and mesh declarations",
+          "[shader][mesh_limits]") {
+    VkPhysicalDeviceMeshShaderPropertiesEXT limits{};
+    limits.maxTaskPayloadSize = 16384;
+    limits.maxTaskSharedMemorySize = 16384;
+    limits.maxTaskPayloadAndSharedMemorySize = 32768;
+    limits.maxMeshSharedMemorySize = 6908;
+    limits.maxMeshPayloadAndSharedMemorySize = 32768;
+    limits.maxMeshOutputVertices = 64;
+    limits.maxMeshOutputPrimitives = 126;
+    limits.maxMeshOutputComponents = 32;
+    limits.maxMeshOutputMemorySize = 8192;
+    limits.maxMeshPayloadAndOutputMemorySize = 65536;
+    limits.meshOutputPerVertexGranularity = 32;
+    limits.meshOutputPerPrimitiveGranularity = 32;
+
+    std::array<IR::Program, 2> programs{};
+    programs[0].stage = Shader::Stage::Task;
+    programs[0].mesh.payload_words = 6976;
+    programs[1].stage = Shader::Stage::Mesh;
+    auto& mesh = programs[1].mesh;
+    mesh.payload_words = 6976;
+    mesh.max_vertices = 64;
+    mesh.max_primitives = 126;
+    mesh.vertex_lines.push_back(static_cast<u32>(IR::Attribute::PositionX));
+    for (u32 line = 0; line < 20; ++line) {
+        mesh.vertex_lines.push_back(static_cast<u32>(IR::Attribute::Generic0X) + (line / 3) * 4 +
+                                    line % 3);
+    }
+
+    size_t module_builds{};
+    Vulkan::MeshShaderLimitViolation rejected{};
+    const auto build = [&] {
+        ++module_builds;
+        return true;
+    };
+    const auto reject = [&](size_t, Vulkan::MeshShaderLimitViolation violation) {
+        rejected = violation;
+    };
+
+    const auto task_only = std::span{programs}.first(1);
+    CHECK_FALSE(Vulkan::BuildWithMeshShaderLimits(task_only, limits, reject, build));
+    CHECK(module_builds == 0);
+    REQUIRE(rejected.name != nullptr);
+    CHECK(std::string_view{rejected.name} == "maxTaskPayloadSize");
+    CHECK(rejected.declared == 27904);
+
+    const auto mesh_only = std::span{programs}.subspan(1);
+    CHECK_FALSE(Vulkan::BuildWithMeshShaderLimits(mesh_only, limits, reject, build));
+    CHECK(module_builds == 0);
+    REQUIRE(rejected.name != nullptr);
+    CHECK(std::string_view{rejected.name} == "maxMeshPayloadAndSharedMemorySize");
+    CHECK(rejected.declared == 34812);
+
+    limits.maxMeshPayloadAndSharedMemorySize = 34812;
+    CHECK(Vulkan::BuildWithMeshShaderLimits(mesh_only, limits, reject, build));
+    CHECK(module_builds == 1);
+
+    programs[0].mesh.payload_words = 4096;
+    mesh.payload_words = 4096;
+    CHECK(Vulkan::BuildWithMeshShaderLimits(programs, limits, reject, build));
+    CHECK(module_builds == 2);
+
+    const auto check_limit = [&](u32& limit, u32 too_small, std::string_view name, u64 declared) {
+        const u32 saved = std::exchange(limit, too_small);
+        CHECK_FALSE(Vulkan::BuildWithMeshShaderLimits(programs, limits, reject, build));
+        CHECK(module_builds == 2);
+        REQUIRE(rejected.name != nullptr);
+        CHECK(std::string_view{rejected.name} == name);
+        CHECK(rejected.declared == declared);
+        limit = saved;
+    };
+    check_limit(limits.maxTaskPayloadSize, 16383, "maxTaskPayloadSize", 16384);
+    check_limit(limits.maxTaskPayloadAndSharedMemorySize, 16383,
+                "maxTaskPayloadAndSharedMemorySize", 16384);
+    check_limit(limits.maxMeshSharedMemorySize, 6907, "maxMeshSharedMemorySize", 6908);
+    check_limit(limits.maxMeshOutputVertices, 63, "maxMeshOutputVertices", 64);
+    check_limit(limits.maxMeshOutputPrimitives, 125, "maxMeshOutputPrimitives", 126);
+    check_limit(limits.maxMeshOutputComponents, 31, "maxMeshOutputComponents", 32);
+    check_limit(limits.maxMeshOutputMemorySize, 8191, "maxMeshOutputMemorySize", 8192);
+    check_limit(limits.maxMeshPayloadAndOutputMemorySize, 24575,
+                "maxMeshPayloadAndOutputMemorySize", 24576);
+
+    mesh.max_vertices = 33;
+    mesh.primitive_lines.push_back(static_cast<u32>(IR::Attribute::PrimitiveId));
+    mesh.primitive_lines.push_back(static_cast<u32>(IR::Attribute::PrimitiveId));
+    mesh.primitive_lines.push_back(static_cast<u32>(IR::Attribute::PositionX));
+    limits.maxMeshSharedMemorySize = 10000;
+    limits.maxMeshOutputComponents = 33;
+    limits.maxMeshOutputMemorySize = 8704;
+    CHECK(Vulkan::BuildWithMeshShaderLimits(mesh_only, limits, reject, build));
+    CHECK(module_builds == 3);
+    limits.maxMeshOutputMemorySize = 8703;
+    CHECK_FALSE(Vulkan::BuildWithMeshShaderLimits(mesh_only, limits, reject, build));
+    CHECK(module_builds == 3);
+    REQUIRE(rejected.name != nullptr);
+    CHECK(std::string_view{rejected.name} == "maxMeshOutputMemorySize");
+    CHECK(rejected.declared == 8704);
+
+    mesh.vertex_lines.back() = static_cast<u32>(IR::Attribute::Generic31W);
+    limits.maxMeshOutputComponents = 64;
+    CHECK_FALSE(Vulkan::BuildWithMeshShaderLimits(mesh_only, limits, reject, build));
+    CHECK(module_builds == 3);
+    REQUIRE(rejected.name != nullptr);
+    CHECK(std::string_view{rejected.name} == "maxMeshOutputComponents");
+    CHECK(rejected.declared == 128);
 }

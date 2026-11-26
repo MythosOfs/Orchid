@@ -717,8 +717,8 @@ FN_MAX_LIMIT_LIST
                features.mesh_shader.meshShader;
     }
 
-    u32 GetMaxTaskPayloadSize() const {
-        return properties.mesh_shader.maxTaskPayloadSize;
+    const VkPhysicalDeviceMeshShaderPropertiesEXT& GetMeshShaderProperties() const {
+        return properties.mesh_shader;
     }
 
     /// Returns true if the device supports VK_KHR_image_format_list.

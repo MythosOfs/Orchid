@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <type_traits>
 #include "common/container/unordered_map.h"
@@ -264,6 +265,9 @@ private:
 
     /// Declared before every thread pool, which all use it.
     ShaderReuseCache shader_reuse;
+
+    std::mutex mesh_limit_warning_mutex;
+    std::array<std::unordered_set<u64>, 2> warned_mesh_limits;
 
     Shader::Profile profile;
     Shader::HostTranslateInfo host_info;

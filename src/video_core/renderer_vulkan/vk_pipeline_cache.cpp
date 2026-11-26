@@ -36,9 +36,9 @@
 #include "video_core/memory_manager.h"
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
+#include "video_core/renderer_vulkan/mesh_shader_limits.h"
 #include "video_core/renderer_vulkan/pipeline_helper.h"
 #include "video_core/renderer_vulkan/pipeline_statistics.h"
-#include "video_core/renderer_vulkan/task_payload_limit.h"
 #include "video_core/renderer_vulkan/vertex_repack.h"
 #include "video_core/renderer_vulkan/vk_compute_pipeline.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
@@ -1464,19 +1464,6 @@ std::shared_ptr<ReusableShaders> PipelineCache::BuildGraphicsShaders(
             Shader::Optimization::LimitSampledTextureArrays(programs[index], host_info);
         }
 
-        if (programs[index].stage == Shader::Stage::Task) {
-            const u32 payload_words = programs[index].mesh.payload_words;
-            const u32 max_payload_bytes = device.GetMaxTaskPayloadSize();
-            if (TaskPayloadExceedsLimit(payload_words, max_payload_bytes)) {
-                LOG_WARNING(Render_Vulkan,
-                            "Skipping graphics pipeline: task shader {:#018x} declares {} bytes "
-                            "of payload, device maxTaskPayloadSize is {} bytes",
-                            key.unique_hashes[index], u64{payload_words} * sizeof(u32),
-                            max_payload_bytes);
-                return nullptr;
-            }
-        }
-
         if (device.GetDriverID() != VK_DRIVER_ID_NVIDIA_PROPRIETARY && Shader::Optimization::HasBrokenPattern(programs[index])) {
             LOG_WARNING(Render_Vulkan, "0x{:016x}: Skipping shader with known issues", key.unique_hashes[index]);
             return nullptr;
@@ -1525,81 +1512,96 @@ std::shared_ptr<ReusableShaders> PipelineCache::BuildGraphicsShaders(
             }
         }
     }
-    std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
-    auto modules{std::make_shared<GraphicsShaderModules>()};
-
-    const Shader::IR::Program* previous_stage{};
-    Shader::Backend::Bindings binding;
-    for (size_t index = uses_vertex_a && uses_vertex_b ? 1 : 0; index < Maxwell::MaxShaderProgram;
-         ++index) {
-        const bool is_emulated_stage = layer_source_program != nullptr &&
-                                       index == static_cast<u32>(Maxwell::ShaderType::Geometry);
-        if (key.unique_hashes[index] == 0 && !is_emulated_stage) {
-            continue;
+    const auto reject = [&](size_t index, MeshShaderLimitViolation violation) {
+        const u64 shader_key = key.unique_hashes[index];
+        const bool is_mesh = programs[index].stage == Shader::Stage::Mesh;
+        std::scoped_lock lock{mesh_limit_warning_mutex};
+        if (warned_mesh_limits[is_mesh].insert(shader_key).second) {
+            LOG_WARNING(Render_Vulkan,
+                        "Skipping graphics pipeline: {} shader {:#018x} declares {} for {}, "
+                        "device limit is {}",
+                        is_mesh ? "mesh" : "task", shader_key, violation.declared, violation.name,
+                        violation.limit);
         }
-        UNIMPLEMENTED_IF(index == 0);
+    };
+    const auto build = [&] {
+        std::array<const Shader::Info*, Maxwell::MaxShaderStage> infos{};
+        auto modules{std::make_shared<GraphicsShaderModules>()};
 
-        Shader::IR::Program& program{programs[index]};
-        const size_t stage_index{index - 1};
-        infos[stage_index] = &program.info;
-
-        const auto runtime_info{MakeRuntimeInfo(programs, key, program, previous_stage)};
-        ConvertLegacyToGeneric(program, runtime_info);
-        const bool relative_layer_geometry = key.layer_viewport_relative &&
-            index == static_cast<size_t>(Maxwell::ShaderType::Geometry);
-        if (index == static_cast<size_t>(Maxwell::ShaderType::Geometry)) {
-            PruneUnreadGeometryOutputs(program, programs[static_cast<size_t>(Maxwell::ShaderType::Pixel)],
-                                       key, device.IsNvGeometryShaderPassthroughSupported() &&
-                                                !relative_layer_geometry);
-        }
-        Shader::Profile stage_profile{profile};
-        stage_profile.has_broken_spirv_dynamic_subgroup_shuffle =
-            device.NeedsGraphicsSubgroupShuffleWorkaround(MaxwellToVK::ShaderStage(program.stage));
-        if (relative_layer_geometry) {
-            // Translated as on hosts without the NV extensions (StageHostInfo), emitted the same.
-            stage_profile.support_viewport_mask = false;
-            stage_profile.support_geometry_shader_passthrough = false;
-        }
-        const std::vector<u32> code{EmitSPIRV(stage_profile, runtime_info, program, binding)};
-        device.SaveShader(code);
-        (*modules)[stage_index] = BuildShader(device, code);
-
-        // Text log + .spv dump. Text log is gated by gpu_log_level != Off; .spv dump
-        // is independent and gated only by gpu_log_shader_dumps.
-        const bool should_log = GPU::Logging::IsActive();
-        const bool should_dump = Settings::values.gpu_log_shader_dumps.GetValue();
-        if (should_log || should_dump) {
-            static constexpr std::array stage_names{"vertex", "tess_control", "tess_eval", "geometry", "fragment"};
-            const std::string shader_name = fmt::format("shader_{:016x}_{}", key.unique_hashes[index], stage_names[stage_index]);
-            if (should_log) {
-                const std::string shader_info = fmt::format("SPIR-V size: {} bytes, hash: {:016x}",
-                    code.size() * sizeof(u32), key.unique_hashes[index]);
-                GPU::Logging::GPULogger::GetInstance().LogShaderCompilation(shader_name, shader_info);
+        const Shader::IR::Program* previous_stage{};
+        Shader::Backend::Bindings binding;
+        for (size_t index = uses_vertex_a && uses_vertex_b ? 1 : 0; index < Maxwell::MaxShaderProgram;
+             ++index) {
+            const bool is_emulated_stage = layer_source_program != nullptr &&
+                                           index == static_cast<u32>(Maxwell::ShaderType::Geometry);
+            if (key.unique_hashes[index] == 0 && !is_emulated_stage) {
+                continue;
             }
-            if (should_dump) {
-                GPU::Logging::DumpSpirvShader(key.unique_hashes[index],
-                                              std::span<const u32>(code.data(), code.size()));
+            UNIMPLEMENTED_IF(index == 0);
+
+            Shader::IR::Program& program{programs[index]};
+            const size_t stage_index{index - 1};
+            infos[stage_index] = &program.info;
+
+            const auto runtime_info{MakeRuntimeInfo(programs, key, program, previous_stage)};
+            ConvertLegacyToGeneric(program, runtime_info);
+            const bool relative_layer_geometry = key.layer_viewport_relative &&
+                index == static_cast<size_t>(Maxwell::ShaderType::Geometry);
+            if (index == static_cast<size_t>(Maxwell::ShaderType::Geometry)) {
+                PruneUnreadGeometryOutputs(program, programs[static_cast<size_t>(Maxwell::ShaderType::Pixel)],
+                                           key, device.IsNvGeometryShaderPassthroughSupported() &&
+                                                    !relative_layer_geometry);
+            }
+            Shader::Profile stage_profile{profile};
+            stage_profile.has_broken_spirv_dynamic_subgroup_shuffle =
+                device.NeedsGraphicsSubgroupShuffleWorkaround(MaxwellToVK::ShaderStage(program.stage));
+            if (relative_layer_geometry) {
+                // Translated as on hosts without the NV extensions (StageHostInfo), emitted the same.
+                stage_profile.support_viewport_mask = false;
+                stage_profile.support_geometry_shader_passthrough = false;
+            }
+            const std::vector<u32> code{EmitSPIRV(stage_profile, runtime_info, program, binding)};
+            device.SaveShader(code);
+            (*modules)[stage_index] = BuildShader(device, code);
+
+            // Text log + .spv dump. Text log is gated by gpu_log_level != Off; .spv dump
+            // is independent and gated only by gpu_log_shader_dumps.
+            const bool should_log = GPU::Logging::IsActive();
+            const bool should_dump = Settings::values.gpu_log_shader_dumps.GetValue();
+            if (should_log || should_dump) {
+                static constexpr std::array stage_names{"vertex", "tess_control", "tess_eval", "geometry", "fragment"};
+                const std::string shader_name = fmt::format("shader_{:016x}_{}", key.unique_hashes[index], stage_names[stage_index]);
+                if (should_log) {
+                    const std::string shader_info = fmt::format("SPIR-V size: {} bytes, hash: {:016x}",
+                        code.size() * sizeof(u32), key.unique_hashes[index]);
+                    GPU::Logging::GPULogger::GetInstance().LogShaderCompilation(shader_name, shader_info);
+                }
+                if (should_dump) {
+                    GPU::Logging::DumpSpirvShader(key.unique_hashes[index],
+                                                  std::span<const u32>(code.data(), code.size()));
+                }
+            }
+
+            if (device.HasDebuggingToolAttached()) {
+                const std::string name{fmt::format("Shader {:016x}", key.unique_hashes[index])};
+                (*modules)[stage_index].SetObjectNameEXT(name.c_str());
+            }
+            previous_stage = &program;
+        }
+
+        auto shaders{std::make_shared<ReusableShaders>()};
+        shaders->modules = std::move(modules);
+        for (size_t stage = 0; stage < infos.size(); ++stage) {
+            if (infos[stage]) {
+                shaders->infos[stage] = *infos[stage];
             }
         }
-
-        if (device.HasDebuggingToolAttached()) {
-            const std::string name{fmt::format("Shader {:016x}", key.unique_hashes[index])};
-            (*modules)[stage_index].SetObjectNameEXT(name.c_str());
+        for (RecordingEnvironment& recorder : recorders) {
+            shaders->reads.push_back(recorder.TakeReads());
         }
-        previous_stage = &program;
-    }
-
-    auto shaders{std::make_shared<ReusableShaders>()};
-    shaders->modules = std::move(modules);
-    for (size_t stage = 0; stage < infos.size(); ++stage) {
-        if (infos[stage]) {
-            shaders->infos[stage] = *infos[stage];
-        }
-    }
-    for (RecordingEnvironment& recorder : recorders) {
-        shaders->reads.push_back(recorder.TakeReads());
-    }
-    return shaders;
+        return shaders;
+    };
+    return BuildWithMeshShaderLimits(programs, device.GetMeshShaderProperties(), reject, build);
 }
 
 namespace {

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d7d0f057c6ec8738406c0aaddfc529247710b8be9f07dde4ae5fc776161677b0",
+  "claims": [
+    {
+      "id": "claim_a56f35cc817149e19ed20360fe1f225e",
+      "statement": "The desktop Qt entry point creates QApplication and runs the Qt event loop. MainWindow handles launch and starts the EmuThread after the shared core successfully loads the process. QtCommon supplies the control thread, which reports shader-cache progress, releases the graphics context, starts the GPU and signals CPU readiness.",
+      "evidence": [
+        {
+          "resource": "repo://src/qt_common/render/emu_thread.cpp#L17-L46",
+          "version": "repo-lines-v1:sha256:9cbec5add0a5fa68589398ab86de0409baafbfb152d4592da65163d30a8f1a8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MzZhNDgzYzFjZWIzZjYyYzljODEwZjBlMjYyOTBmMTYyZTkxMjdlYzkyMmZmOGE0YTI3ZmZlOWI5OWJmMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyYmE0NWI1ODQ1ODU1OTg0YmU1ODBmN2IxOTk3NjFhYTNhYjM5NTQ2NGM0ZTgzOGNjMDY4MDViNDM0NTQxMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlNDVkYTEyMDI2YjJlMWUxZWVmM2FkNDk0MmVmNDc3NzcyODUwMjNlMTM2Mjk5NGFhY2FjNTVkNjVjOGFlNDEifQ"
+        },
+        {
+          "resource": "repo://src/yuzu/main.cpp#L327-L353",
+          "version": "repo-lines-v1:sha256:a47e7b862cbfd82d3c699689d39b96738f97aa8d4f1ea96c1673dbf3923d2e77:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4NjA1ZWZkNzhiMmIzMjk0ODM2Y2NlNDlmYWUyMzUwNDRmZWRhMmNhYWU3NWZlZjIxZGY2OTg5OTVkOWFlYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyOGFmOWI2NmM0ODBlOWQzMzllMjQyODc5ZjE4MDI2YjcyMDBmZmZkZTIyNzkzMTljZTZmYWJjYzExOGM5MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxZjY1NzI1M2NkOTc5MzRmN2NhNDEyNmQ5YjE4Y2IxMzVhM2UzMTM1OTA1Yjg5NjI1YjEzNmRmYWViMDAwMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        },
+        {
+          "resource": "repo://src/yuzu/main_window.cpp#L2196-L2213",
+          "version": "repo-lines-v1:sha256:3ee9f0b057e97feff29454a61e3167e4300a56070581cb8f642e825424cc649b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZDAwMTMzNDAyNGFlMjYwOTE0NTdkMzlmMTc2ZGZhMGViNDRiOWQ4ZjZlMDhjM2ZlYjMwNWQ1YTBmZTIwZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ODEyM2ZiZDZhMmQ4MTRjMGY5ZmI2YjM2ZDM4MjAyYTdjYmMzZjA0N2U5YmM4MWFlZmE1MTM3M2JjMjI5ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NmU4NDY0YzkxZWRjMTIzMWI5MzNiNzU5Y2JkM2ZhMzdjMDJjYjNmY2ZjNzk5OTMxMGY2NjU2MjdjMDZkOGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8bed59435dd48fa97e2bf364fcc175a",
+      "statement": "EmuThread uses core Run and Pause in response to control state. Its condition-variable waits permit a stop request and, on the running path, a pending shader-cache reload. It detaches the debugger and shuts down the guest process when the thread exits.",
+      "evidence": [
+        {
+          "resource": "repo://src/qt_common/render/emu_thread.cpp#L48-L78",
+          "version": "repo-lines-v1:sha256:53088f3f6f625723beae54f24800556ee24d48cbb719aae068b5c698a69f98f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZWRmMDM5YTAyY2QzZTM5NDA4YTE5NjQ0NDliNjkwNTVlYzM3ODVkZDI5ZGQxMzZmMjgxYTFkMzA4YjI1M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMDA0N2YyODEwOWM0MTY1NmQ4MTcxNzk4NTY2MWFlNzAxMzI5M2ZiZTlkNGFlMTZlMDRlNjliNzE4ZWJhYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwMzYxZTE1OWZjZDQ0YTg1Njg5NmNlNzEwNGFmZDdjNjU4ODBjMzljYTgyZTZmZTRhNmRmNzBjNTgxN2EyYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwZDAzNGMxNzE0NzViYmI4MTliMmE1NzkxYzhhZjkyZTYzNWZiOGZmNDk3MzQwNTVjNzU5MjQ2YTI5M2E3ZmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0f123c2d82dc47968f3776a293786069",
+      "statement": "SDL_AppInit creates a backend-specific EmuWindow_SDL3, prepares the filesystem and calls System::Load. SDL_AppEvent forwards events to the window, while SDL_AppIterate applies pending window titles and decides whether the application should continue. This frontend shares core emulation but has its own window and event loop.",
+      "evidence": [
+        {
+          "resource": "repo://src/yuzu_cmd/yuzu.cpp#L410-L449",
+          "version": "repo-lines-v1:sha256:ea40883f4f9d1846d1e049a4c071f86e78c36de26fd21ff1ae2262278f0ec5a4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5N2U2ZWM4MjgzM2Y1NmI3MjQ1NWZhNDlhY2VhMGYzY2M4ZjA4ZmJiMmJjMTMwNWQ1MmE2ODhhNzUwZjFkM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwZTM3M2NmOGIzMTYwZGMzZjVlODM1ZWRlODZiZjY2ZWNhNzIyNTM1ZTg1ZDU3NjY3OGVmOTU5NWE4N2VjY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxZTBkZjA4YTc4M2M0MWJiNTMzOGVkNjI0ZDA1NjM2NzY4ZGZlNGI2ZGU1YWE2NGE4MjQ5YmYzYjAxOTUzNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjMzRkZGYxNjgxNjFlOThmYmIxNWExMWE5ZGNiZDlmYzljNWQyNWQ5NWM1NjcxNmIzNDQ1MDk1N2MzMTI0ZDAifQ"
+        },
+        {
+          "resource": "repo://src/yuzu_cmd/yuzu.cpp#L576-L588",
+          "version": "repo-lines-v1:sha256:934e6d1c7061aad0b96fe5eebe1acafa63df1e79f394955123c687ce1b53f3a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5ZmQ2NjI1ZGY4ZTIyODFkMzdjNjEzMzJjYzkyNzliNWZmMWYwMWQ0YTY3OTFiMTA4MTA0ZWVkYTRiZGExNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhNWMxYWRhNTRkYjBiZDY2MWRlYjVmMmFhZGRhYmE2OTdiOGNmZThmN2U3NGRmZTAxZWFmNjI4MTU5ZWExM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0MzkyNDYxNDI3Y2M4MGRiNzc2ODNlZmQxOTIzMDJkYjUxZTY4YWJiNDljNDhiMDQyYjc1NTU4NmU4ZTgzMWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c9cc255fea5c4d3aaae707269a3fefdf",
+      "statement": "SDL_AppQuit guards guest pause and shutdown with IsPoweredOn. Quit can be called even when initialization exited early, such as for help output, so the guard protects uninitialized kernel state. The callback releases the frontend state and shuts down networking if it was initialized.",
+      "evidence": [
+        {
+          "resource": "repo://src/yuzu_cmd/yuzu.cpp#L590-L608",
+          "version": "repo-lines-v1:sha256:e6d5ba9145b89b5246ca1a502455a6f81b4b126f6563ce98e5a329c742babbc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0OTdmMjI3ZDVkMTY5MmE5M2VkMTdhMjUwNDQ2NzAwMzcxZTFjNmIxYmZkNWUyMzhlOWYwOTYzZTA0MTZjZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYmNkNDY3NzY0ZmU5NDdmZDlkNGU1YmU0NDMwNGNkYzNkZmVlYWI5ZTI4ZDc5ODhmNjQxZjAxZTdmMjY2ZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhNTI3MzllMTM1M2U2YjFiNjIzODlkODIxZjMxMjM0MWZmYWEyODAxNmEwNDExYzUzZTYwZmUxODY5NjMyMDIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

@@ -1,12 +1,18 @@
 ---
 type: workflow
-title: Build and test Orchid
-description: Linux development build settings, target selection and focused Catch2 and expect test commands.
-tags: [build, cmake, testing]
+title: Build, PGO and release
+description: Local build, focused tests, profile-guided build and release lifecycle.
+tags: [orchid, development]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T21:50:59.685Z
+    at: 2026-11-26T21:59:01.672Z
 sources:
+  - id: openwiki-source-1b3b02a24e2ae5673ef8671c
+    resource: repo://.github/workflows/release-binaries.yml
+  - id: openwiki-source-8037e2358a2c4f9b2c722a11
+    resource: repo://AGENTS.md
+  - id: openwiki-source-d724ea8199d19ee7ed36a18d
+    resource: repo://docs/Build.md
   - id: openwiki-source-6fbd0ecef1f5e21a2e4bf7c9
     resource: repo://src/CMakeLists.txt
   - id: openwiki-source-178cd3a8b6b64347d1893796
@@ -17,10 +23,10 @@ sources:
     resource: repo://src/yuzu/CMakeLists.txt
   - id: openwiki-source-3039b7c74d91b572f803dd1d
     resource: repo://tools/build-local.sh
-generated: { by: "codex", at: "2026-11-26T21:50:59.685Z" }
+generated: { by: "codex", at: "2026-11-26T21:59:01.672Z" }
 ---
 
-# Build and test Orchid
+# Build, PGO and release
 
 ## Linux development build
 
@@ -39,3 +45,17 @@ build-local/bin/tests '[expect]'
 ```
 
 The [test CMake file](../../src/tests/CMakeLists.txt#L270) links Catch2 and registers the binary and selected filters with CTest. [CheckExpect](../../src/tests/expect.cpp#L15) compares emitted text with a file under `src/tests/expect/` and reports the first differing line. After reviewing an intended output change, rerun the relevant filter with `ORCHID_EXPECT_UPDATE=1` to rewrite references and review the resulting diff. See [ExpectTests.md](../../docs/ExpectTests.md) for the reference workflow and [Emulation lifecycle](../architecture/emulation.md) for frontend entry points.
+
+## Release configuration and PGO
+
+The existing release-binaries workflow is manually dispatched and exposes a publication toggle. Its PGO jobs verify that the tracked orchid.profdata is nonempty. Linux PGO uses a matching LLVM compiler and LLD and passes the profile to both C and C++ compilation. The non-PGO Linux branch retains Release optimization and chooses mold for linking. [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L7) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L297) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L429)
+
+Profile generation and profile consumption are distinct. The workflow consumes the checked-in PGO profile through -fprofile-use and pins a compatible Clang reader. Consult the release matrix for platform variants and packaging, and use the job summaries when comparing hosted build time and compiler-cache behavior. [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L18) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L130) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L495) [`Build.md`](../../docs/Build.md#L223)
+
+## Verification before packaging
+
+The release gate is a gameplay check performed before release builds. It exercises registered routes against a selected binary and produces a contact sheet and per-game status. Rendering judgments and reported regressions still require inspection. For ordinary code changes, select the narrow test path that covers the change and follow the repository's mutation-check policy for production or unit-test changes. [`AGENTS.md`](../../AGENTS.md#L91) [`AGENTS.md`](../../AGENTS.md#L259) [`AGENTS.md`](../../AGENTS.md#L271)
+
+## Related pages
+
+[Orchid harness and development tools](../development/harness-and-tools.md) · [Qt and SDL frontends](../architecture/frontends.md)

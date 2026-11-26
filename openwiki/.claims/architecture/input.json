@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f569b4ee2eed01947313043c26f8d1e24737f2e842e884280ff137f05936c827",
+  "claims": [
+    {
+      "id": "claim_52bd74138d624946ac6f43d9533f3e5f",
+      "statement": "InputSubsystem registers host engines with common input and output factories. The SDL driver routes joystick button events to its engine state using the device identifier. Debug a missing host event in the driver and a recognized event mapped to the wrong guest control in the controller configuration.",
+      "evidence": [
+        {
+          "resource": "repo://src/input_common/drivers/sdl_driver.cpp#L620-L640",
+          "version": "repo-lines-v1:sha256:be27c4cb3c9d240e58150944c076deeb361f0868ab630e0f9abe91d7a94b02a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0ZTlkOTNhMTAzYjQ1ZmQ1NGFkOGUzZTIzNjJlZGE5MDk0MWUwODdhM2RjYmMzZmQ2ZGEyNzg2Mzk4MWVjM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhYzVkMDI1YTgyOTczNzJiY2UxNDg2ZTJiZGIyMDg4MDg5MDk4OTc0YTNiMTQ0MzIzOWFkNWY3Mzc1NTQ5NDAifQ"
+        },
+        {
+          "resource": "repo://src/input_common/main.cpp#L61-L96",
+          "version": "repo-lines-v1:sha256:fc8d94e2be60bce3ef066a632273720ee2f4783641355dbc969835b0254ef1a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2YTQ2OWI0ZmM2MmQ4OTdmNzg1ODgyNGFiZTlmMjhiYmFlOWIzMjhhNjhiMmY5ZDYzNzg0YjllYjI1ODlkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMzQ5YmJkMWEyMTEwNGYwNTFlMzRiMmM4YTllNzBjYzdmYmI1MGJjMTlhNjc3ODFmMmExNDBjMzg2ZDk0MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YTY1ZmZiZjEzMTYwNmMyODMwZjFhZTA3MjBjNDRkN2Y0MmRkZjc2ZmNjOGY3NDIxYWFhM2JhOGQyYjNkYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NjgwNTIxZjk2MjVmMzg0ODE4NDFlNzJlODliNmJjZTFmOWU2M2YyMTEyZDM3YzI2ZWYwYWUxMzJjM2UzZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ee007c552baa429e8ed73051c2f747f6",
+      "statement": "EmulatedController reloads its devices and installs per-binding callbacks. Button and stick closures capture the mapping index and source UUID, and ForceUpdate applies current state after callback installation. This is the seam between a settings change and the emulated controller state.",
+      "evidence": [
+        {
+          "resource": "repo://src/hid_core/frontend/emulated_controller.cpp#L344-L373",
+          "version": "repo-lines-v1:sha256:cadef909fd4e388eabb8921a933c46bd4dac3301add928a687777c0b3a9b1708:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmZDZhYWExM2I1NWQxOTRiZjViMDY1MGM4ZTEyOGFjYzUzNjhkYjA3NTkxZjU3NThmOThhMjUxMTMwMzI5MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwNzBlOTMwNTQwZTExYzA1NGNjMjFhZmMwYmRmNWJmZGE2ZjNkYTdlZTVkYzliNmJlYjI5Y2NhOWVjMDQ1YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3M2Q3NWZiZjRjZTJmNDcyZWY5ZjYwNzEwMzQ2YWU1M2I3M2JiYjgxMmFjY2RiM2U5MzVjN2M3MmE2ZDIxYjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_36f347a336224304ad766ef75ea85124",
+      "statement": "HID ResourceManager schedules separate update callbacks for NPad, other controllers, mouse and keyboard, and motion. NPad sampling publishes the result to guest state rings selected by controller style, such as the full-key and handheld rings. A host event reaching a binding and a guest program seeing a sampled entry are therefore separate checkpoints.",
+      "evidence": [
+        {
+          "resource": "repo://src/hid_core/resource_manager.cpp#L483-L511",
+          "version": "repo-lines-v1:sha256:8cb37b3f9bf4070c90aa44e500a8bfa68f36e1cbbccd0f3a24f6983be2a76236:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NGZlNzkwY2MyOTYyYjM0MjdhNDhlNjBmMGVkYjYzOTRlZjVmZTgyZWMxYWVmN2NjZWNiYjE5ZDVjZjNhMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2MTRhYzY3MDMyNGMyNThjODU5MTcxYjI1Y2JiNDRkZDFlODE2ODBiZDQyNzU4Y2U1ZjcyODczM2JmNTQzYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5MWU0MmQ4Y2ZhZmQ0NzNlYzAyZWNlOTRlZjM4NzUzMDMwN2Q4MzM0ZjFhNzk0NWQyOGQwYTdhMDIwYjMwNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVlYmQ4MDI1YWIyZGJlMjMyNmYzYTViMDQxNjc0OTRhZGRjMzNiY2E4MWFhMTQ3NGI3NzVlZmRmZTM3MDg1ODMifQ"
+        },
+        {
+          "resource": "repo://src/hid_core/resource_manager.cpp#L60-L85",
+          "version": "repo-lines-v1:sha256:6384b661ae2d40300eaac74fa050e2b841b3089f3bbf9f36ed188fde137936f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4MDAxMjAxMzFiMGIwMWJkMThmZDc5ZTlmOWJkMjNkMWRkNmY5M2QxYjNhYzgxZTYxM2JhMTkxNmY3Yjg3OTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyMmJlN2JlYWJkODc1MWIyYThmMGU4Y2I4NmEyMzMwNWViOTFkNmU0Njg3YTE2YzEyNWQ1MjIzZDhmMjIzYzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMTc4ZDZjZjI2MDEwODRjMTI2MTAyYzg0ZjhhOWNjMjQ4YzlhYmViOTlkNDExZWNiNWJjMThkNzE5Y2U0NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0NjFkNDcxZTE1ZDg2MDVjN2Y5MjI1MjJlNWE2ZjFkNjgyNDZjMDMzODhmYWQwYmY3NmZiZDY4OWU3Yzg2MWQifQ"
+        },
+        {
+          "resource": "repo://src/hid_core/resources/npad/npad.cpp#L513-L539",
+          "version": "repo-lines-v1:sha256:37be7e37662cedcc836ac9e8f216fed50aa228646071bef699ace9ddbc8037c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiN2ZlNDA5ODA3ZGYyNmVmYTJjOWE2NmVjYTA0YzI3ZDRiMzRlYzI1ZDI1OGVmMDM3N2I1OGM0ZWMwZGY1YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1M2Q5MDNlMTdhZGJkZWJlZTQzZjM1NTRjMjhhNTQ5NGYzNTg5MTQxMWI0MjRkNzJmNjM3YjMxYWExYWJiYTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwZDk0NmI2YWE3OWY4Njk1MmQxODMyYmEwYjNkYmMyZmM5MDZjOTQ4OGNlOTE0MDlmNzM1NzhiMWFhMjZhZDUifQ"
+        },
+        {
+          "resource": "repo://src/hid_core/resources/npad/npad.cpp#L568-L614",
+          "version": "repo-lines-v1:sha256:ac4576952a02fe68a1954426741a3b1ebd5a3e88337ce7f9e8adbbd99b76de83:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMDdiNDM5MjQ5Mzc0YjkxMmI5Zjc5YzI4ZjczOGM2N2QwNDVhMWNjNjUzMjcxMmNmY2VlOWZlYWRkY2JmNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5YmZlNzg4MzkxNGUwZGEyOWU5MmZlMWNhMWUwZTRiMTAxN2QzZjJjZmQ3NzYxMTI4NzYxNjBlMDQ4ODJhMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZWUwYmU0YmZkZjZhMjA2Y2IzNjk0ZTdiZjY2ZDI3NDM4ZDNjNDk3NmJlM2YzOTc2MDI0YjM0Y2RmNWU0ZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3OGRiZGM5MWI1ZTU0MzYyZTQ3ODk3M2Q4OTVmZGVlNDgxNWZmNGY3Mjc3ZWE3ZjU1ZGFmOTI5YzY1M2FmNTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fb253fdd25d744beae9f8a3fa7a82cc5",
+      "statement": "IHidServer creates an IAppletResource keyed by the applet user ID. The resource exposes a copy of the shared-memory handle and frees the resource ID on destruction. Start here for applet-specific handle or allocation problems, then trace ResourceManager for the contents of the shared region.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/hid/applet_resource.cpp#L15-L35",
+          "version": "repo-lines-v1:sha256:7e3d2195a177baac4612ac0850aa060b29906e53c5d1cc2ba72d150a5ae718d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwN2UyMWMxZmZjYmE5N2JjMWY0MTE1Y2VlY2U2ODYyNWVjYjM3ZjZlMWQyOGQ5MzdmZDE2OWRiZTJmZTMwZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMGUwNTIzODFjZWZlMDQ5Yjc4MTM3OGY0OGYyOGMwMmJjOGNmYTdkZjE2MmVlYjUwNTYxMDJhYjMzZjJhMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwZDljZWU5MGM0YmVhYjJmZTcyNGZkNzUxODM5OTIyODBlNTc1OGY2YzdjZjA0ZjA5OWYxYzAwNDVlZGU0OWEifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/hid/hid_server.cpp#L296-L305",
+          "version": "repo-lines-v1:sha256:8f6b0bfa1de2b81c942861a3b60ae277ebe3b8549191664283ccf666f3c1adb6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NDIzMjA0YzUzOTg5NmZlYjNmODQ4NDI1YjhlZjg5ZDc4MGEwY2Y1M2ZkNGM4OTA2YjA1MGViY2UwZDVlNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNTUzODg5MTQ1ZTEyNDYzNDZiMTVlNTI0ZGI5YjZjMjQzMmM0ODk1ZjExOTVlOWM0MzU0Nzk4ZDNmYzQ2MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ODNjNzRmYzdmNmEyZmI3ZTIyNDM0YzhlOTJlNjQ2Mjk1ZGYzMDY1YmYzMTFiOTQxYWM2N2U0ZjNjYzY1OTAifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

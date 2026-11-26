@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ebd07bbb761bd315a65f70452e92c4154944845f4df4d5b601d31b24c52f14d3",
+  "claims": [
+    {
+      "id": "claim_f305ee56c45140e2ba442322d8b2be01",
+      "statement": "Core resolves the path through VirtualFilesystem before passing the resulting VirtualFile to the applet process creation code. The helper also recognizes split files and constructs a concatenated virtual file, so downstream loaders can consume a single file abstraction. Debug path opening at this boundary before changing a format loader.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L398-L415",
+          "version": "repo-lines-v1:sha256:519ed787f47f24e0dc6321fc78adc8b4e8f332a7c13d8c8ff670ca1ff5220f11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZGJhMGZlNDdhMjVlNmIxNjE4NmQzOTMzMDJiZjlmYjBlMWEyMDVmYWU1NmUxOThlNjRkMDlkNDZkMjBjZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhY2Q4OWU5NWRiYzlhOGY0YjU4OTZhZWRhYzA4YWE5NjUyYWIyNjk2ODAxZDMyMmZiMWM5NzdmODM1N2VjNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYWIzMzRjM2Q4M2UzYjA3YTU3YWJmY2UyZmRhYTMyMzRiOGE2ZTg3MGE5MWMxYTIyNTJiNWM2ZTMwN2ZkNWMifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L85-L122",
+          "version": "repo-lines-v1:sha256:b7f79603e41ce10c2cf2628c8e1308d8c984f0f7b636f1d11d0d3409f5f3f9ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NTg5OGMwYmJlYjk5NGI1OTJmYjFlM2M4M2VmNjEwMDVmMWE0NDY2NzcyN2RlYTAwYWVkZTRiOWRkYWNlN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4YTZmMDNkMzMzNzUyMjk2MWZmM2RkMjhiNTczZmJlM2FlMTJkMDdlYzFjYjg2YmZhZTc5MDMyNDU1YzQyMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMTFlYzM1NTlkZTJmNzViOWNhNzAwZTEyOWEwYWNlMTNlMjQ1OWEwMGZmNmI0NjU4ZjcxZTMxMzJjNjA3NDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eec7389cb8624759bb9b44287cecae23",
+      "statement": "Loader::GetLoader first rejects a missing file and checks whether an indexed program can be resolved. It then identifies the file by content, consults the filename, and falls back to the filename type when content identification is unknown. A recognized deconstructed ExeFS directory can take precedence over interpreting its main binary as a lone NSO.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/loader/loader.cpp#L465-L497",
+          "version": "repo-lines-v1:sha256:8ca3ce1feeff9e1c51f08626770357306e7231e44fb4cb4232cf175925dce9d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhZTQ1Nzk5MWM2ZGY3YTQwNDdjYTE3YmVlY2U4ZWI1OWE5MTYzNTk0OGQ3Y2I2ZGU4OWZiOTMwZmU0OGVmODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMGNmMDgyZWRmZGE0ZTMyMDEzMWM5OTQ4NDJiNTJhMmI5ZWM1YWQ2ZTUxN2ZjNjIwMzNjNWUzNjEyMDk3MWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MDE2ODc3Njc4YzJiN2M3NDM3NjVlYTJiZWMxZGI3ZTVmNGEzZTQyMzAwMzUyZTFkNTBkN2QzYjg2NzAwNDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d0f20d43f1741c680faa33794b294be",
+      "statement": "The applet process creation implementation obtains an AppLoader and initializes an AM process with it. This is the seam between file-format handling and process construction. Loader status is propagated to the core launch path, where failed loads are cleaned up.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L404-L415",
+          "version": "repo-lines-v1:sha256:477785d5423d82291c416b1fd9a31cc95c18651b5819385001da64cdb0563806:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0N2VmNGJkMzY5NmI2OGQzMmQ2MDljMzI5NDhjYzg4Y2QxMmJhMjAwMjAxYzNhNWVhY2JlZGEyZmFlMjUzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzOTczOTc1NTdjYTAzNjYxZjk1MGNmMTRmM2M2YjhhNWJkYWYzOTljM2I3MzMwYzE2OTE0YTQzNjRiNmVmYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYWIzMzRjM2Q4M2UzYjA3YTU3YWJmY2UyZmRhYTMyMzRiOGE2ZTg3MGE5MWMxYTIyNTJiNWM2ZTMwN2ZkNWMifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/am/process_creation.cpp#L40-L68",
+          "version": "repo-lines-v1:sha256:9dc61974c6210bd8ca5b2513d502496a31f2cc197fec239958f9fe35808c2064:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlZTVmZTA0MjFkZTNjYWYzNTU0ZTE2MDY2YmM0MjhiMDBmOWNkNzAwZGRhMmJkMWVhOGZjMThmOTllYTRjMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkOWQ4NzVhNDE2M2NjNjg5YTBjNTE2ZWVhOTI1YWYyYWVkMGE5MDdhZjEzOTZjNWZmNmFkNTY2OGU4YWFkN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjZDgzNjhlYTMwZDNjMWRiMjNlMGNiNTkzM2M2MDA5NzdiYTIwNTZmZTMzYzY3ZjlmYjg5YTAwNmU5YTJlY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmMDFiOGUyNjIyMDk4YmMxNTAwNDM3N2Q0NTc3MDljZDZmMGMxNzE4ZDMzNDRjZDM2NjdhMDZiNjk3NjZiMTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c794e8d556574812aac65def51617d61",
+      "statement": "Core keeps a ContentProviderUnion and separately holds the loader for the current application. Its launch path uses PatchManager with the filesystem controller and content provider to obtain control metadata. For missing game metadata, trace provider selection and PatchManager separately from executable format recognition.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L491-L500",
+          "version": "repo-lines-v1:sha256:2ea1034cf113c00d025699389d1439f53c66babe7475e48f202ae64f873ff96e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkNTg0MzdmMTUxNGJjMzFkNmY1ODE2ZTI2NzA0MWFlNjk2YTM5NWViYzU3NDc2NjU4YzllNTEzNDJiMjFlY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkOTg2MDFhNzliMjBkNmQ1MzY1NWRjMzEyMmQ0NGQ1Nzc4MTcyNzlkYzRiZjJjODY0MDhhODUzZDlkZmU1M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YjBmYjE2NWQ0NGM0OWYwYmZlOGUyNWI5ZmVkOTJiZGJiMDhjMDkxNGI4NWQ5YzFhMmU4NzFkMmIzYWU5MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNzc1YWQ0MjQxMjVlMDhiZTk2YzAzMDZlNjM4MmU2MGU3MWYzOGIwYTdhZmE3MjJlMzc5OWZjYzNjOTY2NGUifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L630-L638",
+          "version": "repo-lines-v1:sha256:11c82074cb70384fb3058063364555dadf8dd4cde7e8f08f8408985d88e2ae73:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWExZGI5OWNjMDg2MjNkNmY2MDFiMzE5MGZjM2Y3YTk3ZWNhNDYyMTQ1NDNjMTllMzhlNTUxYTBiODk0MWQwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWI4YzJhYTQ4NDlkYjdlZjFhODI1NWJmMWVmN2RkYzQzYjUxZTFmYzQyMDMwZDczYTA4ZjU2M2ExYzlmZTllOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzY2ZGQxZjk3YWMxOTg3YjJlYjZjZGE2NjBiNjhjYTg0NTFkZTU1YjNjNjQ3M2M5MTUyYzI2NTc5Y2E3NmRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjQ4NTViZjRjZTM3NmEzNzNhMmE1NDU2Y2JjODQ0M2U0OGRkNDI2NGE3MGVhZWNlMjc3ODk0ZWVjYTNjZGYwMSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

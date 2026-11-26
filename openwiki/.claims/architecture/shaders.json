@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:102c22db7bca36881feace77d98866b0cf5197a0f58467ef984a1ec3f1d58b04",
+  "claims": [
+    {
+      "id": "claim_004dc74154ab4ec5a76779fd891dbf84",
+      "statement": "The Vulkan compute builder constructs a Maxwell control-flow graph from an environment and start address, then passes it to TranslateProgram. The shared recompiler constructs a structured syntax list and block order and records stage-specific metadata in IR::Program. For compute, it gets workgroup size and shared memory size from the environment. Compare guest decode with IR before investigating a backend opcode.",
+      "evidence": [
+        {
+          "resource": "repo://src/shader_recompiler/frontend/maxwell/translate_program.cpp#L386-L396",
+          "version": "repo-lines-v1:sha256:325c7b49e7c75a68641f1c12917b88dbda92b93b8a9b727d10c3d05948680943:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkZDg3Mzc5ODEwZjA2ZjhiZDU1ZjFiYjMwOTBmZWRmNDUyZjczNWFhNWQ2MmJhYjUxMGI5YjJlYTQwNjdkNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NTQwM2JiMDczYThkOGE4NjMyZjAwMjAwNGU2ODk5MGEwY2JhNTQyNjIzMWIxYTZjZTZlMGM5MDYyNDhlOWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyOGE5Mjg2ZjZhMjk0ZGMwODgyYzdmNGYxZmM2Yjc4NGM1OWE1ZWVjYTJjYzJhMDAzMzYyMWQ4YWMzMmE3ZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0YzUyNDY3NTJjMzM1ZDVlNjU3ZmMxODI0MTQxMjYzNmM4ZDU3MjVmNjE4ZGNlYWNhMGNjM2M3OTdlMWFiYjQifQ"
+        },
+        {
+          "resource": "repo://src/shader_recompiler/frontend/maxwell/translate_program.cpp#L431-L434",
+          "version": "repo-lines-v1:sha256:ebcbbedd8f9e112a35a4cf8429353b989a86a36a73e96860baeae4ad6fbff6d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjMwM2E2MDA1NTgwMGRiOWE5MDExNGM4OGY4N2ZlM2U3MDZhNDgyNGE3MWY3NjBjZDU1YjQ2ZDdkN2I1ZDYwZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE3NDg1MTc3MDJlODc1ZGQ1ZTI5YjdiYjAyN2FmNDgyMjc2NzBjYjhhNDg4YTI5NzQwZjVlOWFhODY5MDAyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzUxOWExYThjMWUxMDk0MDI1ZjYyMmQyZDI1ZWUwMmI4MGRkMzdkMzdkZjFmM2EzYzk2MzdlOWQxNDkzZGFiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDJhM2E0MDg4NTdmY2Q1YWExNzVjZDU2NmEyNDFhYzAxYjcwOTdhNjExYzZmZjg5ZTY1MzBiYTUxNTE1ZmJlYiJ9"
+        },
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_pipeline_cache.cpp#L1910-L1923",
+          "version": "repo-lines-v1:sha256:ee27bcec2e640c98366f29ae3eaf6bbe46dbc3fe9808425fec19552cf72eb8f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2OWMyZWU4ZTdhMTgzZTYwMmRkZmEwMzkxNWEzY2UwNDJmNjEzYmZhZmNkYmExYjcyNTUxMTIzYzc5NDI4YjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwMDhmOWEyMzkzZDUyOTAxMDczZmZhNDQxNTQxZjFjYjZhYzMzMzhmMjgyYzYyYTA2NGMyZjJmZDA0ZDU3ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiYjZhNzU4ZTgyOWRjOTQxNGU4ODNjNDE5MmE4ZTk5MDBhZmQ0OGNiN2ZlNWRkY2RhYjc4YjBiYjE2ZWY2MjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_da8ff086ea8b455b98a4cd3c249028be",
+      "statement": "For graphics stages, PipelineCache supplies EmitSPIRV with a stage profile, runtime info and resource bindings, then builds a Vulkan shader module. The compute path validates the constant buffer mask and can clamp shared memory on selected drivers before emission. Host capability policy can therefore affect lowering or emission for the same guest shader.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_pipeline_cache.cpp#L1555-L1565",
+          "version": "repo-lines-v1:sha256:d85fbb8e0f1bcbee873dbdce933dc229b4e6deb7f678f74712d8a0244453f710:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhN2ZkNGQ0MzRiZWM5YjU2YTI0ZTBiOTk0ZDZiMjZjOGQ0MGI3MDY4NmE3M2E3MTRjNjFmNmM1ZDU5YzE4NjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZjBlZmI2ODRkOGRjZDhhNTJjODMxNWQwYzkyOThkNDk5YWI2MWJkZDBmN2MwZjFiNThlZGJlZjA1MzVmNTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0YjEyMmE4ZWY5MzE0MjFhMjYxMTdhYzg3Y2QxOWIwYWQ4MGIzZGM2NWQ3NTJmMWNlYzk1NzhlMjMzZjNmNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0Zjg3NTViNzgwZjlhODhiZDI4MTMwZGM2YTY2Nzk4NDBjOGRlMjZhMTk4Y2VjYjU1MGIxNzg5ZDBkNzUwY2IifQ"
+        },
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_pipeline_cache.cpp#L1919-L1937",
+          "version": "repo-lines-v1:sha256:ff58bd88540a972a1df0275b760beeb120de71e99f18901969b9521c3f247284:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NDMyMmE1MTI2ZjFiMTFkZDQ5MTg2Njc4ZTlkMmIyZTNkM2MzNzUzOWFjYmY3Y2FjYmNhNGFjZGQyMTRiNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2YWVkYmYxNjFkMjcxMDI2M2UyMDQ1YzFiZDE5YmY4YWZhNWM1YjkzZTU2NGMzYjRiOWRhNzkzNjcyYmE3MjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzZDRiOTE1MDY4ODE5ZDY5Mjc3YzRjNDRmOGExNDE4ZjFjYTI5YzIwYWIxYmNlZTVhNjFiYzdiMjAzMWE4Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YzVhYjdjNzg3NzQ5OGU5ZjA0ZWFlYjBkNTBiNGJiMzE0ODk4NzJkZjE3MWY4ZDllZDk3N2YyMmRjNjZmNjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56e290478a224e95af632dbece4116aa",
+      "statement": "LoadDiskResources is title-scoped and ignores title ID zero. Before changing cache files it waits for outstanding serialization work. It uses separate paths for serialized pipeline data and used-pipeline tracking, with a distinct suffix for the title workaround that changes lowered code. Review cache compatibility when changing the representation of persisted environments.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_pipeline_cache.cpp#L932-L973",
+          "version": "repo-lines-v1:sha256:7400056dc026819feeb13a5293a1c90d348ef6ad410b5acd9b6bebc3c26f5fe6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNGMyMzE1YjI0MzdkNmFhZTE5Y2JlZmRiNTBlYzdjM2E0OWQ1MDRlMTJjNzRlMTAzYmYxMzJkNmYwMzQ5MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYThkODhlN2Y2NmQ4N2E1ODA1MjExNjlhMzllN2NiN2U4YTVjNjM3MGRlMzBmMjkzMmIzNzUwMTEyNzhhZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4MTI3ZmE5Y2UyNTc5YWNkYWY3M2RiYWI4MTk5ZGI3NWExY2E5ZjZlOGZiNzJhYWM2Y2RiZDJiZDA3ZTkwY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlODNjMWY0OWU4NjY4ZDRjNDczOGFmNWEyMWExMGRjMDI5YTBhY2VjOGViYWEwOTQ0NDVkNmJiZWU5YmE4MzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_80296b8db12b4fb7951e5f348117bd75",
+      "statement": "The repository includes Maxwell disassembly, IR and SPIR-V tools as separate entry points. Use a disassembly to inspect guest decode, an IR dump to inspect translation, and SPIR-V to inspect backend output. For stable regression output, the expect-test helper compares emitted text against a reference.",
+      "evidence": [
+        {
+          "resource": "repo://src/tests/expect.cpp#L15-L49",
+          "version": "repo-lines-v1:sha256:b88a170bd68e1376bc3156f9a2d6fda65703a117ca0dd2cd7a71725c80bf9201:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjA1ODRjZGEwYzgxYjEyZGYxYWI1NzlhMWE4NjU4MDRlZjI5ZjIzODU4OTJlZDBkYzM3NTExZTdjN2M4YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxY2FkMmYyNjQ3MzE1YmNkYTM2ZmFjYzRlY2U1OTlhNzg4NWRmYTI4YWYzZTFjOTRiODgzMGNiMmFjYTk3ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiYjEzMGU1OWRhZmFhZTNiODFlNTlmMmQ0YmIxMTQyMTYzYjRmMGFlNWQ0YTQ5ODI5M2FlY2IwMTVlNmU5ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDE2ODczNTdhOTMxZjZlMDUxMTRjZmZjNDcyOTA3MjliZjJmODJkMGRhNDAyYTA0MWVmMjBhYmQ1ZTc1NmEifQ"
+        },
+        {
+          "resource": "repo://tools/README.md#L8-L15",
+          "version": "repo-lines-v1:sha256:78aaaf1af71f3dea18ee5a9e2e75839fb73181cb47ef0746f8af28178bd29897:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2I0ODIzYTA0ODFhNjRiY2RhYWViMDllYTI4MDliMTJkNjQ5ODFhMWUzMjg1MmE5MTVhNmJiYmI2ZWE0MjM2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzc0NjhiMGMzZGQ4YWUxMmYzZjg2N2NlZjU0M2Y1Yjc4ZjlkOWFjYWZmMjFhZDQ2ZTgwY2VlMTI3YmQxOGRjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjAzODc2NmEyY2FhYjk4Y2EyNWI1MGRhZjc5ODI1ZWNiZjU0ZTAyOTZhNzYyY2Y3MjY4M2ExMDFmNDkyODI3NSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

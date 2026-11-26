@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a5c1880ea5b24466df1c898b652c79ea4f8bc4cca9ab663d515aeefb65a47968",
+  "pageVersion": "sha256:014ad46e0d77cf0c0a44220208a2887cc70462ecdd0d2af9accfc8eb85bee12d",
   "claims": [
     {
       "id": "claim_cf595942521c44ef9fba7ab9ac7ba7ca",
@@ -35,10 +35,32 @@
           "version": "repo-lines-v1:sha256:81915bed8a66b3f7b60bb742b2638916495a5b59b38ffdafc297b001391cd982:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NWZkNDNkYjVjYmI3YWRhZjExMjM5NmU2NDhiYzgwYTgzM2Y4MGVkNjk0ZGJiMjI1NTVmNTY2MjRmMTE3NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYTAwMmU5ZTM5NDc3MGZhNDhjYjg3MDYzNWMxMGQ2NGQxMmFjNWMyNDE5MzZjNDdiNWM4MjA4ODEyYzU1NmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiZTQ0ODA1ZDk1ZGMwMTIwZDQzNjUwY2I4NTk4ZWI2Y2JlYThhY2NkYTBhMjY3NDU4ZDAyZjY0OWM3YTI3ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZmI3NzU3YmI3MmYzMjNkMTc1NGU4MjJlMmU1YTliOWU2YTAyNGYwZDNlMzgyMjAzYjlhZWNmNGZlYjVkM2MifQ"
         }
       ]
+    },
+    {
+      "id": "claim_1d64e570ce9b40a99e28908f438b66f4",
+      "statement": "A desktop boot crosses the frontend, Process/Loader and Core::System boundaries before the CPU execution loop owns the running thread. Qt hands session control to an EmuThread after loading, while the core registers the initialized process with the applet manager. Use the table to narrow the next source lookup by the boundary where the behavior first diverges.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L404-L415",
+          "version": "repo-lines-v1:sha256:477785d5423d82291c416b1fd9a31cc95c18651b5819385001da64cdb0563806:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0N2VmNGJkMzY5NmI2OGQzMmQ2MDljMzI5NDhjYzg4Y2QxMmJhMjAwMjAxYzNhNWVhY2JlZGEyZmFlMjUzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzOTczOTc1NTdjYTAzNjYxZjk1MGNmMTRmM2M2YjhhNWJkYWYzOTljM2I3MzMwYzE2OTE0YTQzNjRiNmVmYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYWIzMzRjM2Q4M2UzYjA3YTU3YWJmY2UyZmRhYTMyMzRiOGE2ZTg3MGE5MWMxYTIyNTJiNWM2ZTMwN2ZkNWMifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L446-L471",
+          "version": "repo-lines-v1:sha256:307b39b1c2f7aa32dbac44d3fad3fb08d240a5ee97baa588e05e876c4cbbfd0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YzAyMDc3MGNmNTNjOTY3YzRhNjdjNDdkMDM1OTg0MGI4OTI3YzE2MGJiMjBkOTVhNmIxMzcxMzM3ZTFkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzFlYmNkZDRkMzQ1OThmYjgwMjQ3YzdhMDA4YTQ3ZGY0MTRiOGExY2E3YTM3YmFjNjNhNGM0NDIxY2YwZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkYTZhM2VlNGJlMTE4MzA2ZjYzOGZmMzljMDRmNWYyZWNhMGRmNjUyNDk3Mjk3MmIwNjI4MmVlMTJiYjk5ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlMmNjNzgzODU2ZTdlMjVhZjcxNDE4MGMzMDA3MTgwMGU0YzE4ODI0ZjA2NjY3NjBkODczODIwODM1YjJjYjgifQ"
+        },
+        {
+          "resource": "repo://src/core/cpu_manager.cpp#L73-L85",
+          "version": "repo-lines-v1:sha256:4bea74fddb7252875f2b57e31ef4b341d0eabd3bc382b0e1e31aac7da956b54d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYjU4ZmI3MDU2NDNmODgxZDRjYWNlNzg4OGM2ODhlN2FmYTcwODIzZTQ4YzJlMTU5Y2QwN2M0OThhYzE0MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmYjYxZGQxNTBjNmZhZGMwMmZmYmNmMjRmMjc3YzFiMGYwZmU0OGVjODQxMzI5NDZmYjk2NWI2MTE0NTkzYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNDVmMzU4YWUwMTFlZDZhZGFiN2VmZTRmNjBmYjJjZTkwNzA1ZGM1N2FmYmIzY2QxODY0MDlmMmU3MDE0YzkifQ"
+        },
+        {
+          "resource": "repo://src/yuzu/main_window.cpp#L2196-L2213",
+          "version": "repo-lines-v1:sha256:3ee9f0b057e97feff29454a61e3167e4300a56070581cb8f642e825424cc649b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZDAwMTMzNDAyNGFlMjYwOTE0NTdkMzlmMTc2ZGZhMGViNDRiOWQ4ZjZlMDhjM2ZlYjMwNWQ1YTBmZTIwZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ODEyM2ZiZDZhMmQ4MTRjMGY5ZmI2YjM2ZDM4MjAyYTdjYmMzZjA0N2U5YmM4MWFlZmE1MTM3M2JjMjI5ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NmU4NDY0YzkxZWRjMTIzMWI5MzNiNzU5Y2JkM2ZhMzdjMDJjYjNmY2ZjNzk5OTMxMGY2NjU2MjdjMDZkOGIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:50:59.685Z"
+    "at": "2026-11-26T21:54:46.723Z"
   }
 }

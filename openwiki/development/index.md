@@ -1,3 +1,4 @@
 # Files
 
-- [Build and test Orchid](build-and-test.md) - Linux development build settings, target selection and focused Catch2 and expect test commands.
+- [Build, PGO and release](build-and-test.md) - Local build, focused tests, profile-guided build and release lifecycle.
+- [Orchid harness and development tools](harness-and-tools.md) - Private-display MCP contract, test evidence and repository utilities.

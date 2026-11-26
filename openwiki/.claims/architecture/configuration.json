@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4a492f7480e00bee7af4d64b0a1f562685e67a82069c0390ba581cace40c4769",
+  "claims": [
+    {
+      "id": "claim_1d01b5ecbc2041fc93f1183ac7e0d46d",
+      "statement": "Settings::SwitchableSetting retains a global value and a custom value for a setting. SetGlobal selects the active slot, and the getter can explicitly request the global value. The type registers a restoration callback, so selecting the global slot again also works for settings added through the same linkage.",
+      "evidence": [
+        {
+          "resource": "repo://src/common/settings_setting.h#L291-L372",
+          "version": "repo-lines-v1:sha256:e3897c35094ecba07b1ba4c362ae6433ceb56ac66590e2afc4ace1ae50a52c5b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3N2I5OWRlYzIxM2ZhNWZmNGY3ZDA4MmExM2MzNTUwMDkyYWMxZDQ3M2FkMjA5NjRkZTM5OTRhOGZkZTdiMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZDEzZGFjMTc5NzI3YTMzNDEzNGUwN2MyMTJlMTA3NTk5NjM5MDk0MmJiODgyNTVjMzcyNWFhZmExYTBiMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMGI5MWQ4MjIxYWJmMjgwZjJlNTVlYTE5YjA4OWM3ZDdkYTk4MjE4NThkNWJlYTFiYTg4Nzk5NjZmNmFkNDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlMmI5ZTIxZmRjODZmYzJjMmVlNDQ3MjE4NWQ2NzY0NjdiZGQxY2JmMmUyNGI0ZGM2NDRhYjFhYmIzMzI1NDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e459242e69c1454b8d6837861f8080f8",
+      "statement": "FrontendCommon::Config reads persisted keys into the shared settings registry. Its generic reader distinguishes a custom configuration from the global one, reads the per-setting global flag for switchable settings, and loads the appropriate value. QtConfig wraps the shared reload and save routines with its own GUI value handling.",
+      "evidence": [
+        {
+          "resource": "repo://src/frontend_common/config.cpp#L946-L1015",
+          "version": "repo-lines-v1:sha256:252e1a74d2b43747db915dca1cc4b6e11dc23c0db33fd24b0f4dc30424eb4d38:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NmNiZTJkNGZkNzQ1MGU0NjVhMzY0Y2MwMjI0YWI0NmVjZTNkMGQzNGM3NGRjNzA0OTkyZTVjMDZiMTMyMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhMmQwZWU4ZDA1ODAwNDU2MThlZWY3OGVkNDFiMTFmZmY1ODQ0YTNhM2Y2YmZkNWFkMjRkOTE2NzhmM2ZmYWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0M2E2YWNiNDlkNTYzZGVmOTcyYzYzODBmMzYxYTk2YjgwOGYxMGMxNGFkOTczYjQ3YWQyOTE1ZmVkYjcwOWMifQ"
+        },
+        {
+          "resource": "repo://src/qt_common/config/qt_config.cpp#L66-L75",
+          "version": "repo-lines-v1:sha256:f38e0444eb6b5669e938da28023f75798f9bb9e579548548e16a9e7187e45281:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNjVmMjU5ZGEzNjcwMzczYjdlMTVkOWY0NjAxN2EzNjhlMmNjYzNlZGI4MDc4YWQ2ZTkyNGU2YTlhMDU3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk3OWQ2ZDQ3YjU2ODllNTRlYjBjODA5M2RmYWE3MGVlMTJlMmE1MDUyZTlmNmZlZDY0ZjI4ODZlNjk0NjQ5M2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a6eb78de9b684354aa5bd3a0c948eade",
+      "statement": "Qt reads a per-game configuration during BootGame. Core applies early title defaults before constructing the GPU, then invokes renderer-aware overrides after the renderer exists. Start with the Qt boot path for persisted selection and core setup for defaults that affect initialization.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L446-L459",
+          "version": "repo-lines-v1:sha256:2e4388a732cc242ab41be7ff17fd5e63657733cb668ddcb99c5048b28bde03c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YzAyMDc3MGNmNTNjOTY3YzRhNjdjNDdkMDM1OTg0MGI4OTI3YzE2MGJiMjBkOTVhNmIxMzcxMzM3ZTFkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkYTZhM2VlNGJlMTE4MzA2ZjYzOGZmMzljMDRmNWYyZWNhMGRmNjUyNDk3Mjk3MmIwNjI4MmVlMTJiYjk5ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhNWRjMDEzNDRmZGFlZTViMzkzNmNiYmIyMGY3M2JkZGVmMTNlZTY5NWUxODc5ZDUwMWUwMzgxYjE0MTg0MTgifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L491-L500",
+          "version": "repo-lines-v1:sha256:2ea1034cf113c00d025699389d1439f53c66babe7475e48f202ae64f873ff96e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkNTg0MzdmMTUxNGJjMzFkNmY1ODE2ZTI2NzA0MWFlNjk2YTM5NWViYzU3NDc2NjU4YzllNTEzNDJiMjFlY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkOTg2MDFhNzliMjBkNmQ1MzY1NWRjMzEyMmQ0NGQ1Nzc4MTcyNzlkYzRiZjJjODY0MDhhODUzZDlkZmU1M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YjBmYjE2NWQ0NGM0OWYwYmZlOGUyNWI5ZmVkOTJiZGJiMDhjMDkxNGI4NWQ5YzFhMmU4NzFkMmIzYWU5MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNzc1YWQ0MjQxMjVlMDhiZTk2YzAzMDZlNjM4MmU2MGU3MWYzOGIwYTdhZmE3MjJlMzc5OWZjYzNjOTY2NGUifQ"
+        },
+        {
+          "resource": "repo://src/yuzu/main_window.cpp#L1994-L2030",
+          "version": "repo-lines-v1:sha256:2871a21ab4dfce812dca16206bc43c5c181c5aed864bfaeb53a2b08573e9378d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZmE5YjZiZWE2ZDliZGQyOTMzZWQ5ZDcyYjBiZDU5ZjEyYmFhZWZhMzE1NmExNzNlZjdhZWQwYmRjMDAxMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZWE5NmJlM2ZlNWQxOWMzNTY4ODg0ZjcyZmQxOTZmNjIyYWEwNTdlYzcwMWY2OGJjZDFjN2NiYmVmZDUzMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVlZTYxZmY2YjM2ZjhlZTMxZTgzZTc1MGFjNzY0Y2Y4NTcyMDAwOWIyM2JiZjFiMmFhZGY5YWI3NWMyZGVkMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5Yzg2N2YyNDRlM2NlYjJhNTBkMjc2Y2M2ZWQxNTY5MTc2MzU0YWQyOWJhYjkyYTI1NTgyZmFkYjYyODA2MmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7fa4dbb5d8241be9055e284a051a9a2",
+      "statement": "GameSettings::OverrideIfGlobal changes the custom slot only while the setting is still using its global value. The renderer-aware pass reapplies early defaults before applying settings informed by title and host GPU. This keeps explicit per-title values for settings routed through OverrideIfGlobal.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/game_settings.cpp#L125-L151",
+          "version": "repo-lines-v1:sha256:57c8077cd418bbef101bba213f353bb4fa1c2b07f75b93ff44126383c86cb7e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwMDcxZTcyYTdkYTU4ODVmOWJlYjI0OTExNmFkYjg3NjE1NjM1ZTk2YjA1YzNmNzAzNzhkMjA4NDJhYmIzNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlOGFhYjYzNDcyMjkwZDFkNTNjMzMyMDM5MTNmOGJkNWIyNTViNjgyNDRhOTlmNWZiOWYzNmVlZDQ4YTczNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3NjkyYWM0NzBiMmRiMmY4MGVjN2MzNzQ5ZGQ4ZGY4MjE2MjJkNjI2ODhmOTMzOTM5YjFlZmU2NTkzMDVhMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzNzU1MmFiMTUzYTZjZDAyOTE0YTM2OTM0ODUyOWY1NjAwY2E4NGY4ZTYyMzY1NzE3ZGU4YzA0MTIzZDIwYWMifQ"
+        },
+        {
+          "resource": "repo://src/core/game_settings.cpp#L169-L182",
+          "version": "repo-lines-v1:sha256:3670f1a47de901346be1e78a131aaa85b57e41e8f6e2b3295f2861da4cf26668:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxNGE0YTc3NjExNGJhMzNiYjVhNjI4Njk2MjRlY2UwNjExYzU3Y2QwY2EzNDEzZGY0Y2I4NTQwZmU2NWQ2ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZmNhZDBhZmFlYzQwZWVjM2U0Y2JiMjAzYzE4ZDlhMDI1MmM1ZGJkYTZjYjZmOTNiZWFmYjVkMWQ1MjEyZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2M2M2NmFiM2IyYWFkNGExODU5ZDVlYjdjYzdmYjhjNzlhZDYyMTFjYWQxOWU5MTMzYzFhZjRhNjZlZjVjNGIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

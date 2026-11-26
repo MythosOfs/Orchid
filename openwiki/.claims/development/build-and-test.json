@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d8f2dffbe458bc568f4eba31c9a9fa633165c5e400bda72be8c4a98e9f7c5cbe",
+  "pageVersion": "sha256:fbb59cc4b05422f3dfc6ebb0a2fa7c1af0a835e0f66ceadd1b8683aa4f1016ab",
   "claims": [
     {
       "id": "claim_46452c22cc8a4dfcac38b6e1d05cca54",
@@ -61,10 +61,68 @@
           "version": "repo-lines-v1:sha256:b88a170bd68e1376bc3156f9a2d6fda65703a117ca0dd2cd7a71725c80bf9201:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjA1ODRjZGEwYzgxYjEyZGYxYWI1NzlhMWE4NjU4MDRlZjI5ZjIzODU4OTJlZDBkYzM3NTExZTdjN2M4YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxY2FkMmYyNjQ3MzE1YmNkYTM2ZmFjYzRlY2U1OTlhNzg4NWRmYTI4YWYzZTFjOTRiODgzMGNiMmFjYTk3ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiYjEzMGU1OWRhZmFhZTNiODFlNTlmMmQ0YmIxMTQyMTYzYjRmMGFlNWQ0YTQ5ODI5M2FlY2IwMTVlNmU5ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDE2ODczNTdhOTMxZjZlMDUxMTRjZmZjNDcyOTA3MjliZjJmODJkMGRhNDAyYTA0MWVmMjBhYmQ1ZTc1NmEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5e75553f4627472e9de8b9ddcabf5689",
+      "statement": "The existing release-binaries workflow is manually dispatched and exposes a publication toggle. Its PGO jobs verify that the tracked orchid.profdata is nonempty. Linux PGO uses a matching LLVM compiler and LLD and passes the profile to both C and C++ compilation. The non-PGO Linux branch retains Release optimization and chooses mold for linking.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/release-binaries.yml#L297-L303",
+          "version": "repo-lines-v1:sha256:b0d6613fb499b6cd25931e0358259270f3e13b593fbc50692220ca63dbfda799:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2NjY2NlYzA4M2ZkY2Q5NTg2YzI5YTczNGI1MTg3NGQ3NGFjNmU0YjYxMmIzNjczZTRhNDNlMzJjZTEyZDdhYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZThmMDQ1NmYxZDAxNDY3YTI5ZjAwZjQ5MjhmNDRlY2NmNmM5NTA3NTAxMWIzOGZkZWNjOGU3MzA1MTk5NDAzNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdiMjhmMTMxMmFlZDc5NjUwM2QwNGE0M2ExNjU4YTI0YmE2YzIzM2I0ZjAwMjE3YTE4ZjY1Mzc4Y2E2YzhlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2M5NDJjZTQxYWMzNmU2N2UwNmQ4YWM2ZDhlMzdlZmQyOWEzMjY4MWQyZmQ0OWY2MzZlYTk4ZDViN2QwN2Y2MyJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/release-binaries.yml#L429-L445",
+          "version": "repo-lines-v1:sha256:e2926f7216eec5a2d1af429f445d385bf91ec8e6aa5147e691ca654e78b7d6e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3NmM3ZWY0MDg1NzczOTVhNzUzNTExZTIxNTYyMjYyOWRlOWRjOTlmYTViMjhjZDQ2MGNhZmI2NzZmZjRiYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NDY1NmFjNmMxNjdkNzM5ZWJlOWJhYWJlNDE3ZDNjMzZiMmM2ZmU3NWVjZGQyYjQ3ZGNmMzAwNTI2OWQzOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxZDIxMzBlOWVkMWUzZDgxYzk2N2ZiNDg4YjQ5MDgwNjA2NzkxOWE4ZDcwZjVmMjNjYWIwNzcxYjE1NDRlMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMjJhMGI2MWIzOTE4ODZhOGVhNjQzNDZjOTU0N2ZiZWVhZmNmM2QyYjNkZDBjYzU3YjQ5YzAyODdmYmYzMGYifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/release-binaries.yml#L7-L23",
+          "version": "repo-lines-v1:sha256:dcc5dc548460520cb7ccc3497e74e1fa490653fe29893e8c04041d1d3718ffa6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MGExYmM2ZWE5ZTE2MTAyNWQ5MjYwOGVjMGQ2ZmZlZDIzZWRkMTY5MDJiZjZiNzA4ZTJlZDA1Mzc3ZDcyMjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMjE3YjcxMDYxMDJkZWUwNGU3MzI3YmY5ZjE4NDZjZGQ2MzIyNjI3MmNiMDQ3N2RkYWFjMmNmYjQxMTU5MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYjg5MTcyODZkMWM2MjAwMTAzYTg5NzU4M2UxZDAxYzY2ZmRkYjgzMTBmNjZiZWZhMmM5Mzg2NDgxZDVmNTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_35b7425cdfb8427b8873678371f398f7",
+      "statement": "Profile generation and profile consumption are distinct. The workflow consumes the checked-in PGO profile through -fprofile-use and pins a compatible Clang reader. Consult the release matrix for platform variants and packaging, and use the job summaries when comparing hosted build time and compiler-cache behavior.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/release-binaries.yml#L130-L148",
+          "version": "repo-lines-v1:sha256:d6f704e2fe081f106aec8084bab8a34f0f080fe2081e39c8a105d307310b43eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZmZiYmRlMzVjZTAxZjMzN2ZlNjcxNDhlZTg0MGY4NDRlN2RiYzU3ZGYzMWQ2OTVmYTAwY2UxM2FhMzczMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MzVhNzU1NzU3ZWE3MmViOTRlNDAxN2VmOWYzNTEyZGFhMDQwNzBkYjA3NWNiNjYyMzY1ZWFhNTdmMzJlMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ZjNlY2I3MTAyM2EzZWYwMjZlNTgxNzc4YjA5NzQ0YzdiY2EzNGU5MTYzY2QzMGZhOGU2YjM2ZDlmNDk3NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MmIwNTQwMzc3MDA4NGE3MTZjYzdmZDc3NTc0ZDI1YjhiMmJmYTcxMWEwMTUzZjVlNTBiZDhiMTg3OGY5ODIifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/release-binaries.yml#L18-L23",
+          "version": "repo-lines-v1:sha256:379de515411c30e1e3c5765af702314c19dbe5171bebb786b62dea60bb202351:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA2MTM3ZWZmMzJlMDljMmUzZjQ4ZjMzMmQzOWI2ZGY2YzNjZTdjN2I5NDJhZTU5NDllOTBhZTlkZDY3Y2MzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzcwYTFiYzZlYTllMTYxMDI1ZDkyNjA4ZWMwZDZmZmVkMjNlZGQxNjkwMmJmNmI3MDhlMmVkMDUzNzdkNzIyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmYxZDcwZDcyYmFkMjMxZDQzYzU3NWFjZWY2OTQ2NTgwZTQzOWM4Nzk3OTRlZDJlYTFmNGE0MDM0MDI0NTE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGRiODkxNzI4NmQxYzYyMDAxMDNhODk3NTgzZTFkMDFjNjZmZGRiODMxMGY2NmJlZmEyYzkzODY0ODFkNWY1MSJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/release-binaries.yml#L495-L526",
+          "version": "repo-lines-v1:sha256:f1485ded96563c713a90c97364264c10d4fbc9a334b90c965586367e3db4543b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwN2RjNzdmZDE1NWQ5MDk2NzRiZGIxNGE5MjNjMTdmM2YyZWVhOGNjNjdmYWU2YjBjNWRiZGMzMjI4ZDI2ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMDE4NmU5NWQ4OTJkNmU1Y2UyN2IyNjBjZTg3ZThjYjdmMTUwZDFjYWFmNzMyMGNkYWE2YzkwMTI3NGQzZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzN2RjZTUzYjdiMmNlZTA1MjVjY2Q5ZTRlMmU5ODc4MzEwYzE4M2Q3MDcxNGY0NjE4NDAzNDY0ZTVhOTBhYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1ZTJhYjQyYmM0Mjc3ZWZmNDg1YWM0ZTYwZGVhNmM3YmNkN2MwOGYwNGUyMmUzNTA3OGQ2YjJmZGQwOTk2ZmQifQ"
+        },
+        {
+          "resource": "repo://docs/Build.md#L223-L244",
+          "version": "repo-lines-v1:sha256:e0853fb2a046cb20454fde01da0cc085895a856a7f9a965857a665228009596e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwZTgyNWEyM2FhOThlZWE2MGJhZTI4MDkyOTM0OGYyNTRmNDA2MjJmMTY1NWEwOWM0NWQzNmEwM2JmYjQ2YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NDMwNWUwYjc4NTlmNDIwZmJhZmFmNTI2N2ZhNTQwY2RmYjMwYmRiMzkyOThkNGVjMzc5MjU4YjQ0ZDNhN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViYmQ0ZGFjYjkxOTEwNTE2NDgwYTIwZjYyNjNjOWJhMmFmMWE0MjViZmQ0Y2NiZjJlZDRkNGQ5YmVhMjIzZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MWVlYzljM2YzYWNiODM3M2VlYWY4NjA1ZTY4ZWVkZTNhMmM4MDg3MjdlMTBhOGIwZWQzNDE5ZjU2NTFkZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f4111dc1c5b1488b9642589976535d41",
+      "statement": "The release gate is a gameplay check performed before release builds. It exercises registered routes against a selected binary and produces a contact sheet and per-game status. Rendering judgments and reported regressions still require inspection. For ordinary code changes, select the narrow test path that covers the change and follow the repository's mutation-check policy for production or unit-test changes.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L259-L264",
+          "version": "repo-lines-v1:sha256:cd3c945a8213e3a71d18f685460ac4f27fc0a913155e7b615ddeba06cfdb4a83:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ3MzYwMjgxMzIwZWFmMjNhMzY0MGVkNmU4ZTljMzNmZWZkMGUxYmYwNmUzZTg2YzQxMzAxMjBlOWY3YjYzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3ZTFjNjkwMGQ2ZTNjNjAzODUzZDhlZTI2ZDVkODYzNzNjZWYzMjU3YmYwNjcyMTc3YmVkMWY1YWMzMmRiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQ4MDE0MTZiYTRiODM5NzNkZmVhNWI2Yzc2MTMyOTE5NGFiZTc1NGJlMjdkYzVjZDM0MTRmYzExNWRjMDk3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzM4NGUyZmI3NmE2NmI1N2Y0ODBiMzk1MzJkYTIyMjBkMzNhNTVkZmFmYTE4Y2Q1ZGMwYjNkZmQ1NjczZjU0OCJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L271-L285",
+          "version": "repo-lines-v1:sha256:19fdeaad5f2b4861e5251d4e2676b0538568c68bfbb8fea724726c59c25b0c6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MDdlNTBkZmY5MzcyMDI5M2NhZWViZmE5YjkzNTBlODk2OWI3NDc1ZjhiNjkzMWM1YjQwMGRiYmU5Y2YwODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2Y2M2YmQzYjdkZGY4ODA0NzRhNTc2M2I3YzgxYjEzOTc0YjhiMWJkOWM3ZDhiN2JhYjA4MDY5NzQ0NjU5ZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ODUxMjlhMzNiNzk0ZDRhYWI5ZmZiY2EzN2Q2YjMyNjgzNmY1ZjY2NTM3Y2E3ZTNiMzU1NmMzYmRmMmUxMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzMWMyODY1MWUzZGFjZDdlMTE2ZGI5ZWJiNWE5YzY5ZjhlMzE4MjdjMTAxNzI3ZTFmNjY4Mjg3ZjljN2E1ZDkifQ"
+        },
+        {
+          "resource": "repo://AGENTS.md#L91-L117",
+          "version": "repo-lines-v1:sha256:f1e618ce6fc2954c35dbc61a2b449337b38dbb0297dc8efbaaeb5d23ca3cc252:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZjFkYWEzYTE5YzA2MjcyNzczZmVkN2Q2OWY5OThlMDBiYmNjZmE0NDI3Zjc2OTlkMDRlMWVlZWNiNjgwM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMGQyMDJkZmI2NGViYzgxN2RkMzhkZjIxY2ViZjcxM2Y0MjRhZDIxM2U1ODkwNTI5YWM1ZjczNDRjMjBjNzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwYmFhNDVjNTE1MGU0OTI0MTA4YjUxMjYzZWExNTA1YjhjNWEzNGRiMjYyYTJjMzZmZTg0YTVhOGJlMmQ1YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzOTFjODgxOTQxNjI4YTEyODUzNzhkMWZhMTEyMjA1ZWRmNmZjY2NlOWJmZjJmNmI4NmM5MGU1MWFiNWM5YjUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:50:59.685Z"
+    "at": "2026-11-26T21:59:01.672Z"
   }
 }

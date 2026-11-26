@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:59da68715164d7e44e6c0b51fc17a13c180f2c59716277643a58e8f2744eba84",
+  "claims": [
+    {
+      "id": "claim_961e090fafbf4e7da78a0e87637c4ea3",
+      "statement": "Core::Memory installs the owning KProcess page table and uses DeviceMemory as backing storage. The application can expose the fastmem arena when fastmem is enabled; other cases leave it unset. The Dynarmic integration takes the process page table and configures its own execution-side access paths from that memory state.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/arm/dynarmic/arm_dynarmic_64.cpp#L230-L250",
+          "version": "repo-lines-v1:sha256:8c419a8b170d9b24960cbccccabe5fc6389cf091824859c2552c74734a3f5e03:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4YWIxYjFjM2M0NTQzMTBmMDUzZTdlYWMyNWUyZTRhNmMyZTBjYjc3MGJhNTdkZjg5NDcyOWZhMDRlZjBkZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNGU3MTY2MDY0NmNhYWUxYTdlZTlmMWU1MTQ3MWUxZGM1MTMxZTI5Y2I4OGQ5YTA5NWY2OTQyZDIwZTlmMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ZmRkM2ViYWUxNjg5ZTk0YWMwNDI1NTZjZmI4NTk0OGM1ODUzODcxOTFjNGZiNTAwYTIzYWUzZTI1M2RmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNTY2Zjg3Y2E4YTI2MjYyODA2ZGM1YjRjZTQ3ZmZjNzM1NDc2YTIwZWU3Y2NhY2FhYjZlZDNjMDE3N2ZkYzQifQ"
+        },
+        {
+          "resource": "repo://src/core/arm/dynarmic/arm_dynarmic_64.cpp#L436-L442",
+          "version": "repo-lines-v1:sha256:53ce28e54632478492ee899009446d965bfebe88194da6503d81d520ac51ba57:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWM1MTFiMDRiMWU2Yzk4Mjc4NzU0OTczMWFiOTYxNzgzYWI5YzAxYjZjM2ExZDhkNTk3NTE2YmI3N2UwZTY3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDBjNjNlNTY3OWE0MjJiNDNkYTdjZDg1Njc0ZGY0MWM4YmNjZDFjYTMzMGJlYjA5YjViNWZmZGEzM2FmMzg1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjFjYjc5ZTQ4MGIwNTA1NmRjOTA3OTRmZGUwMWZhNDJiNWNjNWFjZGZiN2EzZjE1ODk1YjUzMzUxY2ZlMzBkZiJ9"
+        },
+        {
+          "resource": "repo://src/core/memory.cpp#L64-L85",
+          "version": "repo-lines-v1:sha256:9d6c594b83ce2fdcace1bbd8fa6d0fd919d44ec09f9c78ee8afe7dc75cf12e6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzN2JmYzIyYjRiNGY4ZjZkY2JkZThlOWU3YTA0MDY2NmY0NDlkOWVlODVkNWNlMGVhMWI2NzYyYzgwMGRiMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0OWUzYmUxZDU4M2QzNmI2MjBlNjJlYWVlMjkzYTNlOTEwNjE4YTZmYTI4NzJlMmIxMzdiOTQ3YjhlZGE3ZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkNWJmM2IyZTgyMzM2MzY5NzBlNGJkMDA3ZmRmYWU4YjI5NDBkYjhkYWU4MTkyZmU4MjUwMTRiMDU4YjA3YWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b168911417e8441fac2cb225af90a9ac",
+      "statement": "Block accesses walk the process mapping. Reads of unmapped portions fill the destination with zeroes. Rasterizer-tracked pages can trigger a download before a safe read, or a renderer write notification before a safe write. The unsafe variants skip those renderer callbacks, so a mapped address alone does not establish coherency.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/memory.cpp#L1254-L1279",
+          "version": "repo-lines-v1:sha256:cc18914c0a8a9bfae78c9634b4b1bdaf32643399a67b072eac7bc4066f161f40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0YjBiODI1YTAzOTYxODdkMThkMjg3Y2Y4NjczYjE4NzAyZWYwOWQzMTJiNWMxZDNiMTgxMmUwNGJlYzViMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmZmE1Y2ZiMjNmOTQzYmViYTRlMTIyN2I4OTBmMWVjZTlkMGMzY2Q4OGMyYjJiMjlmOWRjNTRlNjBlNzc2MjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4ZjQzNDJlMDc1ZWQ0ZTdlMjI0Y2RiNDJlYmQ4YjhkNTdmYTBmZGI2NDU0MGU3YTQ0ZDE3YjEyMTczZGI3MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1N2RiNjU4YWI5NTA3OWNlZTU4ZjgxMWZmY2QxMzM5MDMzZDdkODg3ODRhYTJiMjIzNDlkNWNlOGZjMWMyZjIifQ"
+        },
+        {
+          "resource": "repo://src/core/memory.cpp#L318-L333",
+          "version": "repo-lines-v1:sha256:1286991f19e5113f3c99c9a5ce0c832454578a60fa5808e95681f82a11007883:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlN2U0Nzc0MDk2NTQyNjgxZjA3ZDI2NGQxMWJhZmQwNThkNmNhMDcxYzhmMDEyZGU5MGI1ZTY2YTlhNTk2NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzEzNTkwNjY1NjMyM2QxYzVlYTQxNjU0ZWU2NmFmYjU4NWFjZGNmYWVhY2ExMjFkNWUzMGJmMTkzZWVkZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMDM5NmVhNjdlMzcyNGZmODZmY2M0OGNmY2IyZGRhMmRjZWM4ODNmYWU4NDQwODNhYTU5NzQ5MjMwMThkMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlZDNiZDBlODQ0Mjk5ZmM0YTkzZDA3Y2UzZTkzM2EwZTZjNjUzYzcwNzJhYjdlNzQ3NTlkNGIzZTIxZTU5MDYifQ"
+        },
+        {
+          "resource": "repo://src/core/memory.cpp#L352-L365",
+          "version": "repo-lines-v1:sha256:dd7834c6cc84c640f341b7a55c39017972375be755a311de7f4f41018eb5dae4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NjlkMzlhYmNlYTc2NWJiOWViMmYzOWU4OTg3M2IzOTZmZDYyYmNlYTRhMjBlOTdhNGJkZTc1MjE4MjRhZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5YzEzNTkwNjY1NjMyM2QxYzVlYTQxNjU0ZWU2NmFmYjU4NWFjZGNmYWVhY2ExMjFkNWUzMGJmMTkzZWVkZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiZTNlYjM2YWZjYWQ2OWZmYjJkZDcwNjI0NGMyYmM4ZWE3YjUxNjZiZmIxOTM1YzM0NWIwZGVkYTNlYTgzMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjYzg0MDA4Y2VhNDJhNDg3YmIyYjRkMGE5NzY3MjQwZDhlODQ2ZWJjZDU5NDlkOGEzOTQ1ZmExOTdiM2Q3MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66621d5041bc4383a5c933ce40b4d8cc",
+      "statement": "Tegra::MemoryManager maps GPU virtual addresses to device addresses using small or large pages. Sparse reservations have a separate entry type. Despite its name, GpuToCpuAddress returns an optional DAddr, rejects unmapped or out-of-range input and prefers mapped big pages before testing small pages.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/memory_manager.cpp#L274-L320",
+          "version": "repo-lines-v1:sha256:3dfb8e2d07bfd7f623d086c1d581c6e28db397737b531832d0c373a7de30a0dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3MzJkZTBlNGYxYzI0NmZlNzJmYmM4YzcxYTBiZTdkMDgwNzM1ZmM4Zjc4NzFlZWY4YzhhNGUyY2VjNTQ4MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmMjUyNzI3N2Y0NTBjZTkyYzI0YzVhY2ZkY2E4MzVlY2ZhYTEyZjE3ZTdhOGRiZWY4MTVlZmI4ODRlMzVlZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiNzVjYTcxYTAyMTY3NmZkMWQ2OTJlNjI1YjIxYThhNTNkMTNhMTE5M2EyNzVhOWM0NzlmNTlhOGVkOWY3ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzYzQyOWY3NWM3ZjlhMzgwZmJlMjcwYmZjYzIxZWUyMWM0MGIzZGNkMzgyZGZkMDRhNjRjNDVmMGIyZjQ1NjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7de90e25418c409f8edcc6a4932228aa",
+      "statement": "GPU unmap walks the submapped ranges and notifies the rasterizer before clearing entries from both page tables. This ordering lets the renderer release its tracking while the mapped ranges are still known. Start with the GPU memory manager for address translation and the GPU command page for coherency across queued work.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/memory_manager.cpp#L286-L299",
+          "version": "repo-lines-v1:sha256:25322f3c6b0ea22a9e6967b8515b0cd8518ccf8429d1faf30d54910688270f80:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlYTI3MzgxNDc3YTQwODg3ZWU0OWZmNjI5Mzc0NzNkOTdlYzliZTVmMDdlNTlhYzE2NWE2YWQ0NjQwNmU4ZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllMzYzNWE2YjA5OGIzZjg4Y2EyY2FmZGE0Y2IzMTVlMmU4ZDgzYjZkZmZmY2QyMzhkMDBjMDJlYzlkMmIwYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0NjAwYzAxOWNiMDBjZDE2OWRkMjk0ZTQ4MjZmZDE4ZmFiNGFjMWEzOTZiODYwZGYxOWNmYWMwYzZiOThjNDEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

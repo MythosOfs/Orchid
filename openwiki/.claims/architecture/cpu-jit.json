@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d9ae3a839c85c85ade9b3271867ab9cda36f7d36379b85469a293a7757efbdc0",
+  "claims": [
+    {
+      "id": "claim_edb72318d0594becad610c9a169bc7d1",
+      "statement": "CpuManager starts one host worker in single-core mode or one per emulated CPU core in multicore mode. The guest run loop delegates to the current PhysicalCore, then handles interrupts. The single-core loop explicitly advances core timing and performs single-core preemption between execution slices.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/cpu_manager.cpp#L106-L124",
+          "version": "repo-lines-v1:sha256:54c506226bb38a16e7a9395fb0a5564aa587bce5e28aaebbd952ddbb5d12bb80:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5MzhlZjFlYmM2NGNkODAzN2JiZWM0ZDBjYTAxOTFhZDQxY2U1M2I4ZGQ5YjI5MDE1YjkyNDgwMWNlZGM2ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3ZDA1YmU1ODFkYzIwM2VkYjM0ZDdiYzc4Nzk0MTM2NTJkM2EwZGU4YzJkNDM3MzhkNTIxOGU4MDMyOTBhNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMmIzMzAzNGI0NzBlYzdmZmQ5NjM5MGViNmQ5MGVmMWYyYjUyYmUxNDA5ZDE1ODY4OTkyYWEzZTVjNTUwNTEifQ"
+        },
+        {
+          "resource": "repo://src/core/cpu_manager.cpp#L25-L40",
+          "version": "repo-lines-v1:sha256:ebc7779bd2012fb97c5c4e1b66c0d1d73b86f83d856cbda61f1516935a90eb66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MTJhNjhiNjE0ZTE5ZThlMTAwYzM2YzczZTVhM2I1NjkwYzdiM2ZlZGQ5ZGE0MmIzZDJmYWIzMTJkNzY4NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUifQ"
+        },
+        {
+          "resource": "repo://src/core/cpu_manager.cpp#L73-L85",
+          "version": "repo-lines-v1:sha256:4bea74fddb7252875f2b57e31ef4b341d0eabd3bc382b0e1e31aac7da956b54d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYjU4ZmI3MDU2NDNmODgxZDRjYWNlNzg4OGM2ODhlN2FmYTcwODIzZTQ4YzJlMTU5Y2QwN2M0OThhYzE0MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmYjYxZGQxNTBjNmZhZGMwMmZmYmNmMjRmMjc3YzFiMGYwZmU0OGVjODQxMzI5NDZmYjk2NWI2MTE0NTkzYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNDVmMzU4YWUwMTFlZDZhZGFiN2VmZTRmNjBmYjJjZTkwNzA1ZGM1N2FmYmIzY2QxODY0MDlmMmU3MDE0YzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe5399855cce4d51b2570a0e50b2905d",
+      "statement": "KProcess owns the ARM interfaces used on its cores. It selects AArch64 or AArch32 Dynarmic implementations based on process bitness, and a build with native code execution support may select ArmNce for an application when enabled. Both Dynarmic implementations receive the process and its exclusive monitor.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/kernel/k_process.cpp#L1317-L1341",
+          "version": "repo-lines-v1:sha256:3653c38e2bc37e5573645aabc0a47d3c495eab18d49a0d2fbc096e6f39d4d8eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhOTU2ZTdiM2Y2MWIzM2U4OTFjZDcwOTI0MTAwNTYwOTIzYTYyMjU0YWQ1ZDg4YmEwZGVkM2UxN2NhMGI1N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExYjZmZWI5Y2FhNWZiOGZiMDM3YzJiNTJhMjY3OTdiMTZjNDllZjhkZDUxN2IzYjkzODU3OWRmYmRiMzM1MzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_93584a7e093345d3a3827e65b8656b45",
+      "statement": "ArmDynarmic64 configures a JIT from the process page table and address width, then translates the JIT's halt reason before handing it back to the kernel. Memory callbacks provide a route through emulated memory for accesses that use the callback path; inspect MakeJit for direct mapping and configuration.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/arm/dynarmic/arm_dynarmic_64.cpp#L230-L250",
+          "version": "repo-lines-v1:sha256:8c419a8b170d9b24960cbccccabe5fc6389cf091824859c2552c74734a3f5e03:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4YWIxYjFjM2M0NTQzMTBmMDUzZTdlYWMyNWUyZTRhNmMyZTBjYjc3MGJhNTdkZjg5NDcyOWZhMDRlZjBkZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzNGU3MTY2MDY0NmNhYWUxYTdlZTlmMWU1MTQ3MWUxZGM1MTMxZTI5Y2I4OGQ5YTA5NWY2OTQyZDIwZTlmMmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ZmRkM2ViYWUxNjg5ZTk0YWMwNDI1NTZjZmI4NTk0OGM1ODUzODcxOTFjNGZiNTAwYTIzYWUzZTI1M2RmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViNTY2Zjg3Y2E4YTI2MjYyODA2ZGM1YjRjZTQ3ZmZjNzM1NDc2YTIwZWU3Y2NhY2FhYjZlZDNjMDE3N2ZkYzQifQ"
+        },
+        {
+          "resource": "repo://src/core/arm/dynarmic/arm_dynarmic_64.cpp#L31-L67",
+          "version": "repo-lines-v1:sha256:76aab7dac878bb6b1adb34a0e89b99e2563782096bc7bf51cd65fe61da1e7dbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZDc4YzBlOGZjNTJhYzVkMGY3MGM3ZGU4ZTRmYjc3NjhkZWMzNGI0ZDk4MzQzOTU3NzA2OTQyZmQ0YWQ1OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwODYzMjM4OGFlNTBlOTVjYzUyMGEyOTEyZmNmYmJmZTg4YjU0ZTkxYjE2ZDEwNWY4YzJjMDk4ZDI3Y2NlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkZjdiMTExYzQxYjUzZDk3MTA4MmQwOWYxNjkyODQ3ZTU3ODNjZjVjZjM1MTQzNDAyMWQ0YjYwNjlkYTUxYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlMmViMDQwMTEwMWYzNjMwZWJhMzFmZDExZDIwMDE4YjAwNjVhNGYxNGEyMTk0NzE4MWIyMTUxOTUzMWI5YWMifQ"
+        },
+        {
+          "resource": "repo://src/core/arm/dynarmic/arm_dynarmic_64.cpp#L397-L404",
+          "version": "repo-lines-v1:sha256:0bbcf434907f956af84fe71cb5b693ad13984cfea708fd88ba462e21579b0220:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAzMjIwMWJmNzc5ZTJiZGY5NGI3ZjQyNTgzNTY1ODljYTEwY2I3ZDUyZGE2OTQ1MDUzOWExMWE2ZGE5OGRhMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTJmODc0NTc4YWExMGMxYTMwZWQ4OWIwZGMxOWY0OTRlNjc4NDY4ODEyNzcwMzQ5MDliNjQ4MTBiYTZjODRmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDY3YjQ1YmYxMWNhOTFlMTIzNzJhZjJkZWE0OWZhMGQ0YjczYTY1Yzc5ZmIzNjJkMDIyNzNiNTFjMzA3ZjFiYiJ9"
+        },
+        {
+          "resource": "repo://src/core/arm/dynarmic/arm_dynarmic_64.cpp#L436-L442",
+          "version": "repo-lines-v1:sha256:53ce28e54632478492ee899009446d965bfebe88194da6503d81d520ac51ba57:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWM1MTFiMDRiMWU2Yzk4Mjc4NzU0OTczMWFiOTYxNzgzYWI5YzAxYjZjM2ExZDhkNTk3NTE2YmI3N2UwZTY3YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDBjNjNlNTY3OWE0MjJiNDNkYTdjZDg1Njc0ZGY0MWM4YmNjZDFjYTMzMGJlYjA5YjViNWZmZGEzM2FmMzg1NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjFjYjc5ZTQ4MGIwNTA1NmRjOTA3OTRmZGUwMWZhNDJiNWNjNWFjZGZiN2EzZjE1ODk1YjUzMzUxY2ZlMzBkZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_01e1f1e531da4c85b3b9d6e81b411c20",
+      "statement": "PhysicalCore runs or single-steps the selected interface and classifies the halt after leaving the CPU context. This is the entry point for guest supervisor calls, breakpoints and aborts that leave JIT execution. KThread holds the context restored or saved at the execution boundary.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/kernel/physical_core.cpp#L29-L66",
+          "version": "repo-lines-v1:sha256:756866aae9da35737a7184470c68e7ae5ab4018944b75fd5dab3b420b2dbd79d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwNDIzZDk2MGVlNDQ3OTZiZjI2YTYxZDgwZDQ5Y2E2OGM4Yjg5MmNkNWFiN2RiOWMxYWQzNzg2ZmI1ZWQ4ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMGU4ZmMxMzRkZmFhMDcwNzhiYjE1MDk1YzVlOWQ0Y2M5ZDVjZjk5NDUxYzRiNjY4OGQ2N2UxYjliZmQyZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxNzhjNDM1NmVhOWMyMWMyZTZkZTk2Y2YxZjQzMWJiMjY4ZGY5NTFmYTYzOTg0NTlkNDcxNDNiYjY3YTQ2YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0N2U4MWRkN2IwZjg0NzExNWUxOTNlYzg0YzJhODM2NjcwOTBjYzQzYTc5MDQ4NTFiZGI0OTA5M2M4YTFjN2IifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/kernel/physical_core.cpp#L90-L167",
+          "version": "repo-lines-v1:sha256:f91c78a7a778ee38aa0f85a4a31a4f0d2f573223e3cd8232cd409c17c2e07fb3:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZjg1N2JhYjU3N2FhMzQ0OTgzNDFkZjRhODM1ZjJjNzg2YTBmMzllYWNkOGMyYWM1ODFmYTE1NWI2OWRmNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMzhmZDI4MWYxMDY0NzIxODQzZDM0ZjA3OGNjYzJjNGNjNjk4M2U1YzgyYmQ4MmJlZjk5MjYxZWQwNmNmMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1YzYyYTM2OGU1ODA0NTk0YTEwYjJhNDFhNDE3ODRjMzI2ZjY2ZWUzNGE0NjE4MWJkZmNhMmUyODc4NmU0YWEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

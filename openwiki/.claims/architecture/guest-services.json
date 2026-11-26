@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bb5682a69cb28500de67515b2a78ffeec9578494e942f0776a5a4b355dd3973a",
+  "pageVersion": "sha256:97cf283e6e52c07eb7615990f2ba9a20499c40c30335887b08242415c1c40006",
   "claims": [
     {
       "id": "claim_cb5e8dc3f0c0433d8c09d7545e1ba302",
@@ -59,10 +59,52 @@
           "version": "repo-lines-v1:sha256:fc8d94e2be60bce3ef066a632273720ee2f4783641355dbc969835b0254ef1a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2YTQ2OWI0ZmM2MmQ4OTdmNzg1ODgyNGFiZTlmMjhiYmFlOWIzMjhhNjhiMmY5ZDYzNzg0YjllYjI1ODlkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMzQ5YmJkMWEyMTEwNGYwNTFlMzRiMmM4YTllNzBjYzdmYmI1MGJjMTlhNjc3ODFmMmExNDBjMzg2ZDk0MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YTY1ZmZiZjEzMTYwNmMyODMwZjFhZTA3MjBjNDRkN2Y0MmRkZjc2ZmNjOGY3NDIxYWFhM2JhOGQyYjNkYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NjgwNTIxZjk2MjVmMzg0ODE4NDFlNzJlODliNmJjZTFmOWU2M2YyMTEyZDM3YzI2ZWYwYWUxMzJjM2UzZGQifQ"
         }
       ]
+    },
+    {
+      "id": "claim_d2e0e211d5584858bd9fd630b8b4210e",
+      "statement": "Services starts the audio, filesystem, nvservices and socket entry points as host core processes, and starts VI with a stop token. Other named entries include SM, AM, settings and HID. Follow the process table to the relevant LoopProcess and then the registered guest port, since the process label and public service name can differ.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/services.cpp#L88-L126",
+          "version": "repo-lines-v1:sha256:6f73bfb26f8335724dc15de2b593ce2438c838d712be96a7cfe25e67bca3371a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5ZDMzYTQzOWFhZDRhODUwODViOWNmYzc2NTdiM2QwNzg5NTBkNWI3NDc5NmQyMmE4MTZkNjlhMzlkMDQ2ZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhYTc3YTA0NDY4ZGU5ZGM1OTIzZjRjNDcxNDRkYzZhNGY0MTU1YzI1OGJmNTM3YWY3ZGE4MWU1YWM4ZjA3ZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4YTkwZTI5YjFhY2QwN2QxMzg1ODA2YTg2ZTNkODA2ZjRlZDUwYTg5NzVmOWJkNGM0NDU0ODMxMWE4NDJkNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NGRjYWE1YTMzYTUwZjE2ZjAzODY3NDQ3Zjk5MTQ2ZjQzZGVjMmE2NTA3N2M3NWI1NDUwNGI5NDNkNzc3N2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_13f0776b268e4740bb81e0459ae74695",
+      "statement": "The AM service starts a WindowSystem with its button poller and event observer, then exposes appletAE and appletOE through separate proxy implementations. VI registers its manager, system and user ports over one shared Container and calls its termination handler when the stop token fires.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/am/am.cpp#L17-L29",
+          "version": "repo-lines-v1:sha256:cce1fa974187ba5b9557d1fbeb53733bd6948cc37f36f1bb030c668faca033f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZDU3N2I2NDRjZDkxODgyZDFkNTc0ZDYyMTU1ZDIwMmMwNDFjM2YyOWI4OTljZDdmOTRkYjI3YmFlMDI0NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0OGM5OWRjZGE1NjQwZjFlMWQ2ZTYyNzQ2ZTA3NTZmMTI1ZGJhZDY2OWU5ZjlhOGI0MDZlYTYwNTE3MWM2MzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxZDQyNzQzZDRkYzI0ZDA0ZGVhMmNhZTdiOGJmYzhkODRlMjcwYWJhMGQ5MDdhNzNkMmFlMTYxODU4YTI2NmQifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/vi/vi.cpp#L17-L32",
+          "version": "repo-lines-v1:sha256:3535d7a7b4b62d3e3ca5eb447bbbd84c3321c112f519ba0752939e2008b73d47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZTViZWZjMGY3YWE4MzNmYTEwMmVhMGI3NzU5M2NhMTI0ZGRkOTJiOTc4MzQxNzY5ZWIyZjZmZjUyZTJiZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5YzExNTI5YWIyYTc4NTQ1NjlhMGQ5NzBhMTFlMDI2M2JkOWFjNzQyYWMwMWFkZDMyMWQ0OWJiZTU2NjkyYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzNDYwMmNkM2UxMzE5YTU0Njc0OWZkZWVlYjNkOWVmN2EyOWUyODM2M2E0N2EwNDA3ZTcyNmNlNzdhMTJjMzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b28c7a7094f49a39aea42c49a1fd2bf",
+      "statement": "The filesystem service registers distinct loader, program registry and filesystem proxy names. NVDRV registers multiple driver-facing names, including an applet-specific factory. To trace storage use fsp-srv and the filesystem module. For a GPU command list follow the nvdrv device handler into the GPU queue.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/filesystem/filesystem.cpp#L826-L836",
+          "version": "repo-lines-v1:sha256:8ef595b2ae641cb487356651a4f4144d83e787ae30d2c9298163f5c173f23b20:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkZmQzMDA4M2Q3NmIwNTM1MjBiMmUwOGU2NjNkYzlkYTM1ODg4OGQ4Mjg2NDc3YzVlMDBjM2E2OTRhZDBlMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5NDNiOTExMGI3OWQ0YWU1YWMzODQ0MzljM2MzMDcwM2MwNTdkY2M4OTg5NjZmYTU2N2UxNzZjYWE3OGNlMmYifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/nvdrv/devices/nvhost_gpu.cpp#L450-L466",
+          "version": "repo-lines-v1:sha256:2b30b8737e958d76880d8567ce60aad969711fd98830713082a3ba14a8652f54:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiZWViNzMyZDVlNDljMzcxNTFjYWVhYmI4YTE5Y2QyOTAyY2UyZTYwNDg1MTllNzMzMWJjZjFlYTI4ZDgzZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzE3ODQ5ZTE3MWFjNTViYzBmOWMzMWEzOTc0ZTk1NGU4YjRjYmIyOGVhYjdmNGZkOTkxN2RhYzBlMmI3NDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlYmJiZDlhZWJkODZiMWZlMDA4MjMxODE3NDVkYWYyYTQ3ZWJlMWIwNzg0OGI3MDc2NjczNjUwODBmOWY3ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0ZDk5NGFjMWNmNTRmMjc3ZTljZGQwMzIwM2YyOWYwZjNjYTNlNDYzYjhiY2MzNzY5YmM3MDQ2MTg4M2IxOWQifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/nvdrv/nvdrv.cpp#L104-L120",
+          "version": "repo-lines-v1:sha256:d1531169cb3e5f8c9ce0aa4bd52364dd465e5f206ceae803f3a02efe6a4659f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYjcxYjM0NTJiNDQ1ZWZhNDYxYmY1OTA2NTM2OWZjMmJhMzkyY2ZlZTFkYjEyNWIwMmRhYWY5MDgyNjAzZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjOTc2ODE1ODYyYzg1NTc4MjZkZGEzNzk3NjNkNTQ5ZTUyYjU0NDA1NjE3YmFmOWQ3ZWM5MjNkOWM2MDBiZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNWNmNWZlMWQ3MDFkYTNlMWFlYWEzYTM4OGU5OWE4MDYwZTMyY2U3M2E2NDhkZWM2MmYyMjFkNGJiMGUyMGEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:50:59.685Z"
+    "at": "2026-11-26T21:59:01.672Z"
   }
 }

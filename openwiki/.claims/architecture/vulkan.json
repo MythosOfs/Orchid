@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0f0bc428c019fe159bfcc92521c001483948ffad9005da9fdf9c26b0d5720162",
+  "claims": [
+    {
+      "id": "claim_0aa6a7c7694c4fcdaad93637b7830869",
+      "statement": "RasterizerVulkan obtains graphics state through PipelineCache and configures the selected pipeline before recording the draw. DispatchCompute separately selects a compute pipeline and configures it with guest memory, the scheduler and resource caches. A wrong guest register or binding should be traced through the rasterizer before the window's presentation path.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_rasterizer.cpp#L1219-L1246",
+          "version": "repo-lines-v1:sha256:2f1e4d388890ffcbc75c47414c88c1c859a4c3075e502cc7b03edd2845f61d02:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiZDI2MWU2YzQyYjYzYjhlZGUxZmUxNDYyNWIwYzhmOWZiMTJjOTdjMDQ3NDdiMGMzZjczNDFkNmM4NTQ5YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZGQwNThhYzJhYWNjYmYwOTNiNWQ1YTkxMDgzNzk5MDZiZjVjNWQyMTcwMjIxODlkY2RmMjllMjcxOTU0NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2NzZiOWVmYTVmYWY0NjFmYTYyZmJkZTM4NWEwZmZiOGRlMTFjZGYwYWIxYWQ0Yzc4NWM2M2YwOTcxMGUwNWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjOTVmYmNmMTljMWQ1ODlkOGVlNTRjNjlhYTBlNWI4NzgwMzk0MTg2MDE1OTQwM2Q4M2RmZDI1YWY0NjA4MzkifQ"
+        },
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_rasterizer.cpp#L336-L349",
+          "version": "repo-lines-v1:sha256:3629507f1dab035c9725672f5e6f410b58b7d073455824d9e2746b36a3aa968a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExMTY4ZTdlZTcyMTBiODdjYzUxODNmYzliMTg4ZTZhZjZkZGU3YjQwOGM5NDk0YzlkMjA5ZTc2NjZhYjIyMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYzA5NDU4ZmU5YjNhZmNmODJjYmNjODQ4MTA0MDBmMDdiMTE3MmI0MmVmYTFkNGI1M2Y2MWY4N2FlOWQ2M2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5ZGQ1MDkzNzE4ZjFmMjBhODNiNDMwNDYxOTBjZmU2YWRkNjVmMDA1ZDI4MzRmMjQzZmQ4MTk5MTdiYzY4MGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYWM4YWMxOGM3ZjI2YmVlMTlkZTExYjBkZGU0YTFiMWY1NTQ3NTdhMmYzNzE1YTI2NTJkY2RmMzdjYWNlNjcifQ"
+        },
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_rasterizer.cpp#L493-L526",
+          "version": "repo-lines-v1:sha256:e96a32e9df3adb49febb5489975edfa5f80256717c2ee0bb70e0f3f8ac00b085:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ODVjMTkyM2NkYWUyM2E4MmY2YjU5MGI3YzRlMTkyYTlmZDhkYTI5MzFjNDhkYjRlMzc4ZjMyYzFhOTZjMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZGJlNTcyNDJlMDBkMTJhYjUxMmFhMmU5MDE2NmQ3YjIzMTFhZjY2MTkzZmY0MDUxMjQyZTk3MDhjZTIwYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjYzFiZmExOGE4NGEzNGMwNzRhZWVjNzkyODBiYmE5ZTJjZWJmNjdmN2MyYTQxNDFmNTU1YWIwMWUxYzJhNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExNjkwMjlhMzc2NDIzOWUxM2Y2YTIxZTU1MjVmN2UzMTQ4ZTRmYjRmODE1NTJkMDI4MjEzYzE5NTFjZTFiNmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_58e8e9f609d14b4480d1abe8d9a61392",
+      "statement": "RendererVulkan::Composite handles applet capture before testing whether the window is shown. On the visible path it prepares a frame and draws the guest framebuffers into it using the frontend layout, then schedules rendering against its ready semaphore and passes the frame to PresentManager.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/renderer_vulkan.cpp#L291-L312",
+          "version": "repo-lines-v1:sha256:e985facb51581f9ea45f244e3907c842b3db4ea03cf0f4c79452765eb081dbd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmZjQxNWMyNGJjM2M2MjQ1NDZlMzRlN2IwMTFmYzJjMzcxMTU0ODEwYzY1YjljYTk1M2I3OTBkN2U2YTA4OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZTFmZDhmNWM1NmI1YjhmZmUxNzMzMjgyN2MzYzQ3ZTkwOTFkYTdjZjFjNzdlN2I4MzhhOWMzZjU4OWIzNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MTliMThhYTFjZDM5NmYwNTZjYWExYjllNGYwNWYwOGE2YzdjNzBhYTQ3NmJhNDZiYjJkMTgxODRhMzM4MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkNTY4NWU5NGFjZTg4YzA2YWMzYTc0MThkYzRlOTE1MzRjZjIyMDRiZDNiNGVhZmM1M2I1OWMxZGE3OTEzY2IifQ"
+        },
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/renderer_vulkan.cpp#L333-L341",
+          "version": "repo-lines-v1:sha256:dbf249e1f21d9a4682b9df9ff67ff4007571bad94742b558fc5692048e0ac8be:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzEyZmQzZjAwNDJiMTk4MmRjZGU4OTA1NWFjZjIyMjU1YWZkYmZkMjY3Yjc0NDhkYmJlNmEwMzQyYzEyNzc5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWZiZWU2OGMwYzVjZWVlOTI5ODQ5NDExM2UwMjc0NWY4ZGE1MTY4NTMwN2M2ZGFjZTY0YTM2Zjc2MGQ3Y2IyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDViOWYzYzg0OGZkMzA0OWZlOWUzZTZmNTBlNGFiMDU5ZWNmY2JjNTgzNWRmMTAzZTY1ZmE3ZmVmZWJlMzY2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTliNDNiMzJlMmJlZWM4ZjBkODRmYjFjYmE2NTkwMmE1NzEyODY3Zjg3MGVkM2U3ZGI0NWM4M2MyMGNhZDMzOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1deb42e95d284fb399ef3870de98b835",
+      "statement": "Vulkan Scheduler::Flush submits execution and allocates a new context without waiting for the submitted work to complete. Finish waits on the pre-submit tick before allocating a new context. WaitWorker drains scheduler-side work, which is a different boundary from waiting for the device tick.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_scheduler.cpp#L62-L103",
+          "version": "repo-lines-v1:sha256:189f16a521c9d4f100a9f8cdb243e96a7a858409d3e7d9f26a48c7e7583d9462:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0NzI5MDAyY2I5NGUzYWVmZGNkZjNjMGY4Njk4NGMxZDFiYzgyYzFkODVkYzAxMzhkMDZiY2VmNTY3MTEwMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNDg4YjAyY2ZmMjM2MWQ5ZDY1NzRjODAwMmI5ZTdjNDU5M2EzOTNhMjg0OGE4MzgwYzIxYmFmZTU4Mjg1YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlYzkxNDdiMjk4NjEyYjg3ZmU4NjkzODFiNjE1NTQ5NDJiNDFiNGQ4ZDM4ZjU4MjEwM2E3YmZmNDkzNGRhZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0OGYyNTc5NWRjZGVhZjZkZGE1NGU4Njc4YTc2ZWNmZTYwZjI1ODc5MDQ4MDY5Nzk1MjAxYjIzOTZhZjVmNjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_284356e18b4c4ed0af4cb7cc52b99b8e",
+      "statement": "PresentManager can queue the frame from a recorded scheduler callback when the present thread is enabled. Otherwise it waits for the scheduler worker, copies to the swapchain on the calling path, and returns the frame to the free queue. A blocked presentation should be investigated in this path after confirming composition reached Present.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_present_manager.cpp#L203-L215",
+          "version": "repo-lines-v1:sha256:4c58438c27e0a35d81e3b0e9a72bf4d553fdf592d32db49e8960987c8a5ecd9d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYzQzNzg0ZjFiMjY0NmI1YjdkYzE0MDFlNTBkMGEyNGE4ZGNmMGNiZjUwYzViM2EzYjJhZTdjZjU4MzE2ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzZGU2YmNhYjY4YzExYjI4MWJhZjdjMGM1MzAwMDhmNmYxNTViNTIwZmI0MzE2ZDE4MWJiM2NlM2M1MzY1MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NzAzMjdkNjYxZGYzYzM5YzBkYmNlNTI0NGNkZTI5MGRkNDA5ZDU4MjBkMWU3Y2ZkZjllMzA2MTczZmRmYTkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

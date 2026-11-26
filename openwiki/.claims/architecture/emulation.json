@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8e6ed9a36df4442fe63a837fc8f5ac1ce881df6aa8c9cc57ecf9e82c72d3c1e4",
+  "pageVersion": "sha256:aea52ab76909d136663bf2841264878d4dc184f9164794fe68cce8c8488f6215",
   "claims": [
     {
       "id": "claim_7b8847e915fb4a1b805ebe6de6f8a91e",
@@ -65,10 +65,56 @@
           "version": "repo-lines-v1:sha256:53c89ac6f81a15b28105ec34a0269130eb7ed22025ad18442f783cdcf304f204:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NGQ1MGU0YzZlNDViZmI5ZGZjMjZhM2IzMzg2YmVjOGRkNWM2NjVlNjYwODEyYzU4MjZjNmIzZDZjMDlmMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MzNhNTBkYmRhYzlhYzkxMWUyZjcyNDU0NjY3MDVjYTVkYTNmNzIxYjgzODZiMDE3YTc2YjZjYTNiMWE5NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0NDU4ZWM4MjhjM2MxMGEzNjY4ODZjMWE3OWU1MTkzNDA5ODgzMGQxM2ZiYWUyZjU0MTFiNjQ2MjFmMDViOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMjEwZDEzMzdkOTFmZjdkZDBjZjdhNTAxYTljNzljYThiZDMyMTk3MjZmYmMyNDg1NDJmNjFjMGZlNWFhMDIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_56e400a1ff1c42b490f9118d412687b2",
+      "statement": "Core::System holds the kernel, clock, CPU manager, filesystem controller and HID core in a single implementation. The service collection, GPU, Host1x and audio objects are optional session components. When tracking a lifetime bug, distinguish the System object from the application resources that Load constructs and shutdown releases.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L510-L553",
+          "version": "repo-lines-v1:sha256:96ba01a2dc7efd1030c2b8eb39f046cb2fd0a0f525949c3a1d95f5ee9d8254bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NGQ1MGU0YzZlNDViZmI5ZGZjMjZhM2IzMzg2YmVjOGRkNWM2NjVlNjYwODEyYzU4MjZjNmIzZDZjMDlmMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMDg2M2Q4NGE4M2VlNWU1MDI3MjNjN2EzYmU5MDgxYzVkMGU1YTUwNGQ4NTFmZGY1MDAxMDVhZTg3MjA4ZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0NDU4ZWM4MjhjM2MxMGEzNjY4ODZjMWE3OWU1MTkzNDA5ODgzMGQxM2ZiYWUyZjU0MTFiNjQ2MjFmMDViOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4Njc1Mjc5MTc0YjUxMGNjOGRiMzZlYjIwM2I2ZTBlYTE1NTNkYmUzYWEwZjcwMmJiM2MwNmFiMThkMzg1MDYifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L586-L638",
+          "version": "repo-lines-v1:sha256:8027e1cd169fb796ea66904865be6400f9e77ae90e987909bac1602e09ca6c5d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZjc3YjM1ZDY3NDAyNTY5ZTY5YTU2ODY0ZDgxMGQ0Mzg3NDU4NGMxNTk5YWQ2ZGNhOTIyODBmMjQ1MjIwNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiOGMyYWE0ODQ5ZGI3ZWYxYTgyNTViZjFlZjdkZGM0M2I1MWUxZmM0MjAzMGQ3M2EwOGY1NjNhMWM5ZmU5ZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmOGNhOWExNzM4MTBjYmUyNTU5MmU3ZjlkNjhmNjg1MmM4MTlmYzIzNTk2MTdiMjczMmI2MzZiNjQ4ZjM0NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0ODU1YmY0Y2UzNzZhMzczYTJhNTQ1NmNiYzg0NDNlNDhkZDQyNjRhNzBlYWVjZTI3Nzg5NGVlY2EzY2RmMDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e190e0ddf2cf4256839e42588bbbf470",
+      "statement": "Run and Pause serialize transitions through the suspend guard. Run resumes the kernel and clock and clears the paused flag. Pause synchronously pauses timing before suspending the kernel. This boundary is shared by the desktop control paths.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L281-L299",
+          "version": "repo-lines-v1:sha256:b01c1dcf35d30369c34fb15b8291e9a6deb053474cbb09f530ec2c3a750408ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNTYzZjA4YTQ3NGU2MGYyYTQyNDVmMzdiMDFkMGU2NmMyOWJkZDVhNzk3ODU2MjNhOTBlODE2ZWY0ZTE4ZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNDQ3NzMxZDEwYWEwMWY5NTBiNDQwYjRmOTUxNmEwZmE2YzE5ZmM2MDEyNmFhMTdlMzgwNmEwMzZiM2UxMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiNGI4OWJiZGUyOTIzMjRmMjBkZjFjMjQwNGI2N2QwNGZmZDk0ZWM4NGM2NmU0NGE0MDU4MWY4NzkxNzdhOGMifQ"
+        },
+        {
+          "resource": "repo://src/qt_common/render/emu_thread.cpp#L48-L78",
+          "version": "repo-lines-v1:sha256:53088f3f6f625723beae54f24800556ee24d48cbb719aae068b5c698a69f98f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZWRmMDM5YTAyY2QzZTM5NDA4YTE5NjQ0NDliNjkwNTVlYzM3ODVkZDI5ZGQxMzZmMjgxYTFkMzA4YjI1M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMDA0N2YyODEwOWM0MTY1NmQ4MTcxNzk4NTY2MWFlNzAxMzI5M2ZiZTlkNGFlMTZlMDRlNjliNzE4ZWJhYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwMzYxZTE1OWZjZDQ0YTg1Njg5NmNlNzEwNGFmZDdjNjU4ODBjMzljYTgyZTZmZTRhNmRmNzBjNTgxN2EyYTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwZDAzNGMxNzE0NzViYmI4MTliMmE1NzkxYzhhZjkyZTYzNWZiOGZmNDk3MzQwNTVjNzU5MjQ2YTI5M2E3ZmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d829d3919c414ad0a9e185838277479e",
+      "statement": "Application setup connects the frontends to the guest through three successive boundaries: select and initialize the process from a virtual file, initialize guest-facing services and host-facing devices, then initialize the CPU manager and register the process with the applet manager. Use the links below to follow each boundary into its owning module.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L335-L346",
+          "version": "repo-lines-v1:sha256:6bc23533aec721861cc1e55111468965167d4a0cc392f01611dd6a1b5e08dfaf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2ZWZkMjc4OTRmYzE1NTViYWZkYzQyNmI3MzIxNzM3ZDRiOWE3Y2VjNjg2NTViYjUwZGZkMTE2MTA2MGY4YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZWFmYjViYjBjNGM0Mzg1MjY5OWY3NTM4MjU3ZGE2M2I1NzgyMmNiYWU3YTlhNDdlYzJjODE0ZWNiZWU2NzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYmU4NTFjMzg2NTdiZjQyMGZiNGRjY2I2YzVmYjM5OWExYTZjZGYwMmVmN2Y2ZmZiZDVhOGMzYjc1YWYxN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMTVhYWU0MTgxMTExODI1OTljYWQ3NDk2YjNiZjA3NjE5ODMwM2VmZjU2ZDM3NTUxZDI1NmVlOWE2ZDJmMmEifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L398-L415",
+          "version": "repo-lines-v1:sha256:519ed787f47f24e0dc6321fc78adc8b4e8f332a7c13d8c8ff670ca1ff5220f11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZGJhMGZlNDdhMjVlNmIxNjE4NmQzOTMzMDJiZjlmYjBlMWEyMDVmYWU1NmUxOThlNjRkMDlkNDZkMjBjZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhY2Q4OWU5NWRiYzlhOGY0YjU4OTZhZWRhYzA4YWE5NjUyYWIyNjk2ODAxZDMyMmZiMWM5NzdmODM1N2VjNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYWIzMzRjM2Q4M2UzYjA3YTU3YWJmY2UyZmRhYTMyMzRiOGE2ZTg3MGE5MWMxYTIyNTJiNWM2ZTMwN2ZkNWMifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L446-L471",
+          "version": "repo-lines-v1:sha256:307b39b1c2f7aa32dbac44d3fad3fb08d240a5ee97baa588e05e876c4cbbfd0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YzAyMDc3MGNmNTNjOTY3YzRhNjdjNDdkMDM1OTg0MGI4OTI3YzE2MGJiMjBkOTVhNmIxMzcxMzM3ZTFkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzFlYmNkZDRkMzQ1OThmYjgwMjQ3YzdhMDA4YTQ3ZGY0MTRiOGExY2E3YTM3YmFjNjNhNGM0NDIxY2YwZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkYTZhM2VlNGJlMTE4MzA2ZjYzOGZmMzljMDRmNWYyZWNhMGRmNjUyNDk3Mjk3MmIwNjI4MmVlMTJiYjk5ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlMmNjNzgzODU2ZTdlMjVhZjcxNDE4MGMzMDA3MTgwMGU0YzE4ODI0ZjA2NjY3NjBkODczODIwODM1YjJjYjgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:50:59.685Z"
+    "at": "2026-11-26T21:59:01.672Z"
   }
 }

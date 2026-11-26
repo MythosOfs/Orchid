@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:fa73ced110c792f41b42effbc2383d172c5b0681da30ab6d09bd0954a3c7afe2",
+  "claims": [
+    {
+      "id": "claim_1eb2e60f3cbb44b29786fea6f56e655e",
+      "statement": "The guest audio renderer manager opens a session using guest parameters and transfer memory.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/audio/audio_renderer_manager.cpp#L40-L65",
+          "version": "repo-lines-v1:sha256:ef267748c07167806f3939f338387bd29bf58bcea5c3050986d818bfa5ca5733:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYzgzODdhZTEwYjQ0N2RhMWRlZTYwMjE2NzE2NTRkMTcxZjk0Yjk3ZmQyZjAwYjJiYTdiNDNkNThkZTgyNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiYmY5NTBhZjQwMzE0ZTEzNGY5YzVjYzhlYWRiNjUxZGFmMDFiNjRlMmEwNWRiOTdmNWUwYTQ2MWU1MzdmM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NTAxOTIyMjhmZTlkNmY1NDkyZTI3ODU0ZGQ2Y2JlZGRhYzFmMmE1N2I3ZmE1NmFhZmU4NjQ5MDE1NmM3ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_01e0479de48544bcb4c3c1603fb54ccb",
+      "statement": "RequestUpdate and RequestUpdateAuto share the same renderer implementation path.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/audio/audio_renderer.cpp#L78-L94",
+          "version": "repo-lines-v1:sha256:0ea3b29bb6292b81507c5de24f8c767fe8383ef6c396ca6af003e6a18d6c6278:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1YTk4M2JmYjkxYmJkNTUwYjk3ZDEwMTc2ZTcyZGY4ZjM1ODEyZmM1MTdhYjEwZjlkZWZjNmJhNTkwMTY3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MDNmZDI0YzY0MTEyZmM1ZTYzNjE2M2Q5ZWFiMGE3NzNjNjgyOWNmMDEzYzA4OWZmY2YzZjdlMjE2NjI3ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3ZmVlNjIwNzExMjRlM2I1NjAxMTQxOWNjNzFlNTZhNjA0YTUyYjEyYzA0YWQ0YWYxNDBhZTNiNmJjNGJjMWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_514b73b58c9e42518d53c2f857dc05f4",
+      "statement": "The renderer parses guest update data in order from behavior and pools through voices, effects, mixes and sinks.",
+      "evidence": [
+        {
+          "resource": "repo://src/audio_core/renderer/system.cpp#L454-L515",
+          "version": "repo-lines-v1:sha256:0c54297e4250364f29cf00c6368221187d16347a4669b1c2a7e8dbbcf3b77a9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNmQxMWQ1NWQxMjk0NDFjMWU3NmY5N2U4OTg1OTJiYmRlMDQ0MGZhZTY1NDBmNGY3ZTM0OGViOGFhODhhZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MWY2ZWYxYTA3ZDFiMzRlOTYxODQxM2QzYmE2OWNmNWQ4NWUyNTQyYjU0YWNhNGVmYzQwYzYzMzQ2ZmJhZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjMjJlZTU4ZmQxNmUyMmNhZDMxZTM5OGQ3ZDZiM2JhMTVmMzQzNTU0ZWJkMDg3ZDYzMWQ2OTI3NGQ5NWQxMmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7667e77692e4427fb631ede081d4a8cf",
+      "statement": "AudioCore creates host sinks before initializing its DSP with the output sink.",
+      "evidence": [
+        {
+          "resource": "repo://src/audio_core/audio_core.cpp#L14-L32",
+          "version": "repo-lines-v1:sha256:f1cca3a62c00b1ec141ae351717b837af566a0467169ac71175bbda60dec9824:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5MzE3M2E0Y2Y0OWRkOGJkOTNjMzhjMTFiN2NlNWFhOTU3YzIxNzM1NmE3YjZmNmM0YTljNjQzOTliNjhiYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyOWIwMDdkZDAyNDkxMWM4MGUyYjhiOWRlYWJmMDRiZmQwMmJhM2I3ODAyMWQyOTc2MjYxMmU3N2YxY2I2MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmZDVhNDNhM2ZjM2Q1N2NiMTFkZmRlZjI1NjZkOTUwZmQyZjcyNjU4YTkwN2FmMTRmZDhmNDVhMjc1MWE0ZmIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

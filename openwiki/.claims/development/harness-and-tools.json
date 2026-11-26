@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:89178f767b4077be0e96da0d23007f2d54baefac7d257f5ce9400905ccb83166",
+  "claims": [
+    {
+      "id": "claim_0611147ec5c645dc87c50edddde8db27",
+      "statement": "The repository distinguishes a focused Catch2 test, the mutation runner and real emulator tests. The mutation runner establishes a normal test baseline, applies mutations in a private source copy and reruns the selected filter. Its base, file and line options let a developer identify the production logic that the test is expected to exercise.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L91-L117",
+          "version": "repo-lines-v1:sha256:f1e618ce6fc2954c35dbc61a2b449337b38dbb0297dc8efbaaeb5d23ca3cc252:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZjFkYWEzYTE5YzA2MjcyNzczZmVkN2Q2OWY5OThlMDBiYmNjZmE0NDI3Zjc2OTlkMDRlMWVlZWNiNjgwM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMGQyMDJkZmI2NGViYzgxN2RkMzhkZjIxY2ViZjcxM2Y0MjRhZDIxM2U1ODkwNTI5YWM1ZjczNDRjMjBjNzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwYmFhNDVjNTE1MGU0OTI0MTA4YjUxMjYzZWExNTA1YjhjNWEzNGRiMjYyYTJjMzZmZTg0YTVhOGJlMmQ1YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzOTFjODgxOTQxNjI4YTEyODUzNzhkMWZhMTEyMjA1ZWRmNmZjY2NlOWJmZjJmNmI4NmM5MGU1MWFiNWM5YjUifQ"
+        },
+        {
+          "resource": "repo://src/tests/CMakeLists.txt#L270-L283",
+          "version": "repo-lines-v1:sha256:82da19b9214cdcb72db458932d919d09843b72f26418144d7e4e27a8fb4d7158:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhYmEyZGE0OTk0ZDE5NTg1YTIwNzEzZWYzNmY4N2I1ZTliYTAzNzg5YzcwMWFiYzVjOGViYzkxZTAxMmYwN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjZGU2M2RhYWRlNjU2OWZiNmEwYWUzODZmNzUyMjBjMDU5ZDg4NGJjMzYzNTE5ZmZkNjgxMWUyZmVmY2E3OTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzOTZkZWM1OTk0OWY4ZDBmYTc5MjY1ZjFkMDZkODgxMWMxMTRmYzM4YmQwYTFlZTUwYjZjNTY1MGIyZDRiMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1YWRkYzdiMjMwYmVhMTk0YzNlMjMxNzhjN2E4Nzk4MWQ0YWI3MWY0MDg3ZjY2OGMwMzg1ZWE2OWNiYzk2ZmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_030ff0fe6661421ebc1a3a00e4e505f8",
+      "statement": "Offline shader tools under tools provide Maxwell disassembly, recompiler IR and SPIR-V output for focused investigation. Use those tools to identify a translation boundary and the expect helper to capture intentional changes to stable text output.",
+      "evidence": [
+        {
+          "resource": "repo://src/tests/expect.cpp#L15-L49",
+          "version": "repo-lines-v1:sha256:b88a170bd68e1376bc3156f9a2d6fda65703a117ca0dd2cd7a71725c80bf9201:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjA1ODRjZGEwYzgxYjEyZGYxYWI1NzlhMWE4NjU4MDRlZjI5ZjIzODU4OTJlZDBkYzM3NTExZTdjN2M4YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxY2FkMmYyNjQ3MzE1YmNkYTM2ZmFjYzRlY2U1OTlhNzg4NWRmYTI4YWYzZTFjOTRiODgzMGNiMmFjYTk3ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiYjEzMGU1OWRhZmFhZTNiODFlNTlmMmQ0YmIxMTQyMTYzYjRmMGFlNWQ0YTQ5ODI5M2FlY2IwMTVlNmU5ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDE2ODczNTdhOTMxZjZlMDUxMTRjZmZjNDcyOTA3MjliZjJmODJkMGRhNDAyYTA0MWVmMjBhYmQ1ZTc1NmEifQ"
+        },
+        {
+          "resource": "repo://tools/README.md#L8-L15",
+          "version": "repo-lines-v1:sha256:78aaaf1af71f3dea18ee5a9e2e75839fb73181cb47ef0746f8af28178bd29897:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2I0ODIzYTA0ODFhNjRiY2RhYWViMDllYTI4MDliMTJkNjQ5ODFhMWUzMjg1MmE5MTVhNmJiYmI2ZWE0MjM2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzc0NjhiMGMzZGQ4YWUxMmYzZjg2N2NlZjU0M2Y1Yjc4ZjlkOWFjYWZmMjFhZDQ2ZTgwY2VlMTI3YmQxOGRjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjAzODc2NmEyY2FhYjk4Y2EyNWI1MGRhZjc5ODI1ZWNiZjU0ZTAyOTZhNzYyY2Y3MjY4M2ExMDFmNDkyODI3NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5a167829b2bc44a3a0e87423abaa67a0",
+      "statement": "The harness is external to the emulator tree. The checked-in contract requires a private display and virtual input for automated runs. A test brief identifies the build, settings, route and snapshot. Pass the build under test as bin, and boot the route's recorded snapshot before route_play. Screen checkpoints make route playback wait for the expected UI state through varying load times.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L139-L151",
+          "version": "repo-lines-v1:sha256:a1c9261d5ac2888370b541a857ef4c6fc3ffeb60d6ad4f26e611210953685924:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZmMzMThjOTA1MmI3NGU1NTk2ZGMyNjFjNmU0ZjMzMzUxYmVmZDAxODc1YjAxN2Y0MWMwODY3ZThjMjllZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzMDU2ZmI5NDFiMzJkYmQ3NzQxZDcwYmFmODZiZDJlM2UwNDdmMTZjMjNmYjUwYjBlZjQyY2VkNzE3M2U1YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3MTk2OTA2NjdmOTNhMTJlMzZlZDY5NGVkYmEzMjRmNWY0YjU5YjE5YjM4ZmQ4YTQ4NjgzMzA4ZTIyNjBiMDcifQ"
+        },
+        {
+          "resource": "repo://AGENTS.md#L173-L177",
+          "version": "repo-lines-v1:sha256:2215394605e2c82fc485c20aeafd6ecd967e9f84ec2486f630c2c5da667a12d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGUzYjZkMTJjMjQyM2I0NzY1NTczNzE0ZTE2ODNhOGQ2NTE5MDAyNGVmM2QwN2ZhOGFlNjcyNzQ1ODcyOGMzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjJhYWRhOGUyOTIxMjBlNjgwNTJhZjk4NWUwYmYwNTY1ZTJjNDc2NmQwYzZiMWRkZjUyZjkzOGYyMDc1ZDViOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZlOGM5Yjc1ODQzN2U4MWJkOTY2NTFkNjcwOTIzYTBlZTg0YmY4MjdmNzczYmM3YzQzYWYxMDJjODkzNWU2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTIwYzU0MTlmNDI3NDY1OGFlNmVjNDFiYTkxMWU4Y2Q3ZDhhN2U2NDAwZDI5MTY0YzZkYWEwNGY5YzE1MThmZSJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L197-L207",
+          "version": "repo-lines-v1:sha256:6c4819c3e03051ffa439f4c25be11cd0d612ca645ed662fbf8ca1e31b15e23e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYzY5ODAyNGViNDQ3YmY2ZTM3OGNiOTJjNjYyYjBkOTEwZmY4ZDYzNmM5YWQ3OWMxZWFiNDYwYjAzMDlmZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4OTg1YWMwNjc2YThjODM2MWQ3ZDJlZjY5MDU5MTQ3ZDRjMzA1MmZjYmU5YjRmZTNiYTZkZTkxNzIzZmE5MjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MzA1MjI1MTA2MGY4N2Y0YWFlNzE5NGY5OGU0MmQyMjI3ZmZkNjZmZjQ3MjdiYTRiNGIyYjU5NmUzNmNjMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMTQ2NDBmMDEzNGFjZWQ1MDg5OTlmZGM5YTQxNjAxYzMxYzhhNWU1NzkyMTVjY2NjZDlhNThiOWVlMGZiYWYifQ"
+        },
+        {
+          "resource": "repo://AGENTS.md#L216-L224",
+          "version": "repo-lines-v1:sha256:3a5bd1e3445a942ebffa7ddd2a330957245544e7944d2d89c1739a5316b604d8:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg0M2MyMjQxNWIxZDI0NDgxNjc5ZTQ4MzY3MGU2ZmZjOTNlNWE2ZjZkYjZjNmUwMDFlODU3ZTNlZGVmOWRjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGExMzQ3YmQzM2Q5ODZkNmFmZjQ5ZjNhMWEwNTQyNTM2ZmI0ZjIwMTg2N2Q1Y2Q0Zjg3OWM1Nzg4NmM4NDZjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWMzMDExYWE2ODgzNjFjMDMyN2IxODY3ZjY1NzllNmM5YzA4MDE2YmRhM2QzODBkOWM2MWIwZjY1NjlkZjY3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjFlMWIxMTAzY2NiMTA2NmY0ZTFjMTRlOWUyODVjYmE5MTI3YTEzZWQzMTZjNTJjYjQ0YTliM2EwYzZiYTZhYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_39e3aed80739460bb85ce2c52d8bc9ac",
+      "statement": "Use health to distinguish a stall, device loss or exit from a live session. The summary compares current errors against a baseline for the game and route, and frame CSVs report per-guest-frame timings. Use stop to collect the final evidence and end the session. For longer operations, job_status queries the job returned by operations such as gate_start or benchmark_start.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L225-L229",
+          "version": "repo-lines-v1:sha256:00e3c481f5d0c6cea7f7432faf92822b68b253856790f7bb0b1719db3a31b66d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjYxYzQ1MWEzODFjNzY4OWU3MGM0YzQ5ZmVkZmY2ODBiMzMxM2RmNzI3NWNlODY5MWIwNmNhNGE0MDVmNDEwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFjNmMyZWVjMWMxOGM2MzAyZWVhNjRkZmUxOWI4N2FkOTZiY2Q2OWZhZWU2ZWQxNmM0MDQzNTU4MjZjZWZlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjMwYTU0NzUyYzA5NTk3OTYyMWNiZDQ0MTk5NzBhYmQyNzMzZThkNWU3NDkzNmVhOGM4OWRjYzkyZmM3Mzc1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjRiZTg0NTRlZjFlOTI5OWZlODM2MWRhNDQwMWFhNDRlNzA3NzdkZGQ5ODE4MTRiZWFkNzU3MWJlMDZjMzhjYiJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L238-L241",
+          "version": "repo-lines-v1:sha256:20941c841e49aa3216e7445bcaf2840cbb9a837aa38da4197d811bf1dfd492dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFkN2VmMjkzODc0NTBiNmJkODM2ODk5ZGIzMDZiMzk4NWViMTk3OWUyMmM4ZmI5NzkzYzY4YjdjMDk0OGUwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE5NzM0NmMwZjM0NjU0YjJlYzI3YWVmZWJiZmE5NDBiMGNiMzdmNGUyNTcyMjMzOTA0MTQyZDk3ZWFjZjYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGM4MzJiNzU5NjNkNDVjNWRiM2RmZmFhMWE3ZWMzY2ZhZTFlYmUxN2U0YTQ4M2EyNDVmOTVlZmJiYmY4ZWFlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTUyM2QyZjliMjM2YWMzNDk2ODM1NzUxODJiMWJlMjgyZDljOGUwMTI1NGM2MWY4OTRjZWNiOTlmYzcxZTIzMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b74223c70eb46bc80d632a3096517c1",
+      "statement": "The gameplay gate replays registered routes to produce per-game results and a contact sheet. Inspect the images and new errors before accepting the gate as a baseline. A green unit test and a completed gate job answer different questions because the gate also checks visible gameplay and compares behavior against the last good build.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L271-L285",
+          "version": "repo-lines-v1:sha256:19fdeaad5f2b4861e5251d4e2676b0538568c68bfbb8fea724726c59c25b0c6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MDdlNTBkZmY5MzcyMDI5M2NhZWViZmE5YjkzNTBlODk2OWI3NDc1ZjhiNjkzMWM1YjQwMGRiYmU5Y2YwODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2Y2M2YmQzYjdkZGY4ODA0NzRhNTc2M2I3YzgxYjEzOTc0YjhiMWJkOWM3ZDhiN2JhYjA4MDY5NzQ0NjU5ZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ODUxMjlhMzNiNzk0ZDRhYWI5ZmZiY2EzN2Q2YjMyNjgzNmY1ZjY2NTM3Y2E3ZTNiMzU1NmMzYmRmMmUxMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzMWMyODY1MWUzZGFjZDdlMTE2ZGI5ZWJiNWE5YzY5ZjhlMzE4MjdjMTAxNzI3ZTFmNjY4Mjg3ZjljN2E1ZDkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

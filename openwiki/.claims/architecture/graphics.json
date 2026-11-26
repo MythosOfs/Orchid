@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3cc0dc2edfcd5748c2b922831aaed3dc4f4c27a74aa56e69b9b965bb49f86d31",
+  "pageVersion": "sha256:d03745a733f77061e18147c918c2d0ef85bf94c34fcb165313d6cf631c55a2c9",
   "claims": [
     {
       "id": "claim_4bb4942879dc48699b4dffcc5c5f81e9",
@@ -57,10 +57,48 @@
           "version": "repo-lines-v1:sha256:faac9302c6b79d89de03c8e250e93854491649c8bb95a2c2036ec6c0f97bdef4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmZjQxNWMyNGJjM2M2MjQ1NDZlMzRlN2IwMTFmYzJjMzcxMTU0ODEwYzY1YjljYTk1M2I3OTBkN2U2YTA4OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmYmVlNjhjMGM1Y2VlZTkyOTg0OTQxMTNlMDI3NDVmOGRhNTE2ODUzMDdjNmRhY2U2NGEzNmY3NjBkN2NiMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MTliMThhYTFjZDM5NmYwNTZjYWExYjllNGYwNWYwOGE2YzdjNzBhYTQ3NmJhNDZiYjJkMTgxODRhMzM4MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5YjQzYjMyZTJiZWVjOGYwZDg0ZmIxY2JhNjU5MDJhNTcxMjg2N2Y4NzBlZDNlN2RiNDVjODNjMjBjYWQzMzgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_d2345e8407cc42499d99799121f826e6",
+      "statement": "ThreadManager tags each queued command with a monotonically increasing fence. Synchronous emulation forces a producer wait until that fence is signaled, while asynchronous submission can return after enqueueing. A CPU readback requests blocking submission even in asynchronous mode. This fence belongs to the emulated GPU worker queue; the host Vulkan scheduler has its own submission machinery.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/gpu_thread.cpp#L221-L252",
+          "version": "repo-lines-v1:sha256:7f3173716dbb88e32ca398927b531db1a922c544c2dde1d0dc1ef5998489a903:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NGIwMmJmMDY3Zjk4YjBhYjkwMTg2NjI4YTllMmIyMjdkMmE4MmM2NDU2OGYxMTUxYTU0NjhmMDExOWM3ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYzcyNjI5MTVmNmZlN2FiOTYzMmQ0MWY4MjhmM2RjMTRiNzY0YmU3MTA3NTk2MTBiYWNjNjgzMjZkZTQwMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYWI3MTBkZGY3ODU5ZTU3NTc2NGE5MTNhMDAyYzc0NTg1ZmZhNzAwMTUxMGNiODgxMWRhODNkMmNmNzRiMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjMjY3YmU1YmE4ZmIzNmNiNjkwZWRmMGM5Yjc5ZDUzYzk1ZTc1MmQ5ZWI3YzQ2OWQ5ZDliMTA3YjcyNWEwZGMifQ"
+        },
+        {
+          "resource": "repo://src/video_core/gpu_thread.cpp#L311-L342",
+          "version": "repo-lines-v1:sha256:6998009852b689fec59ff5acfdd9e0a062176a2b1418cc705dcdab955825aa6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMWQ3NmEzNWVmNzBmMTEwZTE4N2M4MzFkNzdiNzE1Nzc4YTA2NDUzYjI1Y2YxMjc4ZjE5MDFkOGU5OWMwOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2MWRhMjM2ZDBkYTQ3OGRkMDEyMDJmZTA1ZDcyMGY3NWE1ZWFlYjQ1NTY0M2FkNTIzNjFiZThmZDNhMzdjZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjOGMyYTRkYTkzNmFjNjI3ZjM0ZjYzMDU2NzcxMGZjZDlkOWM5Y2ZiMWY4ZWZmODkzMDVlM2E3NDFkNzJkNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMGI1NmQ5MGNjMmRmN2Y0Y2U3ZTBkNDYyZDZhZjVmNmVjNmNhZjhmYjVhMWY4YmM5NjVjNTQ2NDBhOWE3NDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b8439a1880f44e5bafff6f9253c1abd",
+      "statement": "The worker's regular submit path applies pending guest writes through GPU cache invalidation before handing the list and channel to the GPU scheduler. The CPU readback branch also invalidates before asking the rasterizer to download contents. Read this ordering when tracking stale constants or unexpected guest-visible GPU memory.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/gpu_thread.cpp#L183-L206",
+          "version": "repo-lines-v1:sha256:ed12b18cf0aeeddcb20821aa95597ae3e7fc69e9b88e4951c26eb053f875b7f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZWRjZGJlNjk1NmU3OTYwNzY5YTA5OTQ2YzUxNzFkZTgwNDk1N2EyMDMxYWZhNmJjYzhlOTcxN2U5MWQyNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhZjllMGViOTY5ZjE3MDZlYTNiMGIwMDE0OTJhZDdkOTgyNDRiMjg3OWY2OTQ4MGIzYWYxY2Q5YTE1YTQwMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmM2Y4NGMxODlhYzlmYjg2YjhlZWE4Mjk4NThhOGVkZTc2NDkwMTFiNTAxOTFkYzU4ZTNkMDY1YjhlNjI1ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4ZGNiZjVjOTM0YTNkMzkzNDA4ZjQ2Nzk5Mjk5YTQ1MTEzZTgwYjJmOGVkNDJlMGUzZWRkOWRjOGUzMjcyMTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c1dd304624804c63aae4207c1f473408",
+      "statement": "DmaPusher distinguishes control methods handled by the puller from methods forwarded to an engine bound to the selected subchannel. An unbound subchannel is reported and skipped. The engine can buffer methods until an execution method consumes that state and calls into the engine. Follow this boundary when the guest method is accepted but the expected engine work is missing.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/dma_pusher.cpp#L808-L829",
+          "version": "repo-lines-v1:sha256:30494d7679d933b195ad3c47ad29e74c275a065f40b59aaae202f0f7c73042a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMzY5YmQwZjQ0OTdkNzA3MWYyNjI3NTQzZWQ1Nzg5ZmNkZjE1ZDliYmNkMjIwNTgzOTEzNDUxOTEwMmRlMGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZjliMmViZGFmYTcwOGNhYTI5NTA1Y2U1YWVmZjRmY2U1NTE0YzY0YmRhNDk1YzI1YjlhN2ViN2U2OWM5MzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmNzg4NWQ4NTZlNWYwYmNiZGQyY2JiNmI0ODk4ZjU4YzhlZjRhMTRkZjgwM2E0ZjhhYjYzMDJiODNlNmNlYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5OTcwYzFiNTg2NmUzYWI5ZjA4ODhlYmRiNzBkNWE4NDZiOWYwN2U2YzVmMzlhNTcyMDU2MjM5NDYxOTlhMWIifQ"
+        },
+        {
+          "resource": "repo://src/video_core/dma_pusher.cpp#L858-L878",
+          "version": "repo-lines-v1:sha256:c2c3f1c0b89adf2fe156414ec6ae4444aaa744ba0b11efb44488bcf64c54936d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljNWY1NjQ1YTdlOWJhOTUyYzRkMzlhNmVkMjZlZjhiZmU0NjQ3N2ZkOGM4YTFjOGU0OTUwMzQ0MmNkNDlkZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NzAwYTBiZGY0ODExNjFlZGJlMzVkMzFmYjNjMTY2MWE4MGUzMTVkN2Y3NWYwYWIxNzA2MjNhYzA0MDAzZTcifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:50:59.685Z"
+    "at": "2026-11-26T21:59:01.672Z"
   }
 }

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:b35494ed16ac13052b525fe6805eefe051b3f019b7fc64fad6277ba5359395b2",
+  "claims": [
+    {
+      "id": "claim_8adbcc79bcb245788c2b898732ec0404",
+      "statement": "KernelCore initializes per-core schedulers with their main and idle threads. The scheduler selects a candidate from the per-core priority queue while holding its scheduler lock. Its selection accounts for a process's pinned thread and whether a competing thread has kernel waiters.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/kernel/k_scheduler.cpp#L218-L253",
+          "version": "repo-lines-v1:sha256:760349ccaf10ddd2e82c2d465011b27e7d9df04bab4adf89c937f599e14c7db5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjYzlmOTIwMDU2ZWI3NjFlZjlhNTU5N2JiMTA2NzBmOTJmZjU3Y2I2Y2M3M2NlOWZjZDIzYzhjNmQwYjg3MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5ZTc2MzU1Y2YxMTk5NDgwYzNmOTk4MzZiMTQ4NmM4NDFkODkxZmFhZDkwNGM2MDhlMDkzMDIyZDM3NTdhZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkMjc3NDI5NDgwMDEyMGZmY2Q1ODM4YjRiODY0MmFhNGUyODIyOGQyYWI0MzE0ZGY0MmJjOTBjOTNhNWMwNTQifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/kernel/kernel.cpp#L239-L257",
+          "version": "repo-lines-v1:sha256:1cb288454665e56ce10b4b2886cf3d14c5e8e24f05c9fb1a11c6cfb7eb93b54b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NDNhYTkxODFiNmZlMTJjYTEyNmFmNGM5YzIxZWRmMmJlY2UxZjI5ODUyZTljZjdhMDQ3MjRjMzFjNDBiZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNTc5MjYzZTNlOTYyNTJhMWQ0MzQ5MmQ5ZGI1OGZiOTIwOWE3MjY5ZmFkNjk3ODdkOTYwMGQ4NWMxMmNjYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiMDE5ODJiNmUyMGU4YzYwODllY2YxNjA4MTEzNWNkNTNjNzBiYTMwY2NmM2U0MDQzZWFiZDVlY2IyN2E1OWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b1c3df5c3be412faea15d970c2d2eb7",
+      "statement": "KScheduler reloads the selected guest thread context during a switch. The CPU backend is selected by the owning KProcess, while the kernel's scheduling logic chooses which KThread can use the current core. Inspect the scheduler when a thread stays runnable without executing, and the physical core when execution halts unexpectedly.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/kernel/k_process.cpp#L1317-L1341",
+          "version": "repo-lines-v1:sha256:3653c38e2bc37e5573645aabc0a47d3c495eab18d49a0d2fbc096e6f39d4d8eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhOTU2ZTdiM2Y2MWIzM2U4OTFjZDcwOTI0MTAwNTYwOTIzYTYyMjU0YWQ1ZDg4YmEwZGVkM2UxN2NhMGI1N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExYjZmZWI5Y2FhNWZiOGZiMDM3YzJiNTJhMjY3OTdiMTZjNDllZjhkZDUxN2IzYjkzODU3OWRmYmRiMzM1MzcifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/kernel/k_scheduler.cpp#L492-L546",
+          "version": "repo-lines-v1:sha256:7c629fcd37603ab25ae7243d8e30cc8294f737252e4fc147944a05f96c352d88:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2OTgyNTE3OTI0ZmU4ZDNlMTU2NjcxMTViMWY1YTIwMThlMGQ1NWNlNWEwMDFiMWUyZDVlMzFiOGIyNDEyMmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MjcxMWRkNTBkZWU5ZTZhOTM0ZWNlMmFmMGIxNzhhMjU3ZGRiYWQ2NmUxMDg4MjRmYjRhNWViMDM3Y2RmNGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0ODA1NTRmNDJlZjBiYmRiNzlkNjBiOTMxYTUwMjY5ZTM0MTI2NWVlZGE5NmUwMjBmNGQzOTVkNmQ1MzMyMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkZTlkYzE4MmZkOWEzNTBmOWNiZDVkOWQ4YTcxNGZkOWJmYWQ3OTI4MmZiZmI2OGM5YjhkNGJjN2JiYTM4NGYifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/kernel/physical_core.cpp#L90-L121",
+          "version": "repo-lines-v1:sha256:b1d020dcc7fc6a16c677679318cecf64ab2d9015ed98ea00812f92a4f00aaf68:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZjg1N2JhYjU3N2FhMzQ0OTgzNDFkZjRhODM1ZjJjNzg2YTBmMzllYWNkOGMyYWM1ODFmYTE1NWI2OWRmNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMDg2NGQwZDY4MjMyNTJmOTIyMmQ2ZWJhNWIyYzRhZWEzMDBmNTc1YzQ2MWQ2NmU0OTcxN2Q0YmU5M2VkNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMzhmZDI4MWYxMDY0NzIxODQzZDM0ZjA3OGNjYzJjNGNjNjk4M2U1YzgyYmQ4MmJlZjk5MjYxZWQwNmNmMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmYzQ4MDM2YmNmMzc2MjY3N2VlODk1MDYzYmMxNjA2ZmYwOGYzMTc4Yzk3MThiZGZlZWFjMWJkNDEzZGVkMDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de61e86f35234ab2b01b200bd9dd60d7",
+      "statement": "PhysicalCore sees the supervisor-call halt returned by the ARM interface. Svc::Call saves guest argument registers, uses the process bitness for normal dispatch, then reloads the return registers. To trace an SVC, follow its wrapper to the kernel object implementation and keep the guest ABI separate from the internal method signature.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/kernel/physical_core.cpp#L115-L167",
+          "version": "repo-lines-v1:sha256:08bef87206f8a4551441f19c70a57f60bb93dcdc5d91708863b165d5647a913e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhM2U4ODdjMzhlYjk0NzNjZjA3NWY4NDQ5ZDAxOGU0MzY2MGYzNmM2MThjNDAxNjYyZDA3N2U2NmFkNjVlMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzZThlMmFkMGE1ZjlhZmRiZmVlYjNhNjgwZGU3Zjk3NDQ5NTdkMmE1MzNhMzA4NmVkMjlmMGIxNTdmYzBjYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1YzYyYTM2OGU1ODA0NTk0YTEwYjJhNDFhNDE3ODRjMzI2ZjY2ZWUzNGE0NjE4MWJkZmNhMmUyODc4NmU0YWEifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/kernel/svc.cpp#L2513-L2518",
+          "version": "repo-lines-v1:sha256:881c9267369220670d5187d5996e75b0f8760a6c3d83a061ddd8ba60b497b09b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU0ZWQ3MjAxMTZiMDNhY2NjZTkzMjQzNTliNTA1N2I4YzFmYTdlMzRlN2JmZGJmNjIwOGYyNTFkOWJjMzM0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWM2MzM4MjQyNjIxMjQ4ZjkxZWY4YjBiMDY2YzQxNjlkMDA3ZWVjMDVhNzE5YjkxYWQ2YTgzNGJmZTgwZjQ5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTE4ZmZiNzZjM2YxMGQ1ZjYxODYwMmYyMzc5NzcyMGQzMDZhZjRlYTU3NzZkNWRmYjJkOGY1ZTQ0MjI3YTE0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQ2NjBlMmUyNzVjNjY1MGM4MGRlZWVmZmEwZjQ2N2U5MzMzMjUzYzU0OGJlNmRkN2U0MDI0ZDAzZGE0Y2Q2YSJ9"
+        },
+        {
+          "resource": "repo://src/core/hle/kernel/svc.cpp#L2679-L2693",
+          "version": "repo-lines-v1:sha256:f4696d347c0f6c0462b7be8f65cc35928fab14a1de35a735e764e073b68fe89d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMjUyZTc5ZThkYjFhNDRiZTdkZjc1N2NkNWZlMjQ1ZTMzZTNkM2UwOTg2ZDlmZTZhMDczYjliZjUzNDZjNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkYTY2MDA2ZWI3Y2I4MTFjZDFjNDM5ZjY2M2ViZWI5M2E5OTA5N2Q5NWJjNTQ1NTM3ZTU0NzNmNTEwMTIwNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjMTM5OTMxZWU5N2M3MDE4ZTAxMDkwMjUyMWE5NWMyYzAxNWIwMzQxN2Y2Njg5NjgwMDgwODk1MDc4MDhkODQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:54:46.723Z"
+  }
+}

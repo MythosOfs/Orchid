@@ -5,8 +5,12 @@ description: Rasterizer, renderer, scheduling and presentation.
 tags: [orchid, architecture]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T21:54:46.723Z
+    at: 2026-11-26T22:05:23.195Z
 sources:
+  - id: openwiki-source-d3b0e3ae3c2e0e5814ef754f
+    resource: repo://docs/adr/0003-nx2-display-session-vi2-and-frame-presentation.md
+  - id: openwiki-source-1eaf940dde7cb8fb267576e4
+    resource: repo://src/core/hle/service/nx2_gsv.h
   - id: openwiki-source-f6d634dcba9b9e21088e752e
     resource: repo://src/video_core/renderer_vulkan/renderer_vulkan.cpp
   - id: openwiki-source-0c6471f5b826bb7736a53e8c
@@ -15,7 +19,7 @@ sources:
     resource: repo://src/video_core/renderer_vulkan/vk_rasterizer.cpp
   - id: openwiki-source-244251dd7d41d295086259a1
     resource: repo://src/video_core/renderer_vulkan/vk_scheduler.cpp
-generated: { by: "codex", at: "2026-11-26T21:54:46.723Z" }
+generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
 ---
 
 # Vulkan rendering and presentation
@@ -31,6 +35,12 @@ RendererVulkan::Composite handles applet capture before testing whether the wind
 Vulkan Scheduler::Flush submits execution and allocates a new context without waiting for the submitted work to complete. Finish waits on the pre-submit tick before allocating a new context. WaitWorker drains scheduler-side work, which is a different boundary from waiting for the device tick. [`vk_scheduler.cpp`](../../src/video_core/renderer_vulkan/vk_scheduler.cpp#L62)
 
 PresentManager can queue the frame from a recorded scheduler callback when the present thread is enabled. Otherwise it waits for the scheduler worker, copies to the swapchain on the calling path, and returns the frame to the free queue. A blocked presentation should be investigated in this path after confirming composition reached Present. [`vk_present_manager.cpp`](../../src/video_core/renderer_vulkan/vk_present_manager.cpp#L203)
+
+## Switch 2 display handoff
+
+The guest display path for Switch 2 uses `INx2Vi2Session`. Its composition path hands layers and fences to `Tegra::GPU::RequestComposite` before the host renderer presents them.
+
+[ADR 0003, vi2 presentation](../../docs/adr/0003-nx2-display-session-vi2-and-frame-presentation.md) · [Guest IPC and services](guest-services.md)
 
 ## Related pages
 

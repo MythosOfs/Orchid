@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:97cf283e6e52c07eb7615990f2ba9a20499c40c30335887b08242415c1c40006",
+  "pageVersion": "sha256:b8ffe59e5fc272d3a0ea5b90def7bcb836a3d65186222cc8b1afda07539b03b9",
   "claims": [
     {
       "id": "claim_cb5e8dc3f0c0433d8c09d7545e1ba302",
@@ -101,10 +101,28 @@
           "version": "repo-lines-v1:sha256:d1531169cb3e5f8c9ce0aa4bd52364dd465e5f206ceae803f3a02efe6a4659f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYjcxYjM0NTJiNDQ1ZWZhNDYxYmY1OTA2NTM2OWZjMmJhMzkyY2ZlZTFkYjEyNWIwMmRhYWY5MDgyNjAzZDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjOTc2ODE1ODYyYzg1NTc4MjZkZGEzNzk3NjNkNTQ5ZTUyYjU0NDA1NjE3YmFmOWQ3ZWM5MjNkOWM2MDBiZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdjNWNmNWZlMWQ3MDFkYTNlMWFlYWEzYTM4OGU5OWE4MDYwZTMyY2U3M2E2NDhkZWM2MmYyMjFkNGJiMGUyMGEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_05c4734140814e66ac2f7c21a03c1239",
+      "statement": "`INx2GraphicsSystemSession` handles `nx2:gsv` TIPC commands that open display, GPU and video decoder sessions. These session handlers are separate entry points from the `vi` and `nvdrv` registrations described above.",
+      "evidence": [
+        {
+          "resource": "repo://docs/adr/0002-nx2-graphics-system-server-and-its-sessions.md#L5-L15",
+          "version": "repo-lines-v1:sha256:6494a05488f9b13614e471aa0b837a509802524b0e5ecccc9d1463b8971a8541:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMzYzNGRiYjgwMWE3M2I3MGU4OWVkNzc1NDZjNzdiMTA5M2JiODhjOWU0NzkxOGU5NjY1OTRkYTQ5OTRhZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1YTFmNjlhNTBiMzEzMTRmMzJiN2NkZDQyN2MwZWFiZDI4NjdhZTExODU3NmJhNTVjNGU3NzYwNGMzZTdiYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjZiZDkwNjAyOWJiYWUxNDFmY2QxZTdiNDRjZjI3ZDY2NjAxZjRiNzFiYjA0NGM5ZTI5NjZkMWJjYzBhOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNmY0ZjFiYTM2ZDI0ZTdlMmJmNWEyYjQ3NDgwOGY1YjRjMzcxMWJmZTA1YWM3MzcxODMzMjFkYTgwNGQyNDgifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/nx2_gsv.h#L2749-L2764",
+          "version": "repo-lines-v1:sha256:e77056b0013b80e996e1e76562c90a5820483dcfa6b95994b55d8c7ed7ffe4cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlOTI3OGM4MDk2ZTk3MjE2NjlkM2QzYzY2ZTExMGRmOTY5OWVkY2M2MTY5MTVjYzc2MDc3MWY0MjUzOWVlNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiODNmZjQ2OTliNzg3YTllZmIzNmI0YThiMDA2Y2E5OWY5NGZhNGI0ZGRiOWU3YTE1OGFhMTAwNzdiOTg2MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4MDgwNmE2NTMzOWQ2NTUyMzc4NTUzNmFhYThiYWQ1M2M5MTVlZWJjYzgzYmI0MTdhNGVlZWRkNzZkZGFjMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NDY3ZDZmOTA3Y2IwNTk3MjYyZTIxMTFmNzIzNWU3MzAzMWUyMzc2NGJhYWEzNWI1YzdkZjg1ZmQwYzdlNTcifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/nx2_gsv.h#L2777-L2785",
+          "version": "repo-lines-v1:sha256:d8dea937899e0c27d7675dce271afea0557289a37399179eab9895da3bb08d93:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M5MjliMGNlMDQ3ZTljNmIzYTdjYTA2NzVlN2JlNDgwMjQ3MmY3MmU5Y2NmZTFjZjc1MzUxNTgyNmZiOGQ3NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVmYjQ0Y2E0OWE2MGFiYjlmZmE4MzE1NzA2MjFiZTZkOWQ1Y2I4ZTg1YzkyZmFkOWQ3Mzc3NmNhMzUwMGY1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWIxMmQ5NWU2OGJjM2QyMjdmOTJlNzJjNjRmZWU1MTJkY2ViMWVlNmE4ZjJlNWExYjhkZWRhMjIyNTRiM2U0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGEwYzgwZWE3NDRlYTNlYmM4NTVmNzAwMjQwOGMwYmI2M2YyNGEwNjk3ZDc3ZGEyYTc4MGU4ZWYxMzViNWJiMiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:59:01.672Z"
+    "at": "2026-11-26T22:05:23.195Z"
   }
 }

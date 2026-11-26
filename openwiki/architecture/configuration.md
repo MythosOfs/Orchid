@@ -5,7 +5,7 @@ description: Defaults, persisted settings and scoped overrides.
 tags: [orchid, architecture]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T21:54:46.723Z
+    at: 2026-11-26T22:05:23.195Z
 sources:
   - id: openwiki-source-d41bdd24cc5696ad991edc6b
     resource: repo://src/common/settings_setting.h
@@ -17,9 +17,11 @@ sources:
     resource: repo://src/frontend_common/config.cpp
   - id: openwiki-source-2f75cf9add4ee78edf14128c
     resource: repo://src/qt_common/config/qt_config.cpp
+  - id: openwiki-source-31d011a3c6a4040a5a0bd3cb
+    resource: repo://src/qt_common/qt_common.h
   - id: openwiki-source-849abc74091a24580c4169e4
     resource: repo://src/yuzu/main_window.cpp
-generated: { by: "codex", at: "2026-11-26T21:54:46.723Z" }
+generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
 ---
 
 # Configuration and per-title settings
@@ -32,7 +34,7 @@ FrontendCommon::Config reads persisted keys into the shared settings registry. I
 
 ## Launch precedence
 
-Qt reads a per-game configuration during BootGame. Core applies early title defaults before constructing the GPU, then invokes renderer-aware overrides after the renderer exists. Start with the Qt boot path for persisted selection and core setup for defaults that affect initialization. [`main_window.cpp`](../../src/yuzu/main_window.cpp#L1994) [`core.cpp`](../../src/core/core.cpp#L446) [`core.cpp`](../../src/core/core.cpp#L491)
+During Qt BootGame, per-game configuration is loaded only when a loader returns a program ID successfully and the launch type is StartGameType::Normal. StartGameType::Global uses the global configuration. Core applies early title defaults before constructing the GPU, then invokes renderer-aware overrides after the renderer exists. [`main_window.cpp`](../../src/yuzu/main_window.cpp#L2012) [Launch modes](../../src/qt_common/qt_common.h#L17) [`core.cpp`](../../src/core/core.cpp#L446) [`core.cpp`](../../src/core/core.cpp#L491)
 
 GameSettings::OverrideIfGlobal changes the custom slot only while the setting is still using its global value. The renderer-aware pass reapplies early defaults before applying settings informed by title and host GPU. This keeps explicit per-title values for settings routed through OverrideIfGlobal. [`game_settings.cpp`](../../src/core/game_settings.cpp#L125) [`game_settings.cpp`](../../src/core/game_settings.cpp#L169)
 

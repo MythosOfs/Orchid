@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:aea52ab76909d136663bf2841264878d4dc184f9164794fe68cce8c8488f6215",
+  "pageVersion": "sha256:eb3e0c7ae9a22c290048ce43d61c658330a213ca472c30df8a2828210b99f073",
   "claims": [
     {
       "id": "claim_7b8847e915fb4a1b805ebe6de6f8a91e",
-      "statement": "The Qt frontend checks firmware before calling System::Load and starts an EmuThread after a successful load.",
+      "statement": "For launches initiated by the Qt frontend, MainWindow::BootGame checks firmware through LoadROM before calling System::Load and starts an EmuThread after a successful load.",
       "evidence": [
         {
           "resource": "repo://src/yuzu/main_window.cpp#L1867-L1876",
@@ -111,10 +111,28 @@
           "version": "repo-lines-v1:sha256:307b39b1c2f7aa32dbac44d3fad3fb08d240a5ee97baa588e05e876c4cbbfd0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YzAyMDc3MGNmNTNjOTY3YzRhNjdjNDdkMDM1OTg0MGI4OTI3YzE2MGJiMjBkOTVhNmIxMzcxMzM3ZTFkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzFlYmNkZDRkMzQ1OThmYjgwMjQ3YzdhMDA4YTQ3ZGY0MTRiOGExY2E3YTM3YmFjNjNhNGM0NDIxY2YwZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkYTZhM2VlNGJlMTE4MzA2ZjYzOGZmMzljMDRmNWYyZWNhMGRmNjUyNDk3Mjk3MmIwNjI4MmVlMTJiYjk5ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlMmNjNzgzODU2ZTdlMjVhZjcxNDE4MGMzMDA3MTgwMGU0YzE4ODI0ZjA2NjY3NjBkODczODIwODM1YjJjYjgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_5b1ef44ae78f4ee093faa736c97760a2",
+      "statement": "The native Home Menu creates a guest application through `IApplicationCreator::CreateApplication`. It resolves the installed or loader-backed content, creates and tracks an applet and returns an `IApplicationAccessor`. The guest then calls `IApplicationAccessor::Start`, which delegates to `WindowSystem::StartApplication`.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/am/service/application_accessor.cpp#L61-L64",
+          "version": "repo-lines-v1:sha256:a1d13e9128ac1ce246103bebb751f5a38630e711a4d80d9534e00c8a18930c39:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjYTZlYzg5NTYxYjE3M2I1OGEzYWRmOWNiMTkyN2U5YmIwZDY5ODRjNjQ2NzJiMGE3ZDAyM2YxOWRmMTgyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGU1M2RkZjcwOGQ5ZDk4YTM4NDQ1ZjY0MDk4YjI0MWI2Y2YwMzEzMzAzMGM2MWI3OTgxNTk5MzhhZDNhMGVlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWNjNTQ2YmRiYWI5NTA1MjhjMzdiNzA1NmM4ZDVjNTZjY2IzYjAwZjZlMmI4NzRlM2ZmODkyZWIyNzNmOTBlZSJ9"
+        },
+        {
+          "resource": "repo://src/core/hle/service/am/service/application_creator.cpp#L28-L62",
+          "version": "repo-lines-v1:sha256:edc6e56548b26006d98b17bcb0ade2c6a61305a0f29b31c4ed922ae14d2e340d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5N2VlZDE0MDU2MTdlNWVhNDkzODBjOGU3ODUwNjdkODdmMWY3NTg4MjZiY2QxOWM4ZWUwMzU4NGQwZGYyNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0YjVhMDdhNjRkZWZmNjVmZmUzZjExNTQyYzYzMzg5ZWVmZjQ0NWRlNmFjZjg2YjNmN2Q0YmVjMTEyNWU0MTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiMmUzNGI0NDZmODQ5Y2UwMzY3NGFhYTE3YTMzNmEyNjY1ZjQyY2JiNGRhN2JkMDE1YjRhZjA5NzBjZmJhZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwZmZkNTMwNzIyYTRlMWY0MzZmYjcxY2U5MGFmOWZkNDBkNzk1MTVkMWE4OTk1MTk3NWZjZmQ4NmIxNTNhNDMifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/am/service/application_creator.cpp#L83-L90",
+          "version": "repo-lines-v1:sha256:386e006f30dcc9a5c3f08aca5291252567f96408749ba282024e7a010ba83d10:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjYzM2Y4NzkwOGEzMzY5MzQzODBhYTY5MzZhMmI1ODExNmRhYjgxMGE4Y2E4MDVhYmJmZjk1MGVmNDBhMzViMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRiNWEwN2E2NGRlZmY2NWZmZTNmMTE1NDJjNjMzODllZWZmNDQ1ZGU2YWNmODZiM2Y3ZDRiZWMxMTI1ZTQxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTFiNjRlYTJiNjBjNjJmYjRjMjc1YWI1NTNmYmE0ODJlYTAxZmUyZjhiOTRhM2FhZDFiM2ZhNzk5Y2NjMTQ3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjFhZDBmZjhmMGQwMGE0MWE4MTk0ZjRmNzk4MDg5NjZjNTMzMTg2MjI3ODgwYWNhMjk3NTEwZDI4ZWJjYjYyZiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:59:01.672Z"
+    "at": "2026-11-26T22:05:23.195Z"
   }
 }

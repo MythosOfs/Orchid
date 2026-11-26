@@ -5,12 +5,18 @@ description: Channel submission, GPU workers and guest engines.
 tags: [orchid, architecture]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T21:59:01.672Z
+    at: 2026-11-26T22:05:23.195Z
 sources:
+  - id: openwiki-source-3452446ecc685721cbb32cf3
+    resource: repo://docs/adr/0004-nx2-video-decoder-service.md
+  - id: openwiki-source-4fdaaa20e46e4a618d94aadc
+    resource: repo://docs/adr/0005-nx2-gpu-session-gpu-memory-and-command-synchronisation.md
   - id: openwiki-source-664647317b8f3aa15647b1a5
     resource: repo://src/core/core.cpp
   - id: openwiki-source-45fc218f22125c0ee8960b81
     resource: repo://src/core/hle/service/nvdrv/devices/nvhost_gpu.cpp
+  - id: openwiki-source-1eaf940dde7cb8fb267576e4
+    resource: repo://src/core/hle/service/nx2_gsv.h
   - id: openwiki-source-85c246b3aa0886d6f912eaed
     resource: repo://src/video_core/dma_pusher.cpp
   - id: openwiki-source-9d3313274e6f3a0ec3b216bc
@@ -23,7 +29,7 @@ sources:
     resource: repo://src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
   - id: openwiki-source-f88269ce3154bf687edfbf0b
     resource: repo://src/video_core/video_core.cpp
-generated: { by: "codex", at: "2026-11-26T21:59:01.672Z" }
+generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
 ---
 
 # GPU command processing
@@ -49,6 +55,12 @@ The worker's regular submit path applies pending guest writes through GPU cache 
 ## Decoder and engine seams
 
 DmaPusher distinguishes control methods handled by the puller from methods forwarded to an engine bound to the selected subchannel. An unbound subchannel is reported and skipped. The engine can buffer methods until an execution method consumes that state and calls into the engine. Follow this boundary when the guest method is accepted but the expected engine work is missing. [`dma_pusher.cpp`](../../src/video_core/dma_pusher.cpp#L808) [`dma_pusher.cpp`](../../src/video_core/dma_pusher.cpp#L858)
+
+## Switch 2 GPU and video sessions
+
+The Switch 2 `nx2:gsv` dispatcher has separate GPU and video decode session openers. Follow `INx2GpuSession` for GPU memory and command synchronization, and `INx2VideoSession` for decoder input and output.
+
+[ADR 0005, GPU memory and synchronization](../../docs/adr/0005-nx2-gpu-session-gpu-memory-and-command-synchronisation.md) · [ADR 0004, video decoder](../../docs/adr/0004-nx2-video-decoder-service.md) · [Guest IPC and services](guest-services.md)
 
 ## Related pages
 

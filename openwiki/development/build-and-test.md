@@ -5,14 +5,14 @@ description: Local build, focused tests, profile-guided build and release lifecy
 tags: [orchid, development]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T21:59:01.672Z
+    at: 2026-11-26T22:05:23.195Z
 sources:
   - id: openwiki-source-1b3b02a24e2ae5673ef8671c
     resource: repo://.github/workflows/release-binaries.yml
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
-  - id: openwiki-source-d724ea8199d19ee7ed36a18d
-    resource: repo://docs/Build.md
+  - id: openwiki-source-d44494ef3e497fea81240ef8
+    resource: repo://CMakeLists.txt
   - id: openwiki-source-6fbd0ecef1f5e21a2e4bf7c9
     resource: repo://src/CMakeLists.txt
   - id: openwiki-source-178cd3a8b6b64347d1893796
@@ -23,7 +23,7 @@ sources:
     resource: repo://src/yuzu/CMakeLists.txt
   - id: openwiki-source-3039b7c74d91b572f803dd1d
     resource: repo://tools/build-local.sh
-generated: { by: "codex", at: "2026-11-26T21:59:01.672Z" }
+generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
 ---
 
 # Build, PGO and release
@@ -33,6 +33,10 @@ generated: { by: "codex", at: "2026-11-26T21:59:01.672Z" }
 From the repository root, run `./tools/build-local.sh`. The [script](../../tools/build-local.sh#L5) uses Ninja and ccache with a `RelWithDebInfo` configuration, `-O2 -g1`, and LTO disabled. It defaults to `build-local/` and accepts a different directory through `ORCHID_BUILD_DIR`. The script reuses the existing CMake configuration unless the cache is missing, options are supplied, or `--configure-only` requests configuration.
 
 The script builds the `yuzu` target. Its [output name](../../src/yuzu/CMakeLists.txt#L252) is `orchid`, so the default executable path is `build-local/bin/orchid`. Tests, the command-line frontend and the standalone room server are disabled by default in this local configuration. The optional command-line target is `yuzu-cmd` and its output is `eden-cli`. See [Build.md](../../docs/Build.md) for dependencies and other configurations.
+
+## Offline shader tools
+
+CMake enables the offline Maxwell disassembler, IR dumper and SPIR-V translator with `-DENABLE_DEBUG_TOOLS=ON`. The option defaults to off. See [the CMake targets](../../CMakeLists.txt#L727) and [their roles](harness-and-tools.md).
 
 ## Focused tests
 
@@ -50,7 +54,7 @@ The [test CMake file](../../src/tests/CMakeLists.txt#L270) links Catch2 and regi
 
 The existing release-binaries workflow is manually dispatched and exposes a publication toggle. Its PGO jobs verify that the tracked orchid.profdata is nonempty. Linux PGO uses a matching LLVM compiler and LLD and passes the profile to both C and C++ compilation. The non-PGO Linux branch retains Release optimization and chooses mold for linking. [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L7) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L297) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L429)
 
-Profile generation and profile consumption are distinct. The workflow consumes the checked-in PGO profile through -fprofile-use and pins a compatible Clang reader. Consult the release matrix for platform variants and packaging, and use the job summaries when comparing hosted build time and compiler-cache behavior. [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L18) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L130) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L495) [`Build.md`](../../docs/Build.md#L223)
+The release workflow consumes the checked-in PGO profile through `-fprofile-use`. Linux PGO downloads the LLVM release selected by `PGO_LLVM_VERSION`. Windows/MinGW installs unversioned MSYS2 Clang and LLD packages and selects `clang` and `clang++` from that toolchain. [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L18) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L282) [MSYS2 packages](../../.github/workflows/release-binaries.yml#L345) [`release-binaries.yml`](../../.github/workflows/release-binaries.yml#L495) [`Build.md`](../../docs/Build.md#L223)
 
 ## Verification before packaging
 

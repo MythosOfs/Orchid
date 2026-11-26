@@ -5,8 +5,10 @@ description: Service dispatch and major service families.
 tags: [orchid, architecture]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T21:59:01.672Z
+    at: 2026-11-26T22:05:23.195Z
 sources:
+  - id: openwiki-source-d26aad4a271076f1e092dbe1
+    resource: repo://docs/adr/0002-nx2-graphics-system-server-and-its-sessions.md
   - id: openwiki-source-8c724a03f8ca5cd35b4dbb79
     resource: repo://src/audio_core/audio_core.cpp
   - id: openwiki-source-b2ed0e05d4631111b622209d
@@ -23,6 +25,8 @@ sources:
     resource: repo://src/core/hle/service/nvdrv/devices/nvhost_gpu.cpp
   - id: openwiki-source-b1cd303bb1e673007a7a715f
     resource: repo://src/core/hle/service/nvdrv/nvdrv.cpp
+  - id: openwiki-source-1eaf940dde7cb8fb267576e4
+    resource: repo://src/core/hle/service/nx2_gsv.h
   - id: openwiki-source-90cba46fd437db4a0692b497
     resource: repo://src/core/hle/service/server_manager.cpp
   - id: openwiki-source-3c34e5671645930f1d51e475
@@ -33,7 +37,7 @@ sources:
     resource: repo://src/core/hle/service/vi/vi.cpp
   - id: openwiki-source-93c31a1bef6c97e6cdc1aba0
     resource: repo://src/input_common/main.cpp
-generated: { by: "codex", at: "2026-11-26T21:59:01.672Z" }
+generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
 ---
 
 # Guest IPC and services
@@ -61,6 +65,12 @@ Services starts the audio, filesystem, nvservices and socket entry points as hos
 The AM service starts a WindowSystem with its button poller and event observer, then exposes appletAE and appletOE through separate proxy implementations. VI registers its manager, system and user ports over one shared Container and calls its termination handler when the stop token fires. [`am.cpp`](../../src/core/hle/service/am/am.cpp#L17) [`vi.cpp`](../../src/core/hle/service/vi/vi.cpp#L17)
 
 The filesystem service registers distinct loader, program registry and filesystem proxy names. NVDRV registers multiple driver-facing names, including an applet-specific factory. To trace storage use fsp-srv and the filesystem module. For a GPU command list follow the nvdrv device handler into the GPU queue. [`filesystem.cpp`](../../src/core/hle/service/filesystem/filesystem.cpp#L826) [`nvdrv.cpp`](../../src/core/hle/service/nvdrv/nvdrv.cpp#L104) [`nvhost_gpu.cpp`](../../src/core/hle/service/nvdrv/devices/nvhost_gpu.cpp#L450)
+
+## Switch 2 graphics entry point
+
+`INx2GraphicsSystemSession` handles `nx2:gsv` TIPC commands that open display, GPU and video decoder sessions. These session handlers are separate entry points from the `vi` and `nvdrv` registrations described above.
+
+[ADR 0002, graphics server and sessions](../../docs/adr/0002-nx2-graphics-system-server-and-its-sessions.md) · [ADR 0003, vi2 presentation](../../docs/adr/0003-nx2-display-session-vi2-and-frame-presentation.md) · [ADR 0005, GPU memory and synchronization](../../docs/adr/0005-nx2-gpu-session-gpu-memory-and-command-synchronisation.md) · [ADR 0004, video decoder](../../docs/adr/0004-nx2-video-decoder-service.md)
 
 ## Related pages
 

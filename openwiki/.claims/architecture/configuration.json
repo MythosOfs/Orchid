@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4a492f7480e00bee7af4d64b0a1f562685e67a82069c0390ba581cace40c4769",
+  "pageVersion": "sha256:1a46ac81bcd374a6d4011d464d1936f7b9aca9c4794aa950b1c391663ae7be96",
   "claims": [
     {
       "id": "claim_1d01b5ecbc2041fc93f1183ac7e0d46d",
@@ -28,7 +28,7 @@
     },
     {
       "id": "claim_a6eb78de9b684354aa5bd3a0c948eade",
-      "statement": "Qt reads a per-game configuration during BootGame. Core applies early title defaults before constructing the GPU, then invokes renderer-aware overrides after the renderer exists. Start with the Qt boot path for persisted selection and core setup for defaults that affect initialization.",
+      "statement": "During Qt BootGame, per-game configuration is loaded only when a loader returns a program ID successfully and the launch type is StartGameType::Normal. StartGameType::Global uses the global configuration. Core applies early title defaults before constructing the GPU, then invokes renderer-aware overrides after the renderer exists.",
       "evidence": [
         {
           "resource": "repo://src/core/core.cpp#L446-L459",
@@ -39,8 +39,12 @@
           "version": "repo-lines-v1:sha256:2ea1034cf113c00d025699389d1439f53c66babe7475e48f202ae64f873ff96e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkNTg0MzdmMTUxNGJjMzFkNmY1ODE2ZTI2NzA0MWFlNjk2YTM5NWViYzU3NDc2NjU4YzllNTEzNDJiMjFlY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkOTg2MDFhNzliMjBkNmQ1MzY1NWRjMzEyMmQ0NGQ1Nzc4MTcyNzlkYzRiZjJjODY0MDhhODUzZDlkZmU1M2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YjBmYjE2NWQ0NGM0OWYwYmZlOGUyNWI5ZmVkOTJiZGJiMDhjMDkxNGI4NWQ5YzFhMmU4NzFkMmIzYWU5MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNzc1YWQ0MjQxMjVlMDhiZTk2YzAzMDZlNjM4MmU2MGU3MWYzOGIwYTdhZmE3MjJlMzc5OWZjYzNjOTY2NGUifQ"
         },
         {
-          "resource": "repo://src/yuzu/main_window.cpp#L1994-L2030",
-          "version": "repo-lines-v1:sha256:2871a21ab4dfce812dca16206bc43c5c181c5aed864bfaeb53a2b08573e9378d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZmE5YjZiZWE2ZDliZGQyOTMzZWQ5ZDcyYjBiZDU5ZjEyYmFhZWZhMzE1NmExNzNlZjdhZWQwYmRjMDAxMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZWE5NmJlM2ZlNWQxOWMzNTY4ODg0ZjcyZmQxOTZmNjIyYWEwNTdlYzcwMWY2OGJjZDFjN2NiYmVmZDUzMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVlZTYxZmY2YjM2ZjhlZTMxZTgzZTc1MGFjNzY0Y2Y4NTcyMDAwOWIyM2JiZjFiMmFhZGY5YWI3NWMyZGVkMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5Yzg2N2YyNDRlM2NlYjJhNTBkMjc2Y2M2ZWQxNTY5MTc2MzU0YWQyOWJhYjkyYTI1NTgyZmFkYjYyODA2MmIifQ"
+          "resource": "repo://src/qt_common/qt_common.h#L17-L20",
+          "version": "repo-lines-v1:sha256:2c5efffe7ee8ad4864efa9339e5e18a4363505c1514fc9ee33a1140447cceeea:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjYzMmJjODU3OTE3ZmU1NWU2Nzg4OGZiMDI0ZTY1Mjc0YjI1ZGI2YTYxMmNiOWI2MjVjNDc3YWVmYWZhZjYwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWExZDFhNjMzOTAyMjljNzk4MzQ3ZTgzYTA0MDU0NDFjOTQwMDAzNTI4NGFkMTY4YzFiZjZjZGYxZDcwYTM3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDllNWViMTM1ZWExODRjZTY2OTkyM2IzNWM5MTAzZmZlMWMyZmY0ZGViOWJiYjgyOGNmYmY0NzJlYzViYzk4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2JiOGFkNGYwZDVkNjdiNTIwMGVmMTYxNmJkMTA1MDNkOWRjZWRmMjU1NTA0YjIzZTA5ZWM2OGRmNWZiZWU4YiJ9"
+        },
+        {
+          "resource": "repo://src/yuzu/main_window.cpp#L2012-L2024",
+          "version": "repo-lines-v1:sha256:c56f4d7885ab7a7d64ad7a334dd33c237c40b64fa64db31a1eec9ab8255d2483:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NDMzMTAzYWEwNDVjZmQ0OTJjNDJkYWVlNjNjYmNkNzMwNWQ1MDBkMWFmNTk2ODYxMDJmZWYwNjQwYzRhMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3NDE0NTFlMDY4MDI2YjhmMDQ2MmM3MDJkNGNkMjJlODQ2MmQ3NjVkYzQ5ZGU2M2JkYTAwNzE1MzRhMDYwM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3YjZmNThiYzM4MWE1Y2JlNGRhNGVjZWM2YWRiOTVlMTVhYzk0NThjMjcwYjQ0MGUwNzIxZWFkMWExMDBlMTYifQ"
         }
       ]
     },
@@ -61,6 +65,6 @@
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:54:46.723Z"
+    "at": "2026-11-26T22:05:23.195Z"
   }
 }

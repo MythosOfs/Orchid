@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ebd07bbb761bd315a65f70452e92c4154944845f4df4d5b601d31b24c52f14d3",
+  "pageVersion": "sha256:1ef6d7f73723b843884123347501783e3e15d2680724295fedc0f25bb467fcb2",
   "claims": [
     {
       "id": "claim_f305ee56c45140e2ba442322d8b2be01",
@@ -53,10 +53,28 @@
           "version": "repo-lines-v1:sha256:11c82074cb70384fb3058063364555dadf8dd4cde7e8f08f8408985d88e2ae73:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWExZGI5OWNjMDg2MjNkNmY2MDFiMzE5MGZjM2Y3YTk3ZWNhNDYyMTQ1NDNjMTllMzhlNTUxYTBiODk0MWQwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWI4YzJhYTQ4NDlkYjdlZjFhODI1NWJmMWVmN2RkYzQzYjUxZTFmYzQyMDMwZDczYTA4ZjU2M2ExYzlmZTllOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzY2ZGQxZjk3YWMxOTg3YjJlYjZjZGE2NjBiNjhjYTg0NTFkZTU1YjNjNjQ3M2M5MTUyYzI2NTc5Y2E3NmRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjQ4NTViZjRjZTM3NmEzNzNhMmE1NDU2Y2JjODQ0M2U0OGRkNDI2NGE3MGVhZWNlMjc3ODk0ZWVjYTNjZGYwMSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_95c72d0e34704084be8a1fe5ad98b768",
+      "statement": "The loader recognizes NX and NUP separately and constructs the corresponding `AppLoader_NX` or `AppLoader_NUP`. Packed NX applications started by the native Home Menu use extra content published by game-list discovery; direct loads can publish their own packed extras.",
+      "evidence": [
+        {
+          "resource": "repo://docs/adr/0008-host-and-container-fixes-from-the-fork-scan.md#L53-L59",
+          "version": "repo-lines-v1:sha256:547284f03e6627ab26ddcbaf033ccc2f323da630c5a40c8a865307c64936240c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzA1YWNmNDM1OTU1ZmQ1NjBlOTgzOTZlZjVkY2IwODJmZTIxMzQyZDJlOWNiYThhMzRlMzdiOTBhODVlZjkzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTliYWY4ZmUxMmRhZjc2NDk4ZTcxOTkzYzY4ZjBhYjgzM2M4Mzk2NjgxYWYzN2RhOWZhYjNmMTQ1YWEwOTg1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWJhMGQ2OGRhMGMxOWRhZTk3MjdlOTkyMTM5YzdkMGUzY2EwNjdjZjk3Zjc3NmI1ZmQxM2Q1MTIwMTljNWYyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzJiZmE3N2MzNGM5NGY4ZWU2NjlmYmFjOTIwZjYzNWQ3NTFkNGIwYjM0NTBiZDQ0MTA4YzFhYTUzOGYxNTQwZCJ9"
+        },
+        {
+          "resource": "repo://src/core/loader/loader.cpp#L130-L139",
+          "version": "repo-lines-v1:sha256:b19ee9c0fe318387f0fd9ab8088b3ab557b7a43ce84254e10d76de89548079e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3ZWNjZTg5ZWEyN2IwZjEzNGFiMjFiN2FhZjdkYjY4NTkyMGM2OTMzZTQ3M2E5OGVhZGFkZDhlN2FiMzQxNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2M2E0NWE3ZDdiMjY0MDgwZTk5OTg4Yjk4NDIzNDhiNmI4ZDFjZGYwMDBiMDIzMGYyODc3Yzg0MjZmMmZlYmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhNTc3Y2JjNmE4ZDY3MzE2ZmVmOWEwZDdmNTVkMzMxNzliOGY2ODg5ZDQxYWRlNzk5YmFjOGFjNzg0NjllZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxMmM4ZmZkZmUwOTk3ZDU3YTdmYWU4ZTVjZTc3NjE0ZTQ3YjVlZDhhYmEzMjRmYjc4NDQ2ZmQyMmYyMTk1NmEifQ"
+        },
+        {
+          "resource": "repo://src/core/loader/loader.cpp#L446-L456",
+          "version": "repo-lines-v1:sha256:00d531bda07736b4a72e2e1d73563ce06a6842f8f4e941255680f4101cb6218e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0Y2U3MzVlOWI2ZjQ5MzVhNjkyNTg2NDBmNzliN2M2ZjJmZDZlNjE5ZjY2YzMxZjkwNDYyMjUxMjhhYmY1OTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwN2NmOWM2MzdmMWVkY2NlYTlhNWViYWQzMWUzZWEzMzk2ODk1ZmM3OTIxN2E2NWQyY2FjZjY5NDU2MWVkMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3MWE1YzUwMWJlMDA4MDJjMGQ2MjQ3ZDBiZTNjOGFlOTIyN2FmYWJlMzA5ZjJhYzMxZjRmMzczOTE0N2Y2MWIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:54:46.723Z"
+    "at": "2026-11-26T22:05:23.195Z"
   }
 }

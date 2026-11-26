@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:89178f767b4077be0e96da0d23007f2d54baefac7d257f5ce9400905ccb83166",
+  "pageVersion": "sha256:3b012b523cbe3bb1de137eabaee7b66455a44b0e2c79f433b4cd628dff0fd9a3",
   "claims": [
     {
       "id": "claim_0611147ec5c645dc87c50edddde8db27",
@@ -75,10 +75,24 @@
           "version": "repo-lines-v1:sha256:19fdeaad5f2b4861e5251d4e2676b0538568c68bfbb8fea724726c59c25b0c6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MDdlNTBkZmY5MzcyMDI5M2NhZWViZmE5YjkzNTBlODk2OWI3NDc1ZjhiNjkzMWM1YjQwMGRiYmU5Y2YwODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2Y2M2YmQzYjdkZGY4ODA0NzRhNTc2M2I3YzgxYjEzOTc0YjhiMWJkOWM3ZDhiN2JhYjA4MDY5NzQ0NjU5ZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ODUxMjlhMzNiNzk0ZDRhYWI5ZmZiY2EzN2Q2YjMyNjgzNmY1ZjY2NTM3Y2E3ZTNiMzU1NmMzYmRmMmUxMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzMWMyODY1MWUzZGFjZDdlMTE2ZGI5ZWJiNWE5YzY5ZjhlMzE4MjdjMTAxNzI3ZTFmNjY4Mjg3ZjljN2E1ZDkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_fabbf8e27b6145f6a75b0d9a15195411",
+      "statement": "CMake enables the offline Maxwell disassembler, IR dumper and SPIR-V translator with `-DENABLE_DEBUG_TOOLS=ON`. The option defaults to off.",
+      "evidence": [
+        {
+          "resource": "repo://CMakeLists.txt#L727-L731",
+          "version": "repo-lines-v1:sha256:63a2d93f659facba75be87504a1e3b4ead7d6b17d85b4dc3fe7139698bae8003:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDdmMTdmNzM5MWNlZWI3OGQxOTAxYzM0Yzc5MzIyYzc3ZmFlYjhjNmNjYmJkYjA1N2I0NzE1ODE5YjIwMWUwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU4MGM2MjMxNjhlYTZjMGE3ODlkM2JlMDAwODUyYTU2OWRmNTE5OGVlYjM2NTBjZjViMmE3NWU4NjNmMjE3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTMwZjMyMmY3OWQ3YzZiZDY4MDJhY2MyODIwZWM0NmI2ZjQ0NDIxMTI5OTFhN2FkMTZkZTAyOTJhYWRlMGU1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRlNThiMGFmNTI5MjU1NzFiMTBmYjZiNGJmNTljMjc3ODQzY2U2MDc4MzE0NGEwYzJhMjgyOTVhNGIxYmRmOCJ9"
+        },
+        {
+          "resource": "repo://CMakeLists.txt#L86-L86",
+          "version": "repo-lines-v1:sha256:fb492ec31fcaed99b5d4e3440b15cfcd5a4c0482841d9b00dd95f9c1f1d1e032:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI0OTJlYzMxZmNhZWQ5OWI1ZDRlMzQ0MGIxNWNmY2Q1YTRjMDQ4Mjg0MWQ5YjAwZGQ5NWY5YzFmMWQxZTAzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI0OTJlYzMxZmNhZWQ5OWI1ZDRlMzQ0MGIxNWNmY2Q1YTRjMDQ4Mjg0MWQ5YjAwZGQ5NWY5YzFmMWQxZTAzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTJjZDcxZDk1NDM1MDdiYjM2NzVmZWU4Y2I3MjgxNzBlZTRjMDhmZDI0MWRjZjZkY2E2ZTAzYzIzZTZmZjVkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWU1Njg3YzVjNDg3NmYyMTIwMzJhNjg2ZDRhODBmODdmY2RlMDJjNGJiZDAwZmRlMzAwYWIxN2RiOWEwNzA1YyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:54:46.723Z"
+    "at": "2026-11-26T22:05:23.195Z"
   }
 }

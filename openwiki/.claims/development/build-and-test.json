@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fbb59cc4b05422f3dfc6ebb0a2fa7c1af0a835e0f66ceadd1b8683aa4f1016ab",
+  "pageVersion": "sha256:a78bc8a5a1c20c03b6de430fdf96385c4bb6e0647c6a0e85f40e4e134fe74726",
   "claims": [
     {
       "id": "claim_46452c22cc8a4dfcac38b6e1d05cca54",
@@ -82,23 +82,23 @@
     },
     {
       "id": "claim_35b7425cdfb8427b8873678371f398f7",
-      "statement": "Profile generation and profile consumption are distinct. The workflow consumes the checked-in PGO profile through -fprofile-use and pins a compatible Clang reader. Consult the release matrix for platform variants and packaging, and use the job summaries when comparing hosted build time and compiler-cache behavior.",
+      "statement": "The release workflow consumes the checked-in PGO profile through `-fprofile-use`. Linux PGO downloads the LLVM release selected by `PGO_LLVM_VERSION`. Windows/MinGW installs unversioned MSYS2 Clang and LLD packages and selects `clang` and `clang++` from that toolchain.",
       "evidence": [
-        {
-          "resource": "repo://.github/workflows/release-binaries.yml#L130-L148",
-          "version": "repo-lines-v1:sha256:d6f704e2fe081f106aec8084bab8a34f0f080fe2081e39c8a105d307310b43eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZmZiYmRlMzVjZTAxZjMzN2ZlNjcxNDhlZTg0MGY4NDRlN2RiYzU3ZGYzMWQ2OTVmYTAwY2UxM2FhMzczMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2MzVhNzU1NzU3ZWE3MmViOTRlNDAxN2VmOWYzNTEyZGFhMDQwNzBkYjA3NWNiNjYyMzY1ZWFhNTdmMzJlMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2ZjNlY2I3MTAyM2EzZWYwMjZlNTgxNzc4YjA5NzQ0YzdiY2EzNGU5MTYzY2QzMGZhOGU2YjM2ZDlmNDk3NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1MmIwNTQwMzc3MDA4NGE3MTZjYzdmZDc3NTc0ZDI1YjhiMmJmYTcxMWEwMTUzZjVlNTBiZDhiMTg3OGY5ODIifQ"
-        },
         {
           "resource": "repo://.github/workflows/release-binaries.yml#L18-L23",
           "version": "repo-lines-v1:sha256:379de515411c30e1e3c5765af702314c19dbe5171bebb786b62dea60bb202351:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTA2MTM3ZWZmMzJlMDljMmUzZjQ4ZjMzMmQzOWI2ZGY2YzNjZTdjN2I5NDJhZTU5NDllOTBhZTlkZDY3Y2MzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzcwYTFiYzZlYTllMTYxMDI1ZDkyNjA4ZWMwZDZmZmVkMjNlZGQxNjkwMmJmNmI3MDhlMmVkMDUzNzdkNzIyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmYxZDcwZDcyYmFkMjMxZDQzYzU3NWFjZWY2OTQ2NTgwZTQzOWM4Nzk3OTRlZDJlYTFmNGE0MDM0MDI0NTE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGRiODkxNzI4NmQxYzYyMDAxMDNhODk3NTgzZTFkMDFjNjZmZGRiODMxMGY2NmJlZmEyYzkzODY0ODFkNWY1MSJ9"
         },
         {
-          "resource": "repo://.github/workflows/release-binaries.yml#L495-L526",
-          "version": "repo-lines-v1:sha256:f1485ded96563c713a90c97364264c10d4fbc9a334b90c965586367e3db4543b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwN2RjNzdmZDE1NWQ5MDk2NzRiZGIxNGE5MjNjMTdmM2YyZWVhOGNjNjdmYWU2YjBjNWRiZGMzMjI4ZDI2ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMDE4NmU5NWQ4OTJkNmU1Y2UyN2IyNjBjZTg3ZThjYjdmMTUwZDFjYWFmNzMyMGNkYWE2YzkwMTI3NGQzZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzN2RjZTUzYjdiMmNlZTA1MjVjY2Q5ZTRlMmU5ODc4MzEwYzE4M2Q3MDcxNGY0NjE4NDAzNDY0ZTVhOTBhYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1ZTJhYjQyYmM0Mjc3ZWZmNDg1YWM0ZTYwZGVhNmM3YmNkN2MwOGYwNGUyMmUzNTA3OGQ2YjJmZGQwOTk2ZmQifQ"
+          "resource": "repo://.github/workflows/release-binaries.yml#L270-L293",
+          "version": "repo-lines-v1:sha256:260582ff00ed09e7c6aceaadc9430a98a49ea24b5e8a53d508fc7ef7a1f7466e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxYmQ4ZTQ5OThjOTQ0ZjM2YjU3ZDAyZWYyMDQxYTIxOTk0MTIzNWM5OTRhNTFhYjBmOTFkMWUyOTA0NTcxYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMjc4MDIyYzRhYWFjMGUzZWJkZGI2OTk4OTE1YWYxZDBlOGIxNTJiY2MwZTk1NDFmM2UyNTBiNzg4YmNhYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0YjE0ZTE3ZGJiYjZiNmVmOTZiZWNkOTk0ZTU3ODU0YThkOTUyMmM5NzU0MmI0YmFmYzY5OWEyNzRkN2FhMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3YjI4ZjEzMTJhZWQ3OTY1MDNkMDRhNDNhMTY1OGEyNGJhNmMyMzNiNGYwMDIxN2ExOGY2NTM3OGNhNmM4ZWMifQ"
         },
         {
-          "resource": "repo://docs/Build.md#L223-L244",
-          "version": "repo-lines-v1:sha256:e0853fb2a046cb20454fde01da0cc085895a856a7f9a965857a665228009596e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwZTgyNWEyM2FhOThlZWE2MGJhZTI4MDkyOTM0OGYyNTRmNDA2MjJmMTY1NWEwOWM0NWQzNmEwM2JmYjQ2YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NDMwNWUwYjc4NTlmNDIwZmJhZmFmNTI2N2ZhNTQwY2RmYjMwYmRiMzkyOThkNGVjMzc5MjU4YjQ0ZDNhN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViYmQ0ZGFjYjkxOTEwNTE2NDgwYTIwZjYyNjNjOWJhMmFmMWE0MjViZmQ0Y2NiZjJlZDRkNGQ5YmVhMjIzZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1MWVlYzljM2YzYWNiODM3M2VlYWY4NjA1ZTY4ZWVkZTNhMmM4MDg3MjdlMTBhOGIwZWQzNDE5ZjU2NTFkZWQifQ"
+          "resource": "repo://.github/workflows/release-binaries.yml#L345-L357",
+          "version": "repo-lines-v1:sha256:7ffc67d3b1249e62eb6bf4a72f3eba3bb0d9dc4dbf4a6b40993b32136963b8fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0YTFmYWRmYTJmMzk5OTIwYWM0ZjY4NzUzOTA4ZDUxNThiNWQ0ODM5NTAwN2JlY2ZhNTUyZTc3YWJmOTk4YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5YzliMDZiNGJjMGQ4ZTBiYjJhZDEyNGUyMDYyY2U5NzRkNjdiOTcwNjk1NWYyNjhmMDA2YTYyZTEyMGE2ODgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkYTdmOWY1OGUxYzMwYWQ2NTMxOTgzNWZmZGJhYWQyMzU5YmQzM2ZhY2ExMWRkZDU1MjZlZmU1ODMyYjA2OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1YzRiZDA5OTRkNTFiMmUxOTdlYmQ0YWE3MTg4NzU4OTcxNjU4MjQxZDM2NGQ0YzFiZjJhYWY4YjI5YjQ2MmQifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/release-binaries.yml#L495-L526",
+          "version": "repo-lines-v1:sha256:f1485ded96563c713a90c97364264c10d4fbc9a334b90c965586367e3db4543b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwN2RjNzdmZDE1NWQ5MDk2NzRiZGIxNGE5MjNjMTdmM2YyZWVhOGNjNjdmYWU2YjBjNWRiZGMzMjI4ZDI2ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMDE4NmU5NWQ4OTJkNmU1Y2UyN2IyNjBjZTg3ZThjYjdmMTUwZDFjYWFmNzMyMGNkYWE2YzkwMTI3NGQzZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzN2RjZTUzYjdiMmNlZTA1MjVjY2Q5ZTRlMmU5ODc4MzEwYzE4M2Q3MDcxNGY0NjE4NDAzNDY0ZTVhOTBhYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1ZTJhYjQyYmM0Mjc3ZWZmNDg1YWM0ZTYwZGVhNmM3YmNkN2MwOGYwNGUyMmUzNTA3OGQ2YjJmZGQwOTk2ZmQifQ"
         }
       ]
     },
@@ -119,10 +119,24 @@
           "version": "repo-lines-v1:sha256:f1e618ce6fc2954c35dbc61a2b449337b38dbb0297dc8efbaaeb5d23ca3cc252:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZjFkYWEzYTE5YzA2MjcyNzczZmVkN2Q2OWY5OThlMDBiYmNjZmE0NDI3Zjc2OTlkMDRlMWVlZWNiNjgwM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMGQyMDJkZmI2NGViYzgxN2RkMzhkZjIxY2ViZjcxM2Y0MjRhZDIxM2U1ODkwNTI5YWM1ZjczNDRjMjBjNzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwYmFhNDVjNTE1MGU0OTI0MTA4YjUxMjYzZWExNTA1YjhjNWEzNGRiMjYyYTJjMzZmZTg0YTVhOGJlMmQ1YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzOTFjODgxOTQxNjI4YTEyODUzNzhkMWZhMTEyMjA1ZWRmNmZjY2NlOWJmZjJmNmI4NmM5MGU1MWFiNWM5YjUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_cf03234596744972b0a9dab0aa362ba5",
+      "statement": "CMake enables the offline Maxwell disassembler, IR dumper and SPIR-V translator with `-DENABLE_DEBUG_TOOLS=ON`. The option defaults to off.",
+      "evidence": [
+        {
+          "resource": "repo://CMakeLists.txt#L727-L731",
+          "version": "repo-lines-v1:sha256:63a2d93f659facba75be87504a1e3b4ead7d6b17d85b4dc3fe7139698bae8003:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDdmMTdmNzM5MWNlZWI3OGQxOTAxYzM0Yzc5MzIyYzc3ZmFlYjhjNmNjYmJkYjA1N2I0NzE1ODE5YjIwMWUwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU4MGM2MjMxNjhlYTZjMGE3ODlkM2JlMDAwODUyYTU2OWRmNTE5OGVlYjM2NTBjZjViMmE3NWU4NjNmMjE3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTMwZjMyMmY3OWQ3YzZiZDY4MDJhY2MyODIwZWM0NmI2ZjQ0NDIxMTI5OTFhN2FkMTZkZTAyOTJhYWRlMGU1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTRlNThiMGFmNTI5MjU1NzFiMTBmYjZiNGJmNTljMjc3ODQzY2U2MDc4MzE0NGEwYzJhMjgyOTVhNGIxYmRmOCJ9"
+        },
+        {
+          "resource": "repo://CMakeLists.txt#L86-L86",
+          "version": "repo-lines-v1:sha256:fb492ec31fcaed99b5d4e3440b15cfcd5a4c0482841d9b00dd95f9c1f1d1e032:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI0OTJlYzMxZmNhZWQ5OWI1ZDRlMzQ0MGIxNWNmY2Q1YTRjMDQ4Mjg0MWQ5YjAwZGQ5NWY5YzFmMWQxZTAzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI0OTJlYzMxZmNhZWQ5OWI1ZDRlMzQ0MGIxNWNmY2Q1YTRjMDQ4Mjg0MWQ5YjAwZGQ5NWY5YzFmMWQxZTAzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTJjZDcxZDk1NDM1MDdiYjM2NzVmZWU4Y2I3MjgxNzBlZTRjMDhmZDI0MWRjZjZkY2E2ZTAzYzIzZTZmZjVkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWU1Njg3YzVjNDg3NmYyMTIwMzJhNjg2ZDRhODBmODdmY2RlMDJjNGJiZDAwZmRlMzAwYWIxN2RiOWEwNzA1YyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:59:01.672Z"
+    "at": "2026-11-26T22:05:23.195Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:102c22db7bca36881feace77d98866b0cf5197a0f58467ef984a1ec3f1d58b04",
+  "pageVersion": "sha256:bd20e240d79355915691262cd9032a7afb3d846bce5b02984a3753d17a5fa0cc",
   "claims": [
     {
       "id": "claim_004dc74154ab4ec5a76779fd891dbf84",
@@ -57,10 +57,28 @@
           "version": "repo-lines-v1:sha256:78aaaf1af71f3dea18ee5a9e2e75839fb73181cb47ef0746f8af28178bd29897:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2I0ODIzYTA0ODFhNjRiY2RhYWViMDllYTI4MDliMTJkNjQ5ODFhMWUzMjg1MmE5MTVhNmJiYmI2ZWE0MjM2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzc0NjhiMGMzZGQ4YWUxMmYzZjg2N2NlZjU0M2Y1Yjc4ZjlkOWFjYWZmMjFhZDQ2ZTgwY2VlMTI3YmQxOGRjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjAzODc2NmEyY2FhYjk4Y2EyNWI1MGRhZjc5ODI1ZWNiZjU0ZTAyOTZhNzYyY2Y3MjY4M2ExMDFmNDkyODI3NSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_0160147d00e34063a445aa3ceef87ec0",
+      "statement": "`GenericEnvironment::LowerNativeCode` captures native instructions from GPU memory and calls `Shader::Ampere::LowerToMaxwell` with stage-specific options. Capture supplies the instruction span to lowering, so the geometry exit handler rule matters before IR translation.",
+      "evidence": [
+        {
+          "resource": "repo://docs/adr/0013-native-program-capture-geometry-exit-envelope.md#L5-L15",
+          "version": "repo-lines-v1:sha256:7b2daed2f681aa19dc1450e5e29a3eb01ba112e583e77f670c5a7f6728661224:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMzYzNGRiYjgwMWE3M2I3MGU4OWVkNzc1NDZjNzdiMTA5M2JiODhjOWU0NzkxOGU5NjY1OTRkYTQ5OTRhZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhNGIzMDdmNjRkNWUyZmQ3ZDlkYzg2MzY4ZjA3NWVkODM2MjBlNmI3YzNmMzg3OWE5NzBjMTk5YWEyNDBhYzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwNjRhOTIyNjY4MmU2NzBjYTRlYzQ5ZGU1MmVjY2NjYjU5M2RkMzllZTM1YjBiMmY2MTM3NmM0NTI5OWQ1YmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmNzMyODlkZTFiYjVlM2E4NDM0Y2ZmMzYxNjczOGY4NWU3ZDQzMmM5MTM2Y2E4MDk0MGI0NTk4MGE4YWViOGUifQ"
+        },
+        {
+          "resource": "repo://src/video_core/shader_environment.cpp#L538-L551",
+          "version": "repo-lines-v1:sha256:c3ab7019334d642ab06c4a947cc64a0df44794c8b50936665c19c0043e008930:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwN2Q5ZDg5ZDZiY2U1YjQxOWRjY2I5ZGY1NDc1NmQ3N2NjNDVlYjEzZDVjYzAyNjQ1Nzc4MmU5NGJlNDU4NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmZjM5ZGNkMDgwYmFiZjVjMjVhZTgzYzY2N2E3MDFiYzRiNWYxMTBjODJjYzJlOGFlOTQzYzI5MDU0NmY4OTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YjllNmJjNGY5MDhhMzZlZmI4NjQ4MTQwYzE3MzliODlkNDJmZTYzODVmZTg5YzEwZTlhNTVkYzE4MmY0NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5OWUxMTY2MDkzNjc3MWNhYTcxNzY1NTUyMGYxODY2YzYyM2Q1MGMxYWI2ZGUyMDZkYTgxZjQxOGRiZDA1ODYifQ"
+        },
+        {
+          "resource": "repo://src/video_core/shader_environment.cpp#L610-L624",
+          "version": "repo-lines-v1:sha256:5dc6740bb47d8149bb783e185521a6011b1fb0d1251132bcff1e3db1606fd194:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4NTc4NmViZjY5MThjYTNlZjBlOTEzN2VkOGQ5MzNjMzJkYTFhZDhlMDljN2Y2ZDNkYzIyZTE1ODAxNDBjY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0MmI2Mjg1YWE1ZGJiNjQ5ZTlhMDc0MmU5ZmRhNGRlZGQ2MTUwZTZiNzdjMjUzMjAwY2ZkZGYyZjdiMWM3MTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4MDMyY2U5NGE0Y2QwMjc0YTVkNzZlMmM5ZWU1M2Y3ODg0NGVlNmU1OTU2MjJlOTgzNGU1YmQ2YjZjNWFkOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyMTcwY2U1OGVlODYzMDFmMmU5M2IyNTg4ODA4N2ZhMTUzZGRhNjI2NjIxMzY3NzAyODdiNzkwYTFkZTAxZjgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:54:46.723Z"
+    "at": "2026-11-26T22:05:23.195Z"
   }
 }

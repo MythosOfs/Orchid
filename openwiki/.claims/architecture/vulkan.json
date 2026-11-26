@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0f0bc428c019fe159bfcc92521c001483948ffad9005da9fdf9c26b0d5720162",
+  "pageVersion": "sha256:c6eecb49b8cdad949ccc5748ae8be700b4f4aeb6db2eeb8da5b0c6b58ae16e46",
   "claims": [
     {
       "id": "claim_0aa6a7c7694c4fcdaad93637b7830869",
@@ -53,10 +53,28 @@
           "version": "repo-lines-v1:sha256:4c58438c27e0a35d81e3b0e9a72bf4d553fdf592d32db49e8960987c8a5ecd9d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYzQzNzg0ZjFiMjY0NmI1YjdkYzE0MDFlNTBkMGEyNGE4ZGNmMGNiZjUwYzViM2EzYjJhZTdjZjU4MzE2ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzZGU2YmNhYjY4YzExYjI4MWJhZjdjMGM1MzAwMDhmNmYxNTViNTIwZmI0MzE2ZDE4MWJiM2NlM2M1MzY1MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NzAzMjdkNjYxZGYzYzM5YzBkYmNlNTI0NGNkZTI5MGRkNDA5ZDU4MjBkMWU3Y2ZkZjllMzA2MTczZmRmYTkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_47ce5d2c203c469a9cbb420e2ea84637",
+      "statement": "The guest display path for Switch 2 uses `INx2Vi2Session`. Its composition path hands layers and fences to `Tegra::GPU::RequestComposite` before the host renderer presents them.",
+      "evidence": [
+        {
+          "resource": "repo://docs/adr/0003-nx2-display-session-vi2-and-frame-presentation.md#L5-L15",
+          "version": "repo-lines-v1:sha256:e4b926558facab990936dfcf4d2b57c05532dd29ddd090a05498ef685670ca06:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMzYzNGRiYjgwMWE3M2I3MGU4OWVkNzc1NDZjNzdiMTA5M2JiODhjOWU0NzkxOGU5NjY1OTRkYTQ5OTRhZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDIzODJkMGQ4NDQ0NTFhMzU4ZmQ3MTNlODNhNjY3N2NlYjdkM2E0MTE2MTdmZDBjMWIwNGYwNjNmNzgyOTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzNjZiZDkwNjAyOWJiYWUxNDFmY2QxZTdiNDRjZjI3ZDY2NjAxZjRiNzFiYjA0NGM5ZTI5NjZkMWJjYzBhOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhNmY0ZjFiYTM2ZDI0ZTdlMmJmNWEyYjQ3NDgwOGY1YjRjMzcxMWJmZTA1YWM3MzcxODMzMjFkYTgwNGQyNDgifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/nx2_gsv.h#L1271-L1286",
+          "version": "repo-lines-v1:sha256:6dbe656b595af0ed6ccd31089c758a6a02128b1673a27bd7f3e593f2f6816db1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2MmVjZjU4ZmUxNDhiMTk2MmRjYzE4NmEwMzYyOWQ2ZmFhNDY1ZDhiYjE2NzA2ZThmNWQxODEzNTdlYTEyMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjNGJmMzIwNWU2MTg0MzgxZmZmMzM0YThlZGZiYTgwMDY2NDdkNDg3NWIwOGRlOGI0OWUxNWU5OGJlYjNhYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxNTEzZTRiNjJlNWRhMjc0ZGU2MGRkMDQzMzkwMWY4YmIzOGYzNWM4NTRkZGIxZGYwZjJkNjk3NGNhMWQzNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1NDI4OGQ4MTZiODBkMDNmNGU4ZTc4MDRjZmNjODBhNGJmNTcyMDA0Y2UzYzAzNjczNTFlZTJiYTMxODVjODgifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/nx2_gsv.h#L1713-L1726",
+          "version": "repo-lines-v1:sha256:fbc981c1f2f2a82af6cfaca31fafb6ad6ed26bdf93b2377091416a2de62c8886:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MmM5YmIyYWI1NWY3NTAwMGE3ZTVjZTlhOWU5NjU2OTgwNWVjZjAxMmIwMWE0NWVjMjZhYmJjMDljNjBhN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNDE4Y2E4ZjY5NzFhNWUzZGFmNzE5OWI3N2U3YzczMTE3MmEzYWQ5ZDRiMTIyMWIyMThlNTY4Nzk4MTVjNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkZmYwOTI1MmY5MWViNjA5M2E0NDRjNjNhM2ZhNDFhNjIwMzRmODU5NDkxYmUyOGJhOWIyMzM0NTFhYmFkYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5N2E1MDk5MmU4ZGFlOWQ5MTFkZmEwYzhlODg0NmQzMTNiNzhjNDU3YzRjM2MzZjZiZjM0MTgzNjU4ZjE2N2IifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:54:46.723Z"
+    "at": "2026-11-26T22:05:23.195Z"
   }
 }

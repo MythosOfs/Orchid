@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fa73ced110c792f41b42effbc2383d172c5b0681da30ab6d09bd0954a3c7afe2",
+  "pageVersion": "sha256:718095f969a17efceb80b3a599725859fbc1089b5d576171d715607de012a5c0",
   "claims": [
     {
       "id": "claim_1eb2e60f3cbb44b29786fea6f56e655e",
@@ -41,10 +41,28 @@
           "version": "repo-lines-v1:sha256:f1cca3a62c00b1ec141ae351717b837af566a0467169ac71175bbda60dec9824:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5MzE3M2E0Y2Y0OWRkOGJkOTNjMzhjMTFiN2NlNWFhOTU3YzIxNzM1NmE3YjZmNmM0YTljNjQzOTliNjhiYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyOWIwMDdkZDAyNDkxMWM4MGUyYjhiOWRlYWJmMDRiZmQwMmJhM2I3ODAyMWQyOTc2MjYxMmU3N2YxY2I2MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmZDVhNDNhM2ZjM2Q1N2NiMTFkZmRlZjI1NjZkOTUwZmQyZjcyNjU4YTkwN2FmMTRmZDhmNDVhMjc1MWE0ZmIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_05aa5c157bf64b7aa75e93a0c6a928e6",
+      "statement": "The audio service registers `aud:u`, `auddmg:u` and `audsmx:u` for Switch 2. The Sysmix session manages guest streams separately from the renderer session above, and its playback path appends converted samples to a host buffer.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/audio/audio.cpp#L207-L213",
+          "version": "repo-lines-v1:sha256:f84bc7256c0d1d91658708b1b037845b7bb2ad27802499f2157524babe7dafa6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRkMmU5MmMwNGU3YWNkNjQ5ZDBkZGYwZTU4MzJmYTdjNjk0MzM1NDViMjczZGFkYjE5NTUyYjhlYTQ5OGRkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTAzNWE1ZGI1OTQ4NzFhZWVkNjcyYWVmYmRjYWM0ZWJiMDNjYTJkZmIxNWQ3NjZhZGI2YjhjMDUzNTU5YWZmNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWExMDljODQ1NDY3ZWZmMjgxMWQ4ZmI3YmQyYmE4MjE3N2QwODZhNTI2ZjlkNjczODM5OTY4NGM0NTNkNzI4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjRmMmIxZjgzMjM5MjJlMDcxZjZjYTM2NWEyZDBlOTAxYjE1OGY5ZTg3YjkxZjM3YzAxZDkwOWQzYWU5ZDQxNiJ9"
+        },
+        {
+          "resource": "repo://src/core/hle/service/audio/nx2_audio_device_manager.h#L384-L402",
+          "version": "repo-lines-v1:sha256:59f5f73797a00378a4802a2f1b7c7d4aebbfdf28c91b4cf38f98d1ce18c5af2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlODM0MTJiNTEyNjZhZWY4MzExNmJkZTVhZDY4YWQ1MDU0YjZhODYyMmRjNzk2ZDg1OTM0M2I4MDdhNDE5MmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YTc3NTE1ZWIxNDRmMzVlY2U1YmIyOTE0OTM0MjhlODZkMjllOGJkMjI1OTY5MDYyZWMwNzYzOWQ0YWJjODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMjY0YmFkNzQ5ZjQzZGMyYzhlMTJmZjI5M2EwYWQ3MzQ2ODk5YWRkOWI3ODI5NGQzZjFjZWJlMjI1YTEyM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwZThiYjE0OThkZjdlYjYyOWVjMmE1OTE4YWNlZjY4YWViNTgxZTVmZjQ4MWI5YjRjMWM0ODVkZjcyNzYzYzcifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/audio/nx2_audio_device_manager.h#L416-L435",
+          "version": "repo-lines-v1:sha256:641f270f547c5ba026d9a6b6e6a515b11573f277ffde4d65061662df596cef4f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4Y2I1ZGEwYTM5NjJhOTM3NjA3NzYwNzQyMzJiMDYxOTJmZmJkZDAxYTAyMjA3ZDg3OWZhMWQ3ZDhjNjE4OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5NzQzZTk5N2MzYjFhNTBhYTJhOGQyOWNlY2E5YzA0NWRmNDdkZTUxYjFjNTBhNDdhNjRmZDhmZDNjN2FkN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxZTc0YTU5ZjA0ZjAwMGE5YjlhZjE5M2ZjNWFiZDAwOTdhNDI5NzAyMDIwNTFiOWQ5ZGE3YWI1NjRlZDcwZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhMDc2ZDc5MmRmOTMzN2RkZWFhZWQxODE5NzU2OTI2NWQ4MjY1MDY4MmFhZTdiN2RkMjg4YjFkZjU4OTEyM2QifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T21:54:46.723Z"
+    "at": "2026-11-26T22:05:23.195Z"
   }
 }

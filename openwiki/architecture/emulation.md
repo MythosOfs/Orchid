@@ -5,17 +5,21 @@ description: Architecture map, shared system lifecycle and subsystem ownership.
 tags: [orchid, architecture]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T21:59:01.672Z
+    at: 2026-11-26T22:05:23.195Z
 sources:
   - id: openwiki-source-664647317b8f3aa15647b1a5
     resource: repo://src/core/core.cpp
+  - id: openwiki-source-128960124fcb807750afa03f
+    resource: repo://src/core/hle/service/am/service/application_accessor.cpp
+  - id: openwiki-source-fee340835df851478809471a
+    resource: repo://src/core/hle/service/am/service/application_creator.cpp
   - id: openwiki-source-d7db04fa5ce3dc23bc95d4a9
     resource: repo://src/qt_common/render/emu_thread.cpp
   - id: openwiki-source-4980c72de3964520648d4185
     resource: repo://src/yuzu_cmd/yuzu.cpp
   - id: openwiki-source-849abc74091a24580c4169e4
     resource: repo://src/yuzu/main_window.cpp
-generated: { by: "codex", at: "2026-11-26T21:59:01.672Z" }
+generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
 ---
 
 # Emulation lifecycle
@@ -36,9 +40,13 @@ flowchart LR
 
 ## Desktop entry points
 
-The Qt executable enters through [main.cpp](../../src/yuzu/main.cpp#L217), which constructs the Qt application and enters its event loop. Game launches converge in [MainWindow::BootGame](../../src/yuzu/main_window.cpp#L1946). The window checks firmware before calling `Core::System::Load` with the render window. After a successful load it creates and starts an `EmuThread`.
+The Qt executable enters through [main.cpp](../../src/yuzu/main.cpp#L217), which constructs the Qt application and enters its event loop. Game launches initiated by the Qt frontend converge in [MainWindow::BootGame](../../src/yuzu/main_window.cpp#L1946). The window checks firmware before calling `Core::System::Load` with the render window. After a successful load it creates and starts an `EmuThread`.
 
 The command-line frontend uses SDL application callbacks. It supplies its own emulation window and application applet parameters to the same core loader, maps a failed load to SDL failure, and calls `System::Run` for a successful session. See the [CLI launch path](../../src/yuzu_cmd/yuzu.cpp#L432).
+
+## Native Home Menu launch
+
+The native Home Menu creates a guest application through `IApplicationCreator::CreateApplication`. It resolves the installed or loader-backed content, creates and tracks an applet and returns an `IApplicationAccessor`. The guest then calls `IApplicationAccessor::Start`, which delegates to `WindowSystem::StartApplication`. [Application creator](../../src/core/hle/service/am/service/application_creator.cpp#L83) · [Application accessor](../../src/core/hle/service/am/service/application_accessor.cpp#L61)
 
 ## Guest construction and teardown
 
@@ -46,7 +54,7 @@ The command-line frontend uses SDL application callbacks. It supplies its own em
 
 Loader failures and application subsystem setup failures both take a cleanup path before returning an error. During [shutdown](../../src/core/core.cpp#L510), the system notifies the GPU, requests stop, suspends emulation, closes guest services and shuts down the cores before releasing the GPU and audio objects.
 
-Follow [Graphics and presentation](graphics.md) for GPU work, [Guest services and host I/O](guest-services.md) for IPC and host boundaries, and [Build and test Orchid](../development/build-and-test.md) for targets.
+Follow [GPU command processing](graphics.md) for GPU work, [Guest IPC and services](guest-services.md) for IPC and host boundaries, and [Build, PGO and release](../development/build-and-test.md) for targets.
 
 ## System ownership
 

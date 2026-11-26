@@ -5,15 +5,17 @@ description: VFS, format dispatch, applet process creation and content.
 tags: [orchid, architecture]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T21:54:46.723Z
+    at: 2026-11-26T22:05:23.195Z
 sources:
+  - id: openwiki-source-160d83a24fe077e508d6dcfc
+    resource: repo://docs/adr/0008-host-and-container-fixes-from-the-fork-scan.md
   - id: openwiki-source-664647317b8f3aa15647b1a5
     resource: repo://src/core/core.cpp
   - id: openwiki-source-72d6af1e9bfc66c5ebeb8561
     resource: repo://src/core/hle/service/am/process_creation.cpp
   - id: openwiki-source-19e1cd500f4c3edb6c5b209f
     resource: repo://src/core/loader/loader.cpp
-generated: { by: "codex", at: "2026-11-26T21:54:46.723Z" }
+generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
 ---
 
 # Filesystem and application loading
@@ -29,6 +31,12 @@ Loader::GetLoader first rejects a missing file and checks whether an indexed pro
 The applet process creation implementation obtains an AppLoader and initializes an AM process with it. This is the seam between file-format handling and process construction. Loader status is propagated to the core launch path, where failed loads are cleaned up. [`process_creation.cpp`](../../src/core/hle/service/am/process_creation.cpp#L40) [`core.cpp`](../../src/core/core.cpp#L404)
 
 Core keeps a ContentProviderUnion and separately holds the loader for the current application. Its launch path uses PatchManager with the filesystem controller and content provider to obtain control metadata. For missing game metadata, trace provider selection and PatchManager separately from executable format recognition. [`core.cpp`](../../src/core/core.cpp#L491) [`core.cpp`](../../src/core/core.cpp#L630)
+
+## Switch 2 NX and NUP formats
+
+The loader recognizes NX and NUP separately and constructs the corresponding `AppLoader_NX` or `AppLoader_NUP`. Packed NX applications started by the native Home Menu use extra content published by game-list discovery; direct loads can publish their own packed extras.
+
+[ADR 0008, Home Menu content ownership](../../docs/adr/0008-host-and-container-fixes-from-the-fork-scan.md#home-menu-application-ownership) · [ADR 0008, NUP writer](../../docs/adr/0008-host-and-container-fixes-from-the-fork-scan.md#nup-writer)
 
 ## Related pages
 

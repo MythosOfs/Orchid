@@ -5,17 +5,21 @@ description: Guest shader translation, IR, SPIR-V and pipelines.
 tags: [orchid, architecture]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T21:54:46.723Z
+    at: 2026-11-26T22:05:23.195Z
 sources:
+  - id: openwiki-source-48110f28831e12c522739205
+    resource: repo://docs/adr/0013-native-program-capture-geometry-exit-envelope.md
   - id: openwiki-source-8c3969dc47b6f9c7c4464575
     resource: repo://src/shader_recompiler/frontend/maxwell/translate_program.cpp
   - id: openwiki-source-3e4be3ba3cb1c320fd084347
     resource: repo://src/tests/expect.cpp
   - id: openwiki-source-708accf73fb6c8d2a57b9c2c
     resource: repo://src/video_core/renderer_vulkan/vk_pipeline_cache.cpp
+  - id: openwiki-source-53bd67f4ee18e4d76760e3c6
+    resource: repo://src/video_core/shader_environment.cpp
   - id: openwiki-source-6beb56f71e8be126fb014149
     resource: repo://tools/README.md
-generated: { by: "codex", at: "2026-11-26T21:54:46.723Z" }
+generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
 ---
 
 # Shader recompiler and pipeline cache
@@ -31,6 +35,12 @@ For graphics stages, PipelineCache supplies EmitSPIRV with a stage profile, runt
 LoadDiskResources is title-scoped and ignores title ID zero. Before changing cache files it waits for outstanding serialization work. It uses separate paths for serialized pipeline data and used-pipeline tracking, with a distinct suffix for the title workaround that changes lowered code. Review cache compatibility when changing the representation of persisted environments. [`vk_pipeline_cache.cpp`](../../src/video_core/renderer_vulkan/vk_pipeline_cache.cpp#L932)
 
 The repository includes Maxwell disassembly, IR and SPIR-V tools as separate entry points. Use a disassembly to inspect guest decode, an IR dump to inspect translation, and SPIR-V to inspect backend output. For stable regression output, the expect-test helper compares emitted text against a reference. [`README.md`](../../tools/README.md#L8) [`expect.cpp`](../../src/tests/expect.cpp#L15)
+
+## Switch 2 Ampere lowering
+
+`GenericEnvironment::LowerNativeCode` captures native instructions from GPU memory and calls `Shader::Ampere::LowerToMaxwell` with stage-specific options. Capture supplies the instruction span to lowering, so the geometry exit handler rule matters before IR translation.
+
+[ADR 0013, native geometry capture](../../docs/adr/0013-native-program-capture-geometry-exit-envelope.md) · [Native shader environment](../../src/video_core/shader_environment.cpp#L538)
 
 ## Related pages
 

@@ -1,0 +1,7 @@
+data/
+logs/
+*.log
+*.jsonl
+chat-exports/
+.env
+.env.*

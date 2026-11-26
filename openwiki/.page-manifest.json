@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "pages": {
+    "/openwiki/architecture/emulation.md": {
+      "gitHead": "0f6eb7a59cc584c02dfb065903c4dfad00e47061",
+      "sourceFingerprint": "sha256:abbaaf02288e0a6f31f6932c8fafb7d287b814684559a0266eabbfd6e17f4cc9",
+      "pageVersion": "sha256:8e6ed9a36df4442fe63a837fc8f5ac1ce881df6aa8c9cc57ecf9e82c72d3c1e4",
+      "completedBy": "codex",
+      "completedRunId": "5708ee84-0546-4800-aac2-e90f92d3d1ca"
+    },
+    "/openwiki/architecture/graphics.md": {
+      "gitHead": "0f6eb7a59cc584c02dfb065903c4dfad00e47061",
+      "sourceFingerprint": "sha256:abbaaf02288e0a6f31f6932c8fafb7d287b814684559a0266eabbfd6e17f4cc9",
+      "pageVersion": "sha256:3cc0dc2edfcd5748c2b922831aaed3dc4f4c27a74aa56e69b9b965bb49f86d31",
+      "completedBy": "codex",
+      "completedRunId": "5708ee84-0546-4800-aac2-e90f92d3d1ca"
+    },
+    "/openwiki/architecture/guest-services.md": {
+      "gitHead": "0f6eb7a59cc584c02dfb065903c4dfad00e47061",
+      "sourceFingerprint": "sha256:abbaaf02288e0a6f31f6932c8fafb7d287b814684559a0266eabbfd6e17f4cc9",
+      "pageVersion": "sha256:bb5682a69cb28500de67515b2a78ffeec9578494e942f0776a5a4b355dd3973a",
+      "completedBy": "codex",
+      "completedRunId": "5708ee84-0546-4800-aac2-e90f92d3d1ca"
+    },
+    "/openwiki/development/build-and-test.md": {
+      "gitHead": "0f6eb7a59cc584c02dfb065903c4dfad00e47061",
+      "sourceFingerprint": "sha256:abbaaf02288e0a6f31f6932c8fafb7d287b814684559a0266eabbfd6e17f4cc9",
+      "pageVersion": "sha256:d8f2dffbe458bc568f4eba31c9a9fa633165c5e400bda72be8c4a98e9f7c5cbe",
+      "completedBy": "codex",
+      "completedRunId": "5708ee84-0546-4800-aac2-e90f92d3d1ca"
+    },
+    "/openwiki/quickstart.md": {
+      "gitHead": "0f6eb7a59cc584c02dfb065903c4dfad00e47061",
+      "sourceFingerprint": "sha256:abbaaf02288e0a6f31f6932c8fafb7d287b814684559a0266eabbfd6e17f4cc9",
+      "pageVersion": "sha256:a5c1880ea5b24466df1c898b652c79ea4f8bc4cca9ab663d515aeefb65a47968",
+      "completedBy": "codex",
+      "completedRunId": "5708ee84-0546-4800-aac2-e90f92d3d1ca"
+    }
+  }
+}

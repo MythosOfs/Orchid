@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8e6ed9a36df4442fe63a837fc8f5ac1ce881df6aa8c9cc57ecf9e82c72d3c1e4",
+  "claims": [
+    {
+      "id": "claim_7b8847e915fb4a1b805ebe6de6f8a91e",
+      "statement": "The Qt frontend checks firmware before calling System::Load and starts an EmuThread after a successful load.",
+      "evidence": [
+        {
+          "resource": "repo://src/yuzu/main_window.cpp#L1867-L1876",
+          "version": "repo-lines-v1:sha256:5b79f98e29e947b539ed72f1fa8ecb4540f86c9ca464f417028ecab07a94d688:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NTJiMDdhMTI4ODE4ODBhN2NiZjkzOTQ5YzAxZTc1NTNkNTE5YjE5NjBmMDRmOWEwMjdkZjk2MzA3MWRiNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxMjNhZDg5NTk3YmQ4ZTI0NDQxMjhlYTBiYWUyOGFkZTAxNzg3OWQ5YTE3NjVkODE4OWQ4YzIzNzVmMzQwNDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhZTUzMjM1NjA0NTRiNWQxZjhjN2VjMzZmNWNhNTc0Nzk1MThiZTQ2ZjBmNGUyMGJhMzQ1YzIwNzAwNzAwODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmYWYzMjVmZjNlYjM5ZDk4NTQ3ZGEyYjUyODIyN2VlNzQyMzkyZmU5ZTVjODdlNGUwMDE5N2JhZjBiZWZiNjgifQ"
+        },
+        {
+          "resource": "repo://src/yuzu/main_window.cpp#L2196-L2213",
+          "version": "repo-lines-v1:sha256:3ee9f0b057e97feff29454a61e3167e4300a56070581cb8f642e825424cc649b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZDAwMTMzNDAyNGFlMjYwOTE0NTdkMzlmMTc2ZGZhMGViNDRiOWQ4ZjZlMDhjM2ZlYjMwNWQ1YTBmZTIwZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0ODEyM2ZiZDZhMmQ4MTRjMGY5ZmI2YjM2ZDM4MjAyYTdjYmMzZjA0N2U5YmM4MWFlZmE1MTM3M2JjMjI5ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OWJkZWZlZWFjYTYzNDBlMDI5MGRjODZlODg5Yzg5ZDVlMTg5YWE1YmE0NGI1ODViM2I3MDczNGY0YTYyZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NmU4NDY0YzkxZWRjMTIzMWI5MzNiNzU5Y2JkM2ZhMzdjMDJjYjNmY2ZjNzk5OTMxMGY2NjU2MjdjMDZkOGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a433b72b56594fb0b639f18ccdeb05f6",
+      "statement": "The SDL command-line frontend calls the shared System::Load and starts execution with System::Run.",
+      "evidence": [
+        {
+          "resource": "repo://src/yuzu_cmd/yuzu.cpp#L432-L450",
+          "version": "repo-lines-v1:sha256:d6f813b1df97b3c3d225c190d56e89bf2e168dce2f75982d42690aa7893040ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NWZkNDNkYjVjYmI3YWRhZjExMjM5NmU2NDhiYzgwYTgzM2Y4MGVkNjk0ZGJiMjI1NTVmNTY2MjRmMTE3NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5OWFhODA4MDM4NjZiNzE1NGZkMjU5N2E0ZTFhNTBlYzhlY2M3YjlhNzA2Y2E1ODY1ZTY0YTU1MTViNjExODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiZTQ0ODA1ZDk1ZGMwMTIwZDQzNjUwY2I4NTk4ZWI2Y2JlYThhY2NkYTBhMjY3NDU4ZDAyZjY0OWM3YTI3ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlMDk1MTQ5NmZjOTE4NjYyNTAwOWRhOTUzNmFjZWRmMWM1MTcxYWVkYTMzMjNkZTUyMDNjZTcwOTFkNDA4NGQifQ"
+        },
+        {
+          "resource": "repo://src/yuzu_cmd/yuzu.cpp#L516-L519",
+          "version": "repo-lines-v1:sha256:304b0665bcaff7325c359e26d2752a0a8d1c525591759e60eeb9fee6dd120eaf:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTFkODRiYzc4MjNlYzIyNTg4NjdlNTgyODMzN2VkZjgwYzVhZDlmZmVlMTgwZjNlOTI5MDU1MDVjYmEyOWYxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE1YzFhZGE1NGRiMGJkNjYxZGViNWYyYWFkZGFiYTY5N2I4Y2ZlOGY3ZTc0ZGZlMDFlYWY2MjgxNTllYTEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzAzMmYzNjIxYTc2MjBhY2MxYmYxZGQ5NzdhOTMzMTQ0NDdjNWY0YjViYmZkMTM4NDRiMmY0YTI4OTA4NWJiMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2QyNjRmYjYwNWQzZTMxY2YwZGFmZjkzNjA4MzRhMTMwMGE4NjVjMzllYTg2ZmI5ZjUxYjQzMTkzZmRmZDM2NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_89cc1a00e9c34678bb833b94c72fd60d",
+      "statement": "Core creates the process from a VFS file, registers it as the application, applies early title settings, sets up runtime subsystems, initializes the CPU manager and hands the process to the applet manager.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L327-L346",
+          "version": "repo-lines-v1:sha256:0391abee821857f53fa72ad3d67fe575f6e87ac83157830a368b8e06afd53285:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmMjU3MDc4OTMxZTlkZDMxZjNmZjhiMTc2YWU0MWJiMTBiOTk2YTUxODUzZDIyZDY4Y2Y2NjkwYWY3NmYxMTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZWFmYjViYjBjNGM0Mzg1MjY5OWY3NTM4MjU3ZGE2M2I1NzgyMmNiYWU3YTlhNDdlYzJjODE0ZWNiZWU2NzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExZGIyNDJjYzc2ZjBkZmVhYmQzM2JmNGNmYzE3ZGI2ZTFhMzk5ODY1MmQ0NWRhYjcyOWM1NTE3ZGM3OGM5M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMTVhYWU0MTgxMTExODI1OTljYWQ3NDk2YjNiZjA3NjE5ODMwM2VmZjU2ZDM3NTUxZDI1NmVlOWE2ZDJmMmEifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L398-L415",
+          "version": "repo-lines-v1:sha256:519ed787f47f24e0dc6321fc78adc8b4e8f332a7c13d8c8ff670ca1ff5220f11:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZGJhMGZlNDdhMjVlNmIxNjE4NmQzOTMzMDJiZjlmYjBlMWEyMDVmYWU1NmUxOThlNjRkMDlkNDZkMjBjZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhY2Q4OWU5NWRiYzlhOGY0YjU4OTZhZWRhYzA4YWE5NjUyYWIyNjk2ODAxZDMyMmZiMWM5NzdmODM1N2VjNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYWIzMzRjM2Q4M2UzYjA3YTU3YWJmY2UyZmRhYTMyMzRiOGE2ZTg3MGE5MWMxYTIyNTJiNWM2ZTMwN2ZkNWMifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L446-L471",
+          "version": "repo-lines-v1:sha256:307b39b1c2f7aa32dbac44d3fad3fb08d240a5ee97baa588e05e876c4cbbfd0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YzAyMDc3MGNmNTNjOTY3YzRhNjdjNDdkMDM1OTg0MGI4OTI3YzE2MGJiMjBkOTVhNmIxMzcxMzM3ZTFkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzFlYmNkZDRkMzQ1OThmYjgwMjQ3YzdhMDA4YTQ3ZGY0MTRiOGExY2E3YTM3YmFjNjNhNGM0NDIxY2YwZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkYTZhM2VlNGJlMTE4MzA2ZjYzOGZmMzljMDRmNWYyZWNhMGRmNjUyNDk3Mjk3MmIwNjI4MmVlMTJiYjk5ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlMmNjNzgzODU2ZTdlMjVhZjcxNDE4MGMzMDA3MTgwMGU0YzE4ODI0ZjA2NjY3NjBkODczODIwODM1YjJjYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_901858a538414879a64d5a59933c806d",
+      "statement": "Loader failures and runtime setup failures call ShutdownMainProcess; shutdown requests stop and closes services and cores before releasing audio and GPU.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L404-L415",
+          "version": "repo-lines-v1:sha256:477785d5423d82291c416b1fd9a31cc95c18651b5819385001da64cdb0563806:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0N2VmNGJkMzY5NmI2OGQzMmQ2MDljMzI5NDhjYzg4Y2QxMmJhMjAwMjAxYzNhNWVhY2JlZGEyZmFlMjUzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzOTczOTc1NTdjYTAzNjYxZjk1MGNmMTRmM2M2YjhhNWJkYWYzOTljM2I3MzMwYzE2OTE0YTQzNjRiNmVmYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjYWIzMzRjM2Q4M2UzYjA3YTU3YWJmY2UyZmRhYTMyMzRiOGE2ZTg3MGE5MWMxYTIyNTJiNWM2ZTMwN2ZkNWMifQ"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L452-L459",
+          "version": "repo-lines-v1:sha256:deebc451f1f1280bdd0ea9bba433b716c8d753c5a3e3f0f7f46237116e300e07:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGMyM2ExZTYxZjc5MmIyZjljZjM5OGQ5NGQ4ODRkMWRlNWUzNDdjMTBhZmEyZmZkNzk4MTEwNDNjNDliOGJlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDAyZjFiOGRiODQzYzZkNjM2Y2U0MjNlNTkyODYyMGFmOTNiNmYzYmQ3OThjMjY4ZWQ5YmExMDJmOTg0ZGU4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGE1ZGMwMTM0NGZkYWVlNWIzOTM2Y2JiYjIwZjczYmRkZWYxM2VlNjk1ZTE4NzlkNTAxZTAzODFiMTQxODQxOCJ9"
+        },
+        {
+          "resource": "repo://src/core/core.cpp#L510-L539",
+          "version": "repo-lines-v1:sha256:53c89ac6f81a15b28105ec34a0269130eb7ed22025ad18442f783cdcf304f204:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NGQ1MGU0YzZlNDViZmI5ZGZjMjZhM2IzMzg2YmVjOGRkNWM2NjVlNjYwODEyYzU4MjZjNmIzZDZjMDlmMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MzNhNTBkYmRhYzlhYzkxMWUyZjcyNDU0NjY3MDVjYTVkYTNmNzIxYjgzODZiMDE3YTc2YjZjYTNiMWE5NWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0NDU4ZWM4MjhjM2MxMGEzNjY4ODZjMWE3OWU1MTkzNDA5ODgzMGQxM2ZiYWUyZjU0MTFiNjQ2MjFmMDViOTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMjEwZDEzMzdkOTFmZjdkZDBjZjdhNTAxYTljNzljYThiZDMyMTk3MjZmYmMyNDg1NDJmNjFjMGZlNWFhMDIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:50:59.685Z"
+  }
+}

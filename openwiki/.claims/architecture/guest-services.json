@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:bb5682a69cb28500de67515b2a78ffeec9578494e942f0776a5a4b355dd3973a",
+  "claims": [
+    {
+      "id": "claim_cb5e8dc3f0c0433d8c09d7545e1ba302",
+      "statement": "Named guest services register ports through the system service manager and the server manager takes ownership of the server port.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/server_manager.cpp#L175-L190",
+          "version": "repo-lines-v1:sha256:5719742ace037a5ed6fa414f3d27bd828a03ac0466fbf2d83681ce1ed105eee4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNjY0N2M1YjI1MTNkZDQwYzYxODc5ZDRmNjhlYzI4ZmE3Y2U1ZjUzZmZiZmQyNTA0YzZjN2E2ZDU4YTUzOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MDNmZDI0YzY0MTEyZmM1ZTYzNjE2M2Q5ZWFiMGE3NzNjNjgyOWNmMDEzYzA4OWZmY2YzZjdlMjE2NjI3ZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwMjcyZWU0MDNmNmE5MWZmZmVhMzExODE4OGFjN2NmZTdhZjdhODlhOTlkMGIzZWExZTdmNTA1NTAwZDA5Y2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0bb8416d77c94259862f23df5ebcb30c",
+      "statement": "The service framework separates session close, control, normal and TIPC requests.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/service.cpp#L302-L326",
+          "version": "repo-lines-v1:sha256:75d1c1702cd44419f9df3e6dad0bec36c340da4e2b6bebf78bb907944081f158:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZTAzN2Q2ZTM0YTk1ZWZhOGY4ZGQ1NzI0YTgyZmQ4OWZmYjE3YjA3YzM1MWQ3YzIxNTc1ZmUzYzM4YmE5NzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMjc2OGVlZjNkNzBlYWRmZGMyYTgxZTdiMGM1NTIyMjIzMWMyMGIxNDA1NmU5NWFjNmQzY2ZjZThiOWRlZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY0ZWJlNGQ1NWNjNmRjYTUwNjRiM2JjY2EwZDAxNTM1MzM2MjVjMjA1ODM0OTFjNDMwZDljYWIwZWEzZDk0OTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_37ed918169aa4a53b146e04eeba34638",
+      "statement": "The audio service registers separate guest endpoints while AudioCore creates host sinks from settings and passes output to its DSP.",
+      "evidence": [
+        {
+          "resource": "repo://src/audio_core/audio_core.cpp#L14-L32",
+          "version": "repo-lines-v1:sha256:f1cca3a62c00b1ec141ae351717b837af566a0467169ac71175bbda60dec9824:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5MzE3M2E0Y2Y0OWRkOGJkOTNjMzhjMTFiN2NlNWFhOTU3YzIxNzM1NmE3YjZmNmM0YTljNjQzOTliNjhiYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyOWIwMDdkZDAyNDkxMWM4MGUyYjhiOWRlYWJmMDRiZmQwMmJhM2I3ODAyMWQyOTc2MjYxMmU3N2YxY2I2MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmZDVhNDNhM2ZjM2Q1N2NiMTFkZmRlZjI1NjZkOTUwZmQyZjcyNjU4YTkwN2FmMTRmZDhmNDVhMjc1MWE0ZmIifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/audio/audio.cpp#L187-L214",
+          "version": "repo-lines-v1:sha256:8d055fdfa60ce671cdca17c359bc9b9b37dcc6597b68c1d4f79fa72333da64ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxZDU3N2I2NDRjZDkxODgyZDFkNTc0ZDYyMTU1ZDIwMmMwNDFjM2YyOWI4OTljZDdmOTRkYjI3YmFlMDI0NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3ODQ3NWJmZTI1ODc3ZjI0YTQ1Nzk4N2I1ODlkZTMwNGVmN2E2YjIxN2U1NTY3YWIwMWRhMzU5MTRmYjQ0NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxZWEyMGJhYzc4M2Q2M2M5YjMzNDRhNGNkZDYxNTVjNDk4NTE5N2U4MDU0YTdmZWQ0OWI5OWFkMmY2NGM1Y2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzMTU0M2U2MjYwN2UzZjc4YjQyZmUzZmU2YzMxNTNmYWU4NDhjNTczZmZmZTcyZGQ5ODFlYjgzZmY1NGViNmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_560d7498c0c04529aaa7f85c6f24ea02",
+      "statement": "The HID service creates an applet resource interface for the guest user ID and the interface delegates shared-memory lookup and resource cleanup to the resource manager.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/hid/applet_resource.cpp#L15-L35",
+          "version": "repo-lines-v1:sha256:7e3d2195a177baac4612ac0850aa060b29906e53c5d1cc2ba72d150a5ae718d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwN2UyMWMxZmZjYmE5N2JjMWY0MTE1Y2VlY2U2ODYyNWVjYjM3ZjZlMWQyOGQ5MzdmZDE2OWRiZTJmZTMwZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMGUwNTIzODFjZWZlMDQ5Yjc4MTM3OGY0OGYyOGMwMmJjOGNmYTdkZjE2MmVlYjUwNTYxMDJhYjMzZjJhMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwZDljZWU5MGM0YmVhYjJmZTcyNGZkNzUxODM5OTIyODBlNTc1OGY2YzdjZjA0ZjA5OWYxYzAwNDVlZGU0OWEifQ"
+        },
+        {
+          "resource": "repo://src/core/hle/service/hid/hid_server.cpp#L296-L305",
+          "version": "repo-lines-v1:sha256:8f6b0bfa1de2b81c942861a3b60ae277ebe3b8549191664283ccf666f3c1adb6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NDIzMjA0YzUzOTg5NmZlYjNmODQ4NDI1YjhlZjg5ZDc4MGEwY2Y1M2ZkNGM4OTA2YjA1MGViY2UwZDVlNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNTUzODg5MTQ1ZTEyNDYzNDZiMTVlNTI0ZGI5YjZjMjQzMmM0ODk1ZjExOTVlOWM0MzU0Nzk4ZDNmYzQ2MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ODNjNzRmYzdmNmEyZmI3ZTIyNDM0YzhlOTJlNjQ2Mjk1ZGYzMDY1YmYzMTFiOTQxYWM2N2U0ZjNjYzY1OTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_43abe47bddc442f28d7f968d1ba9bb32",
+      "statement": "The host InputSubsystem registers input and output factories for its engines.",
+      "evidence": [
+        {
+          "resource": "repo://src/input_common/main.cpp#L61-L96",
+          "version": "repo-lines-v1:sha256:fc8d94e2be60bce3ef066a632273720ee2f4783641355dbc969835b0254ef1a9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2YTQ2OWI0ZmM2MmQ4OTdmNzg1ODgyNGFiZTlmMjhiYmFlOWIzMjhhNjhiMmY5ZDYzNzg0YjllYjI1ODlkODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMzQ5YmJkMWEyMTEwNGYwNTFlMzRiMmM4YTllNzBjYzdmYmI1MGJjMTlhNjc3ODFmMmExNDBjMzg2ZDk0MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0YTY1ZmZiZjEzMTYwNmMyODMwZjFhZTA3MjBjNDRkN2Y0MmRkZjc2ZmNjOGY3NDIxYWFhM2JhOGQyYjNkYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NjgwNTIxZjk2MjVmMzg0ODE4NDFlNzJlODliNmJjZTFmOWU2M2YyMTEyZDM3YzI2ZWYwYWUxMzJjM2UzZGQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:50:59.685Z"
+  }
+}

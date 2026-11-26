@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3cc0dc2edfcd5748c2b922831aaed3dc4f4c27a74aa56e69b9b965bb49f86d31",
+  "claims": [
+    {
+      "id": "claim_4bb4942879dc48699b4dffcc5c5f81e9",
+      "statement": "GPU setup binds the configured renderer to the emulated GPU and resets the GPU on a renderer setup runtime error.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/core.cpp#L335-L339",
+          "version": "repo-lines-v1:sha256:fddfae7179f059f52d73e6e53801e33b93ba8dcca4a0f7104e592a83a1b4a7be:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjZlZmQyNzg5NGZjMTU1NWJhZmRjNDI2YjczMjE3MzdkNGI5YTdjZWM2ODY1NWJiNTBkZmQxMTYxMDYwZjhjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDZkNjJjZGY3ZGQ4YTMyYzNhZWNiZGYzMmFhZjNhMjIyYmQxN2EyMzdmNjc4MWFlZDJmOWRjYTgxMzJjODU4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2JiZTg1MWMzODY1N2JmNDIwZmI0ZGNjYjZjNWZiMzk5YTFhNmNkZjAyZWY3ZjZmZmJkNWE4YzNiNzVhZjE3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGZmYzdhMTUzOTk1ZGQ0OWE0ZTU3OTI3MDU1MWNjYjljODUzMDZhYTZmM2ZkYWNjYWIxMmVkZjA4YWIxMzc5MCJ9"
+        },
+        {
+          "resource": "repo://src/video_core/video_core.cpp#L26-L41",
+          "version": "repo-lines-v1:sha256:a4684cbcfc169cd3365dcae0ea20ba200d6ed95c9435a97bead06f76ac6a8283:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzODM5YWU4Njk0ZmU2YmY0MGZkNTA4MjJjYjQzZWY2YzEyZDc0OTg5YzAxNzVhMzEzYTFhMDMyNzM3YjMwNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiMmUzNGI0NDZmODQ5Y2UwMzY3NGFhYTE3YTMzNmEyNjY1ZjQyY2JiNGRhN2JkMDE1YjRhZjA5NzBjZmJhZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyNDU3MmE3Mzc2NjIzNWJiODBhZGVlN2JkOGNjYmExZjRiMmZmOWNjYmFhODFjYTYwMDZiM2NjNTZkZWY2YjAifQ"
+        },
+        {
+          "resource": "repo://src/video_core/video_core.cpp#L49-L65",
+          "version": "repo-lines-v1:sha256:b4dbdc3b0d37c7ce93bc321c95e4f64b29a807a272fc58ed62939a14d5e4f325:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlOTk1Y2Q3MzQ3NDg2YjhmNzkzN2Q2OTEwYmU0Mzg0MDMxNWFmYTUwZDMwOGQ0MDEzYWNjOGJlMzVlMWUzNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmOWE4OTNjNTQyYjY4NDkxOGMxM2RmMzY1ZGM1MDBhZWQ0MjJlNDc0NDRiNDQyMTQ3NjA4MzJlN2U4ODQ2MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxNzAzMjhjZTZkYWI4ZWQzZWI5ZWNmZjkyNTRlZThkZTBlN2ZiZWY4OTkwYjI3OGY2YTA4ZWM3YjRhZjM2ZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_40a681f5ce8c474db6c68aca55c2e6ea",
+      "statement": "The nvdrv channel forwards guest command lists through Tegra GPU to ThreadManager submission with the asynchronous-emulation setting.",
+      "evidence": [
+        {
+          "resource": "repo://src/core/hle/service/nvdrv/devices/nvhost_gpu.cpp#L441-L466",
+          "version": "repo-lines-v1:sha256:5fc9be937e9c424f757cc0341416282e7f9d33dd620878cdc05577b10d7b1b14:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NjgyZDJmZWU0Yjk2NzU4YzliNmMxNDQxZDgwMWE4MjdlODczNmNhMmNhNDcyNDdkZjA0MWU5ZWExNGI1MTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzE3ODQ5ZTE3MWFjNTViYzBmOWMzMWEzOTc0ZTk1NGU4YjRjYmIyOGVhYjdmNGZkOTkxN2RhYzBlMmI3NDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxY2IzZTMwMDQzOTEwZDkwZWY4YzY0NGEwNzI2NzAyOTg0OTJjOTZmMjk4OTI0ZmU3MmExY2VjMTVkZmVkM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0ZDk5NGFjMWNmNTRmMjc3ZTljZGQwMzIwM2YyOWYwZjNjYTNlNDYzYjhiY2MzNzY5YmM3MDQ2MTg4M2IxOWQifQ"
+        },
+        {
+          "resource": "repo://src/video_core/gpu.cpp#L253-L260",
+          "version": "repo-lines-v1:sha256:12805e1c932bc77393d7e4f7be1ff32ea594ab51df73bd628000feac1b89fae6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODI4MTc3YzZmZTZmNGZiOTExNWVjOTVhMDBlNzQ2ZDk0NzY3MWU2Zjc5YTg3MTc1YzM5NzRjMDMyZjZjNDNjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjg2OWE5MDFhYWMwOGQ5ZmIyZDM1OWQxYTk3MDAxNWM1NjczZTIxOWI3NmFjZmEzODVhMDBhMmRhM2M0YjE3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTViYTg0NWJjZTE2NTNhNjRjOGI2MzIxZGNhZjRkODExYzFhZjgyOGYyZmI3ZTZmMmJhMGVmMDYwZGMzODFkOCJ9"
+        },
+        {
+          "resource": "repo://src/video_core/gpu_thread.cpp#L220-L224",
+          "version": "repo-lines-v1:sha256:36dea6e53b9cf16b1d68e5c2874c0dd1ac3ab5a4c052e56bc6f95b51c3a63f5c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmNkZDVjMTY0YjVlMTYyYTk3MjFiMjQ2ZDcxYTg2OGZmMmViNTc1MjQxODE4ODFiYzQ2MjUxODU1ZTM2MzAyOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDMzYmU0Y2ZjNWQ0ZjBiZmNhNGU0MjFhYjA4NzZiMjIyZjRiYzlkNzcwZmRiYTYyZWJhYWZmZDczMjFhNjI1YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0e4907a84bf4ec78f176e360b88f293",
+      "statement": "The Vulkan pipeline cache translates Maxwell programs and emits SPIR-V.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/vk_pipeline_cache.cpp#L1914-L1944",
+          "version": "repo-lines-v1:sha256:a460d1f7dbb8447f34b728da9e1b317c194cc8b2ec4bc92e8c45b08343014f47:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NTQ3Mjk4ZGFmYWY2OWM3NTFhZDQ1YzA2ZDhjMjk1MTBmM2JjMzM2ZDQ5N2JiNzFkOTRkMjQxNTQ0OTNiMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYTljZTg3NWYzYmE4OTM5NmZhZDUyNjNiNDM2ZmQ5OGZjNzkxNDE1ZThmNDFkZTlmZmZlODE5MDNmMzIxNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwOWY2MWMyYmRjYjgzMmY1ZjQyY2Q1NGQyMjBlYmM0NzRiYzZlY2QxMDVjYzQ3MTQyODc5MjlkZmE5MGNlNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4ODQ5YzZlZDZiOTRmYzEyYzg4MTNmYmI4NzQyNzBkNjRhMjQwZTBiMGI4Yzg4Njg3ZTlmY2QxN2MyNDFkY2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_58a229ea34844a8fb3c3307c2c177b69",
+      "statement": "Vulkan composition processes applet capture before checking window visibility, and the visible path blits, flushes and presents a frame.",
+      "evidence": [
+        {
+          "resource": "repo://src/video_core/renderer_vulkan/renderer_vulkan.cpp#L291-L341",
+          "version": "repo-lines-v1:sha256:faac9302c6b79d89de03c8e250e93854491649c8bb95a2c2036ec6c0f97bdef4:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmZjQxNWMyNGJjM2M2MjQ1NDZlMzRlN2IwMTFmYzJjMzcxMTU0ODEwYzY1YjljYTk1M2I3OTBkN2U2YTA4OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmYmVlNjhjMGM1Y2VlZTkyOTg0OTQxMTNlMDI3NDVmOGRhNTE2ODUzMDdjNmRhY2U2NGEzNmY3NjBkN2NiMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MTliMThhYTFjZDM5NmYwNTZjYWExYjllNGYwNWYwOGE2YzdjNzBhYTQ3NmJhNDZiYjJkMTgxODRhMzM4MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5YjQzYjMyZTJiZWVjOGYwZDg0ZmIxY2JhNjU5MDJhNTcxMjg2N2Y4NzBlZDNlN2RiNDVjODNjMjBjYWQzMzgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:50:59.685Z"
+  }
+}

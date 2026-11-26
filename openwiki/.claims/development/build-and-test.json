@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d8f2dffbe458bc568f4eba31c9a9fa633165c5e400bda72be8c4a98e9f7c5cbe",
+  "claims": [
+    {
+      "id": "claim_46452c22cc8a4dfcac38b6e1d05cca54",
+      "statement": "The Linux development wrapper uses Ninja and ccache with optimized debug information and LTO disabled, reusing its configuration unless explicitly requested or missing.",
+      "evidence": [
+        {
+          "resource": "repo://tools/build-local.sh#L34-L46",
+          "version": "repo-lines-v1:sha256:063f4dec91c4c189e2f706b4a0357e4ff77d942c3eb88595748c2d9c59cabded:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlOTQzM2NmMGVmZmQwMjA4ZDZiOWEzZjVlZDg5OWE2MDk3Y2FkZjA4NTE2MmFmNDQ5ZDVmMDhlMDkzZDM0MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExMjUxMGE0MmY0YWMwZGVlZWIyZTFlMGUyM2MwYjk1MDg0N2FhYzE5OGZjZTE0M2FkNDFhY2Y2OTFkYWFiYWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyOTg3OWY4NGZlMzdkNTRhODY5YzJmOTBjMTg2NTY5MGY3YzcwMGI1ZDZmMGExNDk0ZjdhNzQxYmU1MDg5NzkifQ"
+        },
+        {
+          "resource": "repo://tools/build-local.sh#L5-L24",
+          "version": "repo-lines-v1:sha256:60d8aecd1702d912b6a89a6df2249c32dd24acd5d4d6cd57b406ca24d3759295:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZjczMmZkODFhZjI1OWVlN2YzZmRkZjA3MWU2ZjUzMzNjNzU0YmEzYTk3ZDc4NGFjM2Q3ZGZjYzM2ZjVhZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyYjkwNjNlYTlkZTcxNGI4M2M0OWU0NWM0ZDExNGM4MWFmNjk0MWRjOTRmYjgxYTZkOTEyYjNkZWEyMzcxNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyMTRlMDg0YTA2NWE1MWRhNmE2ZjczMGYwZDZmODcxNjM2YWM5ODU5MWY2YWJjZjQ4ZDJhZDM0Y2ZhYjIxOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzNDBhOGE5MGMwYjdmMjE2M2FiNTkxNGVhYzIzMzYyNDhkMDI3NzE1MjM5YjNkZTEyYjQxYjMwMzVjM2E4NmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc3be30755e04c2184daacd2b587d5ee",
+      "statement": "The wrapper builds the yuzu GUI target as orchid and disables tests, CLI and standalone room by default; the optional CLI target emits eden-cli.",
+      "evidence": [
+        {
+          "resource": "repo://src/CMakeLists.txt#L281-L292",
+          "version": "repo-lines-v1:sha256:09029a106e7fb9fe07f554a45cb4c0233cfef9b65b0f313ae1fb87df348e3c23:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmOTVmYThlZmU3ODNlMjU2YmIxODMwYTgyZDQyZjBjYTFiMzRjOWNiZDE3ZTk1YmI2MWVhMzk2MTZjMmQ3NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExODc2MDc1NGVlZjE1MDEyMjcwNWM1YzE1Yzg0MmYxYWEyZThlZjdhZDcwNzljMzI1YWVjNGQzNjQyODZhM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzZmQ1YmNmNGVjMWM1ZGJkMzc2YTVhZTA5ZTI4M2Q2ZTFjMWVjYjc4YzgxNGQyODAyMTcxNzJiMzE1NTA5YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZGU1Mzk4NDA4NmI2ZGY4MTQyMGE5NmY4ODEzMWFmZjU0YTQ4OWNmZTEwMzY5OWQ0YTFiNWIwZjY3OGNhNDQifQ"
+        },
+        {
+          "resource": "repo://src/yuzu/CMakeLists.txt#L252-L252",
+          "version": "repo-lines-v1:sha256:546b3be386208305e7dc3559eff00d8cf65ad584d716eb6fb3042cb647cbc213:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ2YjNiZTM4NjIwODMwNWU3ZGMzNTU5ZWZmMDBkOGNmNjVhZDU4NGQ3MTZlYjZmYjMwNDJjYjY0N2NiYzIxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ2YjNiZTM4NjIwODMwNWU3ZGMzNTU5ZWZmMDBkOGNmNjVhZDU4NGQ3MTZlYjZmYjMwNDJjYjY0N2NiYzIxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWEwMDhlMDY1NTYzODJmZTRjMmE0MDgyYTdkYjIxNTI0MGVjMWM0MTUyOTQ5Y2Y5OWIzNTEzZTIzMjgxOGM3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmIyMjU5NWYzNThmMTI2MzUzMmMwZTcwZGZkZTk5ODM0NTE3ODQ3ZDE1YmMyZjJlNjM4MDM2NmFlODg1ODhjYyJ9"
+        },
+        {
+          "resource": "repo://tools/build-local.sh#L37-L51",
+          "version": "repo-lines-v1:sha256:b20a10fd707ec5eb75d8b12883de463bda4a10c4154f0b78b2f659e676c6a68c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5OWI3MTRlYjliMTA2YjQ0NTk3YzRmODYzYTRmNjljYzRhNGNjYWZiNWY5YTFiMDZlMzNlYmEyNjU1MzYwNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyNWIzYmI2NWE4NmFmZDVjOWM4MjhlZDlkNGRhZmY2NTRhOTg4MzI5OGViYmE3N2E3OTFhM2NiYzBmMzUzNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWJmZGNjMWM4ZjZjZjk1OTQyYThjMDEwYTZiODIwOTViZDE3MWRkZTI4MjhjNWQ4OTQ2NzQyZDQ4ZDkxYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5945be4625c045f0a647dbaead59c42a",
+      "statement": "The tests directory is gated by YUZU_TESTS and defines a Catch2 executable registered with CTest.",
+      "evidence": [
+        {
+          "resource": "repo://src/CMakeLists.txt#L281-L283",
+          "version": "repo-lines-v1:sha256:771d5286fe19b2b794fcad20a68ad04d4e70d1abab3cda3c5691c735be6210f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGY5NWZhOGVmZTc4M2UyNTZiYjE4MzBhODJkNDJmMGNhMWIzNGM5Y2JkMTdlOTViYjYxZWEzOTYxNmMyZDc1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU4MGM2MjMxNjhlYTZjMGE3ODlkM2JlMDAwODUyYTU2OWRmNTE5OGVlYjM2NTBjZjViMmE3NWU4NjNmMjE3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDNmZDViY2Y0ZWMxYzVkYmQzNzZhNWFlMDllMjgzZDZlMWMxZWNiNzhjODE0ZDI4MDIxNzE3MmIzMTU1MDliYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjMwNzdkYzNiZmUwMmQ4Yzg5MjNhY2YyZjAxMmQ5NTExY2ZkYWYzNDQzMWE4NzgyMmIxZjc0ZjljZTc3MGY5OCJ9"
+        },
+        {
+          "resource": "repo://src/tests/CMakeLists.txt#L270-L283",
+          "version": "repo-lines-v1:sha256:82da19b9214cdcb72db458932d919d09843b72f26418144d7e4e27a8fb4d7158:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhYmEyZGE0OTk0ZDE5NTg1YTIwNzEzZWYzNmY4N2I1ZTliYTAzNzg5YzcwMWFiYzVjOGViYzkxZTAxMmYwN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjZGU2M2RhYWRlNjU2OWZiNmEwYWUzODZmNzUyMjBjMDU5ZDg4NGJjMzYzNTE5ZmZkNjgxMWUyZmVmY2E3OTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzOTZkZWM1OTk0OWY4ZDBmYTc5MjY1ZjFkMDZkODgxMWMxMTRmYzM4YmQwYTFlZTUwYjZjNTY1MGIyZDRiMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1YWRkYzdiMjMwYmVhMTk0YzNlMjMxNzhjN2E4Nzk4MWQ0YWI3MWY0MDg3ZjY2OGMwMzg1ZWE2OWNiYzk2ZmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea297cb4bc9b4113ae343f995cc173cf",
+      "statement": "Expect tests compare emitted text against repository references, identify the first differing line, and rewrite references only in explicit update mode.",
+      "evidence": [
+        {
+          "resource": "repo://src/tests/CMakeLists.txt#L270-L274",
+          "version": "repo-lines-v1:sha256:d46a8779fb436538a7e941750863a0e1437de3f120a17f0a0ed978a3bb82c2fc:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFiYTJkYTQ5OTRkMTk1ODVhMjA3MTNlZjM2Zjg3YjVlOWJhMDM3ODljNzAxYWJjNWM4ZWJjOTFlMDEyZjA3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTM5NmRlYzU5OTQ5ZjhkMGZhNzkyNjVmMWQwNmQ4ODExYzExNGZjMzhiZDBhMWVlNTBiNmM1NjUwYjJkNGIxNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTllNzcyNDAzZTliNDBkMDYyYzk2ZjVkMTI3MWMwZDM4YzVkMzJmYjRhMTMyMWEyNTc4M2QwMGQ5ZGIwNGQ1NiJ9"
+        },
+        {
+          "resource": "repo://src/tests/expect.cpp#L15-L49",
+          "version": "repo-lines-v1:sha256:b88a170bd68e1376bc3156f9a2d6fda65703a117ca0dd2cd7a71725c80bf9201:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4MjA1ODRjZGEwYzgxYjEyZGYxYWI1NzlhMWE4NjU4MDRlZjI5ZjIzODU4OTJlZDBkYzM3NTExZTdjN2M4YWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxY2FkMmYyNjQ3MzE1YmNkYTM2ZmFjYzRlY2U1OTlhNzg4NWRmYTI4YWYzZTFjOTRiODgzMGNiMmFjYTk3ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiYjEzMGU1OWRhZmFhZTNiODFlNTlmMmQ0YmIxMTQyMTYzYjRmMGFlNWQ0YTQ5ODI5M2FlY2IwMTVlNmU5ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzZDE2ODczNTdhOTMxZjZlMDUxMTRjZmZjNDcyOTA3MjliZjJmODJkMGRhNDAyYTA0MWVmMjBhYmQ1ZTc1NmEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:50:59.685Z"
+  }
+}

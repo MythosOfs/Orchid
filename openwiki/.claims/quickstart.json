@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a5c1880ea5b24466df1c898b652c79ea4f8bc4cca9ab663d515aeefb65a47968",
+  "claims": [
+    {
+      "id": "claim_cf595942521c44ef9fba7ab9ac7ba7ca",
+      "statement": "Orchid is an experimental Switch 2 emulator.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L17-L24",
+          "version": "repo-lines-v1:sha256:c3a645c453a21808827bd941fcdd1a794f677203ab437186ba3b61fb912fce31:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2QzYjM0OGEyY2MyYmFmODNhNzYxODhlOGRiMTk4ZGVmMjE1MTJiMzUwNDY1NDRmNTA1MTQ5MDE1ZDY2NGNlMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTk2NzAzMTE4MjQ5OGFhNjRlOGFlZWY5ZDY2OTAyMjIwMGRkNzI5NWRmMWE2NzlhMDc3NzY3ZDBmMDg4ZWFhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzEwMDRkNTdjYjdkYzI4ZGI4YTI5NWZlOTUzOTdlMWE3NzQ3NDg5NzA3MWExNzM4MmM3MDkwMmE0MTAyMDNlMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_523598fbb1f14f54ac7ca7e3d6b01f74",
+      "statement": "CMake defines the shared emulation subsystems and configures the Qt and command-line frontends through separate options.",
+      "evidence": [
+        {
+          "resource": "repo://src/CMakeLists.txt#L273-L293",
+          "version": "repo-lines-v1:sha256:161437776287bf91621de1c92febe09501d07db79bea881805c4a635925dfb40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5MjRkOTYxMTIzOGRlOGExZDFhZjA3Y2Q4NDI3MTI1MjgxMWRlYmYyMmM5ZjA5MTI3YmNmMDJmZmI2ZGNkMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1ODBjNjIzMTY4ZWE2YzBhNzg5ZDNiZTAwMDg1MmE1NjlkZjUxOThlZWIzNjUwY2Y1YjJhNzVlODYzZjIxNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZjdhNzk0MDVmM2ViN2UxNjQxZjM2OTI4ODc4YmNkM2EwMTFkM2FmY2NiMzIwMmUxZTU5NDA0NDI2MTQ4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMzQwZmI1NDZhMzEwYmM1NzdmMzQ5ZmM1NDUwOGMyN2E5YjEyM2Y1MGNmOGY1ZGQ3ZGZhZTQxN2NhNjQ1NjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd182014ca134542b4f152cc084fa97a",
+      "statement": "The Qt and command-line launch paths supply frontend windows to the same core loader.",
+      "evidence": [
+        {
+          "resource": "repo://src/yuzu/main_window.cpp#L1867-L1875",
+          "version": "repo-lines-v1:sha256:9fc4e84bd61bf58f260f8bd6b47a4c3c1f9c1830eb7a226d93d7456f117eda5b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY1MmIwN2ExMjg4MTg4MGE3Y2JmOTM5NDljMDFlNzU1M2Q1MTliMTk2MGYwNGY5YTAyN2RmOTYzMDcxZGI1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2FlNTMyMzU2MDQ1NGI1ZDFmOGM3ZWMzNmY1Y2E1NzQ3OTUxOGJlNDZmMGY0ZTIwYmEzNDVjMjA3MDA3MDA4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzkxMzBiYzJmZGU0NWE1ZGZkN2ZlZmMzYmE0N2Q0MTk4ZTVjZGE3MDhkZmYyM2Y1NDQyMGE1Njk0Y2VkOGJiNSJ9"
+        },
+        {
+          "resource": "repo://src/yuzu_cmd/yuzu.cpp#L432-L442",
+          "version": "repo-lines-v1:sha256:81915bed8a66b3f7b60bb742b2638916495a5b59b38ffdafc297b001391cd982:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NWZkNDNkYjVjYmI3YWRhZjExMjM5NmU2NDhiYzgwYTgzM2Y4MGVkNjk0ZGJiMjI1NTVmNTY2MjRmMTE3NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYTAwMmU5ZTM5NDc3MGZhNDhjYjg3MDYzNWMxMGQ2NGQxMmFjNWMyNDE5MzZjNDdiNWM4MjA4ODEyYzU1NmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiZTQ0ODA1ZDk1ZGMwMTIwZDQzNjUwY2I4NTk4ZWI2Y2JlYThhY2NkYTBhMjY3NDU4ZDAyZjY0OWM3YTI3ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgzZmI3NzU3YmI3MmYzMjNkMTc1NGU4MjJlMmU1YTliOWU2YTAyNGYwZDNlMzgyMjAzYjlhZWNmNGZlYjVkM2MifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.9.0",
+    "at": "2026-11-26T21:50:59.685Z"
+  }
+}

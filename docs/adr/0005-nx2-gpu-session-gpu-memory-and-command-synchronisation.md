@@ -134,7 +134,7 @@ Disassembly of the `sdk` NSO (dynamic symbols name the nn::gpu::sdk functions). 
 
 The mirror came from early bring-up (Takoroka dce3adbc4c, 2026-10-27, first region only). Upstream dropped it (Franseven 9582ebe2d1, "it clobbered 3D report counters"), and on Orchid main nothing has read the table since 60ef6d2750 (2026-10-31); releases v0.4.0 to v0.12.0 all shipped without it.
 
-A diagnostic build of origin/main 2cba629f6a counted every GPU write and acquire inside the 0x2000-byte memories nx2:gpu 101 registered (private harness runs along the scope routes `mtf-stadium-match-v3`, `bananza-leon-tunnel-entry-v4` and `wonder-level-entry-v2`, about 60 s of gameplay each; counts at the last 10 s summary):
+A diagnostic build of origin/main 2cba629f6a counted every GPU write and acquire inside the 0x2000-byte memories nx2:gpu 101 registered (private harness runs along the scope routes `mtf-stadium-match-v3`, the Bananza tunnel-entry v4 route and `wonder-level-entry-v2`, about 60 s of gameplay each; counts at the last 10 s summary):
 
 | Game | Two-page memories | Host semaphore releases page 1 / page 2 | Reports page 1 / page 2 | QMD releases page 1 / page 2 | Acquires page 1 / page 2 |
 |---|---|---|---|---|---|

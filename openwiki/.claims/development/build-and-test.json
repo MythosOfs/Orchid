@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a78bc8a5a1c20c03b6de430fdf96385c4bb6e0647c6a0e85f40e4e134fe74726",
+  "pageVersion": "sha256:c37b606d7166fb9b9ecfc8fcb075ed63b8b7de52d29e82c2021ce925d0344f16",
   "claims": [
     {
       "id": "claim_46452c22cc8a4dfcac38b6e1d05cca54",
@@ -107,12 +107,12 @@
       "statement": "The release gate is a gameplay check performed before release builds. It exercises registered routes against a selected binary and produces a contact sheet and per-game status. Rendering judgments and reported regressions still require inspection. For ordinary code changes, select the narrow test path that covers the change and follow the repository's mutation-check policy for production or unit-test changes.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L259-L264",
-          "version": "repo-lines-v1:sha256:cd3c945a8213e3a71d18f685460ac4f27fc0a913155e7b615ddeba06cfdb4a83:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ3MzYwMjgxMzIwZWFmMjNhMzY0MGVkNmU4ZTljMzNmZWZkMGUxYmYwNmUzZTg2YzQxMzAxMjBlOWY3YjYzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3ZTFjNjkwMGQ2ZTNjNjAzODUzZDhlZTI2ZDVkODYzNzNjZWYzMjU3YmYwNjcyMTc3YmVkMWY1YWMzMmRiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQ4MDE0MTZiYTRiODM5NzNkZmVhNWI2Yzc2MTMyOTE5NGFiZTc1NGJlMjdkYzVjZDM0MTRmYzExNWRjMDk3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzM4NGUyZmI3NmE2NmI1N2Y0ODBiMzk1MzJkYTIyMjBkMzNhNTVkZmFmYTE4Y2Q1ZGMwYjNkZmQ1NjczZjU0OCJ9"
+          "resource": "repo://AGENTS.md#L259-L266",
+          "version": "repo-lines-v1:sha256:536fb59bed3753dc165d8c8b9b8cba70b32e8d64cee0b24612ca55d6889df6eb:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQxOTgwZWJhZjM2ZDNlNTFmMDIwZWU2MzdlMmQ4ZDY2NTA4NzA5NTNlYmUwMTFmZmMyNjM2NDBhNzlhOTdiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3ZTFjNjkwMGQ2ZTNjNjAzODUzZDhlZTI2ZDVkODYzNzNjZWYzMjU3YmYwNjcyMTc3YmVkMWY1YWMzMmRiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2M1NTZkY2I1MmE2Zjc3YjBkNTU0Yjk0MTBhOTczYTVhYjBjNjVlYmJhNTQ2ZTBiNjUxNjBmMzBkNTIzNGE3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzM4NGUyZmI3NmE2NmI1N2Y0ODBiMzk1MzJkYTIyMjBkMzNhNTVkZmFmYTE4Y2Q1ZGMwYjNkZmQ1NjczZjU0OCJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L271-L285",
-          "version": "repo-lines-v1:sha256:19fdeaad5f2b4861e5251d4e2676b0538568c68bfbb8fea724726c59c25b0c6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MDdlNTBkZmY5MzcyMDI5M2NhZWViZmE5YjkzNTBlODk2OWI3NDc1ZjhiNjkzMWM1YjQwMGRiYmU5Y2YwODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2Y2M2YmQzYjdkZGY4ODA0NzRhNTc2M2I3YzgxYjEzOTc0YjhiMWJkOWM3ZDhiN2JhYjA4MDY5NzQ0NjU5ZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ODUxMjlhMzNiNzk0ZDRhYWI5ZmZiY2EzN2Q2YjMyNjgzNmY1ZjY2NTM3Y2E3ZTNiMzU1NmMzYmRmMmUxMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzMWMyODY1MWUzZGFjZDdlMTE2ZGI5ZWJiNWE5YzY5ZjhlMzE4MjdjMTAxNzI3ZTFmNjY4Mjg3ZjljN2E1ZDkifQ"
+          "resource": "repo://AGENTS.md#L273-L287",
+          "version": "repo-lines-v1:sha256:c1babff0351066f09b534902bc0c7497f903ef738bbb531d3ab566927e4aea75:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MDdlNTBkZmY5MzcyMDI5M2NhZWViZmE5YjkzNTBlODk2OWI3NDc1ZjhiNjkzMWM1YjQwMGRiYmU5Y2YwODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2Y2M2YmQzYjdkZGY4ODA0NzRhNTc2M2I3YzgxYjEzOTc0YjhiMWJkOWM3ZDhiN2JhYjA4MDY5NzQ0NjU5ZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ODUxMjlhMzNiNzk0ZDRhYWI5ZmZiY2EzN2Q2YjMyNjgzNmY1ZjY2NTM3Y2E3ZTNiMzU1NmMzYmRmMmUxMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzMWMyODY1MWUzZGFjZDdlMTE2ZGI5ZWJiNWE5YzY5ZjhlMzE4MjdjMTAxNzI3ZTFmNjY4Mjg3ZjljN2E1ZDkifQ"
         },
         {
           "resource": "repo://AGENTS.md#L91-L117",
@@ -137,6 +137,6 @@
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T22:05:23.195Z"
+    "at": "2026-11-27T06:45:36.012Z"
   }
 }

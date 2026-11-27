@@ -132,8 +132,8 @@ Run all commands from the repository root.
 
 Notes:
 
-- If `/home/leon/src/Eglantine/.cache/cpm` exists, add
-  `-DCPM_SOURCE_CACHE=/home/leon/src/Eglantine/.cache/cpm` to the first configure command.
+- If `$HOME/src/Eglantine/.cache/cpm` exists, add
+  `-DCPM_SOURCE_CACHE=$HOME/src/Eglantine/.cache/cpm` to the first configure command.
 - If `build-local` already exists and was configured with `-DYUZU_TESTS=ON`
   (`grep YUZU_TESTS build-local/CMakeCache.txt` shows `ON`), skip the configure line.
 - Only one full build at a time on a machine. Do not delete `build-local`.

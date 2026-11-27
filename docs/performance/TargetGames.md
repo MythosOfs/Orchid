@@ -50,7 +50,7 @@ Binary SHA256: 79edc189ab3474cdc50fb415c483958bceb87461a52c0731f25865ecfd98631c.
 Host CPU: Ryzen 7 5800X3D; RADV reported by GUI. Full GPU/driver manifest pending.
 
 Hyrule Warriors run: 20261107-162249-e81608bd under
-/home/leon/.local/share/codex-orchid-mcp/state/runs/.
+~/.local/share/codex-orchid-mcp/state/runs/.
 Seed: hw-blur-mission-20261106; game version 1.0.3 visible on title.
 Settings inherited from seed: 2x resolution, handheld, FSR1, SMAA, speed 100%,
 frame generation disabled. These are diagnostic settings, not a 1x baseline.
@@ -183,14 +183,14 @@ verification. A filesystem seed does not resume RAM at the measured scene.
 
 ## 2026-11-07: Bananza Ingot Isle baseline diagnostic
 
-Historical dk-leon save copied into stopped isolated run only, original preserved.
-Immutable seed bananza-leon-import-20261107:
+Historical maintainer save copied into stopped isolated run only, original preserved.
+Immutable seed imported from that save (ID via `snapshot_list`):
 56e57703f9e5b9669e5622032646f8151c0decdb9fde6eb8cbe1d17617a4c1cd.
 Bananza version 3.2.0, DLC 1.0.0, 1x handheld; RX 9070 XT / RADV 26.99.99.
 Run 20261107-165157-c3f26d25 uses EDEN_NX2_HITCH_TRACE=1.
 Continued File 1, Ingot Isle, moved forward 300 ms; tunnel scene, fur, rock
 surfaces, lighting and HUD visible. Checkpoint bananza-ingot-tunnel-v1 passes
-(RMSE 0.00891). Route bananza-leon-tunnel-entry-v1 recorded with final checkpoint.
+(RMSE 0.00891). Tunnel-entry route v1 recorded with final checkpoint.
 
 Single 60 s diagnostic window: 2,931 complete native service intervals; mean
 20.465 ms, p50 16.705 ms, p95 33.402 ms, p99 33.537 ms, maximum 39.370 ms.

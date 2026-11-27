@@ -144,7 +144,7 @@ Run all commands from the repository root.
 
 Notes: `./tools/build-local.sh` without arguments reuses an existing `build-local` folder. On the
 maintainer's PC, for a first configure, add
-`-DCPM_SOURCE_CACHE=/home/leon/src/Eglantine/.cache/cpm` if that folder exists. Only one full
+`-DCPM_SOURCE_CACHE=$HOME/src/Eglantine/.cache/cpm` if that folder exists. Only one full
 build at a time on a machine.
 
 ## Scope

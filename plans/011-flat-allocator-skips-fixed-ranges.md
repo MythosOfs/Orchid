@@ -157,7 +157,7 @@ listed by hand in `src/tests/CMakeLists.txt`; common tests in `src/tests/common/
 | GUI build | `cmake --build build-local --target yuzu --parallel 6` | exit 0 |
 | Mutation check | `orchid-agent-test --build-dir build-local --base HEAD -- "[flat_allocator]"` | exit 0 |
 
-Notes: add `-DCPM_SOURCE_CACHE=/home/leon/src/Eglantine/.cache/cpm` to the configure command if
+Notes: add `-DCPM_SOURCE_CACHE=$HOME/src/Eglantine/.cache/cpm` to the configure command if
 that folder exists; skip the configure if `build-local/CMakeCache.txt` already has
 `YUZU_TESTS:BOOL=ON`. One full build at a time. If `orchid-agent-test` is missing, say so.
 

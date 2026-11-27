@@ -166,7 +166,7 @@ Run all commands from the repository root.
 Notes:
 
 - On the maintainer's PC a dependency cache exists. Add
-  `-DCPM_SOURCE_CACHE=/home/leon/src/Eglantine/.cache/cpm` to the configure command if that folder
+  `-DCPM_SOURCE_CACHE=$HOME/src/Eglantine/.cache/cpm` to the configure command if that folder
   exists, so nothing is downloaded again.
 - Do not run `./tools/build-local.sh` again with options after the first configure; use the
   `cmake --build` line. Only one full build at a time on a machine.

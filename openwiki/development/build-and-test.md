@@ -5,7 +5,7 @@ description: Local build, focused tests, profile-guided build and release lifecy
 tags: [orchid, development]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T22:05:23.195Z
+    at: 2026-11-27T06:45:36.012Z
 sources:
   - id: openwiki-source-1b3b02a24e2ae5673ef8671c
     resource: repo://.github/workflows/release-binaries.yml
@@ -23,7 +23,7 @@ sources:
     resource: repo://src/yuzu/CMakeLists.txt
   - id: openwiki-source-3039b7c74d91b572f803dd1d
     resource: repo://tools/build-local.sh
-generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
+generated: { by: "claude-code", at: "2026-11-27T06:45:36.012Z" }
 ---
 
 # Build, PGO and release
@@ -58,7 +58,7 @@ The release workflow consumes the checked-in PGO profile through `-fprofile-use`
 
 ## Verification before packaging
 
-The release gate is a gameplay check performed before release builds. It exercises registered routes against a selected binary and produces a contact sheet and per-game status. Rendering judgments and reported regressions still require inspection. For ordinary code changes, select the narrow test path that covers the change and follow the repository's mutation-check policy for production or unit-test changes. [`AGENTS.md`](../../AGENTS.md#L91) [`AGENTS.md`](../../AGENTS.md#L259) [`AGENTS.md`](../../AGENTS.md#L271)
+The release gate is a gameplay check performed before release builds. It exercises registered routes against a selected binary and produces a contact sheet and per-game status. Rendering judgments and reported regressions still require inspection. For ordinary code changes, select the narrow test path that covers the change and follow the repository's mutation-check policy for production or unit-test changes. [`AGENTS.md`](../../AGENTS.md#L91) [`AGENTS.md`](../../AGENTS.md#L261) [`AGENTS.md`](../../AGENTS.md#L273)
 
 ## Related pages
 

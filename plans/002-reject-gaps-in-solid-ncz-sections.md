@@ -148,7 +148,7 @@ Run all commands from the repository root.
 | Run the whole suite | `./build-local/bin/tests` | `All tests passed` |
 | Mutation check (required by `AGENTS.md`) | `orchid-agent-test --build-dir build-local -- "[ncz]"` | exit 0 |
 
-Notes: on the maintainer's PC add `-DCPM_SOURCE_CACHE=/home/leon/src/Eglantine/.cache/cpm` to the
+Notes: on the maintainer's PC add `-DCPM_SOURCE_CACHE=$HOME/src/Eglantine/.cache/cpm` to the
 configure command if that folder exists. If `build-local/CMakeCache.txt` already exists with
 `YUZU_TESTS:BOOL=ON`, skip the configure. `orchid-agent-test` is a local tool of the maintainer;
 if it does not exist on your machine, say so in the report.

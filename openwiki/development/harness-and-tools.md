@@ -5,7 +5,7 @@ description: Private-display MCP contract, test evidence and repository utilitie
 tags: [orchid, development]
 verified:
   - by: openwiki/0.9.0
-    at: 2026-11-26T22:05:23.195Z
+    at: 2026-11-27T06:45:36.012Z
 sources:
   - id: openwiki-source-8037e2358a2c4f9b2c722a11
     resource: repo://AGENTS.md
@@ -17,7 +17,7 @@ sources:
     resource: repo://src/tests/expect.cpp
   - id: openwiki-source-6beb56f71e8be126fb014149
     resource: repo://tools/README.md
-generated: { by: "codex", at: "2026-11-26T22:05:23.195Z" }
+generated: { by: "claude-code", at: "2026-11-27T06:45:36.012Z" }
 ---
 
 # Orchid harness and development tools
@@ -30,11 +30,11 @@ CMake enables the offline Maxwell disassembler, IR dumper and SPIR-V translator 
 
 ## Orchid MCP session contract
 
-The harness is external to the emulator tree. The checked-in contract requires a private display and virtual input for automated runs. A test brief identifies the build, settings, route and snapshot. Pass the build under test as bin, and boot the route's recorded snapshot before route_play. Screen checkpoints make route playback wait for the expected UI state through varying load times. [`AGENTS.md`](../../AGENTS.md#L139) [`AGENTS.md`](../../AGENTS.md#L173) [`AGENTS.md`](../../AGENTS.md#L197) [`AGENTS.md`](../../AGENTS.md#L216)
+The harness is external to the emulator tree. The checked-in contract requires a private display and virtual input for automated runs. A test brief identifies the build, settings, route and snapshot. Pass the build under test as bin, and boot the route's recorded snapshot before route_play. Screen checkpoints make route playback wait for the expected UI state through varying load times. [`AGENTS.md`](../../AGENTS.md#L139) [`AGENTS.md`](../../AGENTS.md#L173) [`AGENTS.md`](../../AGENTS.md#L199) [`AGENTS.md`](../../AGENTS.md#L218)
 
-Use health to distinguish a stall, device loss or exit from a live session. The summary compares current errors against a baseline for the game and route, and frame CSVs report per-guest-frame timings. Use stop to collect the final evidence and end the session. For longer operations, job_status queries the job returned by operations such as gate_start or benchmark_start. [`AGENTS.md`](../../AGENTS.md#L225) [`AGENTS.md`](../../AGENTS.md#L238)
+Use health to distinguish a stall, device loss or exit from a live session. The summary compares current errors against a baseline for the game and route, and frame CSVs report per-guest-frame timings. Use stop to collect the final evidence and end the session. For longer operations, job_status queries the job returned by operations such as gate_start or benchmark_start. [`AGENTS.md`](../../AGENTS.md#L227) [`AGENTS.md`](../../AGENTS.md#L240)
 
-The gameplay gate replays registered routes to produce per-game results and a contact sheet. Inspect the images and new errors before accepting the gate as a baseline. A green unit test and a completed gate job answer different questions because the gate also checks visible gameplay and compares behavior against the last good build. [`AGENTS.md`](../../AGENTS.md#L271)
+The gameplay gate replays registered routes to produce per-game results and a contact sheet. Inspect the images and new errors before accepting the gate as a baseline. A green unit test and a completed gate job answer different questions because the gate also checks visible gameplay and compares behavior against the last good build. [`AGENTS.md`](../../AGENTS.md#L273)
 
 ## Related pages
 

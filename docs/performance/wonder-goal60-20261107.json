@@ -7,7 +7,7 @@
   ],
   "identity": {
     "game_identity": {
-      "path": "/home/leon/Switch2/Wonder.nup",
+      "path": "~/Switch2/Wonder.nup",
       "size": 6492909895,
       "mtime_ns": 1793987730623059968,
       "prefix_1MiB_sha256": "b868a75ba6b89249bd23e5a5e7c380bbff210d779b65ca9ca125ed1f773e9cf6"
@@ -24,7 +24,7 @@
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-174453-4a021840/profile/data/eden/log/hitch-frames-040015100b514001-57794497458953.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-174453-4a021840/profile/data/eden/log/hitch-frames-040015100b514001-57794497458953.csv",
         "sha256": "8432fc8663839a53eb71da8f6d0003b4842cc57accfddd423e7ab761e1ddb407",
         "metric": "native_present_interval_ms",
         "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",
@@ -165,7 +165,7 @@
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-174453-4a021840/profile/data/eden/log/hitch-frames-040015100b514001-57794497458953.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-174453-4a021840/profile/data/eden/log/hitch-frames-040015100b514001-57794497458953.csv",
         "sha256": "8432fc8663839a53eb71da8f6d0003b4842cc57accfddd423e7ab761e1ddb407",
         "metric": "native_present_interval_ms",
         "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",

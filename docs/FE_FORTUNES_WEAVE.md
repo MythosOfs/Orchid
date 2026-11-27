@@ -16,7 +16,7 @@ The game logic itself keeps running (~56 presents/s, vblank-paced, no hangs, no 
 
 ```
 SDL_VIDEODRIVER=wayland WAYLAND_DISPLAY=wayland-1 \
-  ./eden-cli -g "/home/leon/Switch2/Fire Emblem Fortune's Weave/updates/131072/exefs"
+  ./eden-cli -g "<game dumps>/Fire Emblem Fortune's Weave/updates/131072/exefs"
 ```
 
 The update's `romfs/` is found next to that `exefs/` directory. Log: `~/.local/share/orchid/log/orchid_log.txt`

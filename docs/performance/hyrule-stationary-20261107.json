@@ -9,7 +9,7 @@
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-163003-2588fe32/frames/system-frames-04003F40232DE000-1784245-53298957812333-0.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-163003-2588fe32/frames/system-frames-04003F40232DE000-1784245-53298957812333-0.csv",
         "sha256": "cb5911cc6207ce4c37317fbe516f1a87ee668a05a3ed55465911a991d07d8fdf",
         "metric": "timestamped_system_frame_work_ms",
         "semantics": "Timestamped Core::PerfStats BeginSystemFrame-to-EndSystemFrame elapsed milliseconds, using the Linux monotonic steady clock. The inverse mean is a work-rate estimate, not measured game/display FPS or GPU execution time.",
@@ -63,7 +63,7 @@
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-163003-2588fe32/frames/system-frames-04003F40232DE000-1784245-53298957812333-0.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-163003-2588fe32/frames/system-frames-04003F40232DE000-1784245-53298957812333-0.csv",
         "sha256": "cb5911cc6207ce4c37317fbe516f1a87ee668a05a3ed55465911a991d07d8fdf",
         "metric": "timestamped_system_frame_work_ms",
         "semantics": "Timestamped Core::PerfStats BeginSystemFrame-to-EndSystemFrame elapsed milliseconds, using the Linux monotonic steady clock. The inverse mean is a work-rate estimate, not measured game/display FPS or GPU execution time.",
@@ -117,7 +117,7 @@
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-163003-2588fe32/frames/system-frames-04003F40232DE000-1784245-53298957812333-0.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-163003-2588fe32/frames/system-frames-04003F40232DE000-1784245-53298957812333-0.csv",
         "sha256": "cb5911cc6207ce4c37317fbe516f1a87ee668a05a3ed55465911a991d07d8fdf",
         "metric": "timestamped_system_frame_work_ms",
         "semantics": "Timestamped Core::PerfStats BeginSystemFrame-to-EndSystemFrame elapsed milliseconds, using the Linux monotonic steady clock. The inverse mean is a work-rate estimate, not measured game/display FPS or GPU execution time.",

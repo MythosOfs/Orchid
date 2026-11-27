@@ -6,7 +6,7 @@
   "end_ns": 56947293213043,
   "identity": {
     "game_identity": {
-      "path": "/home/leon/Switch2/Yoshi and the Mysterious Book.nup",
+      "path": "~/Switch2/Yoshi and the Mysterious Book.nup",
       "size": 40998096127,
       "mtime_ns": 1793987729715066223,
       "prefix_1MiB_sha256": "97199c89e5e89579fa0ea290065aa8cc641d7e9bab76eef5fec16777c5021a0f"
@@ -18,7 +18,7 @@
   "measurement": {
     "available": true,
     "reason": null,
-    "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-172736-c04ad2a3/profile/data/eden/log/hitch-frames-0400245021d2c000-56757285593971.csv",
+    "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-172736-c04ad2a3/profile/data/eden/log/hitch-frames-0400245021d2c000-56757285593971.csv",
     "sha256": "75233e5a6f2cffd8c03df1b02442e189e9c5dfd86ebad299dd3df895f640cd26",
     "metric": "native_present_interval_ms",
     "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",

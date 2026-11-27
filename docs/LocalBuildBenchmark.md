@@ -1,6 +1,6 @@
 # Local Linux build measurements
 
-Measured on 2026-11-06 on Leon's Ryzen 7 5800X3D, 32 GiB RAM, Linux,
+Measured on 2026-11-06 on a Ryzen 7 5800X3D, 32 GiB RAM, Linux,
 GCC and GNU Binutils 2.47. Source revision: `e6bbb9a345c66d74db002245d02ae7cf984dbb24`
 plus the local build-script changes. Other desktop applications remained running.
 These are short local samples, not a full clean-build comparison.

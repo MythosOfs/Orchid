@@ -8,7 +8,7 @@
   "measurement": {
     "available": true,
     "reason": null,
-    "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-164226-b69a3144/frames/system-frames-0400A3A01EE4C000-1825285-54041973298820-0.csv",
+    "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-164226-b69a3144/frames/system-frames-0400A3A01EE4C000-1825285-54041973298820-0.csv",
     "sha256": "2a6dddb237451d902857691226caf56acbc05a885d960d1cfcc7427516588335",
     "metric": "timestamped_system_frame_work_ms",
     "semantics": "Timestamped Core::PerfStats BeginSystemFrame-to-EndSystemFrame elapsed milliseconds, using the Linux monotonic steady clock. The inverse mean is a work-rate estimate, not measured game/display FPS or GPU execution time.",
@@ -87,7 +87,7 @@
   ],
   "identity": {
     "game_identity": {
-      "path": "/home/leon/Switch2/Pokemon Pokopia.nup",
+      "path": "~/Switch2/Pokemon Pokopia.nup",
       "size": 7138689063,
       "mtime_ns": 1793987729763065893,
       "prefix_1MiB_sha256": "8e94331e1d46627c415fdcd56bc243058ea82e6972b4d28ade0df8a0448f3dab"

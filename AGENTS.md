@@ -40,7 +40,7 @@ directory between edits; do not clean or recreate it routinely.
 - Extra arguments are CMake configure options. `ORCHID_BUILD_DIR` sets another output directory.
   Never share one build directory between source worktrees.
 - Share dependency downloads with `-DCPM_SOURCE_CACHE=/absolute/cache/path` (CMake keeps the choice
-  in that build directory). On Leon's PC reuse `/home/leon/src/Eglantine/.cache/cpm`.
+  in that build directory). On the maintainer's PC reuse `$HOME/src/Eglantine/.cache/cpm`.
 - First builds fill the compiler cache and take time. Do not claim a speedup without measuring.
   Verify the build and report limitations. Cached rebuild timings are not timings for changed
   source. Details: [docs/Build.md](docs/Build.md#faster-local-linux-test-builds), measured results
@@ -128,14 +128,14 @@ orchid-agent-test --line src/common/example.h:42 --line src/common/example.h:57 
 - Do not aim ninja diagnostics (`-n`, `-t`) at a build directory while another ninja runs there;
   even diagnostics can corrupt ninja log files.
 
-## Emulator tests: on the PC, run by the agent
+## Emulator tests: on the test host, run by the agent
 
 Every test that starts the emulator (performance/fps, headless boots, repro runs, A/B
-comparisons, screenshots, logs) runs on the PC (RX 9070 XT). The agent runs performance and sound
+comparisons, screenshots, logs) runs on the RDNA4 test host. The agent runs performance and sound
 tests itself, even while the maintainer is at home. Start emulators with `agent-run` (the `orchid`
 MCP does this already), keep runs short, end the emulator afterwards. The laptop runs no emulator
-tests; it may only compile (see "Builds: PC or laptop"). The maintainer tests only the final build
-before a release.
+tests; it may only compile (see "Builds: test host or laptop"). The maintainer tests only the final
+build before a release.
 
 Use the Orchid harness's private display and virtual input for every automated run, including
 benchmarks and delegated runs. Keep the maintainer's mouse, keyboard, window focus and active
@@ -179,20 +179,22 @@ computer use.
   | Game | Snapshot | Route | Ends in |
   |---|---|---|---|
   | Mario Tennis Fever | `mtf-after-first-practice-20261107` | `mtf-stadium-match-v4` | Free Play match (waits for the player HUD) |
-  | Donkey Kong Bananza | `bananza-leon-import-20261107` | `bananza-leon-tunnel-entry-v4` | mining tunnel, HUD checkpoint |
+  | Donkey Kong Bananza | imported save (see `gate_list`) | tunnel entry v4 (see `gate_list`) | mining tunnel, HUD checkpoint |
   | Yoshi and the Mysterious Book | `yoshi-chapter-one-saved-20261106-2114` | `yoshi-wildwoods-entry-v2` | Wildwoods level, Yoshi controllable |
   | Super Mario Bros. Wonder | `wonder-goal60-overworld-20261107` | `wonder-level-entry-v2` | inside a level, HUD checkpoint |
   | Pokémon Pokopia | `pokopia-intro-language-set-20261107` | `pokopia-cave-v3` | first cave, character controllable |
   | Hyrule Warriors: Age of Imprisonment | `hw-blur-mission-20261106` (2x; the gate overrides to 1x) | `hw-mission-v2` (long: `route_start`) | mission, objective text checkpoint |
   | Star Fox | `starfox-tutorial-controls-loop-20261107` | `starfox-flight-v3` | flight tutorial, Arwing controllable |
-  | Kirby and the Forgotten Land | `kirby-leon-dlc-20261110` | `kirby-stage-v2` | stage "Meteor Shower's Arrival" (no HUD at full health: checkpoint on the mission screen before, confirm on the screenshot) |
+  | Kirby and the Forgotten Land | DLC save (see `snapshot_list`) | `kirby-stage-v2` | stage "Meteor Shower's Arrival" (no HUD at full health: checkpoint on the mission screen before, confirm on the screenshot) |
   | Orbitals | `initial`, boot with `settings={"player_1_connected":"true"}` (co-op: needs a second controller) | `orbitals-gameplay-v2` | ship interior, both characters controllable |
-  | Xenoblade Chronicles: Definitive Edition | `xbde-leon-20261112` (no save: New Game) | `xbde-battle-v2` | prologue battle |
-  | Xenoblade Chronicles 2 | `xb2-leon-20261112` (no save: New Game) | `xb2-field-v2` | first battle, Rex controllable |
-  | Xenoblade Chronicles X: Definitive Edition | `xbx-leon-20261112` (the maintainer's save) | `xbx-field-v2-a` | field, minimap HUD |
+  | Xenoblade Chronicles: Definitive Edition | no save: New Game (see `snapshot_list`) | `xbde-battle-v2` | prologue battle |
+  | Xenoblade Chronicles 2 | no save: New Game (see `snapshot_list`) | `xb2-field-v2` | first battle, Rex controllable |
+  | Xenoblade Chronicles X: Definitive Edition | the maintainer's save (see `snapshot_list`) | `xbx-field-v2-a` | field, minimap HUD |
 
-  All twelve are registered for the gate (`gate_list`). Kirby Air Riders has no route on purpose:
-  its races can hang the GPU (README: do not play).
+  Snapshots and routes imported from the maintainer's saves are described by scene above; get
+  the concrete IDs from `snapshot_list` and `route_list`. All twelve are registered for the gate
+  (`gate_list`). Kirby Air Riders has no route on purpose: its races can hang the GPU (README:
+  do not play).
 
 - Routes should wait for screens, not for seconds: `wait_checkpoint(name, buttons=..)` waits until
   a recorded screen region appears (optionally pressing a button meanwhile) and is saved into the
@@ -272,7 +274,7 @@ hand (`release-binaries`); pushes start none.
   is booted, played along its route into gameplay and on for about a minute, and stopped; the
   result gives pass / review / fail per game with reasons and one contact sheet of all last
   frames. A scope game without a gate entry is played by hand as before. Skip a game only if it
-  is not on the PC or is known not to reach gameplay yet (README table); name every skipped game.
+  is not on the test host or is known not to reach gameplay yet (README table); name every skipped game.
 - The harness cannot judge rendering: open the contact sheet (and single screenshots where it is
   too small), and have the `reference_sheet`s judged against hardware (`judge-rendering.md`;
   look at every `differs`/`broken` yourself). After a gate you accept, `gate_accept` stores its
@@ -325,13 +327,13 @@ recording stayed silent and the game played on the speakers); `PIPEWIRE_NODE` is
   and a spectrogram with the baseline. Verified with a test tone containing an 80 ms gap and
   with a Mario Tennis Fever boot (recording not silent, peak -31.7 dB).
 
-### Builds: PC or laptop
+### Builds: test host or laptop
 
-If the laptop is idle, compile there to relieve the PC. Check:
+If the laptop is idle, compile there to relieve the test host. Check:
 `ssh <laptop> 'pgrep -x orchid || pgrep -x eden-cli || pgrep -x ninja'` (no output = idle; address
 in the maintainer's `~/.claude/CLAUDE.md`). One full build per machine at a time; otherwise build
-on the PC (`build-scope`/`agent-run`). Copy the finished binary or AppImage to the PC with `scp`
-and check it with `ldd`.
+on the test host (`build-scope`/`agent-run`). Copy the finished binary or AppImage to the test
+host with `scp` and check it with `ldd`.
 
 ## Test shortcuts for the maintainer (final build before a release)
 

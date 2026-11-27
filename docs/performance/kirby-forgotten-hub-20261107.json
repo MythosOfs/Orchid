@@ -6,7 +6,7 @@
   "end_ns": 56217028697693,
   "identity": {
     "game_identity": {
-      "path": "/home/leon/Switch2/KirbySwitch2.nup",
+      "path": "~/Switch2/KirbySwitch2.nup",
       "size": 15424373958,
       "mtime_ns": 1793982476605261866,
       "prefix_1MiB_sha256": "064ade3ee9970ec7f28bd6db9469fde75b4223290957e7e152f9e2259716bff4"
@@ -20,7 +20,7 @@
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-171456-6bbec008/frames/system-frames-04004D300C5AE001-1947968-56097596765096-0.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-171456-6bbec008/frames/system-frames-04004D300C5AE001-1947968-56097596765096-0.csv",
         "sha256": "1f3d5de4e5efa5d02f7b8c31d5f940cc53dfb1ed0cf6c11c687296795e3d6da3",
         "metric": "timestamped_system_frame_work_ms",
         "semantics": "Timestamped Core::PerfStats BeginSystemFrame-to-EndSystemFrame elapsed milliseconds, using the Linux monotonic steady clock. The inverse mean is a work-rate estimate, not measured game/display FPS or GPU execution time.",
@@ -70,7 +70,7 @@
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-171456-6bbec008/profile/data/eden/log/hitch-frames-04004d300c5ae001-56102546926338.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-171456-6bbec008/profile/data/eden/log/hitch-frames-04004d300c5ae001-56102546926338.csv",
         "sha256": "ea08fa3011e43c037d623644aab97ebde113a794d1e19ac3cb9fe069cedba9e8",
         "metric": "native_present_interval_ms",
         "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",

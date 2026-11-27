@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3b012b523cbe3bb1de137eabaee7b66455a44b0e2c79f433b4cd628dff0fd9a3",
+  "pageVersion": "sha256:468701d06d4c45053924d736c910232cce711b2228285dc04ab6298ee993b17e",
   "claims": [
     {
       "id": "claim_0611147ec5c645dc87c50edddde8db27",
@@ -43,11 +43,11 @@
           "version": "repo-lines-v1:sha256:2215394605e2c82fc485c20aeafd6ecd967e9f84ec2486f630c2c5da667a12d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGUzYjZkMTJjMjQyM2I0NzY1NTczNzE0ZTE2ODNhOGQ2NTE5MDAyNGVmM2QwN2ZhOGFlNjcyNzQ1ODcyOGMzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjJhYWRhOGUyOTIxMjBlNjgwNTJhZjk4NWUwYmYwNTY1ZTJjNDc2NmQwYzZiMWRkZjUyZjkzOGYyMDc1ZDViOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZlOGM5Yjc1ODQzN2U4MWJkOTY2NTFkNjcwOTIzYTBlZTg0YmY4MjdmNzczYmM3YzQzYWYxMDJjODkzNWU2NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTIwYzU0MTlmNDI3NDY1OGFlNmVjNDFiYTkxMWU4Y2Q3ZDhhN2U2NDAwZDI5MTY0YzZkYWEwNGY5YzE1MThmZSJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L197-L207",
+          "resource": "repo://AGENTS.md#L199-L209",
           "version": "repo-lines-v1:sha256:6c4819c3e03051ffa439f4c25be11cd0d612ca645ed662fbf8ca1e31b15e23e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhYzY5ODAyNGViNDQ3YmY2ZTM3OGNiOTJjNjYyYjBkOTEwZmY4ZDYzNmM5YWQ3OWMxZWFiNDYwYjAzMDlmZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4OTg1YWMwNjc2YThjODM2MWQ3ZDJlZjY5MDU5MTQ3ZDRjMzA1MmZjYmU5YjRmZTNiYTZkZTkxNzIzZmE5MjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1MzA1MjI1MTA2MGY4N2Y0YWFlNzE5NGY5OGU0MmQyMjI3ZmZkNjZmZjQ3MjdiYTRiNGIyYjU5NmUzNmNjMTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMTQ2NDBmMDEzNGFjZWQ1MDg5OTlmZGM5YTQxNjAxYzMxYzhhNWU1NzkyMTVjY2NjZDlhNThiOWVlMGZiYWYifQ"
         },
         {
-          "resource": "repo://AGENTS.md#L216-L224",
+          "resource": "repo://AGENTS.md#L218-L226",
           "version": "repo-lines-v1:sha256:3a5bd1e3445a942ebffa7ddd2a330957245544e7944d2d89c1739a5316b604d8:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg0M2MyMjQxNWIxZDI0NDgxNjc5ZTQ4MzY3MGU2ZmZjOTNlNWE2ZjZkYjZjNmUwMDFlODU3ZTNlZGVmOWRjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGExMzQ3YmQzM2Q5ODZkNmFmZjQ5ZjNhMWEwNTQyNTM2ZmI0ZjIwMTg2N2Q1Y2Q0Zjg3OWM1Nzg4NmM4NDZjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWMzMDExYWE2ODgzNjFjMDMyN2IxODY3ZjY1NzllNmM5YzA4MDE2YmRhM2QzODBkOWM2MWIwZjY1NjlkZjY3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjFlMWIxMTAzY2NiMTA2NmY0ZTFjMTRlOWUyODVjYmE5MTI3YTEzZWQzMTZjNTJjYjQ0YTliM2EwYzZiYTZhYSJ9"
         }
       ]
@@ -57,11 +57,11 @@
       "statement": "Use health to distinguish a stall, device loss or exit from a live session. The summary compares current errors against a baseline for the game and route, and frame CSVs report per-guest-frame timings. Use stop to collect the final evidence and end the session. For longer operations, job_status queries the job returned by operations such as gate_start or benchmark_start.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L225-L229",
+          "resource": "repo://AGENTS.md#L227-L231",
           "version": "repo-lines-v1:sha256:00e3c481f5d0c6cea7f7432faf92822b68b253856790f7bb0b1719db3a31b66d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjYxYzQ1MWEzODFjNzY4OWU3MGM0YzQ5ZmVkZmY2ODBiMzMxM2RmNzI3NWNlODY5MWIwNmNhNGE0MDVmNDEwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFjNmMyZWVjMWMxOGM2MzAyZWVhNjRkZmUxOWI4N2FkOTZiY2Q2OWZhZWU2ZWQxNmM0MDQzNTU4MjZjZWZlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjMwYTU0NzUyYzA5NTk3OTYyMWNiZDQ0MTk5NzBhYmQyNzMzZThkNWU3NDkzNmVhOGM4OWRjYzkyZmM3Mzc1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjRiZTg0NTRlZjFlOTI5OWZlODM2MWRhNDQwMWFhNDRlNzA3NzdkZGQ5ODE4MTRiZWFkNzU3MWJlMDZjMzhjYiJ9"
         },
         {
-          "resource": "repo://AGENTS.md#L238-L241",
+          "resource": "repo://AGENTS.md#L240-L243",
           "version": "repo-lines-v1:sha256:20941c841e49aa3216e7445bcaf2840cbb9a837aa38da4197d811bf1dfd492dd:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFkN2VmMjkzODc0NTBiNmJkODM2ODk5ZGIzMDZiMzk4NWViMTk3OWUyMmM4ZmI5NzkzYzY4YjdjMDk0OGUwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDE5NzM0NmMwZjM0NjU0YjJlYzI3YWVmZWJiZmE5NDBiMGNiMzdmNGUyNTcyMjMzOTA0MTQyZDk3ZWFjZjYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGM4MzJiNzU5NjNkNDVjNWRiM2RmZmFhMWE3ZWMzY2ZhZTFlYmUxN2U0YTQ4M2EyNDVmOTVlZmJiYmY4ZWFlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTUyM2QyZjliMjM2YWMzNDk2ODM1NzUxODJiMWJlMjgyZDljOGUwMTI1NGM2MWY4OTRjZWNiOTlmYzcxZTIzMiJ9"
         }
       ]
@@ -71,8 +71,8 @@
       "statement": "The gameplay gate replays registered routes to produce per-game results and a contact sheet. Inspect the images and new errors before accepting the gate as a baseline. A green unit test and a completed gate job answer different questions because the gate also checks visible gameplay and compares behavior against the last good build.",
       "evidence": [
         {
-          "resource": "repo://AGENTS.md#L271-L285",
-          "version": "repo-lines-v1:sha256:19fdeaad5f2b4861e5251d4e2676b0538568c68bfbb8fea724726c59c25b0c6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MDdlNTBkZmY5MzcyMDI5M2NhZWViZmE5YjkzNTBlODk2OWI3NDc1ZjhiNjkzMWM1YjQwMGRiYmU5Y2YwODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2Y2M2YmQzYjdkZGY4ODA0NzRhNTc2M2I3YzgxYjEzOTc0YjhiMWJkOWM3ZDhiN2JhYjA4MDY5NzQ0NjU5ZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ODUxMjlhMzNiNzk0ZDRhYWI5ZmZiY2EzN2Q2YjMyNjgzNmY1ZjY2NTM3Y2E3ZTNiMzU1NmMzYmRmMmUxMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzMWMyODY1MWUzZGFjZDdlMTE2ZGI5ZWJiNWE5YzY5ZjhlMzE4MjdjMTAxNzI3ZTFmNjY4Mjg3ZjljN2E1ZDkifQ"
+          "resource": "repo://AGENTS.md#L273-L287",
+          "version": "repo-lines-v1:sha256:c1babff0351066f09b534902bc0c7497f903ef738bbb531d3ab566927e4aea75:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1MDdlNTBkZmY5MzcyMDI5M2NhZWViZmE5YjkzNTBlODk2OWI3NDc1ZjhiNjkzMWM1YjQwMGRiYmU5Y2YwODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2Y2M2YmQzYjdkZGY4ODA0NzRhNTc2M2I3YzgxYjEzOTc0YjhiMWJkOWM3ZDhiN2JhYjA4MDY5NzQ0NjU5ZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ODUxMjlhMzNiNzk0ZDRhYWI5ZmZiY2EzN2Q2YjMyNjgzNmY1ZjY2NTM3Y2E3ZTNiMzU1NmMzYmRmMmUxMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzMWMyODY1MWUzZGFjZDdlMTE2ZGI5ZWJiNWE5YzY5ZjhlMzE4MjdjMTAxNzI3ZTFmNjY4Mjg3ZjljN2E1ZDkifQ"
         }
       ]
     },
@@ -93,6 +93,6 @@
   ],
   "verification": {
     "by": "openwiki/0.9.0",
-    "at": "2026-11-26T22:05:23.195Z"
+    "at": "2026-11-27T06:45:36.012Z"
   }
 }

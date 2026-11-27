@@ -12,7 +12,7 @@
   "measurement": {
     "available": true,
     "reason": null,
-    "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-165701-dc3bbdf2/profile/data/eden/log/hitch-frames-040074a01bf12000-54922392429477.csv",
+    "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-165701-dc3bbdf2/profile/data/eden/log/hitch-frames-040074a01bf12000-54922392429477.csv",
     "sha256": "fa39b9014487d8f44fb5bc4895446ca50d5577c65715ae0bac73f203524c5223",
     "metric": "native_present_interval_ms",
     "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",
@@ -158,13 +158,13 @@
     "matched": false,
     "rmse": 0.0376142,
     "max_rmse": 0.02,
-    "image": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-165701-dc3bbdf2/0003-checkpoint-bananza-ingot-tunnel-v1.png",
+    "image": "~/.local/share/codex-orchid-mcp/state/runs/20261107-165701-dc3bbdf2/0003-checkpoint-bananza-ingot-tunnel-v1.png",
     "at_ns": 55116612897462,
     "qualification": "Matches an explicitly labelled reference ROI; no semantic rendering correctness proof."
   },
   "identity": {
     "game_identity": {
-      "path": "/home/leon/Switch2/Donkey Kong Bananza.nup",
+      "path": "~/Switch2/Donkey Kong Bananza.nup",
       "size": 9288700437,
       "mtime_ns": 1793746379539877288,
       "prefix_1MiB_sha256": "a2257bb63f89a8bb9a73848941f348e13f89f72d1aa8ff728a043538d2ec4b90"

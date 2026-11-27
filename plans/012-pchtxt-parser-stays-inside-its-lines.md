@@ -100,7 +100,7 @@ listed by hand in `src/tests/CMakeLists.txt`. Exemplar layout: `src/tests/core/v
 | Whole suite | `./build-local/bin/tests` | `All tests passed` |
 | Mutation check | `orchid-agent-test --build-dir build-local --base HEAD -- "[ipswitch]"` | exit 0 |
 
-Notes: add `-DCPM_SOURCE_CACHE=/home/leon/src/Eglantine/.cache/cpm` to the configure command if
+Notes: add `-DCPM_SOURCE_CACHE=$HOME/src/Eglantine/.cache/cpm` to the configure command if
 that folder exists; skip the configure if `build-local/CMakeCache.txt` already has
 `YUZU_TESTS:BOOL=ON`. One full build at a time. If `orchid-agent-test` is missing, say so.
 

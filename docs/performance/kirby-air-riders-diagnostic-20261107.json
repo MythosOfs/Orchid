@@ -3,7 +3,7 @@
   "qualification": "instrumented incomplete opening diagnostic; no gameplay FPS accepted",
   "identity": {
     "game_identity": {
-      "path": "/home/leon/Switch2/Kirby Air Riders.nup",
+      "path": "~/Switch2/Kirby Air Riders.nup",
       "size": 41800038615,
       "mtime_ns": 1793746448917454640,
       "prefix_1MiB_sha256": "dfc7986565bf9febaa278588f49a954d3002ae16bc1cca483a25a43d0f1125cd"
@@ -27,12 +27,12 @@
     "qt_teardown_seen": false,
     "instrumented": false,
     "csv_files": [
-      "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-205405-4f622a0e/frames/system-frames-040077201BE50000-2681686-69142482505847-0.csv"
+      "~/.local/share/codex-orchid-mcp/state/runs/20261107-205405-4f622a0e/frames/system-frames-040077201BE50000-2681686-69142482505847-0.csv"
     ]
   },
   "device_loss_reproduced": false,
   "termination_cause": "undetermined; return code 0, missing frontend teardown marker",
-  "artifacts_path": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-205405-4f622a0e/native-shaders",
+  "artifacts_path": "~/.local/share/codex-orchid-mcp/state/runs/20261107-205405-4f622a0e/native-shaders",
   "shaders": [
     {
       "name": "01153f612b27832e-gfx-11c3804400.bin",

@@ -67,3 +67,10 @@ vulkansdk*.exe
 
 # Build-time generated external sources
 externals/generated
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Local Claude settings (machine-specific, e.g. absolute-path excludes)
+.claude/settings.local.json

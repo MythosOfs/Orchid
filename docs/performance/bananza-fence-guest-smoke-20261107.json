@@ -5,7 +5,7 @@
       "arm": "candidate",
       "repetition": 1,
       "run_id": "20261107-205456-28f2045a",
-      "out": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a",
+      "out": "~/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a",
       "start_ns": 69347867094984,
       "end_ns": 69377897038874,
       "pre": {
@@ -16,7 +16,7 @@
         "matched": true,
         "rmse": 0.0430069,
         "max_rmse": 0.05,
-        "image": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/0002-checkpoint-bananza-ingot-tunnel-v2-calib.png",
+        "image": "~/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/0002-checkpoint-bananza-ingot-tunnel-v2-calib.png",
         "at_ns": 69347866882306,
         "qualification": "Matches an explicitly labelled reference ROI; no semantic rendering correctness proof."
       },
@@ -28,7 +28,7 @@
         "matched": true,
         "rmse": 0.0422455,
         "max_rmse": 0.05,
-        "image": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/0003-checkpoint-bananza-ingot-tunnel-v2-calib.png",
+        "image": "~/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/0003-checkpoint-bananza-ingot-tunnel-v2-calib.png",
         "at_ns": 69378112085472,
         "qualification": "Matches an explicitly labelled reference ROI; no semantic rendering correctness proof."
       },
@@ -42,15 +42,15 @@
         "qt_teardown_seen": true,
         "instrumented": false,
         "csv_files": [
-          "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/frames/system-frames-040074A01BF12000-2685496-69192603114074-0.csv",
-          "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/profile/data/eden/log/hitch-frames-040074a01bf12000-69197647502376.csv"
+          "~/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/frames/system-frames-040074A01BF12000-2685496-69192603114074-0.csv",
+          "~/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/profile/data/eden/log/hitch-frames-040074a01bf12000-69197647502376.csv"
         ],
-        "bundle": "/home/leon/.local/share/codex-orchid-mcp/state/bundles/20261107-205456-28f2045a-1794081485622074071"
+        "bundle": "~/.local/share/codex-orchid-mcp/state/bundles/20261107-205456-28f2045a-1794081485622074071"
       },
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/profile/data/eden/log/hitch-frames-040074a01bf12000-69197647502376.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-205456-28f2045a/profile/data/eden/log/hitch-frames-040074a01bf12000-69197647502376.csv",
         "sha256": "942975e5b702ddb39cfc561ed6fe14ad22d860915aa1cde45e5ad84bebc99b32",
         "metric": "native_present_interval_ms",
         "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",
@@ -98,7 +98,7 @@
       },
       "identity": {
         "game_identity": {
-          "path": "/home/leon/Switch2/Donkey Kong Bananza.nup",
+          "path": "~/Switch2/Donkey Kong Bananza.nup",
           "size": 9288700437,
           "mtime_ns": 1793746379539877288,
           "prefix_1MiB_sha256": "a2257bb63f89a8bb9a73848941f348e13f89f72d1aa8ff728a043538d2ec4b90"

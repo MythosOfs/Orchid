@@ -195,7 +195,7 @@ Run all commands from the repository root.
 | Build the emulator (checks `nvdisp_disp0.cpp` compiles in the GUI target) | `cmake --build build-local --target yuzu --parallel 6` | exit 0 |
 | Mutation check | `orchid-agent-test --build-dir build-local --base HEAD -- "[syncpoint_manager],[nvnflinger]"` | exit 0 |
 
-Notes: add `-DCPM_SOURCE_CACHE=/home/leon/src/Eglantine/.cache/cpm` to the configure command if
+Notes: add `-DCPM_SOURCE_CACHE=$HOME/src/Eglantine/.cache/cpm` to the configure command if
 that folder exists; skip the configure if `build-local/CMakeCache.txt` already has
 `YUZU_TESTS:BOOL=ON`. One full build at a time per machine. If `orchid-agent-test` is not
 installed, say so in the report.

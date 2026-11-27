@@ -3,7 +3,7 @@
   "qualification": "controls dialog measurements, NOT gameplay performance acceptance",
   "identity": {
     "game_identity": {
-      "path": "/home/leon/Switch2/Star Fox (Switch 2).nup",
+      "path": "~/Switch2/Star Fox (Switch 2).nup",
       "size": 30155220124,
       "mtime_ns": 1793769602870414217,
       "prefix_1MiB_sha256": "fd5377bf0612578f505306520330c507ba5368c3eebb6bd7f147b7bc52fd5455"
@@ -38,7 +38,7 @@
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-170619-1929dde6/profile/data/eden/log/hitch-frames-0400e88025b1a000-55480680718392.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-170619-1929dde6/profile/data/eden/log/hitch-frames-0400e88025b1a000-55480680718392.csv",
         "sha256": "92e3fad9392a8f6090ac533dff1687683f71c0e262e7330914af3d4878c8b384",
         "metric": "native_present_interval_ms",
         "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",
@@ -92,7 +92,7 @@
       "measurement": {
         "available": true,
         "reason": null,
-        "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-170619-1929dde6/profile/data/eden/log/hitch-frames-0400e88025b1a000-55480680718392.csv",
+        "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-170619-1929dde6/profile/data/eden/log/hitch-frames-0400e88025b1a000-55480680718392.csv",
         "sha256": "92e3fad9392a8f6090ac533dff1687683f71c0e262e7330914af3d4878c8b384",
         "metric": "native_present_interval_ms",
         "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",

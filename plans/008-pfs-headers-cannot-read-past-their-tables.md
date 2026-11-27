@@ -139,7 +139,7 @@ Run all commands from the repository root.
 | Run the whole suite | `./build-local/bin/tests` | `All tests passed` |
 | Mutation check | `orchid-agent-test --build-dir build-local --base HEAD -- "[pfs]"` | exit 0 |
 
-Notes: add `-DCPM_SOURCE_CACHE=/home/leon/src/Eglantine/.cache/cpm` to the configure command if
+Notes: add `-DCPM_SOURCE_CACHE=$HOME/src/Eglantine/.cache/cpm` to the configure command if
 that folder exists; skip the configure if `build-local/CMakeCache.txt` already has
 `YUZU_TESTS:BOOL=ON`. One full build at a time per machine. If `orchid-agent-test` is not
 installed, say so in the report.

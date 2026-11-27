@@ -6,7 +6,7 @@
   "end_ns": 57577035625885,
   "identity": {
     "game_identity": {
-      "path": "/home/leon/Switch2/Mario Tennis Fever.nup",
+      "path": "~/Switch2/Mario Tennis Fever.nup",
       "size": 16048499819,
       "mtime_ns": 1793746302542340573,
       "prefix_1MiB_sha256": "59e9afc9744aabdb79bac13faf35ba2222106cfe9e36d5bdc1f813c93fb6077a"
@@ -18,7 +18,7 @@
   "measurement": {
     "available": true,
     "reason": null,
-    "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-173656-4da6f700/profile/data/eden/log/hitch-frames-0400d4201c6ea000-57313029921318.csv",
+    "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-173656-4da6f700/profile/data/eden/log/hitch-frames-0400d4201c6ea000-57313029921318.csv",
     "sha256": "85350d33c568dd50f713b440392ab6f7af76fbaacac9b177f08c0ceeef452dcb",
     "metric": "native_present_interval_ms",
     "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",

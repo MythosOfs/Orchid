@@ -7,7 +7,7 @@
   "measurement": {
     "available": true,
     "reason": null,
-    "source": "/home/leon/.local/share/codex-orchid-mcp/state/runs/20261107-165157-c3f26d25/profile/data/eden/log/hitch-frames-040074a01bf12000-54618634551167.csv",
+    "source": "~/.local/share/codex-orchid-mcp/state/runs/20261107-165157-c3f26d25/profile/data/eden/log/hitch-frames-040074a01bf12000-54618634551167.csv",
     "sha256": "31b13d19bd5b8707d91b44f24d53dbd5a44d651f94427bc7568f64615c450b73",
     "metric": "native_present_interval_ms",
     "semantics": "Intervals between native present-service entries (entered_ns/gap_us), including guest/host pacing and stalls; not GPU execution time or physical display scanout.",
@@ -147,7 +147,7 @@
   ],
   "identity": {
     "game_identity": {
-      "path": "/home/leon/Switch2/Donkey Kong Bananza.nup",
+      "path": "~/Switch2/Donkey Kong Bananza.nup",
       "size": 9288700437,
       "mtime_ns": 1793746379539877288,
       "prefix_1MiB_sha256": "a2257bb63f89a8bb9a73848941f348e13f89f72d1aa8ff728a043538d2ec4b90"

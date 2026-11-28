@@ -80,8 +80,8 @@ Detail for [AGENTS.md](../../AGENTS.md#emulator-tests-on-the-test-host-run-by-th
   part of the game: accept and continue.
 - Say in the brief: every reported screenshot must be opened and described. The first real failure
   (crash, hang, device loss, wrong rendering) stops the remaining runs, the gate included: report
-  it. An infrastructure fault (harness error, GPU lock timeout, out-of-memory kill, a start that
-  never reached the game) is inconclusive, not a failure: write it down and rerun. When a number or
+  it. A proven infrastructure fault (harness or GPU-lock error text, out-of-memory kill; see
+  Gameplay gate) is inconclusive, not a failure: write it down and rerun. When a number or
   a log count decides the outcome, check it against the log yourself.
 - The harness lives in `~/.local/share/codex-orchid-mcp/` (its own local git repository, not this
   one). A running MCP server keeps the code it started with; changes reach a session only after
@@ -104,22 +104,29 @@ hand (`release-binaries`); pushes start none.
   from every worktree (other sessions commit and push afterwards; the release session pushes its
   own fixes with `ORCHID_RELEASE_PUSH=1`). Why: on 2026-11-18 a push during the 0.11 gate forced a
   second hour-long gate.
-- Run it with `gate_start(bin=<build>)`: every game registered with `gate_set` (see `gate_list`)
-  is booted, played along its route into gameplay and on for about a minute, and stopped; the
-  result gives pass / review / fail per game with reasons and one contact sheet of all last
-  frames. A scope game without a gate entry is played by hand as before. Skip a game only if it
+- Run it one title at a time: for each game of `gate_list`, `gate_start(bin=<build>,
+  games=["<part of its game path that no other path has>"])`, then `job_status` until it is done. The game is booted,
+  played along its route into gameplay and on for about a minute, and stopped; the result gives
+  pass / review / fail with reasons and a contact sheet. Judge each result before starting the next
+  title. `gate_start` without `games` has no stop point between games (after a boot crash or a
+  GPU-lock timeout it still starts the next one), so always pass `games`; the filter is a substring of the `game` path
+  from `gate_list` (case-insensitive, spaces included), e.g. `tennis`, `chronicles 2`, `chronicles x`.
+  A scope game without a gate entry is played by hand as before. Skip a game only if it
   is not on the test host or is known not to reach gameplay yet (README table); name every skipped game.
 - The harness cannot judge rendering: open the contact sheet (and single screenshots where it is
   too small), and have the `reference_sheet`s judged against hardware (`judge-rendering.md`;
-  look at every `differs`/`broken` yourself). After a gate you accept, `gate_accept` stores its
-  runs as the new baselines.
+  look at every `differs`/`broken` yourself). After you accept a title's result, `gate_accept` stores
+  its run as the new baseline.
 - Pass: each game renders correctly (characters, world, HUD, text without missing glyphs), runs
   without hang, crash or device loss, and its log shows no new errors compared with the last good
   build. A game that worked in the last good build and fails now blocks the release.
 - The test subagent runs it and returns screenshots and log excerpts. The main agent looks at
   the key screenshots and decides pass or fail.
-- The first real fail stops the gate (`job_cancel`): report it, find the regression, fix it, run
-  the gate again; no release meanwhile. An infrastructure fault is inconclusive: rerun that game.
+- The first real fail ends the series: report it, find the regression, fix it, start the series
+  again; no release meanwhile. Only a proven infrastructure fault (the harness's or the GPU lock's own
+  error text, an out-of-memory kill in the journal) is inconclusive: rerun that title. Everything
+  the game did (crash, hang, device loss, unclean exit, wrong picture, new log errors) and every
+  cause you cannot prove is a real fail.
 
 ## Performance measurements
 

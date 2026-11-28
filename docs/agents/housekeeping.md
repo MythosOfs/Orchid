@@ -24,7 +24,7 @@ only when its exact `Exec` passes `--check`; the maintainer must never have to c
 2. Check; all three must be green (from the repo root):
    ```sh
    desktop-file-validate ~/.local/share/applications/orchid-test-<label>.desktop
-   python3 tools/check_test_shortcut.py <file>   # parses Exec (no shell), rejects `~` and `$HOME`, runs `orchid-test-run --check` -> "check ok"
+   python3 tools/check_test_shortcut.py <file>   # parses Exec (no shell), rejects `~`, `$VAR` and a stray `%`, runs `orchid-test-run --check` -> "check ok"
    ldd <binary> | grep 'not found'    # must be empty (not needed for AppImages)
    ```
 3. `update-desktop-database ~/.local/share/applications`.

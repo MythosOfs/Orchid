@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Check a test shortcut before it is handed over: python3 tools/check_test_shortcut.py FILE.desktop
 
-Parses the Exec line into an argument list (shlex, no shell), rejects a path the desktop launcher
-would not expand (`~`, `$HOME`), requires `[env VAR=value...] <absolute>/orchid-test-run <label>
+Parses the Exec line into an argument list (shlex, no shell), de-escapes `%%` and drops whole-argument
+field codes (`%f`) as the Desktop Entry spec says, rejects any other `%`, rejects what the launcher
+does not expand (`~` at the start of an argument or of a value after `=`, `$NAME`), requires `[env VAR=value...] <absolute>/orchid-test-run <label>
 <absolute binary> ...`, then runs `orchid-test-run --check <label> <binary> ...` as that list.
 """
 
@@ -15,12 +16,30 @@ import subprocess
 import sys
 
 WRAPPER = "orchid-test-run"
+FIELD_CODES = "fFuUdDnNickvm"
+
+
+def resolve_percent(arg):
+    if re.fullmatch(f"%[{FIELD_CODES}]", arg):
+        return None
+    out, i = [], 0
+    while i < len(arg):
+        if arg[i] != "%":
+            out.append(arg[i])
+            i += 1
+        elif arg[i + 1 : i + 2] == "%":
+            out.append("%")
+            i += 2
+        else:
+            raise ValueError(f"field code or lone % inside an argument: {arg}")
+    return "".join(out)
 
 
 def build_check_command(exec_line):
-    argv = [a for a in shlex.split(exec_line) if not re.fullmatch(r"%[a-zA-Z]", a)]
+    resolved = [resolve_percent(a) for a in shlex.split(exec_line)]
+    argv = [a for a in resolved if a is not None]
     for arg in argv:
-        if arg.startswith("~") or re.search(r"\$\{?HOME\b", arg):
+        if arg.startswith("~") or arg.partition("=")[2].startswith("~") or re.search(r"\$\{?[A-Za-z_]", arg):
             raise ValueError(f"the launcher does not expand: {arg}")
     found = [i for i, a in enumerate(argv) if os.path.basename(a) == WRAPPER]
     if len(found) != 1:

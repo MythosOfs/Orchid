@@ -31,9 +31,21 @@ with tempfile.TemporaryDirectory() as tmp:
         code = subprocess.run([sys.executable, TOOL, desktop], capture_output=True, check=False).returncode
         return code, os.path.exists(log)
 
+    failures = []
+
+    def expect(name, ok):
+        if not ok:
+            failures.append(name)
+
+    def args_logged():
+        return open(log).read().split("\n")[:-1] if os.path.exists(log) else None
+
     code, ran = run(f'env EDEN_XYZ=1 "{wrapper}" lbl "{binary}" %f')
-    assert code == 0 and ran, "quoted path with a space must pass and start the wrapper"
-    assert open(log).read().split("\n")[:3] == ["--check", "lbl", binary], "--check must be the first argument"
+    expect("quoted path with a space starts the wrapper", code == 0 and ran)
+    expect("--check is the first argument", (args_logged() or [])[:3] == ["--check", "lbl", binary])
+
+    code, ran = run(f'env X=1 "{wrapper}" lbl "{binary}" "Build 100%%"')
+    expect("%% reaches the wrapper as a single %", code == 0 and (args_logged() or [])[-1:] == ["Build 100%"])
 
     bad = {
         "tilde": f"env X=1 ~/.local/bin/orchid-test-run lbl {binary}",
@@ -43,9 +55,18 @@ with tempfile.TemporaryDirectory() as tmp:
         "relative binary": f'env X=1 "{wrapper}" lbl orchid',
         "no wrapper": f'env X=1 "{spaced}/orchid test-run" lbl "{binary}"',
         "other command first": f'sh -c x "{wrapper}" lbl "{binary}"',
+        "tilde in env value": f'env TEST=~/cache "{wrapper}" lbl "{binary}"',
+        "tilde after = in an argument": f'env X=1 "{wrapper}" lbl "{binary}" --cache=~/c',
+        "field code inside an argument": f'env X=1 "{wrapper}" lbl "{binary}" "Build 100%x"',
+        "field code glued to an option": f'env X=1 "{wrapper}" lbl "{binary}" --file=%f',
+        "lone % at the end": f'env X=1 "{wrapper}" lbl "{binary}" "100%"',
     }
     for name, line in bad.items():
         code, ran = run(line)
-        assert code == 1 and not ran, f"{name}: must be rejected before anything starts"
+        expect(f"{name}: rejected before anything starts", code == 1 and not ran)
+
+    if failures:
+        print("check_test_shortcut: FAILED\n  " + "\n  ".join(failures))
+        sys.exit(1)
 
 print("check_test_shortcut: ok")

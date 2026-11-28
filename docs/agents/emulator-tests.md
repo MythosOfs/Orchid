@@ -78,11 +78,11 @@ Detail for [AGENTS.md](../../AGENTS.md#emulator-tests-on-the-test-host-run-by-th
   the seed, not this run.
 - Games run in a private throwaway profile without network. In-game dialogs (EULA, tutorials) are
   part of the game: accept and continue.
-- Say in the brief: every reported screenshot must be opened and described. A real failure (crash,
-  hang, device loss, wrong rendering) stops the remaining runs of the brief: report it. A setup
-  obstacle is a result to write down, not a reason to skip the remaining runs; the gate runs every
-  game regardless (see Gameplay gate). When a number or a log count decides the outcome, check it
-  against the log yourself.
+- Say in the brief: every reported screenshot must be opened and described. The first real failure
+  (crash, hang, device loss, wrong rendering) stops the remaining runs, the gate included: report
+  it. An infrastructure fault (harness error, GPU lock timeout, out-of-memory kill, a start that
+  never reached the game) is inconclusive, not a failure: write it down and rerun. When a number or
+  a log count decides the outcome, check it against the log yourself.
 - The harness lives in `~/.local/share/codex-orchid-mcp/` (its own local git repository, not this
   one). A running MCP server keeps the code it started with; changes reach a session only after
   its restart. After changing it: `uv run --script selftest.py` (no emulator needed), then
@@ -118,7 +118,8 @@ hand (`release-binaries`); pushes start none.
   build. A game that worked in the last good build and fails now blocks the release.
 - The test subagent runs it and returns screenshots and log excerpts. The main agent looks at
   the key screenshots and decides pass or fail.
-- Fail: no release; find the regression, fix it, run the gate again.
+- The first real fail stops the gate (`job_cancel`): report it, find the regression, fix it, run
+  the gate again; no release meanwhile. An infrastructure fault is inconclusive: rerun that game.
 
 ## Performance measurements
 

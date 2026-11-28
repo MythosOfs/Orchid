@@ -21,12 +21,11 @@ only when its exact `Exec` passes `--check`; the maintainer must never have to c
    The desktop launcher expands neither `~` nor `$HOME`: write the absolute home path in `Exec`. Set environment
    switches only via `env VAR=value` before `orchid-test-run`. Quote paths with spaces in `"..."`.
    Do not set `QT_QPA_PLATFORM` or `DISPLAY`; `orchid-test-run` does that.
-2. Check; all four must be green:
+2. Check; all three must be green (from the repo root):
    ```sh
    desktop-file-validate ~/.local/share/applications/orchid-test-<label>.desktop
-   ex=$(sed -n 's/^Exec=//p' <file> | sed 's/ %f$//; s#orchid-test-run #orchid-test-run --check #'); eval "$ex"   # -> "check ok"
+   python3 tools/check_test_shortcut.py <file>   # parses Exec (no shell), rejects `~` and `$HOME`, runs `orchid-test-run --check` -> "check ok"
    ldd <binary> | grep 'not found'    # must be empty (not needed for AppImages)
-   grep -E '^Exec=.*[ =](~|\$HOME)' <file>   # must be empty: the eval above expands `~`, the launcher does not
    ```
 3. `update-desktop-database ~/.local/share/applications`.
 

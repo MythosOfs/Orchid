@@ -12,20 +12,21 @@ only when its exact `Exec` passes `--check`; the maintainer must never have to c
    [Desktop Entry]
    Type=Application
    Name=Orchid <label> (Test)
-   Exec=env EDEN_XYZ=1 ~/.local/bin/orchid-test-run <label> <absolute path to AppImage or build*/bin/orchid> %f
+   Exec=env EDEN_XYZ=1 /home/<user>/.local/bin/orchid-test-run <label> <absolute path to AppImage or build*/bin/orchid> %f
    Icon=orchid
    Terminal=false
    Categories=Game;Emulator;
    X-Orchid-Test=true
    ```
-   Use an absolute home path in `Exec` if the desktop does not expand `~`. Set environment
+   The desktop launcher expands neither `~` nor `$HOME`: write the absolute home path in `Exec`. Set environment
    switches only via `env VAR=value` before `orchid-test-run`. Quote paths with spaces in `"..."`.
    Do not set `QT_QPA_PLATFORM` or `DISPLAY`; `orchid-test-run` does that.
-2. Check; all three must be green:
+2. Check; all four must be green:
    ```sh
    desktop-file-validate ~/.local/share/applications/orchid-test-<label>.desktop
    ex=$(sed -n 's/^Exec=//p' <file> | sed 's/ %f$//; s#orchid-test-run #orchid-test-run --check #'); eval "$ex"   # -> "check ok"
    ldd <binary> | grep 'not found'    # must be empty (not needed for AppImages)
+   grep -E '^Exec=.*[ =](~|\$HOME)' <file>   # must be empty: the eval above expands `~`, the launcher does not
    ```
 3. `update-desktop-database ~/.local/share/applications`.
 

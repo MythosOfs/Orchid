@@ -128,6 +128,18 @@ orchid-agent-test --line src/common/example.h:42 --line src/common/example.h:57 
 - Do not aim ninja diagnostics (`-n`, `-t`) at a build directory while another ninja runs there;
   even diagnostics can corrupt ninja log files.
 
+## Regression gate (second finding of one class)
+
+Trigger: a review reports a finding in a class that already cost a round.
+
+1. Collect every earlier finding of the class as fixtures or seeds.
+2. Build an oracle without production code (expected-value table or independent model), plus at least one
+   parity check (two request forms, same answer).
+3. Run the collected findings against the pre-fix state: each one goes red.
+4. Fix after that. Revert each fix on its own: its test goes red, otherwise drop the change.
+5. Justify every deviation from `main` on real dumps in the ADR.
+6. Report where each finding came from (branch or `main`).
+
 ## Emulator tests: on the test host, run by the agent
 
 Every test that starts the emulator (performance/fps, headless boots, repro runs, A/B
@@ -161,13 +173,16 @@ the maintainer's ChatGPT subscription and spares the Claude limits.
   record, return format (file paths, raw numbers, screenshot paths). While debugging, one brief
   per experiment (build, snapshot, settings, environment variables, what to wait for).
 - The subagent returns data only. The main agent decides: regression or not, root cause, code
-  changes, whether to ship. When a screenshot decides the outcome, look at it yourself.
+  changes, whether to ship. When a screenshot decides the outcome, look at it yourself. Check fine
+  rendering artifacts and small status-bar text on the screenshots yourself: the subagent's scene
+  classification does not cover them.
 - All rules in this file and in `docs/agents/` apply to the subagent run (private display and input, short runs, end the emulator afterwards).
 
 Before any emulator run, route, gameplay gate, performance or sound check, or test-subagent brief:
 read [docs/agents/emulator-tests.md](docs/agents/emulator-tests.md) (harness facts, gate, performance, sound).
-Before creating a test shortcut, cleaning worktrees or builds, or checking the disk budget:
-read [docs/agents/housekeeping.md](docs/agents/housekeeping.md).
+At the start and end of every task and before creating a worktree: run the disk-budget check from
+[docs/agents/housekeeping.md](docs/agents/housekeeping.md). Before creating a test shortcut or
+cleaning worktrees or builds: read that file.
 
 ### Builds: test host or laptop
 

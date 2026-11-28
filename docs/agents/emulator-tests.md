@@ -78,9 +78,11 @@ Detail for [AGENTS.md](../../AGENTS.md#emulator-tests-on-the-test-host-run-by-th
   the seed, not this run.
 - Games run in a private throwaway profile without network. In-game dialogs (EULA, tutorials) are
   part of the game: accept and continue.
-- Say in the brief: every reported screenshot must be opened and described, and an obstacle in
-  one run is a result to write down, not a reason to skip the remaining runs. When a number or a
-  log count decides the outcome, check it against the log yourself.
+- Say in the brief: every reported screenshot must be opened and described. A real failure (crash,
+  hang, device loss, wrong rendering) stops the remaining runs of the brief: report it. A setup
+  obstacle is a result to write down, not a reason to skip the remaining runs; the gate runs every
+  game regardless (see Gameplay gate). When a number or a log count decides the outcome, check it
+  against the log yourself.
 - The harness lives in `~/.local/share/codex-orchid-mcp/` (its own local git repository, not this
   one). A running MCP server keeps the code it started with; changes reach a session only after
   its restart. After changing it: `uv run --script selftest.py` (no emulator needed), then
@@ -130,6 +132,10 @@ hand (`release-binaries`); pushes start none.
   identical code). So: at least 3 runs per variant, alternating A and B, always with a baseline of
   the previous good build. A change counts only if it clearly exceeds the spread between runs of
   the same variant. Check scheduler churn in `threads.log`/`meta.txt` before blaming the code.
+- A/B comparisons keep scene, settings, resolution, power profile and cache state identical, name
+  build/commit and measurement duration, and run one load test at a time.
+- `summary.txt` is a starting point and its bottleneck verdict a heuristic: back every finding
+  with the CSV, `perf-top.txt` and `eden_log.txt`.
 
 ## Sound checks (dropouts show up as gaps in the waveform)
 
